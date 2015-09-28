@@ -10,6 +10,7 @@ admin.site.register(Binary_Model)
 admin.site.register(Robonet_Log)
 admin.site.register(Robonet_Request)
 admin.site.register(Robonet_Status)
+admin.site.register(Robonet_Reduction)
 
 #
 #class EventAdmin(admin.ModelAdmin):

@@ -27,7 +27,7 @@ class Event(models.Model):
 class Ogle_Detail(models.Model):
    def __str__(self):
       return str(self.event)+' updated at '+str(self.last_updated)
-   event = models.ForeignKey(Event)
+   event = models.ForeignKey(Event.id.id)
    Tmax = models.DecimalField("Tmax", max_digits=12,decimal_places=4)
    tau = models.DecimalField("T_E", max_digits=12,decimal_places=4)
    umin = models.DecimalField("u_min", max_digits=12,decimal_places=4)
@@ -38,7 +38,7 @@ class Ogle_Detail(models.Model):
 class Moa_Detail(models.Model):
    def __str__(self):
       return str(self.event)+' updated at '+str(self.last_updated)
-   event = models.ForeignKey(Event)
+   event = models.ForeignKey(Event.id.id)
    Tmax = models.DecimalField("Tmax", max_digits=12,decimal_places=4)
    tau = models.DecimalField("T_E", max_digits=12,decimal_places=4)
    umin = models.DecimalField("u_min", max_digits=12,decimal_places=4)
@@ -49,7 +49,7 @@ class Moa_Detail(models.Model):
 class Kmt_Detail(models.Model):
    def __str__(self):
       return str(self.event)+' updated at '+str(self.last_updated)
-   event = models.ForeignKey(Event)
+   event = models.ForeignKey(Event.id.id)
    Tmax = models.DecimalField("Tmax", max_digits=12,decimal_places=4)
    tau = models.DecimalField("T_E", max_digits=12,decimal_places=4)
    umin = models.DecimalField("u_min", max_digits=12,decimal_places=4)
@@ -60,7 +60,7 @@ class Kmt_Detail(models.Model):
 class Single_Model(models.Model):
    def __str__(self):
       return str(self.event)+' updated at '+str(self.last_updated)
-   event = models.ForeignKey(Event)
+   event = models.ForeignKey(Event.id.id)
    Tmax = models.DecimalField("Tmax", max_digits=12,decimal_places=4)
    e_Tmax = models.DecimalField("sig(Tmax)", max_digits=12,decimal_places=4)
    tau = models.DecimalField("T_E", max_digits=12,decimal_places=4)
@@ -73,7 +73,7 @@ class Single_Model(models.Model):
 class Binary_Model(models.Model):
    def __str__(self):
       return str(self.event)+' updated at '+str(self.last_updated)
-   event = models.ForeignKey(Event)
+   event = models.ForeignKey(Event.id.id)
    Tmax = models.DecimalField("Tmax", max_digits=12,decimal_places=4)
    e_Tmax = models.DecimalField("sig(Tmax)", max_digits=12,decimal_places=4)
    tau  = models.DecimalField("T_E", max_digits=12,decimal_places=4)
@@ -92,7 +92,7 @@ class Binary_Model(models.Model):
 class Data_File(models.Model):
    def __str__(self):
       return str((self.datafile).split('/')[-1])
-   event = models.ForeignKey(Event)
+   event = models.ForeignKey(Event.id.id)
    datafile = models.CharField(max_length=1000)
    last_updated = models.DateTimeField('date last updated')
    last_magnitude = models.DecimalField(max_digits=10,decimal_places=2)
@@ -104,7 +104,7 @@ class Data_File(models.Model):
 class Robonet_Log(models.Model):
    def __str__(self):
       return str(self.image_name)
-   event = models.ForeignKey(Event)
+   event = models.ForeignKey(Event.id.id)
    image_name = models.CharField(max_length=200)
    timestamp = models.DateTimeField('date created')
    exptime = models.DecimalField(max_digits=10,decimal_places=2)
@@ -129,7 +129,7 @@ class Robonet_Log(models.Model):
 class Robonet_Reduction(models.Model):
    def __str__(self):
       return str(self.lc_file)
-   event = models.ForeignKey(Event)
+   event = models.ForeignKey(Event.id.id)
    # location of lightcurve file
    lc_file = models.CharField(max_length=1000)
    timestamp = models.DateTimeField('date created')
@@ -206,7 +206,7 @@ class Robonet_Reduction(models.Model):
 class Robonet_Request(models.Model):
    def __str__(self):
       return str(self.event)+' updated at '+str(self.timestamp)
-   event = models.ForeignKey(Event)
+   event = models.ForeignKey(Event.id)
    possible_types = ( 
    ('T', 'ToO'),
    ('M', 'Monitor'),
@@ -230,7 +230,7 @@ class Robonet_Request(models.Model):
 class Robonet_Status(models.Model):
    def __str__(self):
       return str(self.event)+' updated at '+str(self.timestamp)
-   event = models.ForeignKey(Event)
+   event = models.ForeignKey(Event.id)
    possible_status = ( 
       ('CH', 'check'),
       ('AC', 'active'),

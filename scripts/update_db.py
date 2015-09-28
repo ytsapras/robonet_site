@@ -889,7 +889,5 @@ def run_test():
       single_lens_par(event_name, Tmax, e_Tmax, tau, e_tau, umin, e_umin, last_updated)
       count = count + 1
       print count
-   
-   # Populate Robonet_Reduction database
-   
+  
    len(Event.objects.all())
