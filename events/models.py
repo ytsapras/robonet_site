@@ -206,7 +206,7 @@ class Robonet_Reduction(models.Model):
 class Robonet_Request(models.Model):
    def __str__(self):
       return str(self.event)+' updated at '+str(self.timestamp)
-   event = models.ForeignKey(Event.id)
+   event = models.ForeignKey(Event)
    possible_types = ( 
    ('T', 'ToO'),
    ('M', 'Monitor'),
