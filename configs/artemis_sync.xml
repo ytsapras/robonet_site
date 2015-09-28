@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<artemis_sync_config>
+    <parameter name='user_id'>
+        <value>ARTEMiSinternal</value>
+    </parameter>
+    
+    <parameter name='url'>
+        <value>mlrsync-stand.net</value>
+    </parameter>
+    
+    <parameter name='remote_location'>
+        <value>::ModelParameters</value>
+    </parameter>
+    
+    <parameter name='model_data_directory'>
+        <!-- <value>/science/robonet/rob/Operations/Signalmen_output/model</value> -->
+        <value>/Users/rstreet/RoboNet/Sandbox</value>
+    </parameter>
+    
+    <parameter name='auth'>
+        <!--<value>/home/robouser/.artemis-rsync</value>-->
+        <value>/Users/rstreet/RoboNet/Sandbox/.artemis-rsync</value>
+    </parameter>
+    
+    <parameter name='log_directory'>
+        <!-- <value>/science/robonet/rob/Operations/Signalmen_output/Rsynclog</value> -->
+        <value>/Users/rstreet/RoboNet/Sandbox/</value>
+    </parameter>
+    
+    <parameter name='log_root_name'>
+        <value>model_parameters</value>
+    </parameter>
+
+</artemis_sync_config>
