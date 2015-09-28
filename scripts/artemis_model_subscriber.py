@@ -7,6 +7,13 @@
 
 #########################
 # PACKAGE IMPORT
+import config_parser
+from astropy.time import Time
+import subprocess
+from sys import exit
+from os import path
+import update_db
+import utilities
 
 #########################
 # MAIN FUNCTION
@@ -16,18 +23,25 @@ def sync_artemis_models():
     '''
 
     # Read configuration:
+    config_file_path = '../configs/artemis_sync.xml'
+    config = config_parser.read_config(config_file_path)
 
     # Rsync the contents of ARTEMiS' model files directory, creating a log file listing
     # all files which were updated as a result of this rsync and hence which have been
     # updated.
+    rsync_log_path = rsync_data_log(config)
 
     # Read the list of updated models:
+    event_model_files = read_rsync_log(rsync_log_path)
 
     # Loop over all updated models and update the database:
+    for model_file in event_model_files:
+        
+        # Read the fitting model parameters from the model file:
+        event_params = read_model_file(model_file)
 
-    # Read the fitting model parameters from the model file:
-
-    # Query the DB to check whether the event exists in the database already:
+        # Query the DB to check whether the event exists in the database already:
+        event_exists = update_db.check_exists(event_params['long_name'])
 
     # If event is known to the DB, submit the updated model parameters as a new model object:
 
@@ -36,6 +50,79 @@ def sync_artemis_models():
 
     # Log the update in the script log:
 
+###########################
+# RSYNC FUNCTION
+def rsync_data_log(config):
+    '''Function to rsync data using authentication from file and log the output to a text file.
+    '''
+
+    # Contruct and execute rsync commandline:
+    ts = Time.now()          # Defaults to UTC
+    ts = ts.now().iso.split('.')[0].replace(' ','T').replace(':','').replace('-','')
+    log_path = path.join( config['log_directory'], config['log_root_name'] + '_' + ts + '.log' )
+    command = 'rsync -azu ' + \
+               config['user_id'] + '@' + config['url'] + config['remote_location'] + ' ' + \
+               config['model_data_directory'] + ' ' + \
+               '--password-file=' + config['auth'] + ' ' + \
+                '--log-file=' + log_path
+
+    args = command.split()
+    p = subprocess.Popen(args)
+    p.wait()
+
+    return log_path
+
+###########################
+# READ RSYNC LOG
+def read_rsync_log(log_path):
+    '''Function to parse the rsync -azu log output and return a list of event model file paths with updated parameters.
+    '''
+
+    # Initialize, returning an empty list if no log file is found:
+    event_model_files = []
+    if path.isfile(log_path) == False: return event_model_files
+
+    # Read the log file, parsing the contents into a list of model files to be updated.
+    file = open(log_path,'r')
+    file_lines = file.readlines()
+    file.close()
+
+    for line in file_lines:
+        if 'model' in line:
+            file_name = line.split(' ')[-1]
+            event_model_files.append(file_name)
+
+    return event_model_files
+
+###########################
+# READ ARTEMIS MODEL FILE
+def read_artemis_model_file(model_file_path):
+    '''Function to read an ARTEMiS model file and parse the contents'''
+
+    params = {}
+    if path.isfile(model_file_path) == True:
+        file = open(model_file_path, 'r')
+        line = file.readlines()
+        file.close()
+        
+        entries = line.split()
+        
+        params['ra'] = entries[0]
+        params['dec'] = entries[1]
+        params['short_name'] = entries[2]
+        params['long_name'] = utilities.short_to_long_name( params['short_name'] )
+        params['t0'] = entries[3]
+        params['sig_t0'] = entries[4]
+        params['tE'] = entries[5]
+        params['sig_tE'] = entries[6]
+        params['u0'] = entries[7]
+        params['sig_u0'] = entries[8]
+        params['chi2'] = entries[9]
+        params['ndata'] = entries[10]
+        params['I0'] = entries[14]
+        params['fbl'] = entries[15]
+    
+    return params
 
 ###########################
 # COMMANDLINE RUN SECTION:
