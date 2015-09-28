@@ -1,0 +1,10 @@
+{% if event_names %}
+    <h2>Events in database</h2>
+    <ul>
+    {% for event in event_names %}
+        <li><a href="/events/{{ event.id }}/">{{ event.ev_name_ogle }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No events are available.</p>
+{% endif %}
