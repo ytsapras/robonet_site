@@ -16,44 +16,69 @@ from os import path
 import utilities
 from datetime import datetime
 
-#########################
-# MAIN FUNCTION
-def sync_artemis_models():
-    '''Function to sync a local copy of the ARTEMiS model fit files for all events from the
-       server at the Univ. of St. Andrews.
+###############################################
+# DRIVER MAIN FUNCTION
+def sync_artemis():
+    '''Driver function to maintain an up to date copy of the data on all microlensing events from 
+        the ARTEMiS server at Univ. of St. Andrews.
     '''
 
     # Read configuration:
     config_file_path = '../configs/artemis_sync.xml'
     config = config_parser.read_config(config_file_path)
+    verbose(config,'Started sync with ARTEMiS server')
+    
+    # Sync the results of ARTEMiS' own model fits for all events:
+    sync_artemis_data_db(config,'models')
 
+    # Sync the event parameters published by the surveys from the ARTEMiS server:
+    sync_artemis_data_db(config,'pubpars')
+
+    # Sync the event photometry data from the ARTEMiS server:
+    sync_artemis_data_db(config,'data')
+
+
+###############################################
+# FUNCTION TO SYNC & PROCESS ARTEMiS MODEL DATA
+def sync_artemis_data_db(config,data_type):
+    '''Function to sync a local copy of the ARTEMiS model fit files for all events from the
+       server at the Univ. of St. Andrews.
+    '''
+    
+    verbose(config,'Syncing '+data_type+' from ARTEMiS server')
+    
     # Rsync the contents of ARTEMiS' model files directory, creating a log file listing
     # all files which were updated as a result of this rsync and hence which have been
     # updated.
-    rsync_log_path = rsync_data_log(config)
+    rsync_log_path = rsync_data_log(config,data_type)
+    verbose(config,'-> downloaded datalog')
 
     # Read the list of updated models:
-    event_model_files = read_rsync_log(config,rsync_log_path)
+    event_files = read_rsync_log(config,rsync_log_path,data_type)
+    verbose(config,'-> '+str(len(event_files))+' have been updated and will be synced with DB')
+
     
     # Loop over all updated models and update the database:
-    for model_file in event_model_files:
+    for f in event_files:
         
         # Read the fitting model parameters from the model file:
-        event_params = read_artemis_model_file(model_file)
+        if data_type in ['models', 'pubpars']: event_params = read_artemis_model_file(f)
+        else: event_params = read_artemis_data_file(f)
 
         # Query the DB to check whether the event exists in the database already:
-        event_exists = update_db.check_exists(event_params['long_name'])
+        if len(event_params) > 0 and int(config['update_db']) == 1:
+            event_exists = update_db.check_exists(event_params['long_name'])
 
-        # If event is unknown to the DB, add it first:
-        if event_exists == False:
-            status = update_db.add_new_event( event_params['long_name'],
+            # If event is unknown to the DB, add it first:
+            if event_exists == False:
+                status = update_db.add_new_event( event_params['long_name'],
                                     event_params['ra'],
                                     event_params['dec'],
                                     bright_neighbour = False
                                     )
         
-        # Now submit the updated model parameters as a new model object:
-        status = update_db.single_lens_par( event_params['long_name'],
+            # Now submit the updated model parameters as a new model object:
+            status = update_db.single_lens_par( event_params['long_name'],
                                                             event_params['t0'],
                                                             event_params['sig_t0'],
                                                             event_params['tE'],
@@ -66,17 +91,22 @@ def sync_artemis_models():
 
 ###########################
 # RSYNC FUNCTION
-def rsync_data_log(config):
+def rsync_data_log(config,data_type):
     '''Function to rsync data using authentication from file and log the output to a text file.
     '''
+
+    # Construct config parameter keys to extract data locations and appropriate log file name:
+    remote_location = str(data_type)+'_remote_location'
+    local_location = str(data_type)+'_local_location'
+    log_root_name = str(data_type)+'_log_root_name'
 
     # Contruct and execute rsync commandline:
     ts = Time.now()          # Defaults to UTC
     ts = ts.now().iso.split('.')[0].replace(' ','T').replace(':','').replace('-','')
-    log_path = path.join( config['log_directory'], config['log_root_name'] + '_' + ts + '.log' )
+    log_path = path.join( config['log_directory'], config[log_root_name] + '_' + ts + '.log' )
     command = 'rsync -azu ' + \
-               config['user_id'] + '@' + config['url'] + config['remote_location'] + ' ' + \
-               config['model_data_directory'] + ' ' + \
+               config['user_id'] + '@' + config['url'] + config[remote_location] + ' ' + \
+               config[local_location] + ' ' + \
                '--password-file=' + config['auth'] + ' ' + \
                 '--log-file=' + log_path
 
@@ -88,12 +118,15 @@ def rsync_data_log(config):
 
 ###########################
 # READ RSYNC LOG
-def read_rsync_log(config,log_path):
+def read_rsync_log(config,log_path,data_type):
     '''Function to parse the rsync -azu log output and return a list of event model file paths with updated parameters.
     '''
 
     # Initialize, returning an empty list if no log file is found:
     event_model_files = []
+    local_location = str(data_type)+'_local_location'
+    if data_type in ['models, pubpars']: search_key = '.model'
+    else: search_key = '.dat'
     if path.isfile(log_path) == False: return event_model_files
 
     # Read the log file, parsing the contents into a list of model files to be updated.
@@ -104,7 +137,7 @@ def read_rsync_log(config,log_path):
     for line in file_lines:
         if 'model' in line:
             file_name = line.split(' ')[-1].replace('\n','')
-            event_model_files.append( path.join( config['model_data_directory'], file_name ) )
+            event_model_files.append( path.join( config[local_location], file_name ) )
 
     return event_model_files
 
@@ -117,10 +150,11 @@ def read_artemis_model_file(model_file_path):
     
     if path.isfile(model_file_path) == True:
         file = open(model_file_path, 'r')
-        line = file.readlines()
+        lines = file.readlines()
         file.close()
+        print lines, model_file_path
         
-        entries = line[0].split()
+        entries = lines[0].split()
         
         params['ra'] = entries[0]
         params['dec'] = entries[1]
@@ -141,8 +175,30 @@ def read_artemis_model_file(model_file_path):
     
     return params
 
+###############################
+# READ ARTEMIS PHOTOMETRY FILE
+def read_artemis_data_file(data_file_path):
+    '''Function to read an ARTEMiS-format photometry data file.'''
+
+    params = {}
+    if path.isfile(model_file_path) == True:
+        params['short_name'] = path.basename(data_file_path).split('.')[0]
+        params['long_name'] = utilities.short_to_long_name( params['short_name'] )
+    
+    return params
+
+################################
+# VERBOSE OUTPUT FORMATTING
+def verbose(config,record):
+    '''Function to output logging information if the verbose config flag is set'''
+
+    if bool(config['verbose']) == True:
+        ts = Time.now()          # Defaults to UTC
+        ts = ts.now().iso.split('.')[0].replace(' ','T')
+        print ts+': '+record
+
 ###########################
 # COMMANDLINE RUN SECTION:
 if __name__ == '__main__':
 
-    sync_artemis_models()
+    sync_artemis()
