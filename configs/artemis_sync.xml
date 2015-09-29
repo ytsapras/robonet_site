@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
 <artemis_sync_config>
+    
+    <parameter name='verbose'>
+        <value>True</value>
+    </parameter>
+    
+    <parameter name='update_db'>
+        <value>0</value>
+    </parameter>
+    
     <parameter name='user_id'>
         <value>ARTEMiSinternal</value>
     </parameter>
@@ -9,13 +18,31 @@
         <value>mlrsync-stand.net</value>
     </parameter>
     
-    <parameter name='remote_location'>
+    <parameter name='models_remote_location'>
         <value>::ModelParameters</value>
     </parameter>
     
-    <parameter name='model_data_directory'>
+    <parameter name='pubpars_remote_location'>
+        <value>::PublishedParameters</value>
+    </parameter>
+    
+    <parameter name='data_remote_location'>
+        <value>::Data2015</value>
+    </parameter>
+
+    <parameter name='models_local_location'>
         <!-- <value>/science/robonet/rob/Operations/Signalmen_output/model</value> -->
-        <value>/Users/rstreet/RoboNet/Sandbox</value>
+        <value>/Users/rstreet/RoboNet/Sandbox/models</value>
+    </parameter>
+    
+    <parameter name='pubpars_local_location'>
+        <!-- <value>/science/robonet/rob/Operations/Signalmen_output/PublishedParameters</value> -->
+        <value>/Users/rstreet/RoboNet/Sandbox/PublishedParameters</value>
+    </parameter>
+    
+    <parameter name='data_local_location'>
+        <!-- <value>/science/robonet/rob/Operations/Signalmen_output/data</value> -->
+        <value>/Users/rstreet/RoboNet/Sandbox/data</value>
     </parameter>
     
     <parameter name='auth'>
@@ -28,8 +55,16 @@
         <value>/Users/rstreet/RoboNet/Sandbox/</value>
     </parameter>
     
-    <parameter name='log_root_name'>
+    <parameter name='models_log_root_name'>
         <value>model_parameters</value>
+    </parameter>
+    
+    <parameter name='pubpars_log_root_name'>
+        <value>pubpars_parameters</value>
+    </parameter>
+    
+    <parameter name='data_log_root_name'>
+        <value>phot_data</value>
     </parameter>
 
 </artemis_sync_config>
