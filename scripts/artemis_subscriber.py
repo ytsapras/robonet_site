@@ -11,13 +11,32 @@ import config_parser
 from astropy.time import Time
 import subprocess
 from sys import exit
-from os import path
+from os import path, stat
 #import update_db
 import utilities
 from datetime import datetime
 
+##############################
+# CONFIG INTERPRETATION
+
+# Data_type -> config parameter keys, file name search key
+config_pars = { 'model': { 'remote_location': 'models_remote_location',
+                           'local_location': 'models_local_location',
+                           'log_root_name': 'models_log_root_name',
+                               'search_key': '.model' },
+                'pubpars': { 'remote_location': 'pubpars_remote_location',
+                             'local_location': 'pubpars_local_location',
+                             'log_root_name': 'pubpars_log_root_name',
+                                 'search_key': '.model' },
+                'data': { 'remote_location': 'data_remote_location',
+                          'local_location': 'data_local_location',
+                          'log_root_name': 'data_log_root_name',
+                                 'search_key': '.dat' }
+                }
+
+
 ###############################################
-# DRIVER MAIN FUNCTION
+# MAIN DRIVER FUNCTION
 def sync_artemis():
     '''Driver function to maintain an up to date copy of the data on all microlensing events from 
         the ARTEMiS server at Univ. of St. Andrews.
@@ -29,7 +48,7 @@ def sync_artemis():
     verbose(config,'Started sync with ARTEMiS server')
     
     # Sync the results of ARTEMiS' own model fits for all events:
-    sync_artemis_data_db(config,'models')
+    sync_artemis_data_db(config,'model')
 
     # Sync the event parameters published by the surveys from the ARTEMiS server:
     sync_artemis_data_db(config,'pubpars')
@@ -39,7 +58,7 @@ def sync_artemis():
 
 
 ###############################################
-# FUNCTION TO SYNC & PROCESS ARTEMiS MODEL DATA
+# FUNCTION TO SYNC & PROCESS ARTEMiS DATA
 def sync_artemis_data_db(config,data_type):
     '''Function to sync a local copy of the ARTEMiS model fit files for all events from the
        server at the Univ. of St. Andrews.
@@ -55,18 +74,20 @@ def sync_artemis_data_db(config,data_type):
 
     # Read the list of updated models:
     event_files = read_rsync_log(config,rsync_log_path,data_type)
-    verbose(config,'-> '+str(len(event_files))+' have been updated and will be synced with DB')
+    verbose(config,'-> '+str(len(event_files))+' entries have been updated')
 
     
     # Loop over all updated models and update the database:
     for f in event_files:
         
         # Read the fitting model parameters from the model file:
-        if data_type in ['models', 'pubpars']: event_params = read_artemis_model_file(f)
+        if data_type in ['model', 'pubpars']: event_params = read_artemis_model_file(f)
         else: event_params = read_artemis_data_file(f)
-
+        
+        # For model files:
         # Query the DB to check whether the event exists in the database already:
-        if len(event_params) > 0 and int(config['update_db']) == 1:
+        if data_type == 'model' and len(event_params) > 0 and int(config['update_db']) == 1:
+            verbose(config,'-> Updating database')
             event_exists = update_db.check_exists(event_params['long_name'])
 
             # If event is unknown to the DB, add it first:
@@ -96,9 +117,9 @@ def rsync_data_log(config,data_type):
     '''
 
     # Construct config parameter keys to extract data locations and appropriate log file name:
-    remote_location = str(data_type)+'_remote_location'
-    local_location = str(data_type)+'_local_location'
-    log_root_name = str(data_type)+'_log_root_name'
+    remote_location = config_pars[data_type]['remote_location']
+    local_location = config_pars[data_type]['local_location']
+    log_root_name = config_pars[data_type]['log_root_name']
 
     # Contruct and execute rsync commandline:
     ts = Time.now()          # Defaults to UTC
@@ -124,20 +145,20 @@ def read_rsync_log(config,log_path,data_type):
 
     # Initialize, returning an empty list if no log file is found:
     event_model_files = []
-    local_location = str(data_type)+'_local_location'
-    if data_type in ['models, pubpars']: search_key = '.model'
-    else: search_key = '.dat'
+    local_location = config_pars[data_type]['local_location']
+    search_key = config_pars[data_type]['search_key']
     if path.isfile(log_path) == False: return event_model_files
 
     # Read the log file, parsing the contents into a list of model files to be updated.
     file = open(log_path,'r')
     file_lines = file.readlines()
     file.close()
-
+    
     for line in file_lines:
-        if 'model' in line:
+        if search_key in line:
             file_name = line.split(' ')[-1].replace('\n','')
-            event_model_files.append( path.join( config[local_location], file_name ) )
+            if file_name[0:1] != '.' and len(file_name.split('.')) == 2:
+                event_model_files.append( path.join( config[local_location], file_name ) )
 
     return event_model_files
 
@@ -152,7 +173,6 @@ def read_artemis_model_file(model_file_path):
         file = open(model_file_path, 'r')
         lines = file.readlines()
         file.close()
-        print lines, model_file_path
         
         entries = lines[0].split()
         
@@ -160,14 +180,14 @@ def read_artemis_model_file(model_file_path):
         params['dec'] = entries[1]
         params['short_name'] = entries[2]
         params['long_name'] = utilities.short_to_long_name( params['short_name'] )
-        params['t0'] = entries[3]
-        params['sig_t0'] = entries[4]
-        params['tE'] = entries[5]
-        params['sig_tE'] = entries[6]
-        params['u0'] = entries[7]
-        params['sig_u0'] = entries[8]
-        params['chi2'] = entries[9]
-        params['ndata'] = entries[10]
+        params['t0'] = float(entries[3])
+        params['sig_t0'] = float(entries[4])
+        params['tE'] = float(entries[5])
+        params['sig_tE'] = float(entries[6])
+        params['u0'] = float(entries[7])
+        params['sig_u0'] = float(entries[8])
+        params['chi2'] = float(entries[9])
+        params['ndata'] = float(entries[10])
     
         ts = path.getmtime(model_file_path)
         ts = datetime.fromtimestamp(ts)
@@ -181,10 +201,30 @@ def read_artemis_data_file(data_file_path):
     '''Function to read an ARTEMiS-format photometry data file.'''
 
     params = {}
-    if path.isfile(model_file_path) == True:
+    if path.isfile(data_file_path) == True:
         params['short_name'] = path.basename(data_file_path).split('.')[0]
         params['long_name'] = utilities.short_to_long_name( params['short_name'] )
     
+        # Find and read the last entry in the file, without reading the whole file
+        st_results = stat(data_file_path)
+        st_size = max(0,(st_results[6] - 200))
+        data_file = open(data_file_path,'r')
+        data_file.seek(st_size)
+        last_lines = data_file.readlines()
+        params['last_JD'] = float(last_lines[-1].split()[2])
+        params['last_mag'] = float(last_lines[-1].split()[0])
+    
+        # Ask the OS how many datapoints are in the file.
+        # Turns out there isn't an easy Python way to do this without
+        # reading the whole file, so ask the OS.  Then decrement the number
+        # of lines to account for the 1-line header.
+        command = 'wc -l '+data_file_path
+        args = command.split()
+        p = subprocess.Popen(args,stdout=subprocess.PIPE, bufsize=1)
+        p.wait()
+        params['ndata'] = int(str(p.stdout.readline()).split()[0]) - 1
+        
+        print params
     return params
 
 ################################
