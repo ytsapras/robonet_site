@@ -1,8 +1,8 @@
 #!/usr/bin/python
 ######################################################################################################
-#                            ARTEMiS MODEL SUBSCRIBER
+#                                   ARTEMiS SUBSCRIBER
 #
-# Script to download the latest model parameters from ARTEMiS
+# Script to download the latest model parameters and data from ARTEMiS
 ######################################################################################################
 
 #########################
