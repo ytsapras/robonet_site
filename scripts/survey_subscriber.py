@@ -33,13 +33,17 @@ def sync_surveys():
     # Harvest parameters of lenses detected by OGLE
     (ogle_last_update, ogle_lens_params) = get_ogle_parameters(config)
 
-    print ogle_lens_params
 
 # Sync against database
 
-# Harvest MOA information
+    # Harvest MOA information
+    (moa_last_update, moa_lens_params) = get_moa_parameters(config)
 
-# Harvest KMTNet information
+# Sync against database
+
+
+    # Harvest KMTNet information
+    get_kmtnet_parameters(config)
 
 ##################################################
 # LENS CLASS DESCRIPTION
@@ -58,8 +62,11 @@ class Lens():
 
     def set_par(self,par,par_value):
 
-        if par in [ 'name', 'ra', 'dec' ]: setattr(self,par,par_value)
+        if par in [ 'name' ]: setattr(self,par,par_value)
         else: setattr(self,par,float(par_value))
+
+    def summary(self):
+        return self.name+' '+str(self.ra)+'  '+str(self.dec)+'  '+str(self.t0)+' '+str(self.tE)+' '+str(self.u0)
 
 ##################################################
 # FUNCTION GET OGLE PARAMETERS
@@ -94,6 +101,7 @@ def get_ogle_parameters(config):
     ts = datetime.strptime(t.split('.')[0],'%Y%m%d')
     dt = timedelta(days=float('0.'+t.split('.')[-1]))
     last_update = ts + dt
+    verbose(config,'--> Last udpated at: '+t.replace('\n',''))
 
     # Parse the lenses parameter file.
     # First 2 lines are header, so skipped:
@@ -102,16 +110,117 @@ def get_ogle_parameters(config):
     for line in file_lines[2:]:
         (event_id, field, star, ra, dec, t0_hjd, t0_utc, tE, u0, A0, dmag, fbl, I_bl, I0) = line.split()
         if 'OGLE' not in event_id: event_id = 'OGLE-'+event_id
+        (ra_deg, dec_deg) = utilities.sex2decdeg(ra,dec)
         event = Lens()
         event.set_par('name',event_id)
-        event.set_par('ra',ra)
-        event.set_par('dec',dec)
+        event.set_par('ra',ra_deg)
+        event.set_par('dec',dec_deg)
         event.set_par('t0',t0_hjd)
         event.set_par('tE',tE)
         event.set_par('u0',u0)
         event.set_par('A0',A0)
         event.set_par('I0',I0)
         lens_params[event_id] = event
+    verbose(config,'--> Downloaded index of ' + str(len(lens_params)) + ' events')
+
+    return last_update, lens_params
+
+###################################################
+# FUNCTION GET MOA PARAMETERS
+def get_moa_parameters(config):
+    '''Function to download the parameters of lensing events detected by the MOA survey.  
+        MOA make these available via their websites:
+        https://it019909.massey.ac.nz/moa/alert<year>/alert.html
+        https://it019909.massey.ac.nz/moa/alert<year>/index.dat
+        '''
+    
+    verbose(config,'Syncing data from MOA')
+    
+    # Download the website with MOA alerts, which contains the last updated date.
+    # Note that although the URL prefix has to be https, this isn't actually a secure page
+    # so no login is required.
+    ts = Time.now()
+    year_string = str(ts.utc.now().value.year)
+    url = 'https://it019909.massey.ac.nz/moa/alert' + year_string + '/alert.html'
+    (alerts_page_data,msg) = utilities.get_http_page(url)
+
+    # The last updated timestamp is one of the last lines in this file:
+    alerts_page_data = alerts_page_data.split('\n')
+    i = len(alerts_page_data) - 1
+    while i >= 0:
+        if 'last updated' in alerts_page_data[i]:
+            t = alerts_page_data[i].split(' ')[-2]
+            last_update = datetime.strptime(t.split('.')[0],'%Y-%m-%dT%H:%M:%S')
+            i = -1
+        i = i - 1
+
+    verbose(config,'--> Last udpated at: '+t)
+
+    # Download the index of events:
+    url = 'https://it019909.massey.ac.nz/moa/alert' + year_string + '/index.dat'
+    (events_index_data,msg) = utilities.get_http_page(url)
+    events_index_data = events_index_data.split('\n')
+    
+    # Parse the index of events
+    lens_params = {}
+    for entry in events_index_data:
+        if len(entry.replace('\n','').replace(' ','')) > 0:
+            (event_id, field, ra_deg, dec_deg, t0_hjd, tE, u0, I0, tmp1, tmp2) = entry.split()
+            if ':' in ra_deg or ':' in dec_deg: (ra_deg, dec_deg) = utilities.sex2decdeg(ra_deg,dec_deg)
+            event = Lens()
+            event.set_par('name',event_id)
+            event.set_par('ra',ra_deg)
+            event.set_par('dec',dec_deg)
+            event.set_par('t0',t0_hjd)
+            event.set_par('tE',tE)
+            event.set_par('u0',u0)
+            event.set_par('I0',I0)
+            lens_params[event_id] = event
+    verbose(config,'--> Downloaded index of ' + str(len(lens_params)) + ' events')
+
+    return last_update, lens_params
+
+####################################################
+# FUNCTION GET KMTNET PARAMETERS
+def get_kmtnet_parameters(config):
+    '''Function to retrieve all available information on KMTNet-detected events from the HTML table at:
+    http://astroph.chungbuk.ac.kr/~kmtnet/<year>.html'''
+
+    verbose(config,'Syncing data from KMTNet')
+
+    # Download the website indexing KMTNet-discovered events for the current year:
+    ts = Time.now()
+    year_string = str(ts.utc.now().value.year)
+    url = 'http://astroph.chungbuk.ac.kr/~kmtnet/' + year_string + '.html'
+    events_index_data = utilities.get_secure_url(url,(None,None))
+
+    events_index_data = events_index_data.split('\n')
+
+    # Parse the index of events.  KMTNet don't provide very much information on their discoveries yet.
+    lens_params = {}
+    i = 0
+    while i < len(events_index_data):
+        entry = events_index_data[i]
+        if 'KMT' in entry:
+            entry = [ entry ] + events_index_data[i+1].split()
+            event_id = entry[0].replace(' ','')
+            (ra_deg, dec_deg) = utilities.sex2decdeg( entry[1], entry[2] )
+            event = Lens()
+            event.set_par('name',event_id)
+            event.set_par('ra',ra_deg)
+            event.set_par('dec',dec_deg)
+            lens_params[event_id] = event
+            i = i + 2
+        else:
+            i = i + 1
+
+    # KMTNet do not provide a last-updated timestamp anywhere, so setting this to
+    # the current time for now:
+    last_update = datetime.utcnow()
+    
+    verbose(config,'--> Last udpated at: ' + last_update.strftime("%Y-%m-%dT%H:%M:%S"))
+    verbose(config,'--> Downloaded index of ' + str(len(lens_params)) + ' events')
+
 
     return last_update, lens_params
 
