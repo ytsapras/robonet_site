@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<artemis_sync_config>
+    
+    <parameter name='verbose'>
+        <value>True</value>
+    </parameter>
+    
+    <parameter name='update_db'>
+        <value>0</value>
+    </parameter>
+    
+    <parameter name='ogle_data_local_location'>
+        <!-- <value>/science/robonet/rob/Operations/SurveyData/OGLE</value> -->
+        <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/OGLE</value>
+    </parameter>
+    
+    <parameter name='ogle_ftp_server'>
+        <value>ftp.astrouw.edu.pl</value>
+    </parameter>
+    
+    <parameter name='moa_data_local_location'>
+        <!-- <value>/science/robonet/rob/Operations/SurveyData/MOA</value> -->
+        <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/MOA</value>
+    </parameter>
+    
+    <parameter name='kmtnet_data_local_location'>
+        <!-- <value>/science/robonet/rob/Operations/SurveyData/KMTNet</value> -->
+        <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/KMTNet</value>
+    </parameter>
+    
+    <parameter name='log_directory'>
+        <!-- <value>/science/robonet/rob/Operations/Signalmen_output/Rsynclog</value> -->
+        <value>/Users/rstreet/RoboNet/Sandbox/</value>
+    </parameter>
+    
+    <parameter name='models_log_root_name'>
+        <value>model_parameters</value>
+    </parameter>
+    
+    <parameter name='pubpars_log_root_name'>
+        <value>pubpars_parameters</value>
+    </parameter>
+    
+    <parameter name='data_log_root_name'>
+        <value>phot_data</value>
+    </parameter>
+
+</artemis_sync_config>
