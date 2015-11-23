@@ -1,10 +1,29 @@
 {% if event_names %}
-    <h2>Events in database</h2>
+    <h2>Events in database:</h2>
+    <table border="0">
+    <tr>
+       <td bgcolor="#990000"><b style="color: #FFFFCC ">ID:</b></td>
+       <td bgcolor="#990000"><b style="color: #FFFFCC ">OGLE Name:</b></td>
+       <td bgcolor="#990000"><b style="color: #FFFFCC ">MOA Name:</b></td>
+       <td bgcolor="#990000"><b style="color: #FFFFCC ">KMT Name:</b></td>
+       <td bgcolor="#990000"><b style="color: #FFFFCC ">RA:</b></td>
+       <td bgcolor="#990000"><b style="color: #FFFFCC ">DEC:</b></td>
+       <td bgcolor="#990000"><b style="color: #FFFFCC ">Bright Neighbour:</b></td>
+    </tr>
     <ul>
     {% for event in event_names %}
-        <li><a href="/events/{{ event.id }}/">{{ event.ev_name_ogle }}</a></li>
+    <tr bgcolor="#ffcc99">   
+        <td><a href="/events/{{ event.id }}/">{{ event.id }}</a></td> 
+	<td>{{ event.ev_name_ogle }} </td>
+	<td>{{ event.ev_name_moa }} </td>
+	<td>{{ event.ev_name_kmt }} </td>
+	<td>{{ event.ev_ra }} </td>
+	<td>{{ event.ev_dec }} </td>
+	<td>{{ event.bright_neighbour }} </td>
+    </tr>
     {% endfor %}
     </ul>
+    </table>
 {% else %}
     <p>No events are available.</p>
 {% endif %}

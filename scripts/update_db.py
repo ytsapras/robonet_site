@@ -18,7 +18,87 @@ from django.utils import timezone
 from django import setup
 setup()
 
-from events.models import Event, Single_Model, Binary_Model, Data_File, Robonet_Log, Robonet_Reduction, Robonet_Request, Robonet_Status, Ogle_Detail, Moa_Detail, Kmt_Detail
+#from events.models import Event, Single_Model, Binary_Model, Data_File, Robonet_Log, Robonet_Reduction, Robonet_Request, Robonet_Status, Ogle_Detail, Moa_Detail, Kmt_Detail
+from events.models import Operator, Telescope, Instrument, Filter, Event, Event_Name
+
+################################################################################################################
+def add_operator(operator_name):
+   """
+   Adds a new operator name in the database.
+   This can be the survey name or the name of the follow-up group.
+   
+   Keyword arguments:
+   operator_name -- The operator name (string, required)
+   """
+   new_operator = Operator.objects.get_or_create(name=operator_name)
+   if new_operator[-1] == False:
+      successful = False
+   else:
+      successful = True
+   return successful
+
+################################################################################################################
+def add_telescope(operator, telescope_name, aperture=0.0, latitude=0.0, longitude=0.0, altitude=0.0, site=""):
+   """
+   Adds a new telescope name in the database.
+   
+   Keyword arguments:
+   operator -- The operator (object, required) -- ForeignKey object
+   telescope_name -- The telescope name (string, required)
+   aperture -- The telescope aperture (float, optional, default=0.0)
+   latitude -- The telescope latitude (N) in decimal degrees (float, optional, default=0.0)
+   longitude -- The telescope longitude (E) in decimal degrees (float, optional, default=0.0)
+   altitude -- The telescope altitude in meters (float, optional, default=0.0)
+   site -- The site name (string, optional, default="")
+   """
+   known_telescope = Telescope.objects.filter(name=telescope_name).exists()
+   # If the telescope already exists there's no need to add it
+   if known_telescope == True:
+      successful = False
+   else:
+      add_new = Telescope(operator=operator, name=telescope_name, aperture=aperture, latitude=latitude, 
+                          longitude=longitude, altitude=altitude,site=site)
+      add_new.save()
+      successful = True
+   return successful
+
+################################################################################################################
+def add_instrument(telescope, instrument_name, pixscale=0.0):
+   """
+   Adds a new instrument name in the database. A single instrument can appear multiple 
+   times in this list as it can be moved to different telescopes.
+   
+   Keyword arguments:
+   telescope -- The telescope (object, required) -- ForeignKey object
+   instrument_name -- The instrument name (string, required)
+   pixscale -- The pixel scale of the CCD (arcsec/pix)
+   """
+   try:
+      add_new = Instrument(telescope=telescope, name=instrument_name, pixscale=pixscale)
+      add_new.save()
+      successful = True
+   except:
+      successful = False
+   return successful
+
+################################################################################################################
+def add_filter(instrument, filter_name):
+   """
+   Adds a new filter name in the database. A single filter can appear multiple 
+   times in this list as it can exist for different instruments.
+   
+   Keyword arguments:
+   instrument -- The instrument (object, required) -- ForeignKey object
+   filter_name -- The filter name (string, required)
+   """
+   try:
+      add_new = Filter(instrument=instrument, name=filter_name)
+      add_new.save()
+      successful = True
+   except:
+      successful = False
+   return successful
+
 
 ################################################################################################################
 def check_exists(event_name):
@@ -690,7 +770,7 @@ def update_request(event_name, t_sample, exptime, timestamp=timezone.now(), onem
 
 ################################################################################################################
 def update_status(event_name, timestamp=timezone.now(), priority='L', status='AC',
-                  comment='--', updated_by='--'):
+                  comment='--', updated_by='--', omega=0.0):
    """
    Update or Add robonet status to the database.
    
@@ -708,27 +788,28 @@ def update_status(event_name, timestamp=timezone.now(), priority='L', status='AC
              (string, optional, default='AC')
    comment -- Comment field. (string, optional, default='--')
    updated_by -- Updated by which user? (string, optional, default='--')
+   omega -- Priority value calculated based on parameters. (float, optional, default=0.0)
    """
    if event_name.startswith("OGLE") and check_exists(event_name)==True:
       # Get event identifier
       ev = Event.objects.get(ev_name_ogle=event_name)
       ev.robonet_status_set.update_or_create(event=event_name, timestamp=timestamp,
                                  priority=priority, status=status, comment=comment,
-		                 updated_by=updated_by)
+		                 updated_by=updated_by, omega=omega)
       ev.save()
       successful = True
    elif event_name.startswith("MOA") and check_exists(event_name)==True:
       ev = Event.objects.get(ev_name_moa=event_name)
       ev.robonet_status_set.update_or_create(event=event_name, timestamp=timestamp,
                                  priority=priority, status=status, comment=comment,
-		                 updated_by=updated_by)
+		                 updated_by=updated_by, omega=omega)
       ev.save()
       successful = True
    elif event_name.startswith("KMT") and check_exists(event_name)==True:
       ev = Event.objects.get(ev_name_kmt=event_name)
       ev.robonet_status_set.update_or_create(event=event_name, timestamp=timestamp,
                                  priority=priority, status=status, comment=comment,
-		                 updated_by=updated_by)
+		                 updated_by=updated_by, omega=omega)
       ev.save()
       successful = True
    else:
@@ -891,3 +972,81 @@ def run_test():
       print count
   
    len(Event.objects.all())
+
+def run_test2():
+   # Path to ARTEMiS files
+   artemis = "/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/"
+   # Color & site definitions for plotting
+   colors = artemis+"colours.sig.cfg"
+   colordef = artemis+"colourdef.sig.cfg"
+   # Set up and populate dictionaries
+   col_dict = {}
+   site_dict = {}
+   with open(colors) as f:
+      for line in f:
+         elem = line.split()
+  	 key = elem[0]
+  	 tel_id = " ".join([e.replace('"','') for e in elem[3:]])
+  	 vals = [elem[1], elem[2], tel_id]
+  	 site_dict[key] = vals
+   
+   with open(colordef) as f:
+      for line in f:
+  	 elem = line.split()
+  	 key = elem[0]
+  	 val = elem[1]
+  	 col_dict[key] = val
+   
+   # Populate Operator database
+   for s in ['OGLE', 'MOA', 'KMTNet', 'WISE', 'MOA', 'OGLE', 'KMTNet', 'PLANET', 'RoboNet', 'uFUN', 'uFUN', 'Other']:
+      add_operator(s)
+   
+   # Populate Telescope database
+   from random import uniform
+   for i in site_dict.keys():
+      tel_name = site_dict[i][-1]
+      if ('LCOGT' in tel_name) or ('Liverpool' in tel_name):
+         # Get the appropriate pk for RoboNet
+         operator = Operator.objects.get(name='RoboNet')
+	 site = tel_name.split(' ')[1]
+      elif 'OGLE' in tel_name:
+         operator = Operator.objects.get(name='OGLE')
+	 site = 'CTIO'
+      elif 'MOA' in tel_name:
+         operator = Operator.objects.get(name='MOA')
+	 site = 'New Zealand'
+      else:
+         operator = Operator.objects.get(name='Other')
+	 site = ''
+      aperture = uniform(1.0,2.0)
+      add_telescope(operator=operator, telescope_name=tel_name, aperture=aperture, site=site)
+   
+   # Populate Instrument database
+   for i in Telescope.objects.all().values():
+      inst = i['name']+' CCD camera'
+      telescope = Telescope.objects.get(name=i['name'])
+      pixscale = uniform(0.1,1.4)
+      add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)
+   
+   # Add a few test instruments at existing telescopes   
+   telescope = Telescope.objects.get(name='LCOGT SAAO 1m A')
+   inst = '!!!TEST SAA0 1m A NEW INST!!!'
+   pixscale = uniform(0.1,1.4)
+   add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
+   
+   telescope = Telescope.objects.get(name='Faulkes North 2.0m')
+   inst = '!!!TEST FTN 2.0m NEW INST!!!'
+   pixscale = uniform(0.1,1.4)
+   add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
+   
+   telescope = Telescope.objects.get(name='LCOGT CTIO 1m A')
+   inst = '!!!TEST CTIO 1m A NEW INST!!!'
+   pixscale = uniform(0.1,1.4)
+   add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
+   
+   # Populate filter database
+   filters = ['Bessell-U', 'Bessell-B', 'Bessell-V','Bessell-R','Bessell-I', 'SDSS-u', 
+              'SDSS-g', 'SDSS-r', 'SDSS-i', 'SDSS-z', 'H-alpha']
+   for i in Instrument.objects.all():
+      for j in filters:
+         add_filter(instrument=i, filter_name=j)

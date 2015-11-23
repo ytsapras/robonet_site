@@ -10,6 +10,10 @@ ev2 = Event(ev_name_ogle="OGLE-2015-BLG-0017", ev_ra="17:35:32.16", ev_dec="-27:
 ev2.save()
 ev3 = Event(ev_name_moa="MOA-2015-BLG-531", ev_ra="18:19:12.56", ev_dec="-21:32:33.75", bright_neighbour=True)
 ev3.save()
+ev4 = Event(ev_name_kmt="KMT-2015-BLG-0017", ev_ra="17:56:25.235", ev_dec="-30:47:34.94")
+ev4.save()
+ev5 = Event(ev_name_kmt="KMT-2015-BLG-0152", ev_ra="17:22:10.520", ev_dec="-31:10:20.75")
+ev5.save()
 
 Event.objects.all()
 
@@ -23,6 +27,9 @@ Event.objects.filter(ev_name_moa="MOA-2015-BLG-531").update(ev_name_ogle="OGLE-2
 
 Event.objects.filter(ev_name_ogle="OGLE-2015-BLG-9999")
 
+for i in Event.objects.all():
+    print i.id, i.ev_ra, i.ev_dec
+
 print e1.ev_name_ogle, e1.ev_ra
 print e1.single_model_set.all().values()
 print e1.single_model_set.all().values('tau')
@@ -30,6 +37,7 @@ print e1.single_model_set.all().values("last_updated")[e1.single_model_set.count
 print Event.objects.filter(ev_name_moa__contains="MOA")
 print e1.robonet_log_set.all().values('image_name')
 print e1.robonet_log_set.all().values('image_name')
+print Event.objects.order_by('ev_name_ogle')
 t0 = 2289.803
 tE = 13421.354
 u0 = 04234.000
