@@ -1,25 +1,26 @@
-{% if event_names %}
+{% if rows %}
+{% load staticfiles %}
+    <script type="text/javascript" src="{% static 'events/sorttable.js' %}"></script>
     <h2>Events in database:</h2>
-    <table border="0">
+    <table class="sortable" border="0">
     <tr>
        <td bgcolor="#990000"><b style="color: #FFFFCC ">ID:</b></td>
-       <td bgcolor="#990000"><b style="color: #FFFFCC ">OGLE Name:</b></td>
-       <td bgcolor="#990000"><b style="color: #FFFFCC ">MOA Name:</b></td>
-       <td bgcolor="#990000"><b style="color: #FFFFCC ">KMT Name:</b></td>
+       <td bgcolor="#990000"><b style="color: #FFFFCC ">Known Names:</b></td>
        <td bgcolor="#990000"><b style="color: #FFFFCC ">RA:</b></td>
        <td bgcolor="#990000"><b style="color: #FFFFCC ">DEC:</b></td>
        <td bgcolor="#990000"><b style="color: #FFFFCC ">Bright Neighbour:</b></td>
     </tr>
     <ul>
-    {% for event in event_names %}
-    <tr bgcolor="#ffcc99">   
-        <td><a href="/events/{{ event.id }}/">{{ event.id }}</a></td> 
-	<td>{{ event.ev_name_ogle }} </td>
-	<td>{{ event.ev_name_moa }} </td>
-	<td>{{ event.ev_name_kmt }} </td>
-	<td>{{ event.ev_ra }} </td>
-	<td>{{ event.ev_dec }} </td>
-	<td>{{ event.bright_neighbour }} </td>
+    {% for row in rows %}
+    <tr bgcolor="#ffcc99">
+        <td> {{ row.0 }} </td>
+           <td>{% for name in row.1 %}
+	      <li><a href="/events/{{ row.0 }}/">{{ name }}</a><br>
+	      {% endfor %}
+	   </td>
+	<td>{{ row.2 }} </td>
+	<td>{{ row.3 }} </td>
+	<td>{{ row.4 }} </td>
     </tr>
     {% endfor %}
     </ul>
