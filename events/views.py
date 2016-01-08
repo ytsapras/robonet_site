@@ -159,5 +159,5 @@ def show_event(request, event_id):
 		 'last_obs_tel':last_obs_tel, 'ogle_url':ogle_url, 'time_now': time_now, 
 		 'time_now_jd': time_now_jd, 'the_script': script, 'the_div': div}
    except Event.DoesNotExist:
-      raise Http404("Event does not exist")
+      raise Http404("Event does not exist.")
    return render(request, 'events/show_event.html', context)

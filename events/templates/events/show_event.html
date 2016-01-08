@@ -8,8 +8,10 @@
 	</head>    
 <body bgcolor="#FFFFFF">
   <center><br>
+  <b><a href="http://127.0.0.1:8000/events/{{ event_id|add:-1 }}" STYLE="text-decoration:none">&#11013; &nbsp;<a/></b>
   <b>Current Time:</b> {{ time_now }}
   [HJD: {{ time_now_jd }}]
+  <b><a href="http://127.0.0.1:8000/events/{{ event_id|add:1 }}" STYLE="text-decoration:none">&nbsp; &#10145;<a/></b>
   <table border="2" style="width:1100px">
     <tr> 
 	<td width="200px" height="100px"><center><b><font size="5">ID</b></font><br> {{ event_id }}</center>
