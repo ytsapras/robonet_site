@@ -4,6 +4,7 @@ import glob
 from bokeh.plotting import figure, show, output_file, gridplot, vplot
 from bokeh.resources import CDN
 from bokeh.embed import components
+from bokeh.models import PrintfTickFormatter, HoverTool, BoxZoomTool, PanTool,WheelZoomTool, PreviewSaveTool, ResetTool
 
 artemis = "/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/"
 
@@ -19,7 +20,8 @@ class MLplots():
 		self.survey=[]
 		self.colors=[]
 		self.name=name
-
+                self.data_limits=[]
+		
 	def path_lightcurves(self,directory):
 		self.lightcurves_path=directory
 
@@ -30,13 +32,14 @@ class MLplots():
 		self.telescopes_names=glob.glob(self.lightcurves_path+'/*'+self.name+'*.dat')
 		for i in self.telescopes_names :
 			data=np.loadtxt(i)
-			self.lightcurves.append(data)
+			index=np.where(data[:,2]>self.data_limits)[0]
+			self.lightcurves.append(data[index])
 			self.telescopes.append([i.replace(self.lightcurves_path,'')[0],i.replace(self.lightcurves_path,'')])
 
 	def load_models(self):
 		self.model=glob.glob(self.models_path+self.name+'.model')
 		data=np.loadtxt(self.model[0],dtype='string')
-		data=data[[3,5,6]].astype(float)
+		data=data[[3,5,7]].astype(float)
 		self.models.append(['PSPL',data.tolist()])
 
 	def get_colors(self) :
@@ -77,8 +80,13 @@ class MLplots():
 			index=np.where(letters=='K')[0][0]
 			self.survey.append(['K',index])	
 
-		
-	def set_limits(self):
+	def set_data_limits(self):
+	        number_of_days=300
+		parameters= self.models[0][1]
+		to=parameters[0]
+		self.data_limits=to-number_of_days
+	
+	def set_plot_limits(self):
 		factor_time=3
 		offset_magnitude=0.2
 		to=self.models[0][1][0]
@@ -136,7 +144,8 @@ class MLplots():
 	def plot_data(self):
 		#output_file(self.name+'_'+self.models[0][0]+'.html',title=self.name)
 		tools = "pan,wheel_zoom,box_zoom,reset,save"
-		fig1=figure(title=self.name+'_'+self.models[0][0],title_text_align='center',y_axis_label='I',x_range=self.plot_limits[0],y_range=self.plot_limits[1],min_border_left=50,min_border_bottom=10,tools=tools,width=700,plot_height=250)
+		#tools = tools+",hover"
+		fig1=figure(title=self.name+'_'+self.models[0][0],title_text_align='center',y_axis_label='I',x_range=self.plot_limits[0],y_range=self.plot_limits[1],min_border_left=50,min_border_bottom=10,tools=tools,width=700,plot_height=250,title_text_font_size='12pt')
 		T=np.arange(self.models[0][1][0]-3*self.models[0][1][1],self.models[0][1][0]+3*self.models[0][1][1],0.01)
 		fig1.line(T,18-2.5*np.log10(self.lightcurve_model(self.models[0][0],self.models[0][1],T)),line_width=0.7,color='red')
 		for i in xrange(len(self.telescopes)):
@@ -147,14 +156,30 @@ class MLplots():
 		fig1.xaxis.minor_tick_line_color=None
 		fig1.xaxis.major_tick_line_color=None
 		fig1.xaxis.major_label_text_font_size='0pt'
+		fig1.yaxis.axis_label_text_font_size='12pt'
+		fig1.yaxis[0].formatter=PrintfTickFormatter(format="%4.2f")
+		#fig1.legend.label_text_font = "times"
+		#fig1.legend.background_fill_alpha = 0.5
 		#fig1.legend.label_text_color=colors
-		fig2=figure(width=700,plot_height=125,x_range=fig1.x_range,y_range=(-0.1,0.1),x_axis_label='HJD-2450000',y_axis_label='Delta_I',min_border_left=70,min_border_top=10)
+		fig2=figure(width=700,plot_height=125,x_range=fig1.x_range,y_range=(-0.1,0.1),x_axis_label='HJD-2450000',y_axis_label=u'\u0394I',min_border_left=70,min_border_top=10,tools=tools)
 		for i in xrange(len(self.telescopes)):
 			residuals=self.residuals(i,self.models[0][0],self.models[0][1])
 			fig2.segment(self.lightcurves[i][:,2],residuals+np.abs(self.lightcurves[i][:,1]),self.lightcurves[i][:,2],residuals-np.abs(self.lightcurves[i][:,1]),color='#'+self.colors[self.telescopes[i][0]],line_alpha=0.3)
 			fig2.scatter(self.lightcurves[i][:,2],residuals,fill_color='#'+self.colors[self.telescopes[i][0]],line_color=None,size=4)
 		fig2.xaxis.minor_tick_line_color=None
+		fig2.xaxis.axis_label_text_font_size='12pt'
+		fig2.yaxis.axis_label_text_font_size='14pt'
+		fig1.yaxis[0].formatter=PrintfTickFormatter(format="%3.2f")
 		p=gridplot([[fig1],[fig2]],toolbar_location="right")
+		# --- Include hovertool ---
+		#hover = p.select(dict(type=HoverTool))
+		#hover.always_active=False
+		#hover.tooltips=[
+		#                ("HJD","$x{4.2f}"),
+		#		("mag","$y{2.2f}"),
+		#		("see","N/A"),
+		#               ]
+		# --- End HoverTool ---
 		script, div = components(p, CDN)	
 		#show(p)
 		return script, div

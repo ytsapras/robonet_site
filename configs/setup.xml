@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<setup_config>
+    <!-- Path to ARTEMiS files -->
+    <parameter name='artemis_path'>
+        <value>/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/</value>
+    </parameter>
+    <!-- Path to Scripts subdirectory -->
+    <parameter name='scripts_path'>
+        <value>/home/Tux/ytsapras/robonet_site/scripts/</value>
+    </parameter>
+</setup_config>
