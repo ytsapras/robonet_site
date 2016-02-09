@@ -174,25 +174,38 @@ def read_artemis_model_file(model_file_path):
         lines = file.readlines()
         file.close()
         
-        entries = lines[0].split()
+        if len( lines ) > 0 and len( lines[0] ) > 0 \
+            and lines[0].lstrip()[0:1] != '$':
+            
+            try: 
+                entries = lines[0].split()
+                params['ra'] = entries[0]
+                params['dec'] = entries[1]
+                params['short_name'] = entries[2]
+                params['long_name'] = utilities.short_to_long_name( params['short_name'] )
+                params['t0'] = float(entries[3])
+                params['sig_t0'] = float(entries[4])
+                params['tE'] = float(entries[5])
+                params['sig_tE'] = float(entries[6])
+                params['u0'] = float(entries[7])
+                params['sig_u0'] = float(entries[8])
+                params['chi2'] = float(entries[9])
+                params['ndata'] = float(entries[10])
         
-        params['ra'] = entries[0]
-        params['dec'] = entries[1]
-        params['short_name'] = entries[2]
-        params['long_name'] = utilities.short_to_long_name( params['short_name'] )
-        params['t0'] = float(entries[3])
-        params['sig_t0'] = float(entries[4])
-        params['tE'] = float(entries[5])
-        params['sig_tE'] = float(entries[6])
-        params['u0'] = float(entries[7])
-        params['sig_u0'] = float(entries[8])
-        params['chi2'] = float(entries[9])
-        params['ndata'] = float(entries[10])
-    
-        ts = path.getmtime(model_file_path)
-        ts = datetime.fromtimestamp(ts)
-        params['last_modified'] = ts
-    
+                ts = path.getmtime(model_file_path)
+                ts = datetime.fromtimestamp(ts)
+                params['last_modified'] = ts
+            
+            # In case of a file with zero content
+            except IndexError: 
+                
+                pass
+            
+            # In case of mal-formed file content:
+            except ValueError:
+                print lines[0], model_file_path
+                exit()
+                
     return params
 
 ###############################

@@ -15,6 +15,8 @@ Created on Mon Feb  8 18:03:54 2016
 from os import path
 from sys import argv, exit
 import config_parser
+import glob
+import artemis_subscriber
 
 def exofop_publisher():
     """
@@ -27,10 +29,13 @@ def exofop_publisher():
     # First step is to read in a list of the event parameters from all these providers and compare
     # to ensure the list is up to date.  Produce master event dictionary events, but only include
     # those events found within the K2C9 superstamp.
-    artemis_events = load_artemis_event_data()
-    survey_events = load_survey_event_data()
+    artemis_events = load_artemis_event_data( config )
+    survey_events = load_survey_event_data( config )
     
-    events = combine_event_feeds( artemis_events, survey_events )
+    # Select those events which are in the K2 superstamp
+    # XXX what about events outside that? XXX
+    # Combine all available data on them
+    events = combine_K2C9_event_feed( artemis_events, survey_events )
     
     # Now output the combined information stream in the format agreed on for the ExoFOP transfer
     generate_exofop_output( events )
@@ -41,18 +46,51 @@ def exofop_publisher():
 def load_artemis_event_data( config ):
     """Function to load the full list of events known to ARTEMiS."""
     
+    # List of keys in a K2C9Event which should be prefixed with
+    # Signalmen:
+    prefix_keys = [ 'a0', 't0', 'sig_t0', 'te', 'sig_te', 'u0', 'sig_u0' ]
+    
     # Make a dictionary of all events known to ARTEMiS based on the 
     # ASCII-format model files in its 'models' directory.
-    search_str = path.join( config['models']['local_location'], '*.model' )
+    search_str = path.join( config['models_local_location'], '?B15????.model' )
     model_file_list = glob.glob( search_str )
     
     artemis_events = {}
     for model_file in model_file_list:
-        params = read_artemis_model_file(f)
-        artemis_events[ params['short_name'] ] = params
-
+        params = artemis_subscriber.read_artemis_model_file( model_file )
+        params = set_key_names( params, prefix_keys, 'signalmen' )
+        if len( params ) > 0:
+            event = K2C9Event()
+            event.set_params( params )
+            event.set_event_name( params )
+            artemis_events[ params['short_name'] ] = event
+            
     return artemis_events    
 
+def load_artemis_event_data( config ):
+    """Method to load the parameters of all events known from the surveys.
+    """
+    
+    (ogle_last_update, ogle_lens_params) = survey_subscriber.get_ogle_parameters(config)
+    (moa_last_update, moa_lens_params) = survey_subscriber.get_moa_parameters(config)
+
+    # Combine the data from both sets of events into a single 
+    # dictionary of K2C9Event objects.
+    # Cross-match by position to identify objects detected by multiple surveys
+    
+
+def set_key_names( params, prefix_keys, prefix ):
+    """Function to re-name the prefixes of keys in a parameter dictionary
+    appropriate to use for a K2C9Event class object
+    """
+    
+    output = {}
+    for key, value in params.items():
+        if key in prefix_keys:
+            output[ prefix + '_' + key ] = value
+        else:
+            output[ key ] = value
+    return output
 
 
 def generate_exofop_output( config, events ):
@@ -72,11 +110,11 @@ def generate_exofop_output( config, events ):
         
         output.close()
 
-Class K2C9Event():
+class K2C9Event():
     """Class describing the parameters to be output for a microlensing event 
     within the K2/Campaign 9 field
     """
-    def __init__():
+    def __init__( self ):
         self.identifier = None
         self.status = 'NEW'
         self.recommended_status = 'NEW'
@@ -167,6 +205,46 @@ Class K2C9Event():
         self.nnewdata = 0
         self.time_last_updated = None
 
+    def set_params( self, params ):
+        """Method to set the parameters of the current instance from a 
+        a dictionary containing some or all of the parameters of the class.
+        Key names in the input dictionary must match those used in the class.
+        """
+
+        for key, value in params.items():
+            if key in dir( self ):
+                setattr( self, key, value )
+    
+    def set_event_name( self, params ):
+        """Method to set the name of an event based on the given names
+        allocated by survey.
+        """
+        
+        # Identify the originating survey:
+        prefix = (str( params['long_name'] ).split('-')[0]).lower()
+        
+        key = prefix + '_name'
+        if key in dir( self ):
+            setattr(self, key, params['long_name'] )
+    
+    def summary( self, key_list ):
+        """Method to print a customizible summary of the information on
+        a given K2C9Event instance, given a list of keys to output.
+        """
+
+        # An event may be discovered by multiple surveys and hence
+        # have multiple event names:
+        name = ''
+        for key in [ 'ogle_name', 'moa_name', 'kmt_name' ]:
+            if getattr(self, key) != None: 
+                name = name + str( getattr( self, key ) )
+        
+        output = str( self.identifier ) + ' ' + name + ' '
+        for key in key_list:
+            if key in dir( self ):
+                output = output + str( getattr(self,key) ) + ' '
+        return output
+
     def generate_exofop_data_file( self, output_path ):
         """Method to output a summary file of all parameters of an 
         instance of this class
@@ -174,7 +252,8 @@ Class K2C9Event():
         
         f = open( output_path, 'w' )
         
-        
+        for attr in dir( self ):
+            print attr
         
         f.close()
         
