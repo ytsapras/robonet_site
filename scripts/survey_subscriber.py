@@ -55,10 +55,10 @@ class Lens():
         self.ra = None
         self.dec = None
         self.t0 = None
-        self.tE = None
+        self.te = None
         self.u0 = None
-        self.A0 = None
-        self.I0 = None
+        self.a0 = None
+        self.i0 = None
         self.origin = None
 
     def set_par(self,par,par_value):
@@ -72,6 +72,16 @@ class Lens():
     def sync_event_with_DB(self):
         '''Method to sync the latest survey parameters with the database.'''
 
+    def get_params(self):
+        """Method to return the parameters of the current event in a 
+        dictionary format
+        """
+        
+        params = {}
+        for key in dir( self ):
+            params[ key ] = getattr( self, key )
+        return params
+        
 # Check event is known by name to the DB
 # (possible outcomes: True or False)
 
@@ -129,6 +139,18 @@ def get_ogle_parameters(config):
     ftp.retrbinary('RETR lenses.par', open( par_file_path, 'w').write )
     ftp.quit()
 
+    ( last_update, lens_params ) = read_ogle_param_files( config )
+
+    return last_update, lens_params
+
+def read_ogle_param_files( config ):
+    """Method to read the listing of OGLE data"""
+    
+    ts_file_path = path.join( config['ogle_data_local_location'], \
+                            config['ogle_time_stamp_file'] )
+    par_file_path = path.join( config['ogle_data_local_location'], \
+                            config['ogle_lenses_file'] )
+    
     # Parse the timestamp in the last.changed file. The timestamp is given in yyyymmdd.daydecimal format:
     t = open( ts_file_path, 'r' ).readline()
     ts = datetime.strptime(t.split('.')[0],'%Y%m%d')
@@ -149,10 +171,10 @@ def get_ogle_parameters(config):
         event.set_par('ra',ra_deg)
         event.set_par('dec',dec_deg)
         event.set_par('t0',t0_hjd)
-        event.set_par('tE',tE)
+        event.set_par('te',tE)
         event.set_par('u0',u0)
-        event.set_par('A0',A0)
-        event.set_par('I0',I0)
+        event.set_par('a0',A0)
+        event.set_par('i0',I0)
         event.origin = 'OGLE'
         lens_params[event_id] = event
     verbose(config,'--> Downloaded index of ' + str(len(lens_params)) + ' events')
@@ -175,6 +197,7 @@ def get_moa_parameters(config):
     # so no login is required.
     ts = Time.now()
     year_string = str(ts.utc.now().value.year)
+    year_string = '2015'
     url = 'https://it019909.massey.ac.nz/moa/alert' + year_string + '/alert.html'
     (alerts_page_data,msg) = utilities.get_http_page(url)
 
@@ -202,13 +225,13 @@ def get_moa_parameters(config):
             (event_id, field, ra_deg, dec_deg, t0_hjd, tE, u0, I0, tmp1, tmp2) = entry.split()
             if ':' in ra_deg or ':' in dec_deg: (ra_deg, dec_deg) = utilities.sex2decdeg(ra_deg,dec_deg)
             event = Lens()
-            event.set_par('name',event_id)
+            event.set_par('name','MOA-' + event_id)
             event.set_par('ra',ra_deg)
             event.set_par('dec',dec_deg)
             event.set_par('t0',t0_hjd)
-            event.set_par('tE',tE)
+            event.set_par('te',tE)
             event.set_par('u0',u0)
-            event.set_par('I0',I0)
+            event.set_par('i0',I0)
             event.origin = 'MOA'
             lens_params[event_id] = event
     verbose(config,'--> Downloaded index of ' + str(len(lens_params)) + ' events')

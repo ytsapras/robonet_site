@@ -13,6 +13,7 @@ from cStringIO import StringIO
 from urllib import urlencode
 import cookielib
 import ssl
+import numpy as np
 
 ##################################
 # CONVERT SHORT TO LONG EVENT NAME
@@ -196,3 +197,20 @@ def sexig2dec(CoordStr):
     return Decimal
 
 
+def separation_two_points(pointA,pointB):
+    """Function to calculate the separation between two points on the sky, A and B. 
+    Input are tuples of (RA, Dec) for each point in decimal degrees.
+    Output is the arclength between them in decimal degrees.
+    This function uses the full formula for angular separation, and should be applicable
+    at arbitrarily large distances."""
+    
+    #from numpy import cos, sin, arccos
+    
+    d1 = 90.0 - pointA[1]
+    d2 = 90.0 - pointB[1]
+    dra = pointA[0] - pointB[0]
+    
+    cos_gamma = ( np.cos(d1) * np.cos(d2) ) + \
+                        ( np.sin(d1) * np.sin(d2) * np.cos(dra) )
+    gamma = np.arccos(cos_gamma)
+    return gamma
