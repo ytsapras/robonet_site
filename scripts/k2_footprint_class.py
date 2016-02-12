@@ -104,6 +104,7 @@ class K2Footprint():
         # Call K2onSilicon and harvest the output:
         ( iexec, coutput ) = getstatusoutput( 'K2onSilicon target.csv ' + \
                     str(self.campaign) )
+        print coutput
 	
         # Parse the output file, called targets_siliconFlag.csv'
         # The last column entry for each object indicates whether or not the object lies on silicon.
