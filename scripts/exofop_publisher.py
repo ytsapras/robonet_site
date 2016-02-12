@@ -413,9 +413,9 @@ class K2C9Event():
         self.bozza_url = None
         self.nnewdata = 0
         self.time_last_updated = None
-        self.in_footprint = None
-        self.in_superstamp = None
-        self.during_campaign = None
+        self.in_footprint = False
+        self.in_superstamp = False
+        self.during_campaign = False
         self.alertable = None
 
     def set_params( self, params ):

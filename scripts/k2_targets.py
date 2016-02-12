@@ -30,8 +30,8 @@ def k2_events(campaign=9, year=2016):
     # Plot events relative to the K2 footprint:
     plot_file = path.join( config['log_directory'], \
                     'K2C9_targets_in_footprint.png' )
-    k2_footprint.targets_in_superstamp( survey_events )
     k2_footprint.targets_in_footprint( survey_events )
+    k2_footprint.targets_in_superstamp( survey_events )
     k2_footprint.targets_in_campaign( survey_events )
     k2_footprint.plot_footprint( plot_file=plot_file, \
             targets=survey_events, year=2016 )

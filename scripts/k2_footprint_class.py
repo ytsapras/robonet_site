@@ -123,23 +123,24 @@ class K2Footprint():
 
     def targets_in_superstamp( self, targets ):
         """Method to check whether the targets are within the K2C9 superstamp.
-	Requires targets_in_footprint to have been run already.
-	Depends:
-	    Requires K2inMicrolensRegion installed (from K2FOV package)
-	"""
+        Requires targets_in_footprint to have been run already.
+        Depends:
+            Requires K2inMicrolensRegion installed (from K2FOV package)
+        """
 	
-	for target_id in targets:
-	    target = targets[ target_id ]
-	    if target.in_footprint == True:
-	        ( iexec, coutput ) = getstatusoutput( 'K2inMicrolensRegion ' + str(target.ra) + ' ' + str(target.dec) )
+        for target_id in targets:
+            target = targets[ target_id ]
+            (ra, dec) = target.get_location()
+            if target.in_footprint == True:
+                ( iexec, coutput ) = getstatusoutput( 'K2inMicrolensRegion ' + \
+                    str(ra) + ' ' + str(dec) )
+                if 'coordinate is NOT inside' in coutput:
+                    target.in_superstamp = False
+                elif 'coordinate is inside' in coutput:
+                    target.in_superstamp = True
+            targets[ target_id ] = target
 	    
-	        if 'coordinate is NOT inside' in coutput:
-	            target.in_superstamp = False
-	        elif 'coordinate is inside' in coutput:
-	            target.in_superstamp = True
-	        targets[ target_id ] = target
-	    
-	return targets
+        return targets
 
     def targets_in_campaign( self, targets ):
         """Method to check whether an event would be alerted in time to be included 
@@ -209,9 +210,9 @@ class K2Footprint():
         plt.xlabel( 'RA [deg]' )
         plt.ylabel( 'Dec [deg]' )
         if year == None: 
-            plt.title( 'Microlensing events within K2 Campaign ' + str(self.campaign) + ' footprint' )
+            plt.title( 'Events within K2 Campaign ' + str(self.campaign) + ' footprint' )
         else: 
-            plt.title( 'Microlensing events within K2 Campaign ' + str(self.campaign) + ' footprint from ' + str(year) )
+            plt.title( 'Events within K2 Campaign ' + str(self.campaign) + ' footprint from ' + str(year) )
         if plot_file == None: plot_file = 'k2-footprint.png'
         (xmin,xmax,ymin,ymax) = plt.axis()
         plt.axis( [xmax,xmin,ymin,ymax] )
