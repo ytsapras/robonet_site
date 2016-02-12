@@ -227,7 +227,7 @@ def get_moa_parameters(config):
     lens_params = {}
     for entry in events_index_data:
         if len(entry.replace('\n','').replace(' ','')) > 0:
-            (event_id, field, ra_deg, dec_deg, t0_hjd, tE, u0, \
+            (event_id, field, ra_deg, dec_deg, t0_hjd, tE, A0, \
                         I0, tmp1, tmp2) = entry.split()
             if ':' in ra_deg or ':' in dec_deg: (ra_deg, dec_deg) = \
                                 utilities.sex2decdeg(ra_deg,dec_deg)
@@ -237,8 +237,8 @@ def get_moa_parameters(config):
             event.set_par('dec',dec_deg)
             event.set_par('t0',t0_hjd)
             event.set_par('te',tE)
-            event.set_par('u0',u0)
             event.set_par('i0',I0)
+            event.set_par('a0',A0)
             event.origin = 'MOA'
             lens_params[event_id] = event
     verbose(config,'--> Downloaded index of ' + str(len(lens_params)) + \
@@ -249,6 +249,7 @@ def get_moa_parameters(config):
     # format than HTML:
     file_path = path.join( config['moa_data_local_location'], 'moa_lenses.par' )
     fileobj = open(file_path,'w')
+    fileobj.write('# Name       RA      Dec     T0       TE      u0      A0    i0\n')
     for event_id, event in lens_params.items():
         fileobj.write( event.summary() + '\n' )
     fileobj.close()

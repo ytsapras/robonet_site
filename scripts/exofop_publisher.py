@@ -413,6 +413,10 @@ class K2C9Event():
         self.bozza_url = None
         self.nnewdata = 0
         self.time_last_updated = None
+        self.in_footprint = None
+        self.in_superstamp = None
+        self.during_campaign = None
+        self.alertable = None
 
     def set_params( self, params ):
         """Method to set the parameters of the current instance from a 
@@ -479,8 +483,13 @@ class K2C9Event():
                          'get_valid_params', \
                          'set_event_name', \
                          'set_params',\
+                         'get_par',\
                          'get_params',\
-                         'summary'
+                         'summary',\
+                         'in_superstamp',\
+                         'in_footprint',\
+                         'during_campaign',\
+                         'get_location',
                          ]
         for key in exclude_keys:
             if key in key_list or '__' in key:
@@ -496,7 +505,29 @@ class K2C9Event():
                 f.write( key.upper() + '    ' + value + '\n' )
         
         f.close()
+    
+    def get_location( self ):
+        """Return coordinates of event"""
         
+        ra = None
+        dec = None
+        if self.ogle_ra != None and self.ogle_dec != None:
+            ra = self.ogle_ra
+            dec = self.ogle_dec
+        elif self.moa_ra != None and self.moa_dec != None:
+            ra = self.moa_ra
+            dec= self.moa_dec
+        return (ra, dec)
+
+    def get_par( self, param_name ):
+        """Return indicated parameter value for an event"""
+        
+        value = None
+        if getattr( self, 'ogle_' + param_name ) != None:
+            value = getattr( self, 'ogle_' + param_name )
+        elif getattr( self, 'moa_' + param_name ) != None:
+            value = getattr( self, 'moa_' + param_name )
+        return value
 
 ###############################################################################
 # COMMANDLINE RUN SECTION
