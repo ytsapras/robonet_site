@@ -41,9 +41,9 @@ def sync_surveys():
 
 # Sync against database
 
-
     # Harvest KMTNet information
-    get_kmtnet_parameters(config)
+    # KMTNet are not producing alerts yet
+    #get_kmtnet_parameters(config)
 
 ##################################################
 # LENS CLASS DESCRIPTION
