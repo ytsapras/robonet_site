@@ -12,7 +12,7 @@ Created on Thu Feb 11 20:15:01 2016
 import k2_footprint_class
 import config_parser
 import exofop_publisher
-
+from os import path
         
 def k2_events(campaign=9, year=2016):
     """Function to analyse and select events from K2 field"""
