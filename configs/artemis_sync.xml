@@ -36,23 +36,23 @@
     </parameter>
     
     <parameter name='pubpars_local_location'>
-        <!-- <value>/science/robonet/rob/Operations/Signalmen_output/PublishedParameters</value> -->
-        <value>/Users/rstreet/RoboNet/Sandbox/PublishedParameters</value>
+        <value>/science/robonet/rob/Operations/Signalmen_output/PublishedParameters</value>
+        <!-- <value>/Users/rstreet/RoboNet/Sandbox/PublishedParameters</value> -->
     </parameter>
     
     <parameter name='data_local_location'>
-        <!-- <value>/science/robonet/rob/Operations/Signalmen_output/data</value> -->
-        <value>/Users/rstreet/RoboNet/Sandbox/data</value>
+        <value>/science/robonet/rob/Operations/Signalmen_output/data</value>
+        <!-- <value>/Users/rstreet/RoboNet/Sandbox/data</value> -->
     </parameter>
     
     <parameter name='auth'>
-        <!--<value>/home/robouser/.artemis-rsync</value>-->
-        <value>/Users/rstreet/RoboNet/Sandbox/.artemis-rsync</value>
+        <value>/home/rstreet/.artemis-rsync</value>
+        <!--<value>/Users/rstreet/RoboNet/Sandbox/.artemis-rsync</value>-->
     </parameter>
     
     <parameter name='log_directory'>
-        <!-- <value>/science/robonet/rob/Operations/Signalmen_output/Rsynclog</value> -->
-        <value>/Users/rstreet/RoboNet/Sandbox/</value>
+        <value>/science/robonet/rob/Operations/Signalmen_output/Rsynclog</value>
+        <!-- <value>/Users/rstreet/RoboNet/Sandbox/</value> -->
     </parameter>
     
     <parameter name='models_log_root_name'>

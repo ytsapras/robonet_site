@@ -14,6 +14,12 @@
         <!-- <value>/science/robonet/rob/Operations/SurveyData/OGLE</value> -->
         <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/OGLE</value>
     </parameter>
+    <parameter name='ogle_time_stamp_file'>
+        <value>last.changed</value>
+    </parameter>
+    <parameter name='ogle_lenses_file'>
+        <value>lenses.par</value>
+    </parameter>
     
     <parameter name='ogle_ftp_server'>
         <value>ftp.astrouw.edu.pl</value>
