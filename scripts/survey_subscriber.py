@@ -67,7 +67,9 @@ class Lens():
         else: setattr(self,par,float(par_value))
 
     def summary(self):
-        return self.name+' '+str(self.ra)+'  '+str(self.dec)+'  '+str(self.t0)+' '+str(self.tE)+' '+str(self.u0)
+        return self.name + ' ' + str(self.ra) + '  ' + str(self.dec) + '  ' + \
+                str(self.t0) + ' ' + str(self.te) + ' ' + str(self.u0) + '  ' +\
+                str(self.a0) + ' ' + str(self.i0)
 
     def sync_event_with_DB(self):
         '''Method to sync the latest survey parameters with the database.'''
@@ -197,7 +199,6 @@ def get_moa_parameters(config):
     # so no login is required.
     ts = Time.now()
     year_string = str(ts.utc.now().value.year)
-    year_string = '2015'
     url = 'https://it019909.massey.ac.nz/moa/alert' + year_string + '/alert.html'
     (alerts_page_data,msg) = utilities.get_http_page(url)
 
@@ -210,8 +211,12 @@ def get_moa_parameters(config):
             last_update = datetime.strptime(t.split('.')[0],'%Y-%m-%dT%H:%M:%S')
             i = -1
         i = i - 1
-
+    file_path = path.join( config['moa_data_local_location'], 'last.changed' )
+    fileobj = open( file_path, 'w' )
+    fileobj.write( t + '\n' )
+    fileobj.close()
     verbose(config,'--> Last udpated at: '+t)
+    
 
     # Download the index of events:
     url = 'https://it019909.massey.ac.nz/moa/alert' + year_string + '/index.dat'
@@ -222,8 +227,10 @@ def get_moa_parameters(config):
     lens_params = {}
     for entry in events_index_data:
         if len(entry.replace('\n','').replace(' ','')) > 0:
-            (event_id, field, ra_deg, dec_deg, t0_hjd, tE, u0, I0, tmp1, tmp2) = entry.split()
-            if ':' in ra_deg or ':' in dec_deg: (ra_deg, dec_deg) = utilities.sex2decdeg(ra_deg,dec_deg)
+            (event_id, field, ra_deg, dec_deg, t0_hjd, tE, u0, \
+                        I0, tmp1, tmp2) = entry.split()
+            if ':' in ra_deg or ':' in dec_deg: (ra_deg, dec_deg) = \
+                                utilities.sex2decdeg(ra_deg,dec_deg)
             event = Lens()
             event.set_par('name','MOA-' + event_id)
             event.set_par('ra',ra_deg)
@@ -234,7 +241,16 @@ def get_moa_parameters(config):
             event.set_par('i0',I0)
             event.origin = 'MOA'
             lens_params[event_id] = event
-    verbose(config,'--> Downloaded index of ' + str(len(lens_params)) + ' events')
+    verbose(config,'--> Downloaded index of ' + str(len(lens_params)) + \
+                        ' events')
+
+    # The MOA download is read directly from the website and thus produces
+    # no record on disc.  Therefore we output one here in a more readable 
+    # format than HTML:
+    fileobj = open('moa_lenses.par','w')
+    for event_id, event in lens_params.items():
+        fileobj.write( event.summary() + '\n' )
+    fileobj.close()
 
     return last_update, lens_params
 

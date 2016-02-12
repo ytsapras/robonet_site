@@ -118,11 +118,14 @@ def get_secure_url(URL,login):
                           urllib2.HTTPCookieProcessor(cookies))
 
     # Fetch and parse the page data:
-    response = opener.open(URL,data)
-    PageText = response.read()
-    parser = HTML2Text()
-    parser.feed(PageText)
-    page_text = parser.get_text()
+    try:
+        response = opener.open(URL,data)
+        PageText = response.read()
+        parser = HTML2Text()
+        parser.feed(PageText)
+        page_text = parser.get_text()
+    except urllib2.HTTPError:
+        page_text = urllib2.HTTPError
 
     return page_text
 
