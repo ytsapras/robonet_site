@@ -20,7 +20,10 @@
     <parameter name='ogle_lenses_file'>
         <value>lenses.par</value>
     </parameter>
-    
+    <parameter name='ogle_updated_file'>
+        <value>last.updated</value>
+    </parameter>
+
     <parameter name='ogle_ftp_server'>
         <value>ftp.astrouw.edu.pl</value>
     </parameter>
@@ -28,6 +31,15 @@
     <parameter name='moa_data_local_location'>
         <!-- <value>/science/robonet/rob/Operations/SurveyData/MOA</value> -->
         <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/MOA</value>
+    </parameter>
+    <parameter name='moa_time_stamp_file'>
+        <value>last.changed</value>
+    </parameter>
+    <parameter name='moa_lenses_file'>
+        <value>moa_lenses.par</value>
+    </parameter>
+    <parameter name='moa_updated_file'>
+        <value>last.updated</value>
     </parameter>
     
     <parameter name='kmtnet_data_local_location'>
