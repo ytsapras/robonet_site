@@ -247,7 +247,8 @@ def get_moa_parameters(config):
     # The MOA download is read directly from the website and thus produces
     # no record on disc.  Therefore we output one here in a more readable 
     # format than HTML:
-    fileobj = open('moa_lenses.par','w')
+    file_path = path.join( config['moa_data_local_location'], 'moa_lenses.par' )
+    fileobj = open(file_path,'w')
     for event_id, event in lens_params.items():
         fileobj.write( event.summary() + '\n' )
     fileobj.close()
