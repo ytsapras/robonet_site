@@ -104,7 +104,6 @@ class K2Footprint():
         # Call K2onSilicon and harvest the output:
         ( iexec, coutput ) = getstatusoutput( 'K2onSilicon target.csv ' + \
                     str(self.campaign) )
-        print coutput
 	
         # Parse the output file, called targets_siliconFlag.csv'
         # The last column entry for each object indicates whether or not the object lies on silicon.
@@ -190,7 +189,8 @@ class K2Footprint():
     def plot_footprint( self, plot_file=None, targets=None, year = None ):
         """Method to plot the footprint"""
 	
-        fig = plt.figure(1)
+        fig = plt.figure(1,(12,12))
+        font_pt = 18
         for channel, corners in self.k2_footprint.items():
             a = np.array( corners )
             plt.plot( a[:,0], a[:,1], 'r-' )
@@ -207,15 +207,20 @@ class K2Footprint():
                         plt.plot( ra, dec, 'c.' )
                     elif target.in_footprint == True and target.during_campaign == False: 
                         plt.plot( ra, dec, 'm.' )
-        plt.xlabel( 'RA [deg]' )
-        plt.ylabel( 'Dec [deg]' )
+        plt.xlabel( 'RA [deg]', fontsize=font_pt )
+        plt.ylabel( 'Dec [deg]', fontsize=font_pt  )
         if year == None: 
-            plt.title( 'Events within K2 Campaign ' + str(self.campaign) + ' footprint' )
+            title = 'Events within K2 Campaign ' + \
+                    str(self.campaign) + ' footprint'
         else: 
-            plt.title( 'Events within K2 Campaign ' + str(self.campaign) + ' footprint from ' + str(year) )
+            title = 'Events within K2 Campaign ' + \
+                    str(self.campaign) + ' footprint from ' + str(year) 
+        plt.title( title, fontsize=font_pt )
         if plot_file == None: plot_file = 'k2-footprint.png'
         (xmin,xmax,ymin,ymax) = plt.axis()
         plt.axis( [xmax,xmin,ymin,ymax] )
+        plt.axis('equal')
+        plt.tick_params( labelsize=font_pt )
         plt.grid(True)
         plt.savefig( plot_file )
 
