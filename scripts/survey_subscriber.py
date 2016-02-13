@@ -62,6 +62,7 @@ def get_ogle_parameters(config):
 
     verbose(config,'Syncing data from OGLE')
     ogle_data = survey_classes.SurveyData()
+    years = [ '2015', '2016' ]
     
     # Fetch the parameter files from OGLE via anonymous FTP
     ftp = ftplib.FTP( config['ogle_ftp_server'] )
@@ -72,13 +73,15 @@ def get_ogle_parameters(config):
     ftp.cwd(ftp_file_path)
     ftp.retrbinary('RETR last.changed', open( ts_file_path, 'w').write )
     ts = Time.now()
-    ftp_file_path = path.join( str(ts.utc.now().value.year) )
-    ftp.cwd(ftp_file_path)
-    par_file_path = path.join( config['ogle_data_local_location'], \
-                                    config['ogle_lenses_file'] )
-    ftp.retrbinary('RETR lenses.par', open( par_file_path, 'w').write )
+    for year in years:    
+        ftp_file_path = path.join( str(year) )
+        ftp.cwd(ftp_file_path)
+        par_file_path = path.join( config['ogle_data_local_location'], \
+                                    config['ogle_lenses_file']+'.'+str(year) )
+        ftp.retrbinary('RETR lenses.par', open( par_file_path, 'w').write )
+        ftp.cwd('../')
     ftp.quit()
-
+    
     ogle_data = survey_data_utilities.read_ogle_param_files( config )
         
     verbose(config,'--> Last updated at: ' + \
@@ -105,56 +108,60 @@ def get_moa_parameters(config):
     
     verbose(config,'Syncing data from MOA')
     moa_data = survey_classes.SurveyData()
+    years = [ '2015', '2016' ]
     
     # Download the website with MOA alerts, which contains the last updated date.
     # Note that although the URL prefix has to be https, this isn't actually a secure page
     # so no login is required.
     ts = Time.now()
-    year_string = str(ts.utc.now().value.year)
-    url = 'https://it019909.massey.ac.nz/moa/alert' + year_string + '/alert.html'
-    (alerts_page_data,msg) = utilities.get_http_page(url)
+    for year in years: 
+        
+        # For the last year only, fetch the last-updated timestamp:
+        if year == years[-1]:
+            url = 'https://it019909.massey.ac.nz/moa/alert' + year + '/alert.html'
+            (alerts_page_data,msg) = utilities.get_http_page(url)
 
-    # The last updated timestamp is one of the last lines in this file:
-    alerts_page_data = alerts_page_data.split('\n')
-    i = len(alerts_page_data) - 1
-    while i >= 0:
-        if 'last updated' in alerts_page_data[i]:
-            t = alerts_page_data[i].split(' ')[-2]
-            last_changed = datetime.strptime(t.split('.')[0],'%Y-%m-%dT%H:%M:%S')
-            i = -1
-        i = i - 1
-    ts_file_path = path.join( config['moa_data_local_location'], \
+            # The last updated timestamp is one of the last lines in this file:
+            alerts_page_data = alerts_page_data.split('\n')
+            i = len(alerts_page_data) - 1
+            while i >= 0:
+                if 'last updated' in alerts_page_data[i]:
+                    t = alerts_page_data[i].split(' ')[-2]
+                    last_changed = datetime.strptime(t.split('.')[0],'%Y-%m-%dT%H:%M:%S')
+                    i = -1
+                    i = i - 1
+            ts_file_path = path.join( config['moa_data_local_location'], \
                                 config['moa_time_stamp_file'] )
-    fileobj = open( ts_file_path, 'w' )
-    fileobj.write( t + '\n' )
-    fileobj.close()
-    verbose(config,'--> Last updated at: '+t)
-    moa_data.last_changed = \
-        survey_data_utilities.time_stamp_file( ts_file_path, "%Y-%m-%dT%H:%M:%S" )
+            fileobj = open( ts_file_path, 'w' )
+            fileobj.write( t + '\n' )
+            fileobj.close()
+            verbose(config,'--> Last updated at: '+t)
+            moa_data.last_changed = \
+                survey_data_utilities.time_stamp_file( ts_file_path, \
+                                                "%Y-%m-%dT%H:%M:%S" )
 
-    # Download the index of events:
-    url = 'https://it019909.massey.ac.nz/moa/alert' + year_string + '/index.dat'
-    (events_index_data,msg) = utilities.get_http_page(url)
-    events_index_data = events_index_data.split('\n')
+        # Download the index of events:
+        url = 'https://it019909.massey.ac.nz/moa/alert' + year + '/index.dat'
+        (events_index_data,msg) = utilities.get_http_page(url)
+        events_index_data = events_index_data.split('\n')
     
-    # Parse the index of events
-    moa_data.lenses = {}
-    for entry in events_index_data:
-        if len(entry.replace('\n','').replace(' ','')) > 0:
-            (event_id, field, ra_deg, dec_deg, t0_hjd, tE, A0, \
+        # Parse the index of events
+        for entry in events_index_data:
+            if len(entry.replace('\n','').replace(' ','')) > 0:
+                (event_id, field, ra_deg, dec_deg, t0_hjd, tE, A0, \
                         I0, tmp1, tmp2) = entry.split()
-            if ':' in ra_deg or ':' in dec_deg: (ra_deg, dec_deg) = \
-                                utilities.sex2decdeg(ra_deg,dec_deg)
-            event = Lens()
-            event.set_par('name','MOA-' + event_id)
-            event.set_par('ra',ra_deg)
-            event.set_par('dec',dec_deg)
-            event.set_par('t0',t0_hjd)
-            event.set_par('te',tE)
-            event.set_par('i0',I0)
-            event.set_par('a0',A0)
-            event.origin = 'MOA'
-            moa_data.lenses[event_id] = event
+                if ':' in ra_deg or ':' in dec_deg: 
+                    (ra_deg, dec_deg) = utilities.sex2decdeg(ra_deg,dec_deg)
+                event = Lens()
+                event.set_par('name','MOA-' + event_id)
+                event.set_par('ra',ra_deg)
+                event.set_par('dec',dec_deg)
+                event.set_par('t0',t0_hjd)
+                event.set_par('te',tE)
+                event.set_par('i0',I0)
+                event.set_par('a0',A0)
+                event.origin = 'MOA'
+                moa_data.lenses[event_id] = event
     verbose(config,'--> Downloaded index of ' + str(len(moa_data.lenses)) + \
                         ' events')
                         

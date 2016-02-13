@@ -15,6 +15,7 @@ import utilities
 from datetime import datetime, timedelta
 import event_classes
 import survey_classes
+import glob
 
 def read_ogle_param_files( config ):
     """Function to read the listing of OGLE data"""
@@ -22,7 +23,8 @@ def read_ogle_param_files( config ):
     ts_file_path = path.join( config['ogle_data_local_location'], \
                             config['ogle_time_stamp_file'] )
     par_file_path = path.join( config['ogle_data_local_location'], \
-                            config['ogle_lenses_file'] )
+                            config['ogle_lenses_file']+'.*' )
+    lens_file_list = glob.glob( par_file_path )
     updated_file_path = path.join( config['ogle_data_local_location'], \
                             config['ogle_updated_file'] )
     ogle_data = survey_classes.SurveyData()
@@ -32,24 +34,25 @@ def read_ogle_param_files( config ):
 
     # Parse the lenses parameter file.
     # First 2 lines are header, so skipped:
-    file_lines = open( par_file_path, 'r' ).readlines()
     ogle_data.lenses = {}
-    for line in file_lines[2:]:
-        (event_id, field, star, ra, dec, t0_hjd, t0_utc, tE, u0, A0, \
+    for par_file in lens_file_list:
+        file_lines = open( par_file, 'r' ).readlines()
+        for line in file_lines[2:]:
+            (event_id, field, star, ra, dec, t0_hjd, t0_utc, tE, u0, A0, \
             dmag, fbl, I_bl, I0) = line.split()
-        if 'OGLE' not in event_id: event_id = 'OGLE-'+event_id
-        (ra_deg, dec_deg) = utilities.sex2decdeg(ra,dec)
-        event = event_classes.Lens()
-        event.set_par('name',event_id)
-        event.set_par('ra',ra_deg)
-        event.set_par('dec',dec_deg)
-        event.set_par('t0',t0_hjd)
-        event.set_par('te',tE)
-        event.set_par('u0',u0)
-        event.set_par('a0',A0)
-        event.set_par('i0',I0)
-        event.origin = 'OGLE'
-        ogle_data.lenses[event_id] = event
+            if 'OGLE' not in event_id: event_id = 'OGLE-'+event_id
+            (ra_deg, dec_deg) = utilities.sex2decdeg(ra,dec)
+            event = event_classes.Lens()
+            event.set_par('name',event_id)
+            event.set_par('ra',ra_deg)
+            event.set_par('dec',dec_deg)
+            event.set_par('t0',t0_hjd)
+            event.set_par('te',tE)
+            event.set_par('u0',u0)
+            event.set_par('a0',A0)
+            event.set_par('i0',I0)
+            event.origin = 'OGLE'
+            ogle_data.lenses[event_id] = event
 
     ogle_data.last_updated = read_update_file( updated_file_path )
 

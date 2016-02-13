@@ -82,7 +82,7 @@ class K2Footprint():
             for channel, corners in self.k2_footprint.items():
                 print channel, ': ', corners
 
-    def targets_in_footprint( self, targets ):
+    def targets_in_footprint( self, targets, verbose=False ):
         """Method to determine whether a given target lies within the
         K2 footprint or not.
         Required parameters:
@@ -93,6 +93,9 @@ class K2Footprint():
             target_locations   
         """
 	
+        if verbose == True:
+            print ' -> Checking whether events are in the K2 campaign footprint'
+            
         # Write the CSV file in the format required by K2onSilicon. 
         # This uses a default magnitude for the target, which we don't know.
         fileobj = open( 'target.csv', 'w')
@@ -117,17 +120,20 @@ class K2Footprint():
             targets[ target_id ] = target
 	
         # Remove the temporary files:
-	
+ 
         return targets
 
-    def targets_in_superstamp( self, targets ):
+    def targets_in_superstamp( self, targets, verbose=False ):
         """Method to check whether the targets are within the K2C9 superstamp.
         Requires targets_in_footprint to have been run already.
         Depends:
             Requires K2inMicrolensRegion installed (from K2FOV package)
         """
-	
-        for target_id in targets:
+        
+        if verbose==True: 
+            print ' -> Checking whether events are in the K2C9 superstamp'
+        ntargets = float( len(targets) )
+        for i,target_id in enumerate( targets ):
             target = targets[ target_id ]
             (ra, dec) = target.get_location()
             if target.in_footprint == True:
@@ -138,10 +144,12 @@ class K2Footprint():
                 elif 'coordinate is inside' in coutput:
                     target.in_superstamp = True
             targets[ target_id ] = target
+            if verbose==True and (i%50) == 0:
+                print '  - completed ' + str(i) + ' out of ' + str( ntargets )
 	    
         return targets
 
-    def targets_in_campaign( self, targets ):
+    def targets_in_campaign( self, targets, verbose=False ):
         """Method to check whether an event would be alerted in time to be included 
         in a K2 Campaign.  For this to happen the following criteria must be met:
             For events in footprint but outside superstamp:
@@ -159,7 +167,9 @@ class K2Footprint():
              Inputs:
                  targets   dict   object_id: Event object
         """
-	
+        
+        if verbose == True:
+            print '  -> Checking whether events occur within campaign duration'
         for target_id in targets.keys():
             target = targets[ target_id ]
 	    

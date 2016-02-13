@@ -17,10 +17,12 @@ from sys import argv, exit
 import config_parser
 import glob
 import artemis_subscriber
-import survey_subscriber
+import survey_data_utilities
 from astropy.time import Time
 import numpy as np
 import utilities
+import k2_footprint_class
+import event_classes
 
 def exofop_publisher():
     """
@@ -34,23 +36,35 @@ def exofop_publisher():
     known_events = get_known_events( config )
     print ' -> Read list of known events'
     
-    # Data are provided by combining datastreams from the providing surveys + ARTEMiS
-    # First step is to read in a list of the event parameters from all these providers and compare
-    # to ensure the list is up to date.  Produce master event dictionary events, but only include
+    # Instantiate a K2 footprint object:
+    k2_campaign = k2_footprint_class.K2Footprint( config['k2_campaign'], \
+                                                    config['k2_year'] )
+    
+    # Data are provided by combining datastreams from the providing surveys + 
+    # ARTEMiS.  First step is to read in a list of the event parameters from 
+    # all these providers and compare to ensure the list is up to date.  
+    # Produce master event dictionary events, but only include
     # those events found within the K2C9 superstamp.
     artemis_events = load_artemis_event_data( config )
     print ' -> Loaded ARTEMiS event data'
     survey_events = load_survey_event_data( config )
     print ' -> Loaded survey event data'
     
-    # Select those events which are in the K2 superstamp
-    # XXX what about events outside that? XXX
+    # Select those events which are in the K2 footprint
     # Combine all available data on them
+    print ' -> Combining data on all known events'
     events = combine_K2C9_event_feed( known_events, artemis_events, \
                                                survey_events )
-    print ' -> Combined data on all known events within superstamp'
     
-    # Now output the combined information stream in the format agreed on for the ExoFOP transfer
+    # Identify which events are within the K2 campaign footprint & dates:
+    survey_events = k2_campaign.targets_in_footprint( survey_events, verbose=True )
+    if config['k2_campaign'] == str(9):    
+        survey_events = 
+            k2_campaign.targets_in_superstamp( survey_events, verbose=True )
+    survey_events = k2_campaign.targets_in_campaign( survey_events, verbose=True )
+    
+    # Now output the combined information stream in the format agreed on for 
+    # the ExoFOP transfer
     generate_exofop_output( config, events )
     print ' -> Output data for ExoFOP transfer'
     
@@ -68,37 +82,58 @@ def get_known_events( config ):
     """
     
     events_file = path.join( config['log_directory'], config['events_list'] )
+    
+    if path.isfile( events_file ) == False:
+        print 'Error: Missing events file, ' + events_file
+        exit()
+        
     file_lines = open( events_file, 'r' ).readlines()
     
     known_events= {'identifiers': {}, \
+                   'master_index': {},\
                    'ogle': {}, \
                    'moa': {}, \
                    'kmt': {},
-                   'max_index': None
+                   'max_index': 0
                    }
     for line in file_lines:
         if len(line) > 0 and line.lstrip()[0:1] != '#':
             entries = line.split()
-            event = K2C9Event()
-            event.identifier = entries[0]
-            if entries[1] != 'None':
-                event.ogle_name = repr( entries[1] )
-                known_events['ogle'][event.ogle_name] = event.identifier
-            if entries[2] != 'None':
-                event.moa_name = repr( entries[2] )
-                known_events['moa'][event.moa_name] = event.identifier
-            if entries[3] != 'None':
-                event.kmt_name = repr( entries[3] )
-                known_events['kmt'][event.kmt_name] = event.identifier
-            known_events['identifiers'][event.identifier] = event
-            idx = int(str(event.identifier).replace('K2C9',''))
-            if known_events['max_index'] == None:
-                known_events['max_index'] = idx
-            else:
-                if idx > known_events['max_index']:
+            event = event_classes.K2C9Event()
+            event.master_index = int(entries[0])
+            event.identifier = entries[1]
+            event.in_footprint = bool(entries[2])
+            event.in_superstamp = bool(entries[3])
+            event.during_campaign = bool(entries[4])
+            if entries[5] != 'None':
+                event.ogle_name = repr( entries[5] )
+                known_events['ogle'][event.ogle_name] = event.master_index
+            if entries[6] != 'None':
+                event.moa_name = repr( entries[6] )
+                known_events['moa'][event.moa_name] = event.master_index
+            if entries[7] != 'None':
+                event.kmt_name = repr( entries[7] )
+                known_events['kmt'][event.kmt_name] = event.master_index
+            known_events['identifiers'][event.master_index] = event.identifier
+            known_events['master_index'][event.master_index] = event
+            if str(event.identifier).lower() != 'none'
+                idx = int(str(event.identifier).replace('K2C9',''))
+                if known_events['max_index'] == None:
                     known_events['max_index'] = idx
+                else:
+                    if idx > known_events['max_index']:
+                        known_events['max_index'] = idx
                     
     return known_events
+
+def update_known_events( config, survey_events ):
+    """Function to output a cross-identified list of all event identifiers"""
+    
+    events_file = path.join( config['log_directory'], config['events_list'] )
+    
+    fileobj = open( events_file, 'w' )
+    for event_id, event in survey_events:
+        
 
 def load_artemis_event_data( config ):
     """Function to load the full list of events known to ARTEMiS."""
@@ -109,7 +144,8 @@ def load_artemis_event_data( config ):
     
     # Make a dictionary of all events known to ARTEMiS based on the 
     # ASCII-format model files in its 'models' directory.
-    search_str = path.join( config['models_local_location'], '?B15????.model' )
+    search_str = path.join( config['models_local_location'], \
+            '?B1\[5-6\]????.model' )
     model_file_list = glob.glob( search_str )
     
     artemis_events = {}
@@ -117,7 +153,7 @@ def load_artemis_event_data( config ):
         params = artemis_subscriber.read_artemis_model_file( model_file )
         params = set_key_names( params, prefix_keys, 'signalmen' )
         if len( params ) > 0:
-            event = K2C9Event()
+            event = event_classes.K2C9Event()
             event.set_params( params )
             event.set_event_name( params )
             artemis_events[ params['long_name'] ] = event
@@ -128,8 +164,8 @@ def load_survey_event_data( config ):
     """Method to load the parameters of all events known from the surveys.
     """
     
-    (ogle_last_update, ogle_lens_params) = survey_subscriber.read_ogle_param_files( config )
-    (moa_last_update, moa_lens_params) = survey_subscriber.get_moa_parameters( config )
+    ogle_data = survey_data_utilities.read_ogle_param_files( config )
+    moa_data = survey_data_utilities.read_moa_param_files( config )
     
     # Combine the data from both sets of events into a single 
     # dictionary of K2C9Event objects.
@@ -140,8 +176,8 @@ def load_survey_event_data( config ):
     survey_events = {}
     prefix_keys = [ 'a0', 't0', 'sig_t0', 'te', 'sig_te', 'u0', 'sig_u0', \
                 'ra', 'dec' ]
-    for ogle_id, lens in ogle_lens_params.items():
-        event = K2C9Event()
+    for ogle_id, lens in ogle_data.lenses.items():
+        event = event_classes.K2C9Event()
         params = lens.get_params()
         params = set_key_names( params, prefix_keys, 'ogle' )
         event.set_event_name( params )
@@ -152,7 +188,7 @@ def load_survey_event_data( config ):
     ogle_id_list.sort()
     
     # Now work through MOA events, adding them to the dictionary:
-    for moa_id, lens in moa_lens_params.items():
+    for moa_id, lens in moa_data.lenses.items():
         coords1 = ( lens.ra, lens.dec )
         
         # If this event matches one already in the dictionary, 
@@ -174,7 +210,7 @@ def load_survey_event_data( config ):
         # If no match to an existing OGLE event is found, add this
         # event to the dictionary as a MOA event. 
         if match == False:
-            event = K2C9Event()
+            event = event_classes.K2C9Event()
             moa_params = lens.get_params()
             moa_params = set_key_names( moa_params, prefix_keys, 'moa' )
             event.set_event_name( moa_params )
@@ -231,49 +267,51 @@ def combine_K2C9_event_feed( known_events, artemis_events, survey_events ):
     # First review all events known to ARTEMiS: 
     for event_id, event in artemis_events.items():
         
-        # First check whether the event is within the K2C9 superstamp:
-        in_superstamp = True
-        
-        if in_superstamp == True: 
-            # Does this event already have a K2C9 identifier?:
-            origin = str(event_id.split('-')[0]).lower()
-            if event_id in known_events[origin].keys():
-                event.identifier = known_events[origin][event_id]
-            else:
-                ( event.identifier, known_evnets ) = set_identifier( known_events )
+        # Does this event already have a K2C9 identifier?:
+        origin = str(event_id.split('-')[0]).lower()
+        if event_id in known_events[origin].keys():
+            event.master_index = known_events[origin][event_id]
+            if event.master_index in known_events['identifiers'].keys():
+                event.identifier = known_events['identifiers'][event.master_index]
+        else:
+            XXX HANDLE NEW EVENT, adding it to known events XXX
             
-            # Is this event in the survey_events list?
-            # Theoretically it should always be, but if the surveys webservice
-            # gets out of sync for whatever reason, we should handle this case
-            # Events are listed by both OGLE and MOA names for easy look-up
-            # If an event is found, transfer the parameters from the survey data:
-            if event_id in survey_events.keys():
-                survey_data = survey_events[ event_id ]
-                params = survey_data.get_params()
-                params = set_key_names( params, prefix_keys, origin )
-                event.set_params( params )
+        # Is this event in the survey_events list?
+        # Theoretically it should always be, but if the surveys webservice
+        # gets out of sync for whatever reason, we should handle this case
+        # Events are listed by both OGLE and MOA names for easy look-up
+        # If an event is found, transfer the parameters from the survey data:
+        if event_id in survey_events.keys():
+            survey_data = survey_events[ event_id ]
+            params = survey_data.get_params()
+            params = set_key_names( params, prefix_keys, origin )
+            event.set_params( params )
             
-            events[ event.identifier ] = event
+        events[ event.master_index ] = event
             
     # Now review all events reported by the survey as a double-check
     # that ARTMEMiS isn't out of sync:
     for event_id, event in survey_events.items():
         
-        # First check whether the event is within the K2C9 superstamp:
-        in_superstamp = True
-        if in_superstamp == True:
-            
-            # Does this event already have a K2C9 identifier?:
-            origin = str(event_id.split('-')[0]).lower()
-            #print origin, event_id
-            if event_id in known_events[origin].keys():
-                event.identifier = known_events[origin][event_id]
-            else:
-                ( event.identifier, known_events ) = set_identifier( known_events )
-                
-            events[ event.identifier ] = event
+        # Does this event already have a K2C9 identifier?:
+        origin = str(event_id.split('-')[0]).lower()
+        #print origin, event_id
+        if event_id in known_events[origin].keys():
+            event.master_index = known_events[origin][event_id]
+            if event.master_index in known_events['identifiers'].keys():
+                event.identifier = known_events['identifiers'][event.master_index]
+        else:
+            XXX HANDLE NEW EVENT, checking its in known events XXX
         
-    
+        if event.master_index not in events.keys():
+            events[ event.master_index ] = event
+        
+    # Now update the known_events dictionary:
+    for event_id, event in events.items():
+        
+        origin = str(event_id.split('-')[0]).lower()
+        
+        
     return events
             
 def set_identifier( known_events ):
@@ -285,7 +323,7 @@ def set_identifier( known_events ):
     known_events['max_index'] = idx
     
     sidx = str( idx )
-    while len(sidx) < 3:
+    while len(sidx) < 4:
         sidx = '0' + sidx
     identifier = 'K2C9' + sidx
     return identifier, known_events
@@ -315,219 +353,11 @@ def generate_exofop_output( config, events ):
     for event_id, event in events.items():
         
         output_file = str( event_id ) + '.param'
+        print event_id, output_file
         output_path = path.join( config['log_directory'], output_file )
         event.generate_exofop_data_file( output_path )
         
 
-class K2C9Event():
-    """Class describing the parameters to be output for a microlensing event 
-    within the K2/Campaign 9 field
-    """
-    def __init__( self ):
-        self.identifier = None
-        self.status = 'NEW'
-        self.recommended_status = 'NEW'
-        self.ogle_name = None
-        self.ogle_ra = None 
-        self.ogle_dec = None
-        self.ogle_t0 = None
-        self.ogle_sig_t0 = None
-        self.ogle_a0 = None
-        self.ogle_sig_a0 = None
-        self.ogle_te = None
-        self.ogle_sig_te = None
-        self.ogle_u0 = None
-        self.ogle_sig_u0 = None
-        self.ogle_i0 = None
-        self.ogle_sig_i0 = None
-        self.ogle_ndata = None
-        self.ogle_url = None
-        self.moa_name = None
-        self.moa_ra = None
-        self.moa_dec = None
-        self.moa_t0= None
-        self.moa_sig_t0= None
-        self.moa_a0 = None
-        self.moa_sig_a0 = None
-        self.moa_te = None
-        self.moa_sig_te = None
-        self.moa_u0 = None
-        self.sig_u0 = None
-        self.i0 = None
-        self.sig_i0 = None
-        self.ndata = None
-        self.moa_url = None
-        self.kmt_name = None
-        self.kmt_ra = None
-        self.kmt_dec = None
-        self.kmt_t0 = None
-        self.kmt_sig_t0 = None
-        self.kmt_a0 = None
-        self.kmt_sig_a0 = None
-        self.kmt_te = None
-        self.kmt_sig_te = None
-        self.kmt_u0 = None
-        self.kmt_sig_u0 = None
-        self.kmt_i0 = None
-        self.kmt_sig_i0 = None
-        self.kmt_ndata = None
-        self.kmt_url = None
-        self.signalmen_a0 = None
-        self.signalmen_t0 = None
-        self.signalmen_sig_t0 = None
-        self.signalmen_te = None
-        self.signalmen_sig_te = None
-        self.signalmen_u0 = None
-        self.signalmen_sig_u0 = None
-        self.signalmen_anomaly = None
-        self.pylima_a0 = None
-        self.pylima_sig_a0 = None
-        self.pylima_te = None
-        self.pylima_sig_te = None
-        self.pylima_t0 = None
-        self.pylima_sig_t0 = None
-        self.pylima_u0 = None
-        self.pylima_sig_u0 = None
-        self.pylima_rho = None
-        self.pylima_sig_rho = None
-        self.bozza_a0 = None
-        self.bozza_sig_a0 = None
-        self.bozza_te = None
-        self.bozza_sig_te = None
-        self.bozza_t0 = None
-        self.bozza_sig_t0 = None
-        self.bozza_u0 = None
-        self.bozza_sig_u0 = None
-        self.bozza_rho = None
-        self.bozza_sig_rho = None
-        self.bozza_s = None
-        self.bozza_sig_s = None
-        self.bozza_q = None
-        self.bozza_sig_q = None
-        self.bozza_theta = None
-        self.bozza_sig_theta = None
-        self.bozza_pi_perp = None
-        self.bozza_sig_pi_perp = None
-        self.bozza_pi_para = None
-        self.bozza_sig_pi_para = None
-        self.bozza_url = None
-        self.nnewdata = 0
-        self.time_last_updated = None
-        self.in_footprint = False
-        self.in_superstamp = False
-        self.during_campaign = False
-        self.alertable = None
-
-    def set_params( self, params ):
-        """Method to set the parameters of the current instance from a 
-        a dictionary containing some or all of the parameters of the class.
-        Key names in the input dictionary must match those used in the class.
-        """
-
-        for key, value in params.items():
-            if key in dir( self ):
-                setattr( self, key, value )
-    
-    def get_params( self ):
-        """Method to return a dictionary of all parameters"""
-        
-        params = {}
-        for key in dir( self ):
-            params[key] = getattr(self,key)
-        return params
-        
-    def set_event_name( self, params ):
-        """Method to set the name of an event based on the given names
-        allocated by survey.
-        """
-        
-        # Identify the originating survey:
-        if 'name' in params.keys(): name_key = 'name'
-        else: name_key = 'long_name'
-            
-        prefix = (str( params[name_key] ).split('-')[0]).lower()
-        
-        key = prefix + '_name'
-        if key in dir( self ):
-            setattr(self, key, params[ name_key ] )
-    
-    def summary( self, key_list ):
-        """Method to print a customizible summary of the information on
-        a given K2C9Event instance, given a list of keys to output.
-        """
-
-        # An event may be discovered by multiple surveys and hence
-        # have multiple event names:
-        name = ''
-        for key in [ 'ogle_name', 'moa_name', 'kmt_name' ]:
-            if getattr(self, key) != None: 
-                name = name + str( getattr( self, key ) )
-        
-        output = str( self.identifier ) + ' ' + name + ' '
-        for key in key_list:
-            if key in dir( self ):
-                output = output + str( getattr(self,key) ) + ' '
-        return output
-
-    def generate_exofop_data_file( self, output_path ):
-        """Method to output a summary file of all parameters of an 
-        instance of this class
-        """
-        
-        # First set timestamp of output:
-        nt = Time.now()
-        self.time_last_updated = nt.utc.value.strftime("%Y-%m-%dT%H:%M:%S")
-        
-        key_list = dir( self )
-        exclude_keys = [ 'generate_exofop_data_file', \
-                         'get_valid_params', \
-                         'set_event_name', \
-                         'set_params',\
-                         'get_par',\
-                         'get_params',\
-                         'summary',\
-                         'in_superstamp',\
-                         'in_footprint',\
-                         'during_campaign',\
-                         'get_location',
-                         ]
-        for key in exclude_keys:
-            if key in key_list or '__' in key:
-                key_list.remove( key )
-        key_list.sort()
-        
-        f = open( output_path, 'w' )
-        
-        for attr in key_list:
-            key = str(attr).lower()
-            if '__' not in key[0:2]: 
-                value = str( getattr(self,key) )
-                f.write( key.upper() + '    ' + value + '\n' )
-        
-        f.close()
-    
-    def get_location( self ):
-        """Return coordinates of event"""
-        
-        ra = None
-        dec = None
-        if self.ogle_ra != None and self.ogle_dec != None:
-            ra = self.ogle_ra
-            dec = self.ogle_dec
-        elif self.moa_ra != None and self.moa_dec != None:
-            ra = self.moa_ra
-            dec= self.moa_dec
-        return (ra, dec)
-
-    def get_par( self, param_name ):
-        """Return indicated parameter value for an event"""
-        
-        value = None
-        if getattr( self, 'ogle_' + param_name ) != None:
-            value = getattr( self, 'ogle_' + param_name )
-        elif getattr( self, 'moa_' + param_name ) != None:
-            value = getattr( self, 'moa_' + param_name )
-        return value
 
 ###############################################################################
 # COMMANDLINE RUN SECTION

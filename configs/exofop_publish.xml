@@ -7,22 +7,24 @@
     </parameter>
     
     <parameter name='models_local_location'>
-       <value>/science/robonet/rob/Operations/Signalmen_output/model</value>
-       <!--  <value>/Users/rstreet/RoboNet/Sandbox/models</value> -->
+       <!--<value>/science/robonet/rob/Operations/Signalmen_output/model</value>-->
+       <value>/Users/rstreet/RoboNet/Sandbox/models</value>
     </parameter>
     
     <parameter name='pubpars_local_location'>
-        <value>/science/robonet/rob/Operations/Signalmen_output/PublishedParameters</value>
-        <!-- <value>/Users/rstreet/RoboNet/Sandbox/PublishedParameters</value> -->
+        <!--<value>/science/robonet/rob/Operations/Signalmen_output/PublishedParameters</value>-->
+        <value>/Users/rstreet/RoboNet/Sandbox/PublishedParameters</value>
     </parameter>
     
     <parameter name='artemis_data_local_location'>
-        <value>/science/robonet/rob/Operations/Signalmen_output/data</value>
-        <!-- <value>/Users/rstreet/RoboNet/Sandbox/data</value> -->
+        <!--<value>/science/robonet/rob/Operations/Signalmen_output/data</value>-->
+        <value>/Users/rstreet/RoboNet/Sandbox/data</value>
     </parameter>
     
+    
     <parameter name='ogle_data_local_location'>
-        <value>/science/robonet/rob/Operations/SurveyData/OGLE</value>
+        <!-- <value>/science/robonet/rob/Operations/SurveyData/OGLE</value> -->
+        <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/OGLE</value>
     </parameter>
     <parameter name='ogle_time_stamp_file'>
         <value>last.changed</value>
@@ -30,19 +32,49 @@
     <parameter name='ogle_lenses_file'>
         <value>lenses.par</value>
     </parameter>
-    <parameter name='moa_data_local_location'>
-        <value>/science/robonet/rob/Operations/SurveyData/MOA</value>
+    <parameter name='ogle_updated_file'>
+        <value>last.updated</value>
     </parameter>
     
+    <parameter name='moa_data_local_location'>
+        <!-- <value>/science/robonet/rob/Operations/SurveyData/MOA</value> -->
+        <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/MOA</value>
+    </parameter>
+    <parameter name='moa_time_stamp_file'>
+        <value>last.changed</value>
+    </parameter>
+    <parameter name='moa_lenses_file'>
+        <value>moa_lenses.par</value>
+    </parameter>
+    <parameter name='moa_updated_file'>
+        <value>last.updated</value>
+    </parameter>
+
+    
     <parameter name='auth'>
-        <value>/home/rstreet/.artemis-rsync</value>
-        <!--<value>/Users/rstreet/RoboNet/Sandbox/.artemis-rsync</value>-->
+        <!--<value>/home/rstreet/.artemis-rsync</value>-->
+        <value>/Users/rstreet/RoboNet/Sandbox/.artemis-rsync</value>
     </parameter>
     
     <parameter name='log_directory'>
-        <value>/science/robonet/rob/Operations/ExoFOP</value>
-        <value>/home/rstreet/RoboNet/ExoFOP</value>
+        <!--<value>/science/robonet/rob/Operations/ExoFOP</value>-->
+        <value>/Users/rstreet/RoboNet/ExoFOP</value>
     </parameter>
+    
+    <parameter name='k2_campaign'>
+        <value>9</value>
+    </parameter>
+    
+    <parameter name='k2_year'>
+        <value>2016</value>
+    </parameter>
+
+    
+    <parameter name='events_list'>
+        <value>master_events_list</value>
+    </parameter>
+    
+    
     <parameter name='events_list'>
         <value>K2C9.events</value>
     </parameter>
