@@ -136,7 +136,8 @@ class K2Footprint():
         for i,target_id in enumerate( targets ):
             target = targets[ target_id ]
             (ra, dec) = target.get_location()
-            if target.in_footprint == True:
+            if target.in_footprint == True and \
+                target.in_superstamp == 'Unknown':
                 ( iexec, coutput ) = getstatusoutput( 'K2inMicrolensRegion ' + \
                     str(ra) + ' ' + str(dec) )
                 if 'coordinate is NOT inside' in coutput:

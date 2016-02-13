@@ -32,6 +32,8 @@ def exofop_publisher():
     config = config_parser.read_config( '../configs/exofop_publish.xml' )
     print ' -> Read configuration'
     
+    init = lock( config, state='create' )    
+    
     # Read back the master list of all events known to date:
     known_events = get_known_events( config )
     print ' -> Read list of known events'
@@ -53,26 +55,52 @@ def exofop_publisher():
     # Select those events which are in the K2 footprint
     # Combine all available data on them
     print ' -> Combining data on all known events'
-    events = combine_K2C9_event_feed( known_events, artemis_events, \
+    known_events = \
+            combine_K2C9_event_feed( known_events, artemis_events, \
                                                survey_events )
     
     # Identify which events are within the K2 campaign footprint & dates:
-    survey_events = k2_campaign.targets_in_footprint( survey_events, verbose=True )
+    events = known_events['master_index']
+    events = k2_campaign.targets_in_footprint( events, verbose=True )
     if config['k2_campaign'] == str(9):    
-        survey_events = 
-            k2_campaign.targets_in_superstamp( survey_events, verbose=True )
-    survey_events = k2_campaign.targets_in_campaign( survey_events, verbose=True )
-    
+        events = 
+            k2_campaign.targets_in_superstamp( events, verbose=True )
+    events = k2_campaign.targets_in_campaign( events, verbose=True )
+    known_events['master_index']= events
+        
     # Now output the combined information stream in the format agreed on for 
     # the ExoFOP transfer
-    generate_exofop_output( config, events )
+    generate_exofop_output( config, known_events )
     print ' -> Output data for ExoFOP transfer'
     
     # Update the master list of known events:
+    update_known_events( config, known_events )
     
+    init = lock( config, state='remove' ) 
 
 ###############################################################################
 # SERVICE FUNCTIONS
+def lock( config, state=None ):
+    """Function to create or remove the scripts lockfile"""
+    
+    lock_file = path.join( config['log_directory'], \
+                            config['master_events_list'], \
+                                'exofop_lock' )
+    if state == None:
+        return 0
+    elif state = 'create':
+        fileobj = open( lock_file, 'w' )
+        ts = datetime.utcnow()
+        fileobj.write( ts.strftime("%Y-%m-%dT%H:%M:%S")+'\n' )
+        fileobj.close()
+        return 0
+    elif state = 'remove':
+        if path.isfile( lock_file ) == True:
+            remove( lock_file )
+            return 0
+    else:
+        return 0
+        
 def get_known_events( config ):
     """Function to load the list of known events within the K2 footprint.
     File format: # indicates comment line
@@ -126,15 +154,22 @@ def get_known_events( config ):
                     
     return known_events
 
-def update_known_events( config, survey_events ):
+def update_known_events( config, known_events ):
     """Function to output a cross-identified list of all event identifiers"""
     
-    events_file = path.join( config['log_directory'], config['events_list'] )
+    events_file = path.join( config['log_directory'], \
+                            config['master_events_list'] )
     
     fileobj = open( events_file, 'w' )
-    for event_id, event in survey_events:
-        
-
+    fileobj.write('# Event_index   K2C9_ID   In_footprint  In_superstamp  During_campaign OGLE_ID MOA_ID KMTNET_ID' )
+    for master_index, event in known_events['master_index']:
+        line = str(master_index) + ' ' + str(event.identifier) + ' ' + \
+                str(event.in_footprint) + ' ' + str(event.in_superstamp) + ' '\
+                + str(event.during_campaign) + ' ' + str(event.ogle_name) + \
+                ' ' + str(event.moa_name) + ' ' + str(event.kmt_name) + '\n'
+        fileobj.write( line )
+    fileobj.close()
+    
 def load_artemis_event_data( config ):
     """Function to load the full list of events known to ARTEMiS."""
     
@@ -260,7 +295,6 @@ def combine_K2C9_event_feed( known_events, artemis_events, survey_events ):
     """Function to produce a dictionary of just those events identified
     within the superstamp of K2C9."""
     
-    events = {}
     prefix_keys = [ 'a0', 't0', 'sig_t0', 'te', 'sig_te', 'u0', 'sig_u0', \
                 'ra', 'dec' ]
     
@@ -274,7 +308,10 @@ def combine_K2C9_event_feed( known_events, artemis_events, survey_events ):
             if event.master_index in known_events['identifiers'].keys():
                 event.identifier = known_events['identifiers'][event.master_index]
         else:
-            XXX HANDLE NEW EVENT, adding it to known events XXX
+            # Generate a new master_index and add to the known_events index:
+            event.master_index = len(known_events['master_index'])
+            known_events['master_index'][event.master_index] = event
+            known_events[origin][event_id] = event.master_index
             
         # Is this event in the survey_events list?
         # Theoretically it should always be, but if the surveys webservice
@@ -287,7 +324,7 @@ def combine_K2C9_event_feed( known_events, artemis_events, survey_events ):
             params = set_key_names( params, prefix_keys, origin )
             event.set_params( params )
             
-        events[ event.master_index ] = event
+        known_events['master_index'][ event.master_index ] = event
             
     # Now review all events reported by the survey as a double-check
     # that ARTMEMiS isn't out of sync:
@@ -301,18 +338,17 @@ def combine_K2C9_event_feed( known_events, artemis_events, survey_events ):
             if event.master_index in known_events['identifiers'].keys():
                 event.identifier = known_events['identifiers'][event.master_index]
         else:
-            XXX HANDLE NEW EVENT, checking its in known events XXX
+            # Generate a new master_index and add to the known_events index:
+            event.master_index = len(known_events['master_index'])
+            known_events['master_index'][event.master_index] = event
+            known_events[origin][event_id] = event.master_index
+            
         
         if event.master_index not in events.keys():
-            events[ event.master_index ] = event
-        
-    # Now update the known_events dictionary:
-    for event_id, event in events.items():
-        
-        origin = str(event_id.split('-')[0]).lower()
+            known_events[ event.master_index ] = event
         
         
-    return events
+    return known_events
             
 def set_identifier( known_events ):
     """Function to assign a new identifier by incrementing the maximum
@@ -342,22 +378,22 @@ def set_key_names( params, prefix_keys, prefix ):
     return output
 
 
-def generate_exofop_output( config, events ):
+def generate_exofop_output( config, known_events ):
     """Function to output datafiles for all events in the format agreed 
     with ExoFOP
     """
     
-    # Verify output directory exists:
-    
     # Loop over all events, creating a summary output file for each one:
-    for event_id, event in events.items():
+    for event_id, event in known_events['master_index'].items():
         
-        output_file = str( event_id ) + '.param'
-        print event_id, output_file
-        output_path = path.join( config['log_directory'], output_file )
-        event.generate_exofop_data_file( output_path )
+        if event.in_footprint  == True and event.during_campaign == True:
+            output_file = str( event_id ) + '.param'
+            print event_id, output_file
+            output_path = path.join( config['log_directory'], output_file )
+            event.generate_exofop_data_file( output_path )
         
-
+    # Create manifest for data transfer:
+    
 
 ###############################################################################
 # COMMANDLINE RUN SECTION
