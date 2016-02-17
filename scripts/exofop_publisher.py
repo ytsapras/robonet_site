@@ -114,7 +114,8 @@ def get_known_events( config ):
     them must be a valid, long-hand format name.
     """
     
-    events_file = path.join( config['log_directory'], config['events_list'] )
+    events_file = path.join( config['log_directory'], \
+            config['master_events_list'] )
     
     if path.isfile( events_file ) == False:
         print 'Error: Missing events file, ' + events_file
@@ -180,11 +181,12 @@ def update_known_events( config, known_events ):
     fileobj = open( k2_events_file, 'w' )
     fileobj.write( '# K2C9_ID OGLE_ID MOA_ID KMTNet_ID   In_footprint  In_superstamp  During_campaign \n' )
     for event_id, event in known_events['master_index'].items():
-        line = str(event.identifier) + ' ' + str(event.ogle_name) + \
-                ' ' + str(event.moa_name) + ' ' + str(event.kmt_name) + \
+        if event.in_footprint == True and event.during_campaign == True:        
+            line = str(event.identifier) + ' ' + str(event.ogle_name) + \
+                ' ' + str(event.moa_name) + ' ' + str(event.kmt_name) + ' ' + \
                 str(event.in_footprint) + ' ' + str(event.in_superstamp) + ' '\
                 + str(event.during_campaign) + '\n'
-        fileobj.write( line )
+            fileobj.write( line )
     fileobj.close()
     
 
