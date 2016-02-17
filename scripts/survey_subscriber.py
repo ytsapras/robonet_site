@@ -152,7 +152,7 @@ def get_moa_parameters(config):
                         I0, tmp1, tmp2) = entry.split()
                 if ':' in ra_deg or ':' in dec_deg: 
                     (ra_deg, dec_deg) = utilities.sex2decdeg(ra_deg,dec_deg)
-                event = Lens()
+                event = event_classes.Lens()
                 event.set_par('name','MOA-' + event_id)
                 event.set_par('ra',ra_deg)
                 event.set_par('dec',dec_deg)

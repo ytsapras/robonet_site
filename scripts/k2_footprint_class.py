@@ -136,6 +136,7 @@ class K2Footprint():
         for i,target_id in enumerate( targets ):
             target = targets[ target_id ]
             (ra, dec) = target.get_location()
+            
             if target.in_footprint == True and \
                 target.in_superstamp == 'Unknown':
                 ( iexec, coutput ) = getstatusoutput( 'K2inMicrolensRegion ' + \
@@ -144,6 +145,13 @@ class K2Footprint():
                     target.in_superstamp = False
                 elif 'coordinate is inside' in coutput:
                     target.in_superstamp = True
+                elif 'command not found' in coutput:
+                    print """ERROR: K2fov tools not available.  
+                            Cannot check target location within the footprint"""
+                    exit()
+            else:
+                target.in_superstamp == False
+                
             targets[ target_id ] = target
             if verbose==True and (i%50) == 0:
                 print '  - completed ' + str(i) + ' out of ' + str( ntargets )
@@ -184,7 +192,9 @@ class K2Footprint():
             if ( t0 - 2.0*tE ) < campaign_end and \
                     ( t0 + 2.0*tE ) > campaign_start:
                 target.during_campaign = True
-		
+            else:
+                target.during_campaign = False
+       
             # To be alertable, a target must:
             # - Be within tE of the peak before the alert upload date
             # - Have a predicted end date greater than the campaign start
@@ -192,6 +202,9 @@ class K2Footprint():
                 if ( t0 - tE ) < date and \
                     ( t0 + 2.0*tE ) > campaign_start:
                         target.alertable = True
+                else:
+                    target.alertable = False
+            
             targets[ target_id ] = target
 	
 	return targets

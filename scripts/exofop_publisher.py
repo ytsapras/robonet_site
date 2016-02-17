@@ -12,7 +12,7 @@ Created on Mon Feb  8 18:03:54 2016
 # Script to provide a live datafeed of microlensing events within the K2C9 superstamp to ExoFOP
 ######################################################################################################
 
-from os import path
+from os import path, remove
 from sys import argv, exit
 import config_parser
 import glob
@@ -63,18 +63,24 @@ def exofop_publisher():
     events = known_events['master_index']
     events = k2_campaign.targets_in_footprint( events, verbose=True )
     if config['k2_campaign'] == str(9):    
-        events = 
-            k2_campaign.targets_in_superstamp( events, verbose=True )
+        events = k2_campaign.targets_in_superstamp( events, verbose=True )
     events = k2_campaign.targets_in_campaign( events, verbose=True )
     known_events['master_index']= events
-        
+    
+    # Assign K2C9 identifiers to any events within the footprint which
+    # do not yet have them:
+    known_events = assign_identifiers( known_events )    
+    
     # Now output the combined information stream in the format agreed on for 
     # the ExoFOP transfer
     generate_exofop_output( config, known_events )
     print ' -> Output data for ExoFOP transfer'
     
-    # Update the master list of known events:
+    # Update the master list of known events, and those within the K2C9 footprint:
     update_known_events( config, known_events )
+    
+    # Sync data for transfer to IPAC with transfer location:
+    #sync_data_for_transfer( config )  
     
     init = lock( config, state='remove' ) 
 
@@ -84,17 +90,16 @@ def lock( config, state=None ):
     """Function to create or remove the scripts lockfile"""
     
     lock_file = path.join( config['log_directory'], \
-                            config['master_events_list'], \
                                 'exofop_lock' )
     if state == None:
         return 0
-    elif state = 'create':
+    elif state == 'create':
         fileobj = open( lock_file, 'w' )
         ts = datetime.utcnow()
         fileobj.write( ts.strftime("%Y-%m-%dT%H:%M:%S")+'\n' )
         fileobj.close()
         return 0
-    elif state = 'remove':
+    elif state == 'remove':
         if path.isfile( lock_file ) == True:
             remove( lock_file )
             return 0
@@ -144,8 +149,8 @@ def get_known_events( config ):
                 known_events['kmt'][event.kmt_name] = event.master_index
             known_events['identifiers'][event.master_index] = event.identifier
             known_events['master_index'][event.master_index] = event
-            if str(event.identifier).lower() != 'none'
-                idx = int(str(event.identifier).replace('K2C9',''))
+            if str(event.identifier).lower() != 'none':
+                idx = int(str(event.identifier).replace('K2C9-R-',''))
                 if known_events['max_index'] == None:
                     known_events['max_index'] = idx
                 else:
@@ -161,14 +166,38 @@ def update_known_events( config, known_events ):
                             config['master_events_list'] )
     
     fileobj = open( events_file, 'w' )
-    fileobj.write('# Event_index   K2C9_ID   In_footprint  In_superstamp  During_campaign OGLE_ID MOA_ID KMTNET_ID' )
-    for master_index, event in known_events['master_index']:
+    fileobj.write('# Event_index   K2C9_ID   In_footprint  In_superstamp  During_campaign OGLE_ID MOA_ID KMTNET_ID\n' )
+    for master_index, event in known_events['master_index'].items():
         line = str(master_index) + ' ' + str(event.identifier) + ' ' + \
                 str(event.in_footprint) + ' ' + str(event.in_superstamp) + ' '\
                 + str(event.during_campaign) + ' ' + str(event.ogle_name) + \
                 ' ' + str(event.moa_name) + ' ' + str(event.kmt_name) + '\n'
         fileobj.write( line )
     fileobj.close()
+
+    k2_events_file = path.join( config['log_directory'], \
+                            config['events_list'] )
+    fileobj = open( k2_events_file, 'w' )
+    fileobj.write( '# K2C9_ID OGLE_ID MOA_ID KMTNet_ID   In_footprint  In_superstamp  During_campaign \n' )
+    for event_id, event in known_events['master_index'].items():
+        line = str(event.identifier) + ' ' + str(event.ogle_name) + \
+                ' ' + str(event.moa_name) + ' ' + str(event.kmt_name) + \
+                str(event.in_footprint) + ' ' + str(event.in_superstamp) + ' '\
+                + str(event.during_campaign) + '\n'
+        fileobj.write( line )
+    fileobj.close()
+    
+
+def assign_identifiers( known_events ):
+    """Function to assign K2C9 identifiers to events that are within the 
+    footprint and Campaign duration"""
+    
+    for event_id, event in known_events['master_index'].items():
+        if event.in_footprint == True and event.during_campaign == True\
+            and str(event.identifier).lower() == 'none':
+            ( event.identifier, known_events ) = set_identifier( known_events )
+            known_events['master_index'][event_id] = event
+    return known_events
     
 def load_artemis_event_data( config ):
     """Function to load the full list of events known to ARTEMiS."""
@@ -344,7 +373,7 @@ def combine_K2C9_event_feed( known_events, artemis_events, survey_events ):
             known_events[origin][event_id] = event.master_index
             
         
-        if event.master_index not in events.keys():
+        if event.master_index not in known_events.keys():
             known_events[ event.master_index ] = event
         
         
@@ -361,7 +390,7 @@ def set_identifier( known_events ):
     sidx = str( idx )
     while len(sidx) < 4:
         sidx = '0' + sidx
-    identifier = 'K2C9' + sidx
+    identifier = 'K2C9-R-' + sidx
     return identifier, known_events
     
 def set_key_names( params, prefix_keys, prefix ):
@@ -383,18 +412,72 @@ def generate_exofop_output( config, known_events ):
     with ExoFOP
     """
     
-    # Loop over all events, creating a summary output file for each one:
+    # Open manifest file to describe documents for transfer:
+    manifest_file = path.join( config['log_directory'], 'MANIFEST' )    
+    manifest = open( manifest_file, 'w' )
+    
+    # Loop over all events, ensuring the correct data products are present
+    # for events within the footprint only:
     for event_id, event in known_events['master_index'].items():
         
         if event.in_footprint  == True and event.during_campaign == True:
-            output_file = str( event_id ) + '.param'
-            print event_id, output_file
+            output_file = str( event.identifier ) + '.param'
             output_path = path.join( config['log_directory'], output_file )
+            
+            # Output event parameter file:
             event.generate_exofop_data_file( output_path )
+            
+            # Update the transfer manifest:
+            manifest.write( output_file + '\n' )
         
-    # Create manifest for data transfer:
+    # Lightcurve data file:
     
+    # Model lightcurve data file:
+    
+    # Colour-magnitude diagrams
+    
+    # Finder charts:
+    
+    # End manifest by adding the Manifest to the list:
+    manifest.write( 'MANIFEST\n' )
+    manifest.close()
 
+def sync_data_for_transfer( config ):
+    """Function to scp data to the location from which it will be pulled by
+    IPAC. """
+    
+    def rsync_file( config, path_string ):
+        """Function to rsync a single file"""
+        
+        c = 'rsync -av ' + path_string + ' ' + \
+            str( config['transfer_user'] ) + ':' + \
+                str( config['transfer_location'] )
+        (iexec, coutput) = getstatusoutput( c )
+        print coutput
+    
+    # Firstly, send the lock_file to let IPAC know all transfers should be
+    # suspended until its removed:
+    lock_file = 'exofop_lock' 
+    lock = path.join( config['log_directory'], lock_file )
+    rsync_file( lock )
+    
+    # Read and parse the manifest file to get a list of the files to be
+    # transfered:
+    manifest = path.join( config['log_directory'], 'MANIFEST' )
+    file_list = open( manifest, 'r' ).readlines()
+    
+    # Rsync everything in the Manifest:
+    for f in file_list:
+        file_path = path.join( config['log_directory'], f )
+        if path.isfile( file_path ) == True:
+            rsync_file( file_path )
+    
+    # Remove the lock:
+    c = 'ssh -X ' + str( config['transfer_user'] ) + ' \rm ' + \
+        path.join( config['transfer_location'], lock_file )
+    (iexec, coutput) = getstatusoutput( c )
+    print coutput
+    
 ###############################################################################
 # COMMANDLINE RUN SECTION
 if __name__ == '__main__':

@@ -5,6 +5,8 @@ Created on Fri Feb 12 13:49:18 2016
 @author: rstreet
 """
 
+from astropy.time import Time
+
 ##################################################
 # LENS CLASS DESCRIPTION
 class Lens():
