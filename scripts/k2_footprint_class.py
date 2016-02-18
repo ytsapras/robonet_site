@@ -5,6 +5,7 @@ import numpy as np
 from astropy.time import Time, TimeDelta
 import matplotlib.pyplot as plt
 from commands import getstatusoutput
+import logging
 
 class K2Footprint():
     """Class to parse the JSON file description of the K2 footprint"""
@@ -115,8 +116,10 @@ class K2Footprint():
         for i,target_id in enumerate( targets.keys() ):
             target = targets[ target_id ]
             flag = None
-            if float( file_lines[i].split(',')[-1] ) == 0.0: target.in_footprint = False
-            if float( file_lines[i].split(',')[-1] ) == 2.0: target.in_footprint = True
+            if float( file_lines[i].split(',')[-1] ) == 0.0: 
+                target.in_footprint = False
+            if float( file_lines[i].split(',')[-1] ) == 2.0: 
+                target.in_footprint = True
             targets[ target_id ] = target
 	
         # Remove the temporary files:
@@ -130,29 +133,59 @@ class K2Footprint():
             Requires K2inMicrolensRegion installed (from K2FOV package)
         """
         
+        def check_in_superstamp( target ):
+            (ra, dec) = target.get_location()
+            comm = 'K2inMicrolensRegion ' + str(ra) + ' ' + str(dec) 
+            ( iexec, coutput ) = getstatusoutput( comm )
+            if 'coordinate is NOT inside' in coutput:
+                return False
+            elif 'coordinate is inside' in coutput:
+                return True
+            elif 'command not found' in coutput:
+                print """ERROR: K2fov tools not available.  
+                        Cannot check target location within the footprint"""
+                exit()
+            else:
+                print comm
+                print coutput
+                exit()
+                
         if verbose==True: 
             print ' -> Checking whether events are in the K2C9 superstamp'
         ntargets = float( len(targets) )
         for i,target_id in enumerate( targets ):
             target = targets[ target_id ]
-            (ra, dec) = target.get_location()
             
-            if target.in_footprint == True and \
-                target.in_superstamp == 'Unknown':
-                ( iexec, coutput ) = getstatusoutput( 'K2inMicrolensRegion ' + \
-                    str(ra) + ' ' + str(dec) )
-                if 'coordinate is NOT inside' in coutput:
-                    target.in_superstamp = False
-                elif 'coordinate is inside' in coutput:
-                    target.in_superstamp = True
-                elif 'command not found' in coutput:
-                    print """ERROR: K2fov tools not available.  
-                            Cannot check target location within the footprint"""
-                    exit()
+            print 'SCHK start: ',targets[ target_id ].summary( ['in_superstamp', 'in_footprint', 'during_campaign'] )
+            if target.in_superstamp == True:
+                print 'Target already known to be in superstamp'
+            
+            elif target.in_footprint == 'Unknown' and \
+                    target.in_superstamp == 'Unknown':
+                print 'Target location relative to footprint unknown, checking location with superstamp'
+                target.in_superstamp = check_in_superstamp( target )
+                print '-> check result ',check_in_superstamp( target )
+            elif target.in_footprint == True and \
+                    target.in_superstamp == 'Unknown':
+                print 'Target within footprint, checking location with superstamp'
+                target.in_superstamp = check_in_superstamp( target )
+                print '-> check result ',check_in_superstamp( target )
+                
+            elif target.in_footprint == False:
+                target.in_superstamp = False
+                print 'Target outside footprint'
+                
             else:
-                target.in_superstamp == False
+                print 'Target in footprint unknown?'
+                
+                if target.in_superstamp == 'Unknown' \
+                    and target.in_footprint == False:
+                    print 'MISSED CHECK!'
+                target.in_superstamp = False
                 
             targets[ target_id ] = target
+            print 'SCHK: ',targets[ target_id ].summary( ['in_superstamp', 'in_footprint', 'during_campaign'] )
+            
             if verbose==True and (i%50) == 0:
                 print '  - completed ' + str(i) + ' out of ' + str( ntargets )
 	    
@@ -181,32 +214,40 @@ class K2Footprint():
             print '  -> Checking whether events occur within campaign duration'
         for target_id in targets.keys():
             target = targets[ target_id ]
-	    
+	       
+            origin = target.get_event_origin()
+            
             # Check whether the event is detectable during the Campaign, 
             # accounting for the possibility that there may be a mid-Campaign break, and so
             # multiple start and end dates. 
             campaign_start = self.campaign_dates[0][0]
             campaign_end = self.campaign_dates[-1][-1]
-            t0 = target.get_par('t0')
-            tE = target.get_par('te')
-            if ( t0 - 2.0*tE ) < campaign_end and \
+            t0 = target.get_par( origin+'_t0' )
+            tE = target.get_par( origin+'_te' )
+            try:
+                if ( t0 - 2.0*tE ) < campaign_end and \
                     ( t0 + 2.0*tE ) > campaign_start:
-                target.during_campaign = True
-            else:
-                target.during_campaign = False
-       
-            # To be alertable, a target must:
-            # - Be within tE of the peak before the alert upload date
-            # - Have a predicted end date greater than the campaign start
-            for date in self.last_alert_dates:
-                if ( t0 - tE ) < date and \
-                    ( t0 + 2.0*tE ) > campaign_start:
-                        target.alertable = True
+                    target.during_campaign = True
                 else:
-                    target.alertable = False
-            
+                    target.during_campaign = False
+                    
+                # To be alertable, a target must:
+                # - Be within tE of the peak before the alert upload date
+                # - Have a predicted end date greater than the campaign start
+                for date in self.last_alert_dates:
+                    if ( t0 - tE ) < date and \
+                        ( t0 + 2.0*tE ) > campaign_start:
+                            target.alertable = True
+                    else:
+                        target.alertable = False
+                    
+                    
+            except:
+                print 'Missing params: ',target.summary( ['te','t0'] )
+                target.during_campaign = False
+
             targets[ target_id ] = target
-	
+            
 	return targets
 
 

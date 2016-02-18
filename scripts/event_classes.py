@@ -214,6 +214,30 @@ class K2C9Event():
         if key in dir( self ):
             setattr(self, key, params[ name_key ] )
     
+    def get_event_name( self ):
+        """Return the survey-allocated name of an event"""
+        
+        if self.ogle_name != None:
+            return self.ogle_name
+        elif self.moa_name != None:
+            return self.moa_name
+        elif self.kmt_name != None:
+            return self.kmt_name
+        else:
+            return None
+    
+    def get_event_origin( self ):
+        """Return the originating survey name in lower case"""
+        
+        if self.ogle_name != None:
+            return 'ogle'
+        elif self.moa_name != None:
+            return 'moa'
+        elif self.kmt_name != None:
+            return 'kmt'
+        else:
+            return None
+    
     def summary( self, key_list ):
         """Method to print a customizible summary of the information on
         a given K2C9Event instance, given a list of keys to output.

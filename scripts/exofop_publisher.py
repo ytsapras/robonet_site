@@ -23,6 +23,9 @@ import numpy as np
 import utilities
 import k2_footprint_class
 import event_classes
+import log_utilities
+import logging
+from commands import getstatusoutput
 
 def exofop_publisher():
     """
@@ -30,15 +33,21 @@ def exofop_publisher():
     """
     
     config = config_parser.read_config( '../configs/exofop_publish.xml' )
-    print ' -> Read configuration'
     
-    init = lock( config, state='create' )    
+    log = log_utilities.start_day_log( config, __name__ )
+    log.info( 'Read script configuration\n' )
+    
+    # Remove the READY file from the transfer machine to stop IPAC 
+    # transfering data while the script is running. 
+    ready_file( config, 'remove' )
+    log.info( 'Removed the transfer READY file' )
     
     # Read back the master list of all events known to date:
     known_events = get_known_events( config )
-    print ' -> Read list of known events'
+    n_events = len(known_events['master_index'])
+    log.info( 'Read list of ' + str( n_events ) + ' known events' )
     
-    # Instantiate a K2 footprint object:
+    # Read in the information on the K2 campaign:
     k2_campaign = k2_footprint_class.K2Footprint( config['k2_campaign'], \
                                                     config['k2_year'] )
     
@@ -47,19 +56,24 @@ def exofop_publisher():
     # all these providers and compare to ensure the list is up to date.  
     # Produce master event dictionary events, but only include
     # those events found within the K2C9 superstamp.
+    log.info('Loading ARTEMiS event data')
     artemis_events = load_artemis_event_data( config )
-    print ' -> Loaded ARTEMiS event data'
+    log.info(' -> ' + str(len(artemis_events)) + ' events from ARTEMiS')
+    log.info('Loading survey event data')
     survey_events = load_survey_event_data( config )
-    print ' -> Loaded survey event data'
+    log.info(' -> ' + str(len(survey_events)) + ' events from surveys')
     
     # Select those events which are in the K2 footprint
     # Combine all available data on them
-    print ' -> Combining data on all known events'
+    log.info('Combining data on all known events')
     known_events = \
             combine_K2C9_event_feed( known_events, artemis_events, \
                                                survey_events )
+    n_events = len(known_events['master_index'])
+    log.info(' -> total of ' + str(n_events) + ' events')
     
     # Identify which events are within the K2 campaign footprint & dates:
+    log.info('Identifying events within the K2 Campaign')
     events = known_events['master_index']
     events = k2_campaign.targets_in_footprint( events, verbose=True )
     if config['k2_campaign'] == str(9):    
@@ -74,7 +88,7 @@ def exofop_publisher():
     # Now output the combined information stream in the format agreed on for 
     # the ExoFOP transfer
     generate_exofop_output( config, known_events )
-    print ' -> Output data for ExoFOP transfer'
+    log.info('Output data for ExoFOP transfer')
     
     # Update the master list of known events, and those within the K2C9 footprint:
     update_known_events( config, known_events )
@@ -82,8 +96,8 @@ def exofop_publisher():
     # Sync data for transfer to IPAC with transfer location:
     #sync_data_for_transfer( config )  
     
-    init = lock( config, state='remove' ) 
-
+    log_utilities.end_day_log()
+    
 ###############################################################################
 # SERVICE FUNCTIONS
 def lock( config, state=None ):
@@ -95,8 +109,8 @@ def lock( config, state=None ):
         return 0
     elif state == 'create':
         fileobj = open( lock_file, 'w' )
-        ts = datetime.utcnow()
-        fileobj.write( ts.strftime("%Y-%m-%dT%H:%M:%S")+'\n' )
+        ts = Time.now()
+        fileobj.write( ts.isot + '\n' )
         fileobj.close()
         return 0
     elif state == 'remove':
@@ -114,6 +128,18 @@ def get_known_events( config ):
     them must be a valid, long-hand format name.
     """
     
+    def parse_boolean( value ):
+        """Entries may be Boolean or Unknown"""
+        
+        if str( value ).lower() == 'unknown':
+            return value
+        elif 'true' in str( value ).lower():
+            return True
+        elif 'false' in str( value ).lower():
+            return False
+        else:
+            return 'Unknown'
+            
     events_file = path.join( config['log_directory'], \
             config['master_events_list'] )
     
@@ -122,7 +148,8 @@ def get_known_events( config ):
         exit()
         
     file_lines = open( events_file, 'r' ).readlines()
-    
+    key_list = [ 'identifier', 'ogle_name', 'moa_name', \
+                'in_footprint', 'in_superstamp', 'during_campaign' ]
     known_events= {'identifiers': {}, \
                    'master_index': {},\
                    'ogle': {}, \
@@ -136,17 +163,17 @@ def get_known_events( config ):
             event = event_classes.K2C9Event()
             event.master_index = int(entries[0])
             event.identifier = entries[1]
-            event.in_footprint = bool(entries[2])
-            event.in_superstamp = bool(entries[3])
-            event.during_campaign = bool(entries[4])
-            if entries[5] != 'None':
-                event.ogle_name = repr( entries[5] )
+            event.in_footprint = parse_boolean(entries[2])
+            event.in_superstamp = parse_boolean(entries[3])
+            event.during_campaign = parse_boolean(entries[4])
+            if str(entries[5]).lower() != 'none':
+                event.ogle_name = str( entries[5] )
                 known_events['ogle'][event.ogle_name] = event.master_index
-            if entries[6] != 'None':
-                event.moa_name = repr( entries[6] )
+            if str(entries[6]).lower() != 'none':
+                event.moa_name = str( entries[6] )
                 known_events['moa'][event.moa_name] = event.master_index
-            if entries[7] != 'None':
-                event.kmt_name = repr( entries[7] )
+            if str(entries[7]).lower() != 'none':
+                event.kmt_name = str( entries[7] )
                 known_events['kmt'][event.kmt_name] = event.master_index
             known_events['identifiers'][event.master_index] = event.identifier
             known_events['master_index'][event.master_index] = event
@@ -157,7 +184,7 @@ def get_known_events( config ):
                 else:
                     if idx > known_events['max_index']:
                         known_events['max_index'] = idx
-                    
+    
     return known_events
 
 def update_known_events( config, known_events ):
@@ -359,25 +386,36 @@ def combine_K2C9_event_feed( known_events, artemis_events, survey_events ):
             
     # Now review all events reported by the survey as a double-check
     # that ARTMEMiS isn't out of sync:
-    for event_id, event in survey_events.items():
+    for event_name, event in survey_events.items():
         
-        # Does this event already have a K2C9 identifier?:
-        origin = str(event_id.split('-')[0]).lower()
-        #print origin, event_id
-        if event_id in known_events[origin].keys():
-            event.master_index = known_events[origin][event_id]
+        # Extract event master_index from the listing of events
+        # from this survey:
+        origin = str(event_name.split('-')[0]).lower()
+        if event_name in known_events[origin].keys():
+            event.master_index = known_events[origin][event_name]
+            #print 'Found event in '+origin+' list, index '+str(event.master_index)
+            
+            # Check to see if it has a K2 index:
             if event.master_index in known_events['identifiers'].keys():
                 event.identifier = known_events['identifiers'][event.master_index]
+                #print 'Event identifier = ',event.identifier
+            
+            # Transfer ALL XXX the survey parameters:
+            params = event.get_params()
+            params = set_key_names( params, prefix_keys, origin )
+            event.set_params( params )
+            
         else:
+            #print 'Event not in '+origin+' list'
             # Generate a new master_index and add to the known_events index:
             event.master_index = len(known_events['master_index'])
+            #print 'Assigned new master index ',event.master_index
             known_events['master_index'][event.master_index] = event
-            known_events[origin][event_id] = event.master_index
-            
+            known_events[origin][event_name] = event.master_index
+            #print 'Stored event in known_events'
         
         if event.master_index not in known_events.keys():
             known_events[ event.master_index ] = event
-        
         
     return known_events
             
@@ -444,6 +482,22 @@ def generate_exofop_output( config, known_events ):
     manifest.write( 'MANIFEST\n' )
     manifest.close()
 
+def ready_file( config, status ):
+    """Function to remove the READY file that indicates the data are
+    ready for transfer to IPAC.
+    Status can be either create or remove    
+    """
+    
+    ready_path = path.join( config['transfer_location'], 'READY' )
+    
+    if status == 'create':
+        op = 'touch'
+    elif status == 'remove':
+        op = '\\rm'
+    
+    c = 'ssh -X ' + str( config['transfer_user'] ) + ' ' + op + ' ' + ready_path
+    (iexec, coutput) = getstatusoutput( c )
+    
 def sync_data_for_transfer( config ):
     """Function to scp data to the location from which it will be pulled by
     IPAC. """
@@ -457,11 +511,9 @@ def sync_data_for_transfer( config ):
         (iexec, coutput) = getstatusoutput( c )
         print coutput
     
-    # Firstly, send the lock_file to let IPAC know all transfers should be
-    # suspended until its removed:
-    lock_file = 'exofop_lock' 
-    lock = path.join( config['log_directory'], lock_file )
-    rsync_file( lock )
+    # Firstly, ensure any existing READY file has been removed to let
+    # IPAC know all transfers should be suspended until its removed:
+    ready_file( config, 'remove' )
     
     # Read and parse the manifest file to get a list of the files to be
     # transfered:
@@ -474,11 +526,8 @@ def sync_data_for_transfer( config ):
         if path.isfile( file_path ) == True:
             rsync_file( file_path )
     
-    # Remove the lock:
-    c = 'ssh -X ' + str( config['transfer_user'] ) + ' \rm ' + \
-        path.join( config['transfer_location'], lock_file )
-    (iexec, coutput) = getstatusoutput( c )
-    print coutput
+    # Set the READY FILE:
+    ready_file( config, 'create' )
     
 ###############################################################################
 # COMMANDLINE RUN SECTION
