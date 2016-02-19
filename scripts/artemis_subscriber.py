@@ -100,21 +100,22 @@ def sync_artemis_data_db(config,data_type):
         
             # Now submit the updated model parameters as a new model object:
             status = update_db.single_lens_par( event_params['long_name'],
-                                                            event_params['t0'],
-                                                            event_params['sig_t0'],
-                                                            event_params['tE'],
-                                                            event_params['sig_tE'],
-                                                            event_params['u0'],
-                                                            event_params['sig_u0'],
-                                                            event_params['last_modified'] )
+                                                event_params['t0'],
+                                                event_params['sig_t0'],
+                                                event_params['tE'],
+                                                event_params['sig_tE'],
+                                                event_params['u0'],
+                                                event_params['sig_u0'],
+                                                event_params['last_modified'] )
 
     # Log the update in the script log:
 
 ###########################
 # RSYNC FUNCTION
 def rsync_data_log(config,data_type):
-    '''Function to rsync data using authentication from file and log the output to a text file.
-    '''
+    """Function to rsync data using authentication from file and log the 
+    output to a text file.
+    """
 
     # Construct config parameter keys to extract data locations and appropriate log file name:
     remote_location = config_pars[data_type]['remote_location']

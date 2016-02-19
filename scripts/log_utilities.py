@@ -12,6 +12,7 @@ Created on Wed Feb 17 00:00:05 2016
 import logging
 from os import path
 from astropy.time import Time
+import glob
 
 def start_day_log( config, log_name ):
     """Function to initialize a new log file.  The naming convention for the
@@ -27,6 +28,10 @@ def start_day_log( config, log_name ):
     
     log_file = path.join( config['log_directory'], \
                     config['log_root_name'] + '_' + ts + '.log' )
+
+    # Look for previous logs and rollover the date if the latest log
+    # isn't from the curent date:
+
 
     # To capture the logging stream from the whole script, create
     # a log instance together with a console handler.  
@@ -52,10 +57,10 @@ def start_day_log( config, log_name ):
     log.info( '\n------------------------------------------------------\n')
     return log
     
-def end_day_log( self ):
+def end_day_log( log ):
     """Function to cleanly shutdown logging functions with last timestamped
     entry"""
     
-    self.logger.info( 'Processing complete\n' )
-    self.logger.shutdown()
+    log.info( 'Processing complete\n' )
+    logging.shutdown()
 

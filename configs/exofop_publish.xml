@@ -7,24 +7,24 @@
     </parameter>
     
     <parameter name='models_local_location'>
-       <!--<value>/science/robonet/rob/Operations/Signalmen_output/model</value>-->
-       <value>/Users/rstreet/RoboNet/Sandbox/models</value>
+       <value>/science/robonet/rob/Operations/Signalmen_output/model</value>
+       <!--<value>/Users/rstreet/RoboNet/Sandbox/models</value>-->
     </parameter>
     
     <parameter name='pubpars_local_location'>
-        <!--<value>/science/robonet/rob/Operations/Signalmen_output/PublishedParameters</value>-->
-        <value>/Users/rstreet/RoboNet/Sandbox/PublishedParameters</value>
+        <value>/science/robonet/rob/Operations/Signalmen_output/PublishedParameters</value>
+       <!-- <value>/Users/rstreet/RoboNet/Sandbox/PublishedParameters</value>-->
     </parameter>
     
     <parameter name='artemis_data_local_location'>
-        <!--<value>/science/robonet/rob/Operations/Signalmen_output/data</value>-->
-        <value>/Users/rstreet/RoboNet/Sandbox/data</value>
+        <value>/science/robonet/rob/Operations/Signalmen_output/data</value>
+        <!--<value>/Users/rstreet/RoboNet/Sandbox/data</value>-->
     </parameter>
     
     
     <parameter name='ogle_data_local_location'>
-        <!-- <value>/science/robonet/rob/Operations/SurveyData/OGLE</value> -->
-        <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/OGLE</value>
+        <value>/science/robonet/rob/Operations/SurveyData/OGLE</value>
+        <!-- <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/OGLE</value> -->
     </parameter>
     <parameter name='ogle_time_stamp_file'>
         <value>last.changed</value>
@@ -35,10 +35,13 @@
     <parameter name='ogle_updated_file'>
         <value>last.updated</value>
     </parameter>
+    <parameter name='ogle_root_url'>
+    	<value>http://ogle.astrouw.edu.pl/ogle4/ews/</value>
+    </parameter>
     
     <parameter name='moa_data_local_location'>
-        <!-- <value>/science/robonet/rob/Operations/SurveyData/MOA</value> -->
-        <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/MOA</value>
+        <value>/science/robonet/rob/Operations/SurveyData/MOA</value>
+        <!-- <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/MOA</value> -->
     </parameter>
     <parameter name='moa_time_stamp_file'>
         <value>last.changed</value>
@@ -49,16 +52,22 @@
     <parameter name='moa_updated_file'>
         <value>last.updated</value>
     </parameter>
-
+    <parameter name='moa_root_url'>
+    	<value>https://it019909.massey.ac.nz/moa/alert'</value>
+    </parameter>
     
     <parameter name='auth'>
-        <!--<value>/home/rstreet/.artemis-rsync</value>-->
-        <value>/Users/rstreet/RoboNet/Sandbox/.artemis-rsync</value>
+        <value>/home/rstreet/.artemis-rsync</value>
+        <!--<value>/Users/rstreet/RoboNet/Sandbox/.artemis-rsync</value>-->
     </parameter>
     
     <parameter name='log_directory'>
-        <!--<value>/science/robonet/rob/Operations/ExoFOP</value>-->
-        <value>/Users/rstreet/RoboNet/ExoFOP</value>
+        <value>/science/robonet/rob/Operations/ExoFOP</value>
+        <!--<value>/Users/rstreet/RoboNet/ExoFOP</value>-->
+    </parameter>
+    
+    <parameter name='log_root_name'>
+    	<value>exofop_publisher</value>
     </parameter>
     
     <parameter name='k2_campaign'>
@@ -70,7 +79,7 @@
     </parameter>
 
     
-    <parameter name='events_list'>
+    <parameter name='master_events_list'>
         <value>master_events_list</value>
     </parameter>
     
@@ -90,5 +99,14 @@
     <parameter name='data_log_root_name'>
         <value>phot_data</value>
     </parameter>
+    
+    <parameter name='transfer_user'>
+    	<value>ipac@sci-archive-2.lco.gtn</value>
+    </parameter>
+    
+    <parameter name='transfer_location'>
+    	<value>/data/archive/webfiles/IPAC/microlensing/</value>
+    </parameter>
+    
 
 </exofop_config>

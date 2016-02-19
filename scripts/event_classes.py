@@ -46,9 +46,9 @@ class Lens():
         """Method to return the parameters of the current event in a 
         dictionary format
         """
-        
+        key_list = [ 'name', 'ra', 'dec', 't0', 'te', 'u0', 'a0', 'i0', 'origin']
         params = {}
-        for key in dir( self ):
+        for key in key_list:
             params[ key ] = getattr( self, key )
         return params
         
@@ -89,7 +89,7 @@ class K2C9Event():
         self.identifier = None
         self.master_index = None
         self.status = 'NEW'
-        self.recommended_status = 'NEW'
+        self.recommended_status = None
         self.ogle_name = None
         self.ogle_ra = None 
         self.ogle_dec = None
@@ -277,7 +277,9 @@ class K2C9Event():
                          'in_footprint',\
                          'during_campaign',\
                          'get_location',\
-                         'master_index',
+                         'master_index',\
+                         'check_in_k2', 'get_event_name', 'get_event_origin',\
+                         'alertable'
                          ]
         for key in exclude_keys:
             if key in key_list or '__' in key:

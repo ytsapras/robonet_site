@@ -113,33 +113,13 @@ def get_moa_parameters(config):
     # Download the website with MOA alerts, which contains the last updated date.
     # Note that although the URL prefix has to be https, this isn't actually a secure page
     # so no login is required.
+    # Note that we draw information for each event from BOTH the HTML alerts
+    # table AND the machine-readable index.html file.  This is to avoid a bug
+    # where MOA produce different target coordinates in each place.  Those in 
+    # the HTML alerts table are correct. 
     ts = Time.now()
     for year in years: 
         
-        # For the last year only, fetch the last-updated timestamp:
-        if year == years[-1]:
-            url = 'https://it019909.massey.ac.nz/moa/alert' + year + '/alert.html'
-            (alerts_page_data,msg) = utilities.get_http_page(url)
-
-            # The last updated timestamp is one of the last lines in this file:
-            alerts_page_data = alerts_page_data.split('\n')
-            i = len(alerts_page_data) - 1
-            while i >= 0:
-                if 'last updated' in alerts_page_data[i]:
-                    t = alerts_page_data[i].split(' ')[-2]
-                    last_changed = datetime.strptime(t.split('.')[0],'%Y-%m-%dT%H:%M:%S')
-                    i = -1
-                    i = i - 1
-            ts_file_path = path.join( config['moa_data_local_location'], \
-                                config['moa_time_stamp_file'] )
-            fileobj = open( ts_file_path, 'w' )
-            fileobj.write( t + '\n' )
-            fileobj.close()
-            verbose(config,'--> Last updated at: '+t)
-            moa_data.last_changed = \
-                survey_data_utilities.time_stamp_file( ts_file_path, \
-                                                "%Y-%m-%dT%H:%M:%S" )
-
         # Download the index of events:
         url = 'https://it019909.massey.ac.nz/moa/alert' + year + '/index.dat'
         (events_index_data,msg) = utilities.get_http_page(url)
@@ -153,7 +133,8 @@ def get_moa_parameters(config):
                 if ':' in ra_deg or ':' in dec_deg: 
                     (ra_deg, dec_deg) = utilities.sex2decdeg(ra_deg,dec_deg)
                 event = event_classes.Lens()
-                event.set_par('name','MOA-' + event_id)
+                event_name = 'MOA-' + event_id
+                event.set_par('name',event_name)
                 event.set_par('ra',ra_deg)
                 event.set_par('dec',dec_deg)
                 event.set_par('t0',t0_hjd)
@@ -161,7 +142,45 @@ def get_moa_parameters(config):
                 event.set_par('i0',I0)
                 event.set_par('a0',A0)
                 event.origin = 'MOA'
-                moa_data.lenses[event_id] = event
+                moa_data.lenses[event_name] = event
+    
+        # For the last year only, fetch the last-updated timestamp:
+        url = 'https://it019909.massey.ac.nz/moa/alert' + year + '/alert.html'
+        (alerts_page_data,msg) = utilities.get_http_page(url)
+        alerts_page_data = alerts_page_data.split('\n')
+        
+        for entry in alerts_page_data:
+            line = entry.lstrip()
+            if line[0:2] == '20':
+                name = 'MOA-' + line[0:12]
+                ra = line[12:23]
+                dec = line[23:35]
+                
+                if ':' in ra or ':' in dec: 
+                    (ra_deg, dec_deg) = utilities.sex2decdeg(ra,dec)
+                    
+                if name in moa_data.lenses.keys():
+                    lens = moa_data.lenses[name]
+                    lens.ra = ra_deg
+                    lens.dec = dec_deg
+                    moa_data.lenses[name] = lens
+                    
+            # The last updated timestamp is one of the last lines in this file.
+            # Store this, if the year queried is the most recent one:
+            if year == years[-1]:
+                if 'last updated' in line:
+                    t = line.split(' ')[-2]
+                    last_changed = datetime.strptime(t.split('.')[0],'%Y-%m-%dT%H:%M:%S')
+                    ts_file_path = path.join( config['moa_data_local_location'], \
+                                config['moa_time_stamp_file'] )
+                    fileobj = open( ts_file_path, 'w' )
+                    fileobj.write( t + '\n' )
+                    fileobj.close()
+                    verbose(config,'--> Last updated at: '+t)
+                    moa_data.last_changed = \
+                        survey_data_utilities.time_stamp_file( ts_file_path, \
+                                                "%Y-%m-%dT%H:%M:%S" )
+
     verbose(config,'--> Downloaded index of ' + str(len(moa_data.lenses)) + \
                         ' events')
                         

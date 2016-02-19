@@ -11,8 +11,8 @@
     </parameter>
     
     <parameter name='ogle_data_local_location'>
-        <!-- <value>/science/robonet/rob/Operations/SurveyData/OGLE</value> -->
-        <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/OGLE</value>
+        <value>/science/robonet/rob/Operations/SurveyData/OGLE</value>
+        <!--<value>/Users/rstreet/RoboNet/Sandbox/SurveyData/OGLE</value> -->
     </parameter>
     <parameter name='ogle_time_stamp_file'>
         <value>last.changed</value>
@@ -29,8 +29,8 @@
     </parameter>
     
     <parameter name='moa_data_local_location'>
-        <!-- <value>/science/robonet/rob/Operations/SurveyData/MOA</value> -->
-        <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/MOA</value>
+        <value>/science/robonet/rob/Operations/SurveyData/MOA</value>
+        <!-- <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/MOA</value> -->
     </parameter>
     <parameter name='moa_time_stamp_file'>
         <value>last.changed</value>
@@ -43,13 +43,13 @@
     </parameter>
     
     <parameter name='kmtnet_data_local_location'>
-        <!-- <value>/science/robonet/rob/Operations/SurveyData/KMTNet</value> -->
-        <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/KMTNet</value>
+        <value>/science/robonet/rob/Operations/SurveyData/KMTNet</value>
+        <!-- <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/KMTNet</value> -->
     </parameter>
     
     <parameter name='log_directory'>
-        <!-- <value>/science/robonet/rob/Operations/Signalmen_output/Rsynclog</value> -->
-        <value>/Users/rstreet/RoboNet/Sandbox/</value>
+        <value>/science/robonet/rob/Operations/Signalmen_output/Rsynclog</value>
+        <!-- <value>/Users/rstreet/RoboNet/Sandbox/</value> -->
     </parameter>
     
     <parameter name='models_log_root_name'>

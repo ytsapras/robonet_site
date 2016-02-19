@@ -199,7 +199,18 @@ def sexig2dec(CoordStr):
     # Return with the decimal float:
     return Decimal
 
+def d2r( angle_deg ):
+    """Function to convert an angle in degrees to radians"""
+    
+    angle_rad = ( np.pi * angle_deg ) / 180.0
+    return angle_rad
 
+def r2d( angle_rad ):
+    """Function to convert an angle in radians to degrees"""
+    
+    angle_deg = ( 180.0 * angle_rad ) / np.pi
+    return angle_deg
+    
 def separation_two_points(pointA,pointB):
     """Function to calculate the separation between two points on the sky, A and B. 
     Input are tuples of (RA, Dec) for each point in decimal degrees.
@@ -207,13 +218,20 @@ def separation_two_points(pointA,pointB):
     This function uses the full formula for angular separation, and should be applicable
     at arbitrarily large distances."""
     
-    #from numpy import cos, sin, arccos
+    # Convert to radians because numpy requires them:
+    pA = ( d2r(pointA[0]), d2r(pointA[1]) )
+    pB = ( d2r(pointB[0]), d2r(pointB[1]) )
     
-    d1 = 90.0 - pointA[1]
-    d2 = 90.0 - pointB[1]
-    dra = pointA[0] - pointB[0]
+    half_pi = np.pi/2.0
+    
+    d1 = half_pi - pA[1]
+    d2 = half_pi - pB[1]
+    dra = pA[0] - pB[0]
     
     cos_gamma = ( np.cos(d1) * np.cos(d2) ) + \
                         ( np.sin(d1) * np.sin(d2) * np.cos(dra) )
     gamma = np.arccos(cos_gamma)
+    
+    gamma = r2d( gamma )
+    
     return gamma

@@ -126,7 +126,7 @@ class K2Footprint():
  
         return targets
 
-    def targets_in_superstamp( self, targets, verbose=False ):
+    def targets_in_superstamp( self, targets, log=None, verbose=False, debug=False ):
         """Method to check whether the targets are within the K2C9 superstamp.
         Requires targets_in_footprint to have been run already.
         Depends:
@@ -156,35 +156,43 @@ class K2Footprint():
         for i,target_id in enumerate( targets ):
             target = targets[ target_id ]
             
-            print 'SCHK start: ',targets[ target_id ].summary( ['in_superstamp', 'in_footprint', 'during_campaign'] )
+            if debug==True: 
+                (ra, dec) = target.get_location()
+                print 'SCHK start: ',ra, dec,\
+                targets[ target_id ].summary( ['master_index','in_superstamp', 'in_footprint', 'during_campaign'] )
             if target.in_superstamp == True:
-                print 'Target already known to be in superstamp'
+                if debug==True: print 'Target already known to be in superstamp'
             
             elif target.in_footprint == 'Unknown' and \
                     target.in_superstamp == 'Unknown':
-                print 'Target location relative to footprint unknown, checking location with superstamp'
+                if debug==True: 
+                    print 'Target location relative to footprint unknown, checking location with superstamp'
                 target.in_superstamp = check_in_superstamp( target )
-                print '-> check result ',check_in_superstamp( target )
+                if debug==True: 
+                    print '-> check result ',check_in_superstamp( target )
             elif target.in_footprint == True and \
                     target.in_superstamp == 'Unknown':
-                print 'Target within footprint, checking location with superstamp'
+                if debug==True: 
+                    print 'Target within footprint, checking location with superstamp'
                 target.in_superstamp = check_in_superstamp( target )
-                print '-> check result ',check_in_superstamp( target )
-                
+                if debug==True: 
+                    print '-> check result ',check_in_superstamp( target )
+
             elif target.in_footprint == False:
                 target.in_superstamp = False
-                print 'Target outside footprint'
+                if debug==True: print 'Target outside footprint'
                 
             else:
-                print 'Target in footprint unknown?'
+                if debug==True: print 'Target in footprint unknown?'
                 
                 if target.in_superstamp == 'Unknown' \
                     and target.in_footprint == False:
-                    print 'MISSED CHECK!'
+                    if debug == True: print 'MISSED CHECK!'
                 target.in_superstamp = False
                 
             targets[ target_id ] = target
-            print 'SCHK: ',targets[ target_id ].summary( ['in_superstamp', 'in_footprint', 'during_campaign'] )
+            if debug==True: 
+                print 'SCHK: ',targets[ target_id ].summary( ['in_superstamp', 'in_footprint', 'during_campaign'] )
             
             if verbose==True and (i%50) == 0:
                 print '  - completed ' + str(i) + ' out of ' + str( ntargets )
@@ -212,9 +220,10 @@ class K2Footprint():
         
         if verbose == True:
             print '  -> Checking whether events occur within campaign duration'
+
         for target_id in targets.keys():
             target = targets[ target_id ]
-	       
+            
             origin = target.get_event_origin()
             
             # Check whether the event is detectable during the Campaign, 
@@ -222,8 +231,8 @@ class K2Footprint():
             # multiple start and end dates. 
             campaign_start = self.campaign_dates[0][0]
             campaign_end = self.campaign_dates[-1][-1]
-            t0 = target.get_par( origin+'_t0' )
-            tE = target.get_par( origin+'_te' )
+            t0 = target.get_par( 't0' )
+            tE = target.get_par( 'te' )
             try:
                 if ( t0 - 2.0*tE ) < campaign_end and \
                     ( t0 + 2.0*tE ) > campaign_start:
@@ -242,8 +251,9 @@ class K2Footprint():
                         target.alertable = False
                     
                     
-            except:
-                print 'Missing params: ',target.summary( ['te','t0'] )
+            except TypeError:
+                print 'Missing params: ',t0,tE,\
+                        target.summary( ['ogle_te','ogle_t0'] ), target_id
                 target.during_campaign = False
 
             targets[ target_id ] = target

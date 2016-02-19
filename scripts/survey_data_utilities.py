@@ -53,9 +53,9 @@ def read_ogle_param_files( config ):
             event.set_par('i0',I0)
             event.origin = 'OGLE'
             ogle_data.lenses[event_id] = event
-
+                
     ogle_data.last_updated = read_update_file( updated_file_path )
-
+    
     return ogle_data
 
 def read_moa_param_files( config ):
@@ -78,7 +78,11 @@ def read_moa_param_files( config ):
     for line in file_lines[2:]:
         if line.lstrip()[0:1] != '#': 
             (event_id, ra, dec, t0_hjd, tE, u0, A0, I0) = line.split()
-            (ra_deg, dec_deg) = utilities.sex2decdeg(ra,dec)
+            if ':' in ra or ':' in dec:            
+                (ra_deg, dec_deg) = utilities.sex2decdeg(ra,dec)
+            else:
+                ra_deg = float(ra)
+                dec_deg = float(dec)
             event = event_classes.Lens()
             event.set_par('name',event_id)
             event.set_par('ra',ra_deg)
@@ -90,6 +94,8 @@ def read_moa_param_files( config ):
             event.set_par('i0',I0)
             event.origin = 'MOA'
             moa_data.lenses[event_id] = event
+            if event_id == 'MOA-2015-BLG-359':
+                print 'Read in: ',event.ra, event.dec
     
     moa_data.last_updated = read_update_file( updated_file_path )
     
