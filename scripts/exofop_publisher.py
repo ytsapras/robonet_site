@@ -78,7 +78,7 @@ def exofop_publisher():
     events = known_events['master_index']
     events = k2_campaign.targets_in_footprint( events, verbose=True )
     if config['k2_campaign'] == str(9):    
-        events = k2_campaign.targets_in_superstamp( events, verbose=True, debug=True )
+        events = k2_campaign.targets_in_superstamp( events, verbose=True )
     events = k2_campaign.targets_in_campaign( events, verbose=True )
     known_events['master_index']= events
     
@@ -95,7 +95,7 @@ def exofop_publisher():
     update_known_events( config, known_events )
     
     # Sync data for transfer to IPAC with transfer location:
-    #sync_data_for_transfer( config )  
+    sync_data_for_transfer( config )  
     
     log_utilities.end_day_log( log )
     
@@ -293,8 +293,6 @@ def load_survey_event_data( config, log ):
     # Now work through MOA events, adding them to the dictionary:
     for moa_id, lens in moa_data.lenses.items():
         coords1 = ( lens.ra, lens.dec )
-        if moa_id == 'MOA-2015-BLG-359':
-            print 'Got MOA event ',lens.summary()
             
         # If this event matches one already in the dictionary, 
         # add the MOA parameters to the K2C9Event instance:
@@ -305,14 +303,8 @@ def load_survey_event_data( config, log ):
             coords2 = ( ogle_event.ogle_ra, ogle_event.ogle_dec )
             match = match_events_by_position( coords1, coords2 )
             if match == True:
-                if moa_id == 'MOA-2015-BLG-359':
-                    print 'Matched with ',ogle_event.ogle_id
                 moa_lens_params = lens.get_params()
-                if moa_id == 'MOA-2015-BLG-359':
-                    print 'MOA parameters: ',moa_lens_params
                 ogle_event.set_params( moa_lens_params )
-                if moa_id == 'MOA-2015-BLG-359':
-                    print 'Set parameters: ',ogle_event.moa_ra, ogle_event.moa_dec
                 survey_events[ ogle_id_list[i] ] = ogle_event
                 survey_events[ moa_lens_params['name'] ] = ogle_event
             
@@ -321,17 +313,11 @@ def load_survey_event_data( config, log ):
         # If no match to an existing OGLE event is found, add this
         # event to the dictionary as a MOA event. 
         if match == False:
-            if moa_id == 'MOA-2015-BLG-359':
-                print 'No match found'
             event = event_classes.K2C9Event()
             moa_params = lens.get_params()
-            if moa_id == 'MOA-2015-BLG-359':
-                print 'MOA parameters: ',moa_lens_params
             moa_params = set_key_names( moa_params, prefix_keys, 'moa' )
             event.set_event_name( moa_params )
             event.set_params( moa_params )
-            if moa_id == 'MOA-2015-BLG-359':
-                    print 'Set parameters: ',event.moa_ra, event.moa_dec
             survey_events[ event.moa_name ] = event
 
     
@@ -538,7 +524,7 @@ def sync_data_for_transfer( config ):
             str( config['transfer_user'] ) + ':' + \
                 str( config['transfer_location'] )
         (iexec, coutput) = getstatusoutput( c )
-        print coutput
+        #print coutput
     
     # Firstly, ensure any existing READY file has been removed to let
     # IPAC know all transfers should be suspended until its removed:
@@ -551,9 +537,10 @@ def sync_data_for_transfer( config ):
     
     # Rsync everything in the Manifest:
     for f in file_list:
-        file_path = path.join( config['log_directory'], f )
+        file_path = path.join( config['log_directory'], f.replace('\n','') )
+        #print ' -> Syncing file ' + file_path
         if path.isfile( file_path ) == True:
-            rsync_file( file_path )
+            rsync_file( config, file_path )
     
     # Set the READY FILE:
     ready_file( config, 'create' )
