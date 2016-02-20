@@ -64,8 +64,6 @@ def exofop_publisher():
     survey_events = load_survey_event_data( config, log )
     log.info(' -> ' + str(len(survey_events)) + ' events from surveys')
 
-    print survey_events['MOA-2015-BLG-359'].summary( ['moa_ra', 'moa_dec'])
-    
     # Select those events which are in the K2 footprint
     # Combine all available data on them
     log.info('Combining data on all known events')
@@ -75,15 +73,10 @@ def exofop_publisher():
     n_events = len(known_events['master_index'])
     log.info(' -> total of ' + str(n_events) + ' events')  
 
-    print 'KNOWN: ',known_events['master_index'][48].summary( ['moa_ra, moa_dec'] )
-    print known_events['master_index'][48].moa_ra, known_events['master_index'][48].moa_dec
-    exit()
-    
     # Identify which events are within the K2 campaign footprint & dates:
     log.info('Identifying events within the K2 Campaign')
     events = known_events['master_index']
     events = k2_campaign.targets_in_footprint( events, verbose=True )
-    print 'Footprint: ',events[48].summary( ['moa_ra, moa_dec'] )
     if config['k2_campaign'] == str(9):    
         events = k2_campaign.targets_in_superstamp( events, verbose=True, debug=True )
     events = k2_campaign.targets_in_campaign( events, verbose=True )
@@ -190,7 +183,7 @@ def get_known_events( config ):
                 event.recommended_status = str(entries[8]).upper()
                 event.status = 'UPDATED'
                 
-                known_events['ogle'][event.ogle_name] = event.master_index
+                known_events[origin][event_name] = event.master_index
                 known_events['identifiers'][event.master_index] = event.identifier
                 known_events['master_index'][event.master_index] = event
                 if str(event.identifier).lower() != 'none':
@@ -430,7 +423,7 @@ def combine_K2C9_event_feed( known_events, artemis_events, survey_events ):
     for event_name, event in survey_events.items():
         
         origin = str(event_name.split('-')[0]).lower()
-            
+        
         # Previously known events (K2C9Events):
         if event_name in known_events[origin].keys():
             event.master_index = known_events[origin][event_name]
@@ -448,7 +441,8 @@ def combine_K2C9_event_feed( known_events, artemis_events, survey_events ):
             # Generate a new master_index and add to the known_events index:
             event.master_index = len(known_events['master_index'])
             event.status = 'NEW'
-        
+            known_events[origin][event_name] = event.master_index
+            
         # Always update the known_events with the most up to date event data
         known_events['master_index'][ event.master_index ] = event
         
