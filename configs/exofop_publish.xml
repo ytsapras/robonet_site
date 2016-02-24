@@ -56,7 +56,7 @@
         <value>last.updated</value>
     </parameter>
     <parameter name='moa_root_url'>
-    	<value>https://it019909.massey.ac.nz/moa/alert'</value>
+    	<value>https://it019909.massey.ac.nz/moa/alert</value>
     </parameter>
     
     <parameter name='auth'>

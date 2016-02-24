@@ -78,23 +78,26 @@ def long_to_short_name(long_name):
 
 ###################################
 # FETCH AND PARSE A URL PAGE
-def get_http_page(URL):
+def get_http_page(URL, parse=True):
     '''Function to query the parsed URL which is secured with a user ID and
         password.  Return the text content of the page with the HTML tags removed.
         Also handles common HTML errors.'''
     
     # Initialise:
-    PageText = ''
+    page_text = ''
     msg = ''
     dbg = True
     
     try:
         response = urllib2.urlopen(URL,context=ssl._create_unverified_context())
-        PageText = response.read()
-        #print 'Page',PageText
-        parser = HTML2Text()
-        parser.feed(PageText)
-        page_text = parser.get_text()
+        page_data = response.read()
+        #print 'Page',page_data
+        if parse == True:    
+            parser = HTML2Text()
+            parser.feed(page_data)
+            page_text = parser.get_text()
+        else:
+            page_text = page_data
     except urllib2.HTTPError:
         msg = 'Error opening webpage'
 

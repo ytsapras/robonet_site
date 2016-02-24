@@ -510,11 +510,22 @@ def get_finder_charts( config, known_events ):
                 ftp.cwd(ftp_file_path)
                 file_path = path.join( config['ogle_data_local_location'], \
                                        event.ogle_name + '_fchart.fits' )
-                print file_path
                 ftp.retrbinary('RETR fchart.fts', open( file_path, 'w').write )
                 ftp.quit()
+            
+            elif origin == 'moa':
+                event_year = str(event.moa_name).split('-')[1]
+                event_number = str(event.moa_name).split('-')[-1]
                 
-
+                url = path.join( config['moa_root_url'] + event_year, \
+                        'datab', 'finder-' + event.survey_id + '.fit.gz' )
+                
+                file_path = path.join( config['moa_data_local_location'], \
+                                       event.moa_name + '_fchart.fits' )
+                (page_data,msg) = utilities.get_http_page(url,parse=False)
+                open( file_path, 'w').write(page_data)
+                
+                
 def generate_exofop_output( config, known_events ):
     """Function to output datafiles for all events in the format agreed 
     with ExoFOP
