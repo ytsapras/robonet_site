@@ -16,6 +16,7 @@ class Lens():
 
     def __init__(self):
         self.name = None
+        self.survey_id = None
         self.ra = None
         self.dec = None
         self.t0 = None
@@ -27,7 +28,8 @@ class Lens():
 
     def set_par(self,par,par_value):
 
-        if par in [ 'name' ]: setattr(self,par,par_value)
+        if par in [ 'name', 'survey_id' ]: 
+            setattr(self,par,par_value)
         else: 
             if par_value == None or str(par_value).lower() == 'none':
                 setattr(self,par,par_value)
@@ -35,7 +37,8 @@ class Lens():
                 setattr(self,par,float(par_value))
 
     def summary(self):
-        return self.name + ' ' + str(self.ra) + '  ' + str(self.dec) + '  ' + \
+        return self.name + ' ' + str(self.survey_id) + ' ' + \
+                str(self.ra) + '  ' + str(self.dec) + '  ' + \
                 str(self.t0) + ' ' + str(self.te) + ' ' + str(self.u0) + '  ' +\
                 str(self.a0) + ' ' + str(self.i0)
 

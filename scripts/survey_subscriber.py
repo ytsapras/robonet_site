@@ -135,6 +135,7 @@ def get_moa_parameters(config):
                 event = event_classes.Lens()
                 event_name = 'MOA-' + event_id
                 event.set_par('name',event_name)
+                event.set_par('survey_id',field)
                 event.set_par('ra',ra_deg)
                 event.set_par('dec',dec_deg)
                 event.set_par('t0',t0_hjd)
@@ -190,7 +191,7 @@ def get_moa_parameters(config):
     file_path = path.join( config['moa_data_local_location'], \
                           config['moa_lenses_file'] )
     fileobj = open(file_path,'w')
-    fileobj.write('# Name       RA      Dec     T0       TE      u0      A0    i0\n')
+    fileobj.write('# Name       Field     RA      Dec     T0       TE      u0      A0    i0\n')
     for event_id, event in moa_data.lenses.items():
         fileobj.write( event.summary() + '\n' )
     fileobj.close()

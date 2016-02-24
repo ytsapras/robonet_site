@@ -38,6 +38,9 @@
     <parameter name='ogle_root_url'>
     	<value>http://ogle.astrouw.edu.pl/ogle4/ews/</value>
     </parameter>
+    <parameter name='ogle_ftp_server'>
+        <value>ftp.astrouw.edu.pl</value>
+    </parameter>
     
     <parameter name='moa_data_local_location'>
         <value>/science/robonet/rob/Operations/SurveyData/MOA</value>

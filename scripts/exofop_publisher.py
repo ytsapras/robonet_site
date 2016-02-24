@@ -26,6 +26,7 @@ import event_classes
 import log_utilities
 import logging
 from commands import getstatusoutput
+import ftplib
 
 def exofop_publisher():
     """
@@ -48,6 +49,14 @@ def exofop_publisher():
     n_events = len(known_events['master_index'])
     log.info( 'Read list of ' + str( n_events ) + ' known events' )
     
+    output_target = False
+    if output_target == True:
+        sidx = 1433
+        sid = 'MOA-2015-BLG-102'
+        sorigin = 'moa'
+        key_list = [ 'moa_ra', 'moa_dec', 'moa_t0', 'moa_te' ]
+        log.info( 'KNOWN: ' + known_events['master_index'][sidx].summary(key_list)+'\n' )
+    
     # Read in the information on the K2 campaign:
     k2_campaign = k2_footprint_class.K2Footprint( config['k2_campaign'], \
                                                     config['k2_year'] )
@@ -63,6 +72,9 @@ def exofop_publisher():
     log.info('Loading survey event data')
     survey_events = load_survey_event_data( config, log )
     log.info(' -> ' + str(len(survey_events)) + ' events from surveys')
+    
+    if output_target == True:
+        log.info('SURVEY: '+survey_events[sid].summary(key_list)+'\n')
 
     # Select those events which are in the K2 footprint
     # Combine all available data on them
@@ -73,6 +85,9 @@ def exofop_publisher():
     n_events = len(known_events['master_index'])
     log.info(' -> total of ' + str(n_events) + ' events')  
 
+    if output_target == True:
+        log.info('COMBINED: '+known_events['master_index'][sidx].summary(key_list)+'\n')
+
     # Identify which events are within the K2 campaign footprint & dates:
     log.info('Identifying events within the K2 Campaign')
     events = known_events['master_index']
@@ -82,9 +97,15 @@ def exofop_publisher():
     events = k2_campaign.targets_in_campaign( events, verbose=True )
     known_events['master_index']= events
     
+    if output_target == True:
+        log.info('IDENTIFIED: '+known_events['master_index'][sidx].summary(key_list)+'\n')
+    
     # Assign K2C9 identifiers to any events within the footprint which
     # do not yet have them:
     known_events = assign_identifiers( known_events )    
+    
+    # Extract findercharts for K2C9 objects:
+    
     
     # Now output the combined information stream in the format agreed on for 
     # the ExoFOP transfer
@@ -93,6 +114,11 @@ def exofop_publisher():
     
     # Update the master list of known events, and those within the K2C9 footprint:
     update_known_events( config, known_events )
+    
+    # Plot locations of events:
+    plotname = path.join( config['log_directory'], 'k2_events_map.png' )
+    k2_campaign.plot_footprint( plot_file=plotname, \
+                                targets=known_events['master_index'] )
     
     # Sync data for transfer to IPAC with transfer location:
     sync_data_for_transfer( config )  
@@ -461,6 +487,33 @@ def set_key_names( params, prefix_keys, prefix ):
             output[ key ] = value
     return output
 
+def get_finder_charts( config, known_events ):
+    """Function to retrive the findercharts for known events within the K2
+    footprint"""
+    
+    # Loop through all events, but only extract the finderchart data
+    # for targets within the footprint, since its time consuming:
+    for event_id, event in known_events['master_index'].items():
+        if event.in_footprint  == True and event.during_campaign == True:
+            
+            origin = event.get_event_origin()
+            
+            # URL construction and output depends on the survey:
+            if origin == 'ogle':
+                event_year = str(event.ogle_name).split('-')[1]
+                event_number = str(event.ogle_name).split('-')[-1]
+                
+                ftp = ftplib.FTP( config['ogle_ftp_server'] )
+                ftp.login()
+                ftp_file_path = path.join( 'ogle', 'ogle4', 'ews', \
+                                    event_year, 'blg-'+event_number )
+                ftp.cwd(ftp_file_path)
+                file_path = path.join( config['ogle_data_local_location'], \
+                                       event.ogle_name + '_fchart.fits' )
+                print file_path
+                ftp.retrbinary('RETR fchart.fts', open( file_path, 'w').write )
+                ftp.quit()
+                
 
 def generate_exofop_output( config, known_events ):
     """Function to output datafiles for all events in the format agreed 
