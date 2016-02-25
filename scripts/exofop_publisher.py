@@ -328,13 +328,13 @@ def load_survey_event_data( config, log ):
     # Start by working through OGLE events since this is usually a superset
     # of those detected by the other surveys:
     survey_events = {}
-    prefix_keys = [ 'survey_id', 'a0', 't0', 'sig_t0', 'te', 'sig_te', 'u0', \
+    prefix_keys = [ 'name', 'survey_id', 'a0', 't0', 'sig_t0', 'te', 'sig_te', 'u0', \
                 'sig_u0', 'ra', 'dec', 'i0' ]
     for ogle_id, lens in ogle_data.lenses.items():
         event = event_classes.K2C9Event()
         params = lens.get_params()
         params = set_key_names( params, prefix_keys, 'ogle' )
-        event.set_event_name( params )
+        event.set_event_name( {'name': ogle_id} )
         event.set_params( params )
         survey_events[ event.ogle_name ] = event
             
@@ -353,12 +353,19 @@ def load_survey_event_data( config, log ):
             ogle_event = survey_events[ ogle_id_list[i] ]
             coords2 = ( ogle_event.ogle_ra, ogle_event.ogle_dec )
             match = match_events_by_position( coords1, coords2 )
+
             if match == True:
+                #print 'Matched events: ',ogle_event.ogle_name, lens.name
                 moa_lens_params = lens.get_params()
+                moa_lens_params = set_key_names( moa_lens_params, prefix_keys, 'moa' )
+                #print moa_lens_params
                 ogle_event.set_params( moa_lens_params )
                 survey_events[ ogle_id_list[i] ] = ogle_event
-                survey_events[ moa_lens_params['name'] ] = ogle_event
-            
+                survey_events[ moa_lens_params['moa_name'] ] = ogle_event
+                if ogle_event.ogle_name == 'OGLE-2015-BLG-0274':
+                    print 'Match clash: ',ogle_event.ogle_name, ogle_event.moa_name,\
+                    lens.name
+                
             i = i + 1
             
         # If no match to an existing OGLE event is found, add this
@@ -367,11 +374,13 @@ def load_survey_event_data( config, log ):
             event = event_classes.K2C9Event()
             moa_params = lens.get_params()
             moa_params = set_key_names( moa_params, prefix_keys, 'moa' )
-            event.set_event_name( moa_params )
+            event.set_event_name( {'name': moa_id} )
             event.set_params( moa_params )
             survey_events[ event.moa_name ] = event
 
-    
+    print 'SURVEY: ',
+    print survey_events['OGLE-2015-BLG-0274'].ogle_name, survey_events['OGLE-2015-BLG-0274'].moa_name
+    print survey_events['MOA-2015-BLG-069'].ogle_name, survey_events['MOA-2015-BLG-069'].moa_name
     return survey_events
     
     
@@ -383,7 +392,7 @@ def match_events_by_position( coords1, coords2, debug=False ):
     """
     
     match = False
-    threshold = 1.0     # arcsec
+    threshold = 5.0     # arcsec
     
     try: 
         ra1 = utilities.sexig2dec(coords1[0])
@@ -454,7 +463,7 @@ def combine_K2C9_event_feed( known_events, artemis_events, survey_events ):
             event.set_params( params )
             
         known_events['master_index'][ event.master_index ] = event
-            
+        
     # Now review all events reported by the survey as a double-check
     # that ARTMEMiS isn't out of sync:
     for event_name, event in survey_events.items():
@@ -476,7 +485,10 @@ def combine_K2C9_event_feed( known_events, artemis_events, survey_events ):
             # Ensure event has the up to date parameters from the survey:
             
             event.status = 'UPDATED'
-            
+            if event.ogle_name == 'OGLE-2015-BLG-0274' or event.moa_name == 'MOA-2015-BLG-069':
+                print 'Matched event: ',event.ogle_name, event.moa_name, \
+                event.master_index
+                
         # New events:
         else:
             
@@ -487,7 +499,7 @@ def combine_K2C9_event_feed( known_events, artemis_events, survey_events ):
             
         # Always update the known_events with the most up to date event data
         known_events['master_index'][ event.master_index ] = event
-        
+    
     return known_events
     
 def set_identifier( known_events ):
@@ -556,20 +568,23 @@ def get_finder_charts( config, known_events ):
                     open( file_path, 'w').write(page_data)
                 
 
-def generate_K2C9_events_table( config, known_events, debug=False ):
+def generate_K2C9_events_table( config, known_events, debug=True ):
     """Function to output a table of events in the K2C9 footprint"""
     
     file_path = path.join( config['log_directory'], 'K2C9_events_table.dat' )
     fileobj1 = open( file_path, 'w' )
     fileobj1.write('# Name  RA  Dec  t0  tE  u0  A0  Base_mag  Peak_mag  In_footprint  In_superstamp During_campaign\n')
+    file_list1 = []
     
     file_path = path.join( config['log_directory'], 'K2C9_events_outside_superstamp.dat' )
     fileobj2 = open( file_path, 'w' )
-    fileobj2.write('# Name  RA  Dec  t0  tE  u0  A0  Base_mag  Peak_mag  In_footprint  In_superstamp During_campaign\n')
+    fileobj2.write('# Name  RA  Dec  t0  tE  u0  A0  Base_mag  Peak_mag  In_footprint  In_superstamp During_campaign Npixels \n')
+    file_list2 = []
     
+    pixel_sum = 0.0
     for event_id, event in known_events['master_index'].items():
-        if debug == True:
-            print '-> ',event.get_event_name()
+        if debug == True and event.moa_name == 'MOA-2015-BLG-160':
+            print '-> ',event.ogle_name, event.moa_name, event.master_index
         if event.in_footprint  == True and event.during_campaign == True:
             
             name = str(event.ogle_name) + ' ' + str(event.moa_name)
@@ -584,22 +599,41 @@ def generate_K2C9_events_table( config, known_events, debug=False ):
                 vpeak = round( (float(vmag) - 2.5 * np.log10( float( A0 ) )), 3 )
             else:
                 vpeak = vmag
-                
-            entry = name + ' ' + str(ra) + ' ' + str(dec) + ' ' + str(t0) + ' ' + \
+            if vpeak <= 9.5:
+                npix = '> 100?'
+            else:
+                npix = '100'
+            
+            if float(A0) > 0.0:
+                entry = name + ' ' + str(ra) + ' ' + str(dec) + ' ' + str(t0) + ' ' + \
                     str(te) + ' ' + str(u0) + ' ' + str(A0) + ' ' + \
                     str(vmag) + ' ' + str(vpeak) + ' ' + \
                     str(event.in_footprint) + ' ' + str(event.in_superstamp) + \
-                    ' ' + str(event.during_campaign) + '\n'
+                    ' ' + str(event.during_campaign) 
                     
-            fileobj1.write(entry)
+                #fileobj1.write(entry+ '\n')
+                file_list1.append(entry + '\n')
             
             if event.in_footprint == True and event.in_superstamp == False \
                 and event.during_campaign == True:
-                fileobj2.write(entry)
+                if float(A0) > 0.0:
+                    #fileobj2.write(entry + ' ' + npix + '\n')
+                    file_list2.append(entry + ' ' + npix + '\n')
+                    pixel_sum = pixel_sum + 100
             
-        if debug == True:
-            print '-> completed ',event.get_event_name()
+        #if debug == True:
+         #   print '-> completed ',event.get_event_name()
+    
+        
+    
+    file_list1.sort()
+    for line in file_list1:
+        fileobj1.write(line)
     fileobj1.close()
+    file_list2.sort()
+    for line in file_list2:
+        print fileobj2.write(line)
+    fileobj2.write('\nTotal N pixels = ' + str(pixel_sum) + '\n')
     fileobj2.close()
     
 def generate_exofop_output( config, known_events ):
