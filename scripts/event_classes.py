@@ -49,7 +49,8 @@ class Lens():
         """Method to return the parameters of the current event in a 
         dictionary format
         """
-        key_list = [ 'name', 'ra', 'dec', 't0', 'te', 'u0', 'a0', 'i0', 'origin']
+        key_list = [ 'name', 'survey_id', 'ra', 'dec', 't0', 'te', 'u0', \
+                        'a0', 'i0', 'origin']
         params = {}
         for key in key_list:
             params[ key ] = getattr( self, key )
@@ -94,6 +95,7 @@ class K2C9Event():
         self.status = 'NEW'
         self.recommended_status = None
         self.ogle_name = None
+        self.ogle_survey_id = None
         self.ogle_ra = None 
         self.ogle_dec = None
         self.ogle_t0 = None
@@ -109,6 +111,7 @@ class K2C9Event():
         self.ogle_ndata = None
         self.ogle_url = None
         self.moa_name = None
+        self.moa_survey_id = None
         self.moa_ra = None
         self.moa_dec = None
         self.moa_t0= None
@@ -118,12 +121,13 @@ class K2C9Event():
         self.moa_te = None
         self.moa_sig_te = None
         self.moa_u0 = None
-        self.sig_u0 = None
-        self.i0 = None
-        self.sig_i0 = None
+        self.moa_sig_u0 = None
+        self.moa_i0 = None
+        self.moa_sig_i0 = None
         self.ndata = None
         self.moa_url = None
         self.kmt_name = None
+        self.kmt_survey_id = None
         self.kmt_ra = None
         self.kmt_dec = None
         self.kmt_t0 = None

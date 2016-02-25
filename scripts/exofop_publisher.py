@@ -84,17 +84,17 @@ def exofop_publisher():
                                                survey_events )
     n_events = len(known_events['master_index'])
     log.info(' -> total of ' + str(n_events) + ' events')  
-
+    
     if output_target == True:
         log.info('COMBINED: '+known_events['master_index'][sidx].summary(key_list)+'\n')
 
     # Identify which events are within the K2 campaign footprint & dates:
     log.info('Identifying events within the K2 Campaign')
     events = known_events['master_index']
-    events = k2_campaign.targets_in_footprint( events, verbose=True )
+    events = k2_campaign.targets_in_footprint( events, verbose=False )
     if config['k2_campaign'] == str(9):    
-        events = k2_campaign.targets_in_superstamp( events, verbose=True )
-    events = k2_campaign.targets_in_campaign( events, verbose=True )
+        events = k2_campaign.targets_in_superstamp( events, verbose=False )
+    events = k2_campaign.targets_in_campaign( events, verbose=False )
     known_events['master_index']= events
     
     if output_target == True:
@@ -105,22 +105,42 @@ def exofop_publisher():
     known_events = assign_identifiers( known_events )    
     
     # Extract findercharts for K2C9 objects:
-    
+    log.info('Fetching findercharts for events within the K2 Campaign')
+    get_finder_charts( config, known_events )
     
     # Now output the combined information stream in the format agreed on for 
     # the ExoFOP transfer
     generate_exofop_output( config, known_events )
     log.info('Output data for ExoFOP transfer')
     
+    # Generate K2C9 event summary table:
+    log.info('Generating event summary tables')
+    generate_K2C9_events_table( config, known_events )
+    log.info('Completed event summary tables')
+    
     # Update the master list of known events, and those within the K2C9 footprint:
-    update_known_events( config, known_events )
+    log.info('Identifying events within the footprint and outside the superstamp')
+    xsuperstamp_events = update_known_events( config, known_events )
+    log.info('-> Identified ' + str(len(xsuperstamp_events)) + \
+                ' events outside the superstamp' )
     
     # Plot locations of events:
+    log.info('Plotting event locations...')
     plotname = path.join( config['log_directory'], 'k2_events_map.png' )
     k2_campaign.plot_footprint( plot_file=plotname, \
                                 targets=known_events['master_index'] )
+    log.info('Plotted K2C9 event locations')
+    
+    plotname = path.join( config['log_directory'], 
+                                 'k2_events_outside_superstamp_map.png' )
+    k2_campaign.plot_footprint( plot_file=plotname, \
+                                targets=xsuperstamp_events, \
+                                plot_isolated_stars=True, \
+                                plot_dark_patches=True )
+    log.info('Plotted event locations outside superstamp')
     
     # Sync data for transfer to IPAC with transfer location:
+    log.info('Syncing data to transfer directory')
     sync_data_for_transfer( config )  
     
     log_utilities.end_day_log( log )
@@ -243,6 +263,7 @@ def update_known_events( config, known_events ):
                             config['events_list'] )
     fileobj = open( k2_events_file, 'w' )
     fileobj.write( '# K2C9_ID OGLE_ID MOA_ID KMTNet_ID   In_footprint  In_superstamp  During_campaign \n' )
+    xsuperstamp_events = {}
     for event_id, event in known_events['master_index'].items():
         if event.in_footprint == True and event.during_campaign == True:        
             line = str(event.identifier) + ' ' + str(event.ogle_name) + \
@@ -250,8 +271,12 @@ def update_known_events( config, known_events ):
                 str(event.in_footprint) + ' ' + str(event.in_superstamp) + ' '\
                 + str(event.during_campaign) + '\n'
             fileobj.write( line )
+            if event.in_superstamp == False:
+                xsuperstamp_events[ event_id ] = event
+                
     fileobj.close()
     
+    return xsuperstamp_events    
 
 def assign_identifiers( known_events ):
     """Function to assign K2C9 identifiers to events that are within the 
@@ -303,8 +328,8 @@ def load_survey_event_data( config, log ):
     # Start by working through OGLE events since this is usually a superset
     # of those detected by the other surveys:
     survey_events = {}
-    prefix_keys = [ 'a0', 't0', 'sig_t0', 'te', 'sig_te', 'u0', 'sig_u0', \
-                'ra', 'dec' ]
+    prefix_keys = [ 'survey_id', 'a0', 't0', 'sig_t0', 'te', 'sig_te', 'u0', \
+                'sig_u0', 'ra', 'dec', 'i0' ]
     for ogle_id, lens in ogle_data.lenses.items():
         event = event_classes.K2C9Event()
         params = lens.get_params()
@@ -439,6 +464,11 @@ def combine_K2C9_event_feed( known_events, artemis_events, survey_events ):
         # Previously known events (K2C9Events):
         if event_name in known_events[origin].keys():
             event.master_index = known_events[origin][event_name]
+            existing_event = known_events['master_index'][ event.master_index ]
+            event.in_superstamp = existing_event.in_superstamp
+            event.in_footprint = existing_event.in_footprint
+            event.during_campaign = existing_event.during_campaign
+            
             # Check to see if it has a K2 index:
             if event.master_index in known_events['identifiers'].keys():
                 event.identifier = known_events['identifiers'][event.master_index]
@@ -503,29 +533,75 @@ def get_finder_charts( config, known_events ):
                 event_year = str(event.ogle_name).split('-')[1]
                 event_number = str(event.ogle_name).split('-')[-1]
                 
-                ftp = ftplib.FTP( config['ogle_ftp_server'] )
-                ftp.login()
-                ftp_file_path = path.join( 'ogle', 'ogle4', 'ews', \
-                                    event_year, 'blg-'+event_number )
-                ftp.cwd(ftp_file_path)
                 file_path = path.join( config['ogle_data_local_location'], \
                                        event.ogle_name + '_fchart.fits' )
-                ftp.retrbinary('RETR fchart.fts', open( file_path, 'w').write )
-                ftp.quit()
+                if path.isfile( file_path ) == False:
+                    ftp = ftplib.FTP( config['ogle_ftp_server'] )
+                    ftp.login()
+                    ftp_file_path = path.join( 'ogle', 'ogle4', 'ews', \
+                                        event_year, 'blg-'+event_number )
+                    ftp.cwd(ftp_file_path)
+                    ftp.retrbinary('RETR fchart.fts', open( file_path, 'w').write )
+                    ftp.quit()
             
             elif origin == 'moa':
                 event_year = str(event.moa_name).split('-')[1]
                 event_number = str(event.moa_name).split('-')[-1]
-                
-                url = path.join( config['moa_root_url'] + event_year, \
-                        'datab', 'finder-' + event.survey_id + '.fit.gz' )
-                
                 file_path = path.join( config['moa_data_local_location'], \
                                        event.moa_name + '_fchart.fits' )
-                (page_data,msg) = utilities.get_http_page(url,parse=False)
-                open( file_path, 'w').write(page_data)
+                if path.isfile( file_path ) == False:
+                    url = path.join( config['moa_root_url'] + event_year, \
+                            'datab', 'finder-' + event.moa_survey_id + '.fit.gz' )
+                    (page_data,msg) = utilities.get_http_page(url,parse=False)
+                    open( file_path, 'w').write(page_data)
                 
+
+def generate_K2C9_events_table( config, known_events, debug=False ):
+    """Function to output a table of events in the K2C9 footprint"""
+    
+    file_path = path.join( config['log_directory'], 'K2C9_events_table.dat' )
+    fileobj1 = open( file_path, 'w' )
+    fileobj1.write('# Name  RA  Dec  t0  tE  u0  A0  Base_mag  Peak_mag  In_footprint  In_superstamp During_campaign\n')
+    
+    file_path = path.join( config['log_directory'], 'K2C9_events_outside_superstamp.dat' )
+    fileobj2 = open( file_path, 'w' )
+    fileobj2.write('# Name  RA  Dec  t0  tE  u0  A0  Base_mag  Peak_mag  In_footprint  In_superstamp During_campaign\n')
+    
+    for event_id, event in known_events['master_index'].items():
+        if debug == True:
+            print '-> ',event.get_event_name()
+        if event.in_footprint  == True and event.during_campaign == True:
+            
+            name = str(event.ogle_name) + ' ' + str(event.moa_name)
+            (ra, dec) = event.get_location()
+            origin = event.get_event_origin()
+            t0 = getattr(event,origin+'_t0')
+            te = getattr(event,origin+'_te')
+            u0 = getattr(event,origin+'_u0')
+            A0 = getattr(event,origin+'_a0')
+            vmag = getattr(event,origin+'_i0')
+            if float(A0) > 0.0:            
+                vpeak = round( (float(vmag) - 2.5 * np.log10( float( A0 ) )), 3 )
+            else:
+                vpeak = vmag
                 
+            entry = name + ' ' + str(ra) + ' ' + str(dec) + ' ' + str(t0) + ' ' + \
+                    str(te) + ' ' + str(u0) + ' ' + str(A0) + ' ' + \
+                    str(vmag) + ' ' + str(vpeak) + ' ' + \
+                    str(event.in_footprint) + ' ' + str(event.in_superstamp) + \
+                    ' ' + str(event.during_campaign) + '\n'
+                    
+            fileobj1.write(entry)
+            
+            if event.in_footprint == True and event.in_superstamp == False \
+                and event.during_campaign == True:
+                fileobj2.write(entry)
+            
+        if debug == True:
+            print '-> completed ',event.get_event_name()
+    fileobj1.close()
+    fileobj2.close()
+    
 def generate_exofop_output( config, known_events ):
     """Function to output datafiles for all events in the format agreed 
     with ExoFOP

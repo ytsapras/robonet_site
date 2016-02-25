@@ -150,7 +150,7 @@ class K2Footprint():
                 print coutput
                 exit()
                 
-        if verbose==True: 
+        if debug==True: 
             print ' -> Checking whether events are in the K2C9 superstamp'
         ntargets = float( len(targets) )
         for i,target_id in enumerate( targets ):
@@ -260,28 +260,109 @@ class K2Footprint():
             
 	return targets
 
-
-    def plot_footprint( self, plot_file=None, targets=None, year = None ):
+    def load_isolated_stars( self ):
+        """Method to load the list of isolated stars in the K2C9 field, 
+        compiled by Matthew Penny"""
+        
+        self.isolated_stars = np.array( [ [ 270.40804, -27.046134 ], \
+                        [ 270.49576, -25.536695 ], \
+                        [ 270.73213, -27.874719 ],\
+                        [ 270.74435, -27.865961],\
+                        [ 272.57049, -28.294317], \
+                        [ 268.93794, -28.630169],\
+                        [ 269.31554, -27.714637], \
+                        [ 268.733, -27.826375],\
+                        [ 268.8716, -28.082166],\
+                        [267.57216	, -27.320698],\
+                        [268.2913528, -27.2967556],\
+                        [268.4794417, -27.4386056], \
+                        [268.2337144, -27.1964411]\
+                    ] )
+    
+    def load_dark_patches( self ):
+        """Method to load the list of dark patches in the K2C9 field, 
+        compiled by Matthew Penny"""
+        
+        self.dark_patches = np.array( [ [ 270.84623, -26.762669 ],\
+                                        [ 270.41595, -27.049313 ],\
+                                        [ 270.48975, -25.519039 ],\
+                                        [ 270.75529, -27.858001 ],\
+                                        [ 270.41672, -27.04942 ],\
+                                        [ 270.39375, -27.053268 ],\
+                                        [ 270.38166, -27.041276 ],\
+                                        [ 272.57065, -28.300362 ],\
+                                        [ 268.93974, -28.627501 ],\
+                                        [ 269.38561, -27.652358 ],\
+                                        [ 269.34559, -27.652964 ],\
+                                        [ 269.32428, -27.744229 ],\
+                                        [ 268.72758, -27.817351 ],\
+                                        [ 268.68949, -27.846192 ],\
+                                        [ 268.66007, -27.835367 ],\
+                                        [ 268.87573, -28.08303 ],\
+                                        [ 267.90683, -27.527327 ],\
+                                        [ 267.58464, -27.322087 ]\
+                                    ] )
+        
+    def plot_footprint( self, plot_file=None, targets=None, year = None, 
+                       plot_isolated_stars=False, plot_dark_patches=False ):
         """Method to plot the footprint"""
-	
+        
+        def store_position( target_list, ra, dec ):
+            ( ra_list, dec_list ) = target_list
+            ra_list.append(ra)
+            dec_list.append(dec)
+            target_list = [ ra_list, dec_list ]
+            return target_list
+            
+        # Establish which targets should be plotted in which colours, 
+        # according to whether they occur in or outside the footprint, 
+        # superstamp and campaign:
+        if targets != None:
+            targets_no_k2_data = [ [], [] ]
+            targets_in_superstamp = [ [], [] ]
+            targets_outside_superstamp = [ [], [] ]
+            targets_outside_campaign = [ [], [] ]
+            for target_id, target in targets.items():
+                (ra, dec) = target.get_location()
+                if target.in_footprint == False:
+                    targets_no_k2_data = store_position(targets_no_k2_data, ra, dec)
+                elif target.in_superstamp == True and target.during_campaign == True: 
+                    targets_in_superstamp = store_position(targets_in_superstamp, ra, dec)
+                elif target.in_footprint == True and \
+                    target.in_superstamp == False and \
+                    target.during_campaign == True: 
+                    targets_outside_superstamp = store_position(targets_outside_superstamp, ra, dec)
+                elif target.in_footprint == True and target.during_campaign == False: 
+                    targets_outside_campaign = store_position(targets_outside_campaign, ra, dec)
+        
         fig = plt.figure(1,(12,12))
         font_pt = 18
         for channel, corners in self.k2_footprint.items():
             a = np.array( corners )
             plt.plot( a[:,0], a[:,1], 'r-' )
-            if targets != None:
-                for target_id, target in targets.items():
-                    (ra, dec) = target.get_location()
-                    if target.in_footprint == False:
-                        plt.plot( ra, dec, 'k.', markersize=2 )
-                    elif target.in_superstamp == True and target.during_campaign == True: 
-                        plt.plot( ra, dec, 'y.' )
-                    elif target.in_footprint == True and \
-                        target.in_superstamp == False and \
-                        target.during_campaign == True: 
-                        plt.plot( ra, dec, 'c.' )
-                    elif target.in_footprint == True and target.during_campaign == False: 
-                        plt.plot( ra, dec, 'm.' )
+        
+        if targets != None:
+            ( ra, dec ) = targets_no_k2_data
+            plt.plot( ra, dec, 'k.', markersize=2 )
+            ( ra, dec ) = targets_in_superstamp
+            plt.plot( ra, dec, 'g.' )
+            ( ra, dec ) = targets_outside_superstamp
+            plt.plot( ra, dec, 'c.' )
+            ( ra, dec ) = targets_outside_campaign
+            plt.plot( ra, dec, 'm.', markersize=2 )
+            
+        if plot_dark_patches == True:
+            self.load_dark_patches()
+            plt.plot( self.dark_patches[:,0], \
+                        self.dark_patches[:,1], markersize=8, \
+                            marker='s', mec='#cdc9c9', mfc='#cdc9c9', ls='None')
+        
+        if plot_isolated_stars == True:
+            self.load_isolated_stars()
+            plt.plot( self.isolated_stars[:,0], \
+                        self.isolated_stars[:,1], \
+                            'rd' )
+                            
         plt.xlabel( 'RA [deg]', fontsize=font_pt )
         plt.ylabel( 'Dec [deg]', fontsize=font_pt  )
         if year == None: 
@@ -298,4 +379,4 @@ class K2Footprint():
         plt.tick_params( labelsize=font_pt )
         plt.grid(True)
         plt.savefig( plot_file )
-
+        plt.close(fig)
