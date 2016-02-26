@@ -78,7 +78,7 @@ def read_moa_param_files( config ):
     moa_data.lenses = {}
     for line in file_lines:
         if line.lstrip()[0:1] != '#': 
-            (event_id, field, ra, dec, t0_hjd, tE, u0, A0, I0) = line.split()
+            (event_id, field, ra, dec, t0_hjd, tE, u0, A0, I0, c) = line.split()
             if ':' in ra or ':' in dec:            
                 (ra_deg, dec_deg) = utilities.sex2decdeg(ra,dec)
             else:
@@ -94,6 +94,7 @@ def read_moa_param_files( config ):
             event.set_par('u0',u0)
             event.set_par('a0',A0)
             event.set_par('i0',I0)
+            event.set_par('classification',c)
             event.origin = 'MOA'
             moa_data.lenses[event_id] = event
     

@@ -49,6 +49,12 @@ def exofop_publisher():
     n_events = len(known_events['master_index'])
     log.info( 'Read list of ' + str( n_events ) + ' known events' )
     
+    # Read known false positives list:
+    false_positives = get_false_positives( config )    
+    
+    # Load TAP output:
+    tap_data = load_tap_output( config )    
+    
     output_target = False
     if output_target == True:
         sidx = 1433
@@ -80,8 +86,9 @@ def exofop_publisher():
     # Combine all available data on them
     log.info('Combining data on all known events')
     known_events = \
-            combine_K2C9_event_feed( known_events, artemis_events, \
-                                               survey_events )
+            combine_K2C9_event_feed( known_events, false_positives, \
+                                        artemis_events, survey_events, \
+                                            tap_data )
     n_events = len(known_events['master_index'])
     log.info(' -> total of ' + str(n_events) + ' events')  
     
@@ -242,6 +249,17 @@ def get_known_events( config ):
     
     return known_events
 
+def get_false_positives( config ):
+    """Function to load the list of known false positive alerts"""
+    
+    file_path = path.join( config['log_directory'], 'known_false_positives' )
+    file_lines = open( file_path, 'r' ).readlines()
+    false_positives = []
+    for line in file_lines:
+        if line.lstrip()[0:1] != '#':
+            false_positives.append( line.replace('\n', '') )
+    return false_positives
+    
 def update_known_events( config, known_events ):
     """Function to output a cross-identified list of all event identifiers"""
     
@@ -328,21 +346,42 @@ def load_survey_event_data( config, log ):
     # Start by working through OGLE events since this is usually a superset
     # of those detected by the other surveys:
     survey_events = {}
-    prefix_keys = [ 'name', 'survey_id', 'a0', 't0', 'sig_t0', 'te', 'sig_te', 'u0', \
-                'sig_u0', 'ra', 'dec', 'i0' ]
+    prefix_keys = [ 'name', 'survey_id', 'a0', 't0', 'sig_t0', 'te', \
+                'sig_te', 'u0', 'sig_u0', 'ra', 'dec', 'i0' ]
     for ogle_id, lens in ogle_data.lenses.items():
-        event = event_classes.K2C9Event()
-        params = lens.get_params()
-        params = set_key_names( params, prefix_keys, 'ogle' )
-        event.set_event_name( {'name': ogle_id} )
-        event.set_params( params )
-        survey_events[ event.ogle_name ] = event
+        
+        # Check for duplicated events under different names. 
+        # Note: this filter removes the earlier 
+        (duplicate_event, status) = filter_duplicate_events( survey_events, lens )
+        
+        if duplicate_event != None:
+            log.info('DUPLICATE EVENT')
+            log.info('New lens ' + ogle_id + ' RA,Dec:' + str(lens.ra) + ' ' + str(lens.dec))
+            if status == 'substitute':
+                replaced_event = survey_events.pop( duplicate_event )
+                log.info( 'Matches existing event ' + duplicate_event + ' RA,Dec: ' + \
+                    str(replaced_event.ogle_ra) + ' ' + str(replaced_event.ogle_dec) )
+            else:
+                log.info( 'Matches existing event ' + duplicate_event + ' RA,Dec: ' + \
+                    str(survey_events[duplicate_event].ogle_ra) + ' ' + \
+                    str(survey_events[duplicate_event].ogle_dec) )
+            log.info('Action: ' + status)
+            
+        if status in [ 'no_duplicate', 'substitute' ]:
+            event = event_classes.K2C9Event()
+            params = lens.get_params()
+            params = set_key_names( params, prefix_keys, 'ogle' )
+            event.set_event_name( {'name': ogle_id} )
+            event.set_params( params )
+            survey_events[ event.ogle_name ] = event
             
     ogle_id_list = survey_events.keys()
     ogle_id_list.sort()
     
+        
     # Now work through MOA events, adding them to the dictionary:
     for moa_id, lens in moa_data.lenses.items():
+        
         coords1 = ( lens.ra, lens.dec )
             
         # If this event matches one already in the dictionary, 
@@ -362,25 +401,33 @@ def load_survey_event_data( config, log ):
                 ogle_event.set_params( moa_lens_params )
                 survey_events[ ogle_id_list[i] ] = ogle_event
                 survey_events[ moa_lens_params['moa_name'] ] = ogle_event
-                if ogle_event.ogle_name == 'OGLE-2015-BLG-0274':
-                    print 'Match clash: ',ogle_event.ogle_name, ogle_event.moa_name,\
-                    lens.name
                 
             i = i + 1
             
         # If no match to an existing OGLE event is found, add this
         # event to the dictionary as a MOA event. 
         if match == False:
-            event = event_classes.K2C9Event()
-            moa_params = lens.get_params()
-            moa_params = set_key_names( moa_params, prefix_keys, 'moa' )
-            event.set_event_name( {'name': moa_id} )
-            event.set_params( moa_params )
-            survey_events[ event.moa_name ] = event
 
-    print 'SURVEY: ',
-    print survey_events['OGLE-2015-BLG-0274'].ogle_name, survey_events['OGLE-2015-BLG-0274'].moa_name
-    print survey_events['MOA-2015-BLG-069'].ogle_name, survey_events['MOA-2015-BLG-069'].moa_name
+            # Check for duplicate MOA event:
+            (duplicate_event, status) = filter_duplicate_events( survey_events, lens )
+        
+            if duplicate_event != None and status == 'substitute':
+                replaced_event = survey_events.pop( duplicate_event )
+                log.info('DUPLICATE EVENT')
+                log.info('New lens ' + moa_id + ' RA,Dec:' + str(lens.ra) + ' ' + str(lens.dec))
+                log.info('Matches existing event ' + duplicate_event + ' RA,Dec: ' + \
+                        str(replaced_event.moa_ra) + ' ' + str(replaced_event.moa_dec) )
+                log.info('Action: ' + status)
+                
+            if status in [ 'no_duplicate', 'substitute' ]: 
+                event = event_classes.K2C9Event()
+                moa_params = lens.get_params()
+                moa_params = set_key_names( moa_params, prefix_keys, 'moa' )
+                event.set_event_name( {'name': moa_id} )
+                event.set_params( moa_params )
+                survey_events[ event.moa_name ] = event
+
+    
     return survey_events
     
     
@@ -423,7 +470,81 @@ def match_events_by_position( coords1, coords2, debug=False ):
     
     return match
 
-def combine_K2C9_event_feed( known_events, artemis_events, survey_events ):
+def filter_duplicate_events( survey_events, new_lens ):
+    """Function to filter out duplicate events identified multiple times by
+    the same survey.  
+    Possible return states:
+        No duplicate event - new event should be added to the events dictionary
+        Duplicate event:
+            Existing event was discovered earlier - new event should be ignored
+            Existing event discovered later - should be substituted for new event
+    
+    Return states are indicated with two criteria:
+    duplicate_event    { None or event_name }
+    status             { 'no_duplicate', 'keep_existing_event', 'substitute' }
+    
+    """
+    
+    new_origin = str(new_lens.name).split('-')[0].lower()
+    coords1 = ( new_lens.ra, new_lens.dec )
+    new_year = float(str(new_lens.name).split('-')[1])
+    new_number = float(str(new_lens.name).split('-')[-1])
+    duplicate_event = None
+    status = 'no_duplicate'
+    
+    for event_name, event in survey_events.items():
+        origin = event.get_event_origin()
+        
+        if origin == new_origin:
+            coords2 = event.get_location()
+            match = match_events_by_position( coords1, coords2 )
+            
+            if match == True:
+                match_year = float(event_name.split('-')[1])
+                match_number = float(event_name.split('-')[-1])
+                duplicate_event = event_name
+                
+                if match_year > new_year:
+                    status = 'substitute'
+                
+                elif match_year < new_year:
+                    status = 'keep_existing_event'
+                    
+                else:
+                    if match_number > new_number:
+                        status = 'substitute'
+                    else:
+                        status = 'keep_existing_event'
+                        
+    return duplicate_event, status
+    
+def load_tap_output( configs ):
+    """Function to load TAP prioritization output from the online table."""
+
+    tap_data = { }
+    
+    # Read the TAP output website:
+    (tap_output,msg) = utilities.get_http_page( configs['tap_url'] )
+    
+    for line in tap_output.split('\n \n \n'):
+        if len(line) > 0: 
+            entry = line.split('\n')
+            if 'MOA' in entry[0][0:20] or 'OGLE' in entry[0][0:20]:
+                event_name = str(entry[0]).lstrip().rstrip()
+                priority = str(entry[7]).lstrip().rstrip().replace('\t','')
+                omega_s_now = entry[10]
+                sig_omega_s_now = entry[11]
+                omega_s_peak = entry[12]
+                
+                tap_data[event_name] = { 'priority': entry[7], \
+                                     'omega_s_now': float(entry[10]), \
+                                     'sig_omega_s_now': float(entry[11]), \
+                                     'omega_s_peak': float(entry[12])
+                                     }
+    return tap_data
+    
+def combine_K2C9_event_feed( known_events, false_positives, \
+                                artemis_events, survey_events, tap_data  ):
     """Function to produce a dictionary of just those events identified
     within the superstamp of K2C9."""
     
@@ -435,34 +556,37 @@ def combine_K2C9_event_feed( known_events, artemis_events, survey_events ):
         
         origin = str(event_id.split('-')[0]).lower()
         
-        # Event already known:
-        if event_id in known_events[origin].keys():
-            event.master_index = known_events[origin][event_id]
-            if event.master_index in known_events['identifiers'].keys():
-                event.identifier = known_events['identifiers'][event.master_index]
+        # Exclude known false positives:
+        if event_id not in false_positives:
+        
+            # Event already known:
+            if event_id in known_events[origin].keys():
+                event.master_index = known_events[origin][event_id]
+                if event.master_index in known_events['identifiers'].keys():
+                    event.identifier = known_events['identifiers'][event.master_index]
+                    
+                # Update event from known_events with ARTEMiS parametersXXX
                 
-            # Update event from known_events with ARTEMiS parametersXXX
-            
-            event.status = 'UPDATED'
-            
-        else:
-            # Generate a new master_index and add to the known_events index:
-            event.master_index = len(known_events['master_index'])
-            event.status = 'NEW'
-            known_events[origin][event_id] = event.master_index
-            
-        # Is this event in the survey_events list?
-        # Theoretically it should always be, but if the surveys webservice
-        # gets out of sync for whatever reason, we should handle this case
-        # Events are listed by both OGLE and MOA names for easy look-up
-        # If an event is found, transfer the parameters from the survey data:
-        if event_id in survey_events.keys():
-            survey_data = survey_events[ event_id ]
-            params = survey_data.get_params()
-            params = set_key_names( params, prefix_keys, origin )
-            event.set_params( params )
-            
-        known_events['master_index'][ event.master_index ] = event
+                event.status = 'UPDATED'
+                
+            else:
+                # Generate a new master_index and add to the known_events index:
+                event.master_index = len(known_events['master_index'])
+                event.status = 'NEW'
+                known_events[origin][event_id] = event.master_index
+                
+            # Is this event in the survey_events list?
+            # Theoretically it should always be, but if the surveys webservice
+            # gets out of sync for whatever reason, we should handle this case
+            # Events are listed by both OGLE and MOA names for easy look-up
+            # If an event is found, transfer the parameters from the survey data:
+            if event_id in survey_events.keys():
+                survey_data = survey_events[ event_id ]
+                params = survey_data.get_params()
+                params = set_key_names( params, prefix_keys, origin )
+                event.set_params( params )
+                
+            known_events['master_index'][ event.master_index ] = event
         
     # Now review all events reported by the survey as a double-check
     # that ARTMEMiS isn't out of sync:
@@ -470,36 +594,50 @@ def combine_K2C9_event_feed( known_events, artemis_events, survey_events ):
         
         origin = str(event_name.split('-')[0]).lower()
         
-        # Previously known events (K2C9Events):
-        if event_name in known_events[origin].keys():
-            event.master_index = known_events[origin][event_name]
-            existing_event = known_events['master_index'][ event.master_index ]
-            event.in_superstamp = existing_event.in_superstamp
-            event.in_footprint = existing_event.in_footprint
-            event.during_campaign = existing_event.during_campaign
-            
-            # Check to see if it has a K2 index:
-            if event.master_index in known_events['identifiers'].keys():
-                event.identifier = known_events['identifiers'][event.master_index]
-            
-            # Ensure event has the up to date parameters from the survey:
-            
-            event.status = 'UPDATED'
-            if event.ogle_name == 'OGLE-2015-BLG-0274' or event.moa_name == 'MOA-2015-BLG-069':
-                print 'Matched event: ',event.ogle_name, event.moa_name, \
-                event.master_index
+        # Exclude known false positives:
+        if event_name not in false_positives and \
+                'microlensing' in event.classification:
+        
+            # Previously known events (K2C9Events):
+            if event_name in known_events[origin].keys():
+                event.master_index = known_events[origin][event_name]
+                existing_event = known_events['master_index'][ event.master_index ]
+                event.in_superstamp = existing_event.in_superstamp
+                event.in_footprint = existing_event.in_footprint
+                event.during_campaign = existing_event.during_campaign
                 
-        # New events:
-        else:
-            
-            # Generate a new master_index and add to the known_events index:
-            event.master_index = len(known_events['master_index'])
-            event.status = 'NEW'
-            known_events[origin][event_name] = event.master_index
-            
-        # Always update the known_events with the most up to date event data
-        known_events['master_index'][ event.master_index ] = event
+                # Check to see if it has a K2 index:
+                if event.master_index in known_events['identifiers'].keys():
+                    event.identifier = known_events['identifiers'][event.master_index]
+                
+                # Ensure event has the up to date parameters from the survey:
+                
+                event.status = 'UPDATED'
+                    
+            # New events:
+            else:
+                
+                # Generate a new master_index and add to the known_events index:
+                event.master_index = len(known_events['master_index'])
+                event.status = 'NEW'
+                known_events[origin][event_name] = event.master_index
+                
+            # Always update the known_events with the most up to date event data
+            known_events['master_index'][ event.master_index ] = event
     
+    # Combine the complete listing of events with TAP's output:
+    for event_id, event in known_events['master_index'].items():
+        
+        event_name = event.get_event_name()
+        if event_name in tap_data.keys():
+            tap = tap_data[event_name]
+            event.tap_priority = tap['priority']
+            event.omega_s_now = tap['omega_s_now']
+            event.sig_omega_s_now = tap['sig_omega_s_now']
+            event.omega_s_peak = tap['omega_s_peak']
+    
+            known_events['master_index'][event_id] = event
+            
     return known_events
     
 def set_identifier( known_events ):
@@ -568,23 +706,21 @@ def get_finder_charts( config, known_events ):
                     open( file_path, 'w').write(page_data)
                 
 
-def generate_K2C9_events_table( config, known_events, debug=True ):
+def generate_K2C9_events_table( config, known_events, debug=False ):
     """Function to output a table of events in the K2C9 footprint"""
     
     file_path = path.join( config['log_directory'], 'K2C9_events_table.dat' )
     fileobj1 = open( file_path, 'w' )
-    fileobj1.write('# Name  RA  Dec  t0  tE  u0  A0  Base_mag  Peak_mag  In_footprint  In_superstamp During_campaign\n')
+    fileobj1.write('# Name  RA  Dec  t0  tE  u0  A0  Base_mag  Peak_mag  In_footprint  In_superstamp During_campaign TAP_priority Omega_S(now) sig(Omega_S_now) Omega_S(peak)\n')
     file_list1 = []
     
     file_path = path.join( config['log_directory'], 'K2C9_events_outside_superstamp.dat' )
     fileobj2 = open( file_path, 'w' )
-    fileobj2.write('# Name  RA  Dec  t0  tE  u0  A0  Base_mag  Peak_mag  In_footprint  In_superstamp During_campaign Npixels \n')
+    fileobj2.write('# Name  RA  Dec  t0  tE  u0  A0  Base_mag  Peak_mag  In_footprint  In_superstamp During_campaign TAP_priority Omega_S(now) sig(Omega_S_now) Omega_S(peak) Npixels\n')
     file_list2 = []
     
     pixel_sum = 0.0
     for event_id, event in known_events['master_index'].items():
-        if debug == True and event.moa_name == 'MOA-2015-BLG-160':
-            print '-> ',event.ogle_name, event.moa_name, event.master_index
         if event.in_footprint  == True and event.during_campaign == True:
             
             name = str(event.ogle_name) + ' ' + str(event.moa_name)
@@ -609,7 +745,9 @@ def generate_K2C9_events_table( config, known_events, debug=True ):
                     str(te) + ' ' + str(u0) + ' ' + str(A0) + ' ' + \
                     str(vmag) + ' ' + str(vpeak) + ' ' + \
                     str(event.in_footprint) + ' ' + str(event.in_superstamp) + \
-                    ' ' + str(event.during_campaign) 
+                    ' ' + str(event.during_campaign)  + ' ' + \
+                    str(event.omega_s_now) + ' ' + str(event.sig_omega_s_now) + \
+                    ' ' +str(event.omega_s_peak)
                     
                 #fileobj1.write(entry+ '\n')
                 file_list1.append(entry + '\n')
@@ -617,8 +755,8 @@ def generate_K2C9_events_table( config, known_events, debug=True ):
             if event.in_footprint == True and event.in_superstamp == False \
                 and event.during_campaign == True:
                 if float(A0) > 0.0:
-                    #fileobj2.write(entry + ' ' + npix + '\n')
-                    file_list2.append(entry + ' ' + npix + '\n')
+                    entry = entry + ' ' + npix + '\n'
+                    file_list2.append(entry)
                     pixel_sum = pixel_sum + 100
             
         #if debug == True:
@@ -632,7 +770,7 @@ def generate_K2C9_events_table( config, known_events, debug=True ):
     fileobj1.close()
     file_list2.sort()
     for line in file_list2:
-        print fileobj2.write(line)
+        fileobj2.write(line)
     fileobj2.write('\nTotal N pixels = ' + str(pixel_sum) + '\n')
     fileobj2.close()
     

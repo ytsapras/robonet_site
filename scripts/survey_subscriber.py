@@ -62,7 +62,7 @@ def get_ogle_parameters(config):
 
     verbose(config,'Syncing data from OGLE')
     ogle_data = survey_classes.SurveyData()
-    years = [ '2015', '2016' ]
+    years = [ '2014', '2015', '2016' ]
     
     # Fetch the parameter files from OGLE via anonymous FTP
     ftp = ftplib.FTP( config['ogle_ftp_server'] )
@@ -106,9 +106,27 @@ def get_moa_parameters(config):
         https://it019909.massey.ac.nz/moa/alert<year>/index.dat
         '''
     
+    def get_event_class(line):
+        """Function to extract an event's classification from the HTML
+        table line entry, after removal of the mark-up tags."""
+        
+        iend = len(line)
+        istart = None
+        i = len(line)
+        while (len(line)-i) < 20 and istart == None:
+            if line[(i-1):i].isalpha() == False:
+                istart = i
+            i = i - 1
+        
+        if iend != None:
+            classification = line[istart:iend]
+        else:
+            classification = 'microlensing'
+        return classification
+        
     verbose(config,'Syncing data from MOA')
     moa_data = survey_classes.SurveyData()
-    years = [ '2015', '2016' ]
+    years = [ '2014', '2015', '2016' ]
     
     # Download the website with MOA alerts, which contains the last updated date.
     # Note that although the URL prefix has to be https, this isn't actually a secure page
@@ -156,7 +174,8 @@ def get_moa_parameters(config):
                 name = 'MOA-' + line[0:12]
                 ra = line[12:23]
                 dec = line[23:35]
-                
+                classification = get_event_class(line)
+
                 if ':' in ra or ':' in dec: 
                     (ra_deg, dec_deg) = utilities.sex2decdeg(ra,dec)
                     
@@ -164,6 +183,7 @@ def get_moa_parameters(config):
                     lens = moa_data.lenses[name]
                     lens.ra = ra_deg
                     lens.dec = dec_deg
+                    lens.classification = classification
                     moa_data.lenses[name] = lens
                     
             # The last updated timestamp is one of the last lines in this file.
@@ -191,7 +211,7 @@ def get_moa_parameters(config):
     file_path = path.join( config['moa_data_local_location'], \
                           config['moa_lenses_file'] )
     fileobj = open(file_path,'w')
-    fileobj.write('# Name       Field     RA      Dec     T0       TE      u0      A0    i0\n')
+    fileobj.write('# Name       Field     RA      Dec     T0       TE      u0      A0    i0    Classification\n')
     for event_id, event in moa_data.lenses.items():
         fileobj.write( event.summary() + '\n' )
     fileobj.close()

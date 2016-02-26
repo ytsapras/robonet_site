@@ -59,6 +59,10 @@
     	<value>https://it019909.massey.ac.nz/moa/alert</value>
     </parameter>
     
+    <parameter name="tap_url">
+    	<value>http://robonet.lcogt.net/temp/tap1mlist_kepler.html</value>
+    </parameter>
+    
     <parameter name='auth'>
         <value>/home/rstreet/.artemis-rsync</value>
         <!--<value>/Users/rstreet/RoboNet/Sandbox/.artemis-rsync</value>-->

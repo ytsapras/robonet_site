@@ -25,10 +25,11 @@ class Lens():
         self.a0 = None
         self.i0 = None
         self.origin = None
-
+        self.classification = 'microlensing'
+        
     def set_par(self,par,par_value):
 
-        if par in [ 'name', 'survey_id' ]: 
+        if par in [ 'name', 'survey_id', 'classification' ]: 
             setattr(self,par,par_value)
         else: 
             if par_value == None or str(par_value).lower() == 'none':
@@ -40,7 +41,7 @@ class Lens():
         return self.name + ' ' + str(self.survey_id) + ' ' + \
                 str(self.ra) + '  ' + str(self.dec) + '  ' + \
                 str(self.t0) + ' ' + str(self.te) + ' ' + str(self.u0) + '  ' +\
-                str(self.a0) + ' ' + str(self.i0)
+                str(self.a0) + ' ' + str(self.i0) + ' ' + self.classification
 
     def sync_event_with_DB(self):
         '''Method to sync the latest survey parameters with the database.'''
@@ -142,6 +143,7 @@ class K2C9Event():
         self.kmt_sig_i0 = None
         self.kmt_ndata = None
         self.kmt_url = None
+        self.classification = 'microlensing'
         self.signalmen_a0 = None
         self.signalmen_t0 = None
         self.signalmen_sig_t0 = None
@@ -150,6 +152,10 @@ class K2C9Event():
         self.signalmen_u0 = None
         self.signalmen_sig_u0 = None
         self.signalmen_anomaly = None
+        self.tap_priority = None
+        self.omega_s_now = None
+        self.sig_omega_s_now = None
+        self.omega_s_peak = None
         self.pylima_a0 = None
         self.pylima_sig_a0 = None
         self.pylima_te = None
@@ -286,7 +292,10 @@ class K2C9Event():
                          'get_location',\
                          'master_index',\
                          'check_in_k2', 'get_event_name', 'get_event_origin',\
-                         'alertable'
+                         'alertable', \
+                         'classification', \
+                         'tap_priority', 'omega_s_now', 'sig_omega_s_now', \
+                         'omega_s_peak'
                          ]
         for key in exclude_keys:
             if key in key_list or '__' in key:

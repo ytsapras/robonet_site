@@ -220,7 +220,12 @@ class K2Footprint():
         
         if verbose == True:
             print '  -> Checking whether events occur within campaign duration'
-
+        
+        # Thresholds for determining whether an event has ended before a 
+        # campaign or starts too late:
+        n_min_te = 2.0
+        n_max_te = 1.5
+        
         for target_id in targets.keys():
             target = targets[ target_id ]
             
@@ -234,8 +239,8 @@ class K2Footprint():
             t0 = target.get_par( 't0' )
             tE = target.get_par( 'te' )
             try:
-                if ( t0 - 2.0*tE ) < campaign_end and \
-                    ( t0 + 2.0*tE ) > campaign_start:
+                if ( t0 - n_min_te*tE ) < campaign_end and \
+                    ( t0 + n_max_te*tE ) > campaign_start:
                     target.during_campaign = True
                 else:
                     target.during_campaign = False
@@ -245,7 +250,7 @@ class K2Footprint():
                 # - Have a predicted end date greater than the campaign start
                 for date in self.last_alert_dates:
                     if ( t0 - tE ) < date and \
-                        ( t0 + 2.0*tE ) > campaign_start:
+                        ( t0 + n_max_te*tE ) > campaign_start:
                             target.alertable = True
                     else:
                         target.alertable = False
