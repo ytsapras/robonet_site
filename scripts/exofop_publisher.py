@@ -745,8 +745,8 @@ def generate_K2C9_events_table( config, known_events, debug=False ):
                     str(te) + ' ' + str(u0) + ' ' + str(A0) + ' ' + \
                     str(vmag) + ' ' + str(vpeak) + ' ' + \
                     str(event.in_footprint) + ' ' + str(event.in_superstamp) + \
-                    ' ' + str(event.during_campaign)  + ' ' + \
-                    str(event.omega_s_now) + ' ' + str(event.sig_omega_s_now) + \
+                    ' ' + str(event.during_campaign)  + ' ' + str(event.tap_priority) +\
+                    ' ' + str(event.omega_s_now) + ' ' + str(event.sig_omega_s_now) + \
                     ' ' +str(event.omega_s_peak)
                     
                 #fileobj1.write(entry+ '\n')
