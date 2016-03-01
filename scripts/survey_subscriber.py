@@ -146,7 +146,7 @@ def get_moa_parameters(config):
         # Parse the index of events
         for entry in events_index_data:
             if len(entry.replace('\n','').replace(' ','')) > 0:
-                (event_id, field, ra_deg, dec_deg, t0_hjd, tE, A0, \
+                (event_id, field, ra_deg, dec_deg, t0_hjd, tE, u0, \
                         I0, tmp1, tmp2) = entry.split()
                 if ':' in ra_deg or ':' in dec_deg: 
                     (ra_deg, dec_deg) = utilities.sex2decdeg(ra_deg,dec_deg)
@@ -159,7 +159,7 @@ def get_moa_parameters(config):
                 event.set_par('t0',t0_hjd)
                 event.set_par('te',tE)
                 event.set_par('i0',I0)
-                event.set_par('a0',A0)
+                event.set_par('u0',u0)
                 event.origin = 'MOA'
                 moa_data.lenses[event_name] = event
     

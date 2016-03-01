@@ -307,7 +307,22 @@ class K2Footprint():
                                         [ 267.90683, -27.527327 ],\
                                         [ 267.58464, -27.322087 ]\
                                     ] )
+    
+    def load_ddt_targets( self ):
+        """Method to load the locations of DDT targets"""
         
+        file_name = 'c9-ddt-targets-preliminary.csv'
+        file_lines = open(file_name, 'r').readlines()
+        ddt_targets = []
+        for line in file_lines:
+            if line.lstrip()[0:1] != '#':
+                entries = line.replace('\n','').split(',')
+                ddt_targets.append( [float(entries[1]), float(entries[2]) ] )
+        
+        ddt_targets = np.array( ddt_targets )
+        return ddt_targets
+        
+    
     def plot_footprint( self, plot_file=None, targets=None, year = None, 
                        plot_isolated_stars=False, plot_dark_patches=False ):
         """Method to plot the footprint"""
@@ -318,7 +333,9 @@ class K2Footprint():
             dec_list.append(dec)
             target_list = [ ra_list, dec_list ]
             return target_list
-            
+        
+        ddt_targets = self.load_ddt_targets()        
+        
         # Establish which targets should be plotted in which colours, 
         # according to whether they occur in or outside the footprint, 
         # superstamp and campaign:
@@ -344,7 +361,10 @@ class K2Footprint():
         font_pt = 18
         for channel, corners in self.k2_footprint.items():
             a = np.array( corners )
-            plt.plot( a[:,0], a[:,1], 'r-' )
+            plt.plot( a[:,0], a[:,1], 'k-' )
+            lx = a[:,0].min() + (a[:,0].max() - a[:,0].min()) / 2.0
+            ly = a[:,1].min() + (a[:,1].max() - a[:,1].min()) / 2.0
+            plt.text( lx, ly, str(channel) )
         
         if targets != None:
             ( ra, dec ) = targets_no_k2_data
@@ -355,6 +375,8 @@ class K2Footprint():
             plt.plot( ra, dec, 'c.' )
             ( ra, dec ) = targets_outside_campaign
             plt.plot( ra, dec, 'm.', markersize=2 )
+
+            plt.plot( ddt_targets[:,0], ddt_targets[:,1], 'k+', markersize=3 )            
             
         if plot_dark_patches == True:
             self.load_dark_patches()
@@ -385,3 +407,8 @@ class K2Footprint():
         plt.grid(True)
         plt.savefig( plot_file )
         plt.close(fig)
+
+#####################################################
+if __name__ == '__main__':
+    k2_campaign = K2Footprint( 9, 2016 )
+    k2_campaign.plot_footprint(plot_file='test_k2_footprint.png')               

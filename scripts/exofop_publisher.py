@@ -57,10 +57,10 @@ def exofop_publisher():
     
     output_target = False
     if output_target == True:
-        sidx = 1433
-        sid = 'MOA-2015-BLG-102'
-        sorigin = 'moa'
-        key_list = [ 'moa_ra', 'moa_dec', 'moa_t0', 'moa_te' ]
+        sidx = 2518
+        sid = 'OGLE-2016-BLG-0211'
+        sorigin = 'ogle'
+        key_list = [ 'ogle_ra', 'ogle_dec', 'ogle_t0', 'ogle_te' ]
         log.info( 'KNOWN: ' + known_events['master_index'][sidx].summary(key_list)+'\n' )
     
     # Read in the information on the K2 campaign:
@@ -349,7 +349,9 @@ def load_survey_event_data( config, log ):
     prefix_keys = [ 'name', 'survey_id', 'a0', 't0', 'sig_t0', 'te', \
                 'sig_te', 'u0', 'sig_u0', 'ra', 'dec', 'i0' ]
     for ogle_id, lens in ogle_data.lenses.items():
-        
+        if ogle_id == 'OGLE-2016-BLG-0211':
+            print 'GOT OGLE-2016-BLG-0211'
+            print lens.summary()
         # Check for duplicated events under different names. 
         # Note: this filter removes the earlier 
         (duplicate_event, status) = filter_duplicate_events( survey_events, lens )
@@ -373,6 +375,7 @@ def load_survey_event_data( config, log ):
             params = set_key_names( params, prefix_keys, 'ogle' )
             event.set_event_name( {'name': ogle_id} )
             event.set_params( params )
+            event.classification = lens.classification
             survey_events[ event.ogle_name ] = event
             
     ogle_id_list = survey_events.keys()
@@ -425,6 +428,7 @@ def load_survey_event_data( config, log ):
                 moa_params = set_key_names( moa_params, prefix_keys, 'moa' )
                 event.set_event_name( {'name': moa_id} )
                 event.set_params( moa_params )
+                event.classification = lens.classification
                 survey_events[ event.moa_name ] = event
 
     
@@ -439,7 +443,7 @@ def match_events_by_position( coords1, coords2, debug=False ):
     """
     
     match = False
-    threshold = 5.0     # arcsec
+    threshold = 2.5     # arcsec
     
     try: 
         ra1 = utilities.sexig2dec(coords1[0])
@@ -536,6 +540,21 @@ def load_tap_output( configs ):
                 sig_omega_s_now = entry[11]
                 omega_s_peak = entry[12]
                 
+                if 'MOA' in event_name:
+                    event_year = str(event_name).split('-')[1]
+                    event_number = str(event_name).split('-')[-1]
+                    if len(event_number) == 4 and event_number[0:1] == '0':
+                        event_name = 'MOA-' + event_year + '-BLG-' + event_number[1:]
+                        
+                event_number = float(event_name.split('-')[-1])
+                if event_number > 3000.0:
+                    aka_list = str(entry[4]).split(',')
+                    for item in aka_list:
+                        if 'OB15' in item:
+                            event_number = item[4:]
+                            event_name = 'OGLE-2015-BLG-' + event_number
+                            #print 'EVENT NAME -> ',event_name
+                
                 tap_data[event_name] = { 'priority': entry[7], \
                                      'omega_s_now': float(entry[10]), \
                                      'sig_omega_s_now': float(entry[11]), \
@@ -571,7 +590,10 @@ def combine_K2C9_event_feed( known_events, false_positives, \
                 
             else:
                 # Generate a new master_index and add to the known_events index:
-                event.master_index = len(known_events['master_index'])
+                if len(known_events['master_index'].keys()) > 0:                
+                    event.master_index = np.array(known_events['master_index'].keys()).max() + 1
+                else:
+                    event.master_index = 1
                 event.status = 'NEW'
                 known_events[origin][event_id] = event.master_index
                 
@@ -593,12 +615,16 @@ def combine_K2C9_event_feed( known_events, false_positives, \
     for event_name, event in survey_events.items():
         
         origin = str(event_name.split('-')[0]).lower()
-        
+        if event_name == 'OGLE-2016-BLG-0211':
+            print 'COMBINING DATA on OGLE-2016-BLG-0211 ',event.classification, 
+            (event_name not in false_positives)
+            
         # Exclude known false positives:
         if event_name not in false_positives and \
                 'microlensing' in event.classification:
         
             # Previously known events (K2C9Events):
+            # THIS NEEDS TO CHECK FOR EVENTS UNDER BOTH SURVEYS
             if event_name in known_events[origin].keys():
                 event.master_index = known_events[origin][event_name]
                 existing_event = known_events['master_index'][ event.master_index ]
@@ -618,13 +644,18 @@ def combine_K2C9_event_feed( known_events, false_positives, \
             else:
                 
                 # Generate a new master_index and add to the known_events index:
-                event.master_index = len(known_events['master_index'])
+                if len(known_events['master_index'].keys()) > 0:                
+                    event.master_index = np.array(known_events['master_index'].keys()).max() + 1
+                else:
+                    event.master_index = 1
                 event.status = 'NEW'
                 known_events[origin][event_name] = event.master_index
                 
             # Always update the known_events with the most up to date event data
             known_events['master_index'][ event.master_index ] = event
-    
+            if event_name == 'OGLE-2016-BLG-0211':
+                print 'HERE 1: ',event_name, event.master_index
+                
     # Combine the complete listing of events with TAP's output:
     for event_id, event in known_events['master_index'].items():
         
@@ -721,6 +752,8 @@ def generate_K2C9_events_table( config, known_events, debug=False ):
     
     pixel_sum = 0.0
     for event_id, event in known_events['master_index'].items():
+        if event.ogle_name == 'OGLE-2016-BLG-0095':
+            print event.summary()
         if event.in_footprint  == True and event.during_campaign == True:
             
             name = str(event.ogle_name) + ' ' + str(event.moa_name)
@@ -731,17 +764,18 @@ def generate_K2C9_events_table( config, known_events, debug=False ):
             u0 = getattr(event,origin+'_u0')
             A0 = getattr(event,origin+'_a0')
             vmag = getattr(event,origin+'_i0')
-            if float(A0) > 0.0:            
+            classification = getattr(event,'classification')
+            if str(A0) != 'None' and float(A0) > 0.0:            
                 vpeak = round( (float(vmag) - 2.5 * np.log10( float( A0 ) )), 3 )
             else:
-                vpeak = vmag
-            if vpeak <= 9.5:
+                vpeak = 'None'
+            if vpeak != 'None' and vpeak <= 9.5:
                 npix = '> 100?'
             else:
                 npix = '100'
             
-            if float(A0) > 0.0:
-                entry = name + ' ' + str(ra) + ' ' + str(dec) + ' ' + str(t0) + ' ' + \
+            #if str(A0) == 'None' or float(A0) > 0.0:
+            entry = name + ' ' + str(ra) + ' ' + str(dec) + ' ' + str(t0) + ' ' + \
                     str(te) + ' ' + str(u0) + ' ' + str(A0) + ' ' + \
                     str(vmag) + ' ' + str(vpeak) + ' ' + \
                     str(event.in_footprint) + ' ' + str(event.in_superstamp) + \
@@ -750,11 +784,13 @@ def generate_K2C9_events_table( config, known_events, debug=False ):
                     ' ' +str(event.omega_s_peak)
                     
                 #fileobj1.write(entry+ '\n')
-                file_list1.append(entry + '\n')
+            file_list1.append(entry + '\n')
             
             if event.in_footprint == True and event.in_superstamp == False \
                 and event.during_campaign == True:
-                if float(A0) > 0.0:
+                #if float(A0) > 0.0:
+                print 'Selected event class: ',name, classification
+                if 'microlensing' in classification and float(te) < 10000.0:
                     entry = entry + ' ' + npix + '\n'
                     file_list2.append(entry)
                     pixel_sum = pixel_sum + 100
@@ -815,7 +851,7 @@ def ready_file( config, status ):
     Status can be either create or remove    
     """
     
-    ready_path = path.join( config['transfer_location'], 'READY' )
+    ready_path = path.join( config['transfer_location'], '../microlensing.READY' )
     
     if status == 'create':
         op = 'touch'

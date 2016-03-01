@@ -15,8 +15,8 @@ def test_tap_reader():
     tap_data = exofop_publisher.load_tap_output( config )
     
     for event_name, entry in tap_data.items():
-        if event_name == 'OGLE-2016-BLG-0036':
-            print ':',event_name,':', entry
+        if 'MOA-2015-BLG-499' in event_name: 
+            print ':'+event_name+':', entry
 
 if __name__ == '__main__':
     test_tap_reader()
