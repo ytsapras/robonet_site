@@ -6,35 +6,38 @@ from astropy.time import Time, TimeDelta
 import matplotlib.pyplot as plt
 from commands import getstatusoutput
 import logging
+import event_classes
+import utilities
 
 class K2Footprint():
     """Class to parse the JSON file description of the K2 footprint"""
-    
+
     def __init__( self, campaign, year, debug=False ):
         
-	def date_list_to_jd( date_list ):
-	    """Establish the dates of the campaign in JD"""
-	    jd_list = []
-	    for date in date_list:
-	        timeobj = Time( (date + 'T00:00:00'), format='isot', scale='utc')
-	        jd_list.append( timeobj.jd )
+        def date_list_to_jd( date_list ):
+            """Establish the dates of the campaign in JD"""
+            jd_list = []
+            for date in date_list:
+                timeobj = Time( (date + 'T00:00:00'), format='isot', scale='utc')
+                jd_list.append( timeobj.jd )
             return jd_list
-	
-	def calc_alert_date( year, date ):
-	    """Function to calculate the last-alert date based on the Campaign-start date 
-	    given as a string, adjusting the date to the year requested for the 
-	    simulation, to effectively compare the times of the events from the catalogue."""
+    	
+        def calc_alert_date( year, date ):
+            """Function to calculate the last-alert date based on the Campaign-start date 
+            given as a string, adjusting the date to the year requested for the 
+            simulation, to effectively compare the times of the events from the catalogue."""
+    	    
+            date = str(year) + '-' + date[5:]
+            campaign_start = Time( (date + 'T00:00:00'), format='isot', scale='utc')
+            alert_time = TimeDelta( (30.0*24.0*60.0*60.0), format='sec' )
+            alert_date = campaign_start - alert_time
+            return alert_date.jd
 	    
-	    date = str(year) + '-' + date[5:]
-	    campaign_start = Time( (date + 'T00:00:00'), format='isot', scale='utc')
-	    alert_time = TimeDelta( (30.0*24.0*60.0*60.0), format='sec' )
-	    alert_date = campaign_start - alert_time
-	    return alert_date.jd
-	    
-	# Declare campaign number:
-	self.campaign = campaign
-	
-	# Read and parse the outline of the K2 footprint on sky:
+        # Declare campaign number:
+        self.campaign = campaign
+        self.xsuperstamp_targets = {}
+ 
+        # Read and parse the outline of the K2 footprint on sky:
         k2_footprint_file = 'k2-footprint.json'
         if path.isfile( k2_footprint_file ) == False:
             print 'Error: Cannot find JSON file of the K2 footprint'
@@ -45,41 +48,43 @@ class K2Footprint():
         json_data = json_data['c'+str(self.campaign)]
         self.k2_footprint = {}
         self.channel_limits = {}
-	for channel in json_data['channels'].keys():
-	    corners = []
-	    for i in range(0,4,1):
-	        corners.append( [ json_data['channels'][channel]['corners_ra'][i], \
+        for channel in json_data['channels'].keys():
+            corners = []
+            for i in range(0,4,1):
+                corners.append( [ json_data['channels'][channel]['corners_ra'][i], \
 		                  json_data['channels'][channel]['corners_dec'][i] ] )
-	    corners.append( [ json_data['channels'][channel]['corners_ra'][0], \
+            corners.append( [ json_data['channels'][channel]['corners_ra'][0], \
 	                      json_data['channels'][channel]['corners_dec'][0] ] )
-	    a = np.array( corners )
-	    ra_min = a[:,0].min()
-	    ra_max = a[:,0].max()
-	    dec_min = a[:,1].min()
-	    dec_max = a[:,1].max()
-	    self.k2_footprint[channel] = corners
-	    self.channel_limits[channel] = [ ra_min, ra_max ,dec_min, dec_max ]
+
+            a = np.array( corners )
+            ra_min = a[:,0].min()
+            ra_max = a[:,0].max()
+            dec_min = a[:,1].min()
+            dec_max = a[:,1].max()
+            self.k2_footprint[channel] = corners
+            self.channel_limits[channel] = [ ra_min, ra_max ,dec_min, dec_max ]
 	    
-	# Campaign and last alert dates reset to YEAR to simulate as if the events happened in 2016
-	self.last_alert_dates = []
+        # Campaign and last alert dates reset to YEAR to simulate as if the events happened in 2016
+        self.last_alert_dates = []
         if campaign == 9: 
-	    self.campaign_dates = [ [ str(year) + '-04-07', str(year) + '-05-19' ], \
+            self.campaign_dates = [ [ str(year) + '-04-07', str(year) + '-05-19' ], \
 	                            [ str(year) + '-05-22', str(year) + '-07-02' ] ]
-	else:
-            self.campaign_dates = [ [ str(year) + json_data['start'][4:], str(year) + json_data['stop'][4:] ] ]
+        else:
+            self.campaign_dates = [ [ str(year) + json_data['start'][4:], \
+                                str(year) + json_data['stop'][4:] ] ]
 	    
-	if debug == True: print 'Campaign dates: ',self.campaign_dates
-	for date_range in self.campaign_dates:
-	    self.last_alert_dates.append( calc_alert_date( year, date_range[0] ) )
-	if debug == True: print 'Last alert dates: ',self.last_alert_dates
+        if debug == True: print 'Campaign dates: ',self.campaign_dates
+        for date_range in self.campaign_dates:
+            self.last_alert_dates.append( calc_alert_date( year, date_range[0] ) )
+        if debug == True: print 'Last alert dates: ',self.last_alert_dates
 	
-	date_list = []
-	for sub_campaign in self.campaign_dates:
-	    date_list.append( date_list_to_jd( sub_campaign ) )
-	self.campaign_dates = date_list
-	if debug == True: print 'Campaign dates, JD: ',self.campaign_dates
+        date_list = []
+        for sub_campaign in self.campaign_dates:
+            date_list.append( date_list_to_jd( sub_campaign ) )
+        self.campaign_dates = date_list
+        if debug == True: print 'Campaign dates, JD: ',self.campaign_dates
 	
-	if debug == True:
+        if debug == True:
             for channel, corners in self.k2_footprint.items():
                 print channel, ': ', corners
 
@@ -321,10 +326,28 @@ class K2Footprint():
         
         ddt_targets = np.array( ddt_targets )
         return ddt_targets
+    
+    def load_xsuperstamp_targets( self ):
+        """Method to load the data for targets selected outside the 
+        superstamp"""
         
+        file_data = open( 'xsuperstamp_targets.json', 'r').read()
+        json_data = json.loads( file_data )
+        for target, target_data in json_data['targets'].items():
+            event = event_classes.K2C9Event()
+            (ra_deg, dec_deg) = utilities.sex2decdeg( target_data['RA'], \
+                                                        target_data['Dec'] )
+            event.ogle_ra = ra_deg
+            event.ogle_dec = dec_deg
+            event.ogle_i0 = float( target_data['Io'] )
+            event.in_superstamp = False
+            event.in_footprint= True
+            event.during_campaign = True
+            self.xsuperstamp_targets[ target ] = event
     
     def plot_footprint( self, plot_file=None, targets=None, year = None, 
-                       plot_isolated_stars=False, plot_dark_patches=False ):
+                       plot_isolated_stars=False, plot_dark_patches=False, \
+                       plot_ddt_targets=False):
         """Method to plot the footprint"""
         
         def store_position( target_list, ra, dec ):
@@ -334,7 +357,8 @@ class K2Footprint():
             target_list = [ ra_list, dec_list ]
             return target_list
         
-        ddt_targets = self.load_ddt_targets()        
+        if plot_ddt_targets == True:        
+            ddt_targets = self.load_ddt_targets()        
         
         # Establish which targets should be plotted in which colours, 
         # according to whether they occur in or outside the footprint, 
@@ -376,6 +400,7 @@ class K2Footprint():
             ( ra, dec ) = targets_outside_campaign
             plt.plot( ra, dec, 'm.', markersize=2 )
 
+        if plot_ddt_targets == True:
             plt.plot( ddt_targets[:,0], ddt_targets[:,1], 'k+', markersize=3 )            
             
         if plot_dark_patches == True:
@@ -411,4 +436,7 @@ class K2Footprint():
 #####################################################
 if __name__ == '__main__':
     k2_campaign = K2Footprint( 9, 2016 )
-    k2_campaign.plot_footprint(plot_file='test_k2_footprint.png')               
+    k2_campaign.load_xsuperstamp_targets()
+    k2_campaign.plot_footprint(plot_file='test_k2_footprint.png', targets=\
+                k2_campaign.xsuperstamp_targets)
+                
