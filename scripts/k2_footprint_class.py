@@ -346,11 +346,19 @@ class K2Footprint():
             event.during_campaign = True
             self.xsuperstamp_targets[ target ] = event
     
-    def plot_footprint( self, plot_file=None, targets=None, year = None, 
+    def plot_footprint( self, plot_file=None, targets=None, year = None, \
                        plot_isolated_stars=False, plot_dark_patches=False, \
-                       plot_ddt_targets=False, overlays=[]):
+                       plot_ddt_targets=False, overlays={}):
         """Method to plot the footprint"""
         
+        
+        def get_label_loc( corners ):
+            lx = corners[:,0].min() + \
+                (corners[:,0].max() - corners[:,0].min()) / 2.0
+            ly = corners[:,1].min() + \
+                (corners[:,1].max() - corners[:,1].min()) / 2.0
+            return lx,ly
+            
         def store_position( target_list, ra, dec ):
             ( ra_list, dec_list ) = target_list
             ra_list.append(ra)
@@ -387,8 +395,7 @@ class K2Footprint():
         for channel, corners in self.k2_footprint.items():
             a = np.array( corners )
             plt.plot( a[:,0], a[:,1], 'k-' )
-            lx = a[:,0].min() + (a[:,0].max() - a[:,0].min()) / 2.0
-            ly = a[:,1].min() + (a[:,1].max() - a[:,1].min()) / 2.0
+            (lx, ly) = get_label_loc(a)
             plt.text( lx, ly, str(channel) )
         
         if targets != None:
@@ -400,7 +407,7 @@ class K2Footprint():
             plt.plot( ra, dec, 'c.' )
             ( ra, dec ) = targets_outside_campaign
             plt.plot( ra, dec, 'm.', markersize=2 )
-
+            
         if plot_ddt_targets == True:
             plt.plot( ddt_targets[:,0], ddt_targets[:,1], 'k+', markersize=3 )            
             
@@ -413,12 +420,13 @@ class K2Footprint():
         if plot_isolated_stars == True:
             self.load_isolated_stars()
             plt.plot( self.isolated_stars[:,0], \
-                        self.isolated_stars[:,1], \
-                            'rd' )
+                        self.isolated_stars[:,1],  'rd' )
         
         if len(overlays) != 0:
-            for field in overlays:
+            for name, field in overlays.items():
                 plt.plot( field[:,0], field[:,1], 'r-.' )
+                (lx, ly) = get_label_loc(field)
+                plt.text( lx, ly, str(name), fontsize=8, color='red' )
                             
         plt.xlabel( 'RA [deg]', fontsize=font_pt )
         plt.ylabel( 'Dec [deg]', fontsize=font_pt  )

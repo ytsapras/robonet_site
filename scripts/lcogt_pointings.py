@@ -22,13 +22,13 @@ def lcogt_pointings(tel, camera, pointings_file):
     
     # Load the list of pointings and convert into camera overlays:
     pointings = read_pointings(pointings_file)
-    overlays = []
-    for tup in pointings:
-        corners = sinistro.calc_footprint( tup )
-        overlays.append( corners )
+    overlays = {}
+    for name,coords in pointings.items():
+        corners = sinistro.calc_footprint( coords )
+        overlays[name] = corners
     
     # Plot the K2 footprint with overlays:
-    k2_campaign.plot_footprint(plot_file='test_k2_footprint.png', targets=\
+    k2_campaign.plot_footprint(plot_file='test_k2_footprint.png', targets= \
                 k2_campaign.xsuperstamp_targets, overlays=overlays)
     
     
@@ -41,12 +41,12 @@ def read_pointings(pointings_file):
         exit()
         
     file_lines = open(pointings_file,'r').readlines()
-    pointings = []
+    pointings = {}
     for line in file_lines:
-        (ra, dec) = line.replace('\n','').split()
+        (ra, dec, name) = line.replace('\n','').split()
         if ':' in str(ra):
             (ra, dec) = utilities.sex2decdeg(ra, dec)
-        pointings.append( (ra, dec) )
+        pointings[name] = (ra, dec)
     return pointings
     
 if __name__ == '__main__':
