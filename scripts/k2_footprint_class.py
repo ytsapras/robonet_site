@@ -8,6 +8,7 @@ from commands import getstatusoutput
 import logging
 import event_classes
 import utilities
+import lcogt_imagers
 
 class K2Footprint():
     """Class to parse the JSON file description of the K2 footprint"""
@@ -347,7 +348,7 @@ class K2Footprint():
     
     def plot_footprint( self, plot_file=None, targets=None, year = None, 
                        plot_isolated_stars=False, plot_dark_patches=False, \
-                       plot_ddt_targets=False):
+                       plot_ddt_targets=False, overlays=[]):
         """Method to plot the footprint"""
         
         def store_position( target_list, ra, dec ):
@@ -414,6 +415,10 @@ class K2Footprint():
             plt.plot( self.isolated_stars[:,0], \
                         self.isolated_stars[:,1], \
                             'rd' )
+        
+        if len(overlays) != 0:
+            for field in overlays:
+                plt.plot( field[:,0], field[:,1], 'r-.' )
                             
         plt.xlabel( 'RA [deg]', fontsize=font_pt )
         plt.ylabel( 'Dec [deg]', fontsize=font_pt  )

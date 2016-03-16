@@ -1,0 +1,63 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Mar 15 17:42:22 2016
+
+@author: rstreet
+"""
+import k2_footprint_class
+import lcogt_imagers
+from sys import argv, exit
+from os import path
+import utilities
+
+def lcogt_pointings(tel, camera, pointings_file):
+    """Function to over plot the LCOGT camera footprints on the K2 footprint"""
+    
+    # Load the K2C9 footprint
+    k2_campaign = K2Footprint( 9, 2016 )
+    k2_campaign.load_xsuperstamp_targets()
+    
+    # Load the requested camera footprint:
+    sinistro = lcogt_imagers.load_lcogt_footprints(tel='1m',camera='sinistro')
+    
+    # Load the list of pointings and convert into camera overlays:
+    pointings = read_pointings(pointings_file)
+    overlays = []
+    for tup in pointings:
+        corners = sinistro.calc_footprint( tup )
+        overlays.append( corners )
+    
+    # Plot the K2 footprint with overlays:
+    k2_campaign.plot_footprint(plot_file='test_k2_footprint.png', targets=\
+                k2_campaign.xsuperstamp_targets, overlays=overlays)
+    
+    
+def read_pointings(pointings_file):
+    """Function to read a file of pointings, which may be in sexigesimal or
+    decimal degrees"""
+    
+    if path.isfile(pointings_file) == False:
+        print 'ERROR: Cannot find file ' + pointings_file
+        exit()
+        
+    file_lines = open(pointings_file,'r').readlines()
+    pointings = []
+    for line in file_lines:
+        (ra, dec) = line.replace('\n','').split()
+        if ':' in str(ra):
+            (ra, dec) = utilities.sex2decdeg(ra, dec)
+        pointings.append( (ra, dec) )
+    return pointings
+    
+if __name__ == '__main__':
+    if len(argv) == 1:
+        tel = raw_input('Please enter an LCOGT telescope class: ')
+        camera = raw_input('Please enter an imager class on that telescope: ')
+        pointings_file = raw_input('Please enter the path to a pointings file: ')
+    else:
+        tel = argv[1]
+        camera = argv[2]
+        pointings_file = argv[3]
+    
+    lcogt_pointings(tel, camera, pointings_file)
+    
