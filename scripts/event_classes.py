@@ -35,7 +35,10 @@ class Lens():
             if par_value == None or str(par_value).lower() == 'none':
                 setattr(self,par,par_value)
             else:
-                setattr(self,par,float(par_value))
+                try:
+                    setattr(self,par,float(par_value))
+                except ValueError:
+                    setattr(self,par,par_value)
 
     def summary(self):
         return self.name + ' ' + str(self.survey_id) + ' ' + \

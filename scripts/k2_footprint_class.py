@@ -6,6 +6,8 @@ from astropy.time import Time, TimeDelta
 import matplotlib.pyplot as plt
 from commands import getstatusoutput
 import logging
+import K2fov
+from K2fov import c9
 
 class K2Footprint():
     """Class to parse the JSON file description of the K2 footprint"""
@@ -106,8 +108,9 @@ class K2Footprint():
         fileobj.close()
 	
         # Call K2onSilicon and harvest the output:
-        ( iexec, coutput ) = getstatusoutput( 'K2onSilicon target.csv ' + \
-                    str(self.campaign) )
+        K2fov.K2onSilicon('target.csv', int(self.campaign))
+        #( iexec, coutput ) = getstatusoutput( 'K2onSilicon target.csv ' + \
+        #            str(self.campaign) )
 	
         # Parse the output file, called targets_siliconFlag.csv'
         # The last column entry for each object indicates whether or not the object lies on silicon.
@@ -135,20 +138,22 @@ class K2Footprint():
         
         def check_in_superstamp( target ):
             (ra, dec) = target.get_location()
-            comm = 'K2inMicrolensRegion ' + str(ra) + ' ' + str(dec) 
-            ( iexec, coutput ) = getstatusoutput( comm )
-            if 'coordinate is NOT inside' in coutput:
-                return False
-            elif 'coordinate is inside' in coutput:
-                return True
-            elif 'command not found' in coutput:
-                print """ERROR: K2fov tools not available.  
-                        Cannot check target location within the footprint"""
-                exit()
-            else:
-                print comm
-                print coutput
-                exit()
+            result = c9.inMicrolensRegion(ra, dec)
+            return result
+#            comm = 'K2inMicrolensRegion ' + str(ra) + ' ' + str(dec) 
+#            ( iexec, coutput ) = getstatusoutput( comm )
+#            if 'coordinate is NOT inside' in coutput:
+#                return False
+#            elif 'coordinate is inside' in coutput:
+#                return True
+#            elif 'command not found' in coutput:
+#                print """ERROR: K2fov tools not available.  
+#                        Cannot check target location within the footprint"""
+#                exit()
+#            else:
+#                print comm
+#                print coutput
+#                exit()
                 
         if debug==True: 
             print ' -> Checking whether events are in the K2C9 superstamp'
@@ -224,7 +229,7 @@ class K2Footprint():
         # Thresholds for determining whether an event has ended before a 
         # campaign or starts too late:
         n_min_te = 2.0
-        n_max_te = 1.5
+        n_max_te = 2.0
         
         for target_id in targets.keys():
             target = targets[ target_id ]
@@ -238,12 +243,16 @@ class K2Footprint():
             campaign_end = self.campaign_dates[-1][-1]
             t0 = target.get_par( 't0' )
             tE = target.get_par( 'te' )
+            tnow = Time( '2016-02-01T00:00:00', format='isot', scale='utc')
             try:
-                if ( t0 - n_min_te*tE ) < campaign_end and \
-                    ( t0 + n_max_te*tE ) > campaign_start:
+                if t0 > tnow.jd:
                     target.during_campaign = True
                 else:
-                    target.during_campaign = False
+                    if ( t0 - n_min_te*tE ) < campaign_end and \
+                        ( t0 + n_max_te*tE ) > campaign_start:
+                        target.during_campaign = True
+                    else:
+                        target.during_campaign = False
                     
                 # To be alertable, a target must:
                 # - Be within tE of the peak before the alert upload date
