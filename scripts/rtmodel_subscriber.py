@@ -29,12 +29,15 @@ def rtmodel_subscriber():
     
     # Loop over all events, harvest the parameters of the best fit
     # for each one:
+    rtmodels = {}
     for event_id in events_list:
-        get_event_params( config, event_id, log )
-        exit()
+        model = get_event_params( config, event_id, log )
+        rtmodels[event_id] = model
         
     # Tidy up and finish:
     log_utilities.end_day_log( log )
+    
+    return rtmodels    
     
 def get_events_list( config, log ):
     """Function to scrape the list of events which have been modeled by
@@ -63,6 +66,7 @@ def get_event_params( config, event_id, log ):
     (page_data,msg) = utilities.get_http_page(url,parse=False)
     
     model = event_classes.RTModel()
+    model.event_name = utilities.short_to_long_name(event_id)
     page_lines = page_data.split('\n')
     i = 0
     while i < (len(page_lines)):
@@ -78,15 +82,15 @@ def get_event_params( config, event_id, log ):
     entry = entry.split('</b>')[0]
     model.chisq = float(entry)
     
-    print 'Model chisq = ',model.chisq
-    
     params = {'s':'s', \
                 'q':'q', \
                 'u0': 'u<sub>0</sub>', \
                 'theta': '&theta;', \
                 'rho': '&rho;<sub>*</sub>', \
                 'tE': 't<sub>E</sub>', \
-                't0': 't<sub>0</sub>'
+                't0': 't<sub>0</sub>',\
+                'pi_perp': '&pi;<sub>&perp;</sub>',\
+                'pi_para': '&pi;<sub>||</sub>'
                 }
     
     for key, search_term in params.items():
@@ -103,12 +107,15 @@ def get_event_params( config, event_id, log ):
             
             setattr(model,key, value)
             setattr(model,'sig_'+key, sigma)
-            print 'Model set: ',key,getattr(model,key), getattr(model,'sig_'+key)
             
         except ValueError:
             pass
         
+    return model
     
 if __name__ == '__main__':
-    rtmodel_subscriber()
+    rtmodels = rtmodel_subscriber()
     
+    for event_id, model in rtmodels.items():
+        print model.summary()
+        

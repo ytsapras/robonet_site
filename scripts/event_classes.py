@@ -374,4 +374,19 @@ class RTModel():
         self.pi_para = None
         self.sig_pi_para = None
         self.chisq = None
-        
+    
+    def summary(self):
+        output = self.event_name
+        key_list = [ 's', 'q', 'u0', 't0', 'tE', 'theta', 'rho', 'pi_perp', \
+                'pi_para', 'chisq']
+        for key in key_list:
+            value = getattr(self,key)
+            try:
+                sigma = getattr(self,'sig_'+key)
+            except AttributeError:
+                sigma = None
+            if value != None:
+                output = output + ' ' + key + ' = ' + str(value)
+                if sigma != None:
+                    output = output + '+/-' + str(sigma)
+        return output
