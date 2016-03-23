@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<artemis_sync_config>
+    
+    <parameter name='year'>
+        <value>2016</value>
+    </parameter>
+
+    <parameter name='models_local_location'>
+        <!--<value>/science/robonet/rob/Operations/Signalmen_output/model</value>-->
+        <value>/Users/rstreet/RoboNet/Sandbox/models</value>
+    </parameter>
+    
+    <parameter name='log_directory'>
+        <!-- <value>/science/robonet/rob/Operations/Logs/2016/</value>-->
+        <value>/Users/rstreet/RoboNet/Sandbox/</value>
+    </parameter>
+    
+    <parameter name='log_root_name'>
+        <value>rtmodel_subscriber</value>
+    </parameter>
+    
+    <parameter name='root_url'>
+        <value>http://www.fisica.unisa.it/GravitationAstrophysics/RTModel</value>
+    </parameter>
+
+</artemis_sync_config>

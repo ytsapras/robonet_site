@@ -349,3 +349,29 @@ class K2C9Event():
         events = k2_campaign.targets_in_footprint( events )
         events = k2_campaign.targets_in_superstamp( events )
         events = k2_campaign.targets_in_campaign( events )
+
+class RTModel():
+    """Class describing the parameters of a model from RTModel"""
+    
+    def __init__(self):
+        self.event_name = None
+        self.s = None
+        self.sig_s = None
+        self.q = None
+        self.sig_q = None
+        self.u0 = None
+        self.sig_u0 = None
+        self.t0 = None
+        self.sig_t0 = None
+        self.tE = None
+        self.sig_tE = None
+        self.theta = None
+        self.sig_theta = None
+        self.rho = None
+        self.sig_rho = None
+        self.pi_perp = None
+        self.sig_pi_perp = None
+        self.pi_para = None
+        self.sig_pi_para = None
+        self.chisq = None
+        
