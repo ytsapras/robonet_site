@@ -14,7 +14,7 @@ from os import path
 from astropy.time import Time
 import glob
 
-def start_day_log( config, log_name ):
+def start_day_log( config, log_name, console=False ):
     """Function to initialize a new log file.  The naming convention for the
     file is [log_name]_[UTC_date].log.  A new file is automatically created 
     if none for the current UTC day already exist, otherwise output is appended
@@ -42,17 +42,21 @@ def start_day_log( config, log_name ):
         log.setLevel( logging.INFO )
         file_handler = logging.FileHandler( log_file )
         file_handler.setLevel( logging.INFO )
-    
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel( logging.INFO )
+        
+        if console == True:
+            console_handler = logging.StreamHandler()
+            console_handler.setLevel( logging.INFO )
     
         formatter = logging.Formatter( fmt='%(asctime)s %(message)s', \
                                     datefmt='%Y-%m-%dT%H:%M:%S' )
         file_handler.setFormatter( formatter )
-        console_handler.setFormatter( formatter )
+
+        if console == True:        
+            console_handler.setFormatter( formatter )
     
         log.addHandler( file_handler )
-        log.addHandler( console_handler )
+        if console == True:            
+            log.addHandler( console_handler )
     
     log.info( '\n------------------------------------------------------\n')
     return log

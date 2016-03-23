@@ -207,11 +207,14 @@ class K2C9Event():
             if key in dir( self ):
                 setattr( self, key, value )
     
-    def get_params( self ):
+    def get_params( self, key_list=None ):
         """Method to return a dictionary of all parameters"""
         
+        if key_list == None:
+            key_list = dir( self )
+            
         params = {}
-        for key in dir( self ):
+        for key in key_list:
             params[key] = getattr(self,key)
         return params
         

@@ -15,6 +15,7 @@ from os import path, stat
 #import update_db
 import utilities
 from datetime import datetime
+import log_utilities
 
 ##############################
 # CONFIG INTERPRETATION
@@ -41,40 +42,43 @@ def sync_artemis():
     '''Driver function to maintain an up to date copy of the data on all microlensing events from 
         the ARTEMiS server at Univ. of St. Andrews.
     '''
-
+    
     # Read configuration:
-    config_file_path = '../configs/artemis_sync.xml'
+    config_file_path = '/home/robouser/.robonet_site/artemis_sync.xml'
     config = config_parser.read_config(config_file_path)
-    verbose(config,'Started sync with ARTEMiS server')
+    log = log_utilities.start_day_log( config, __name__ )
+    log.info('Started sync with ARTEMiS server')
     
     # Sync the results of ARTEMiS' own model fits for all events:
-    sync_artemis_data_db(config,'model')
+    sync_artemis_data_db(config,'model',log)
 
     # Sync the event parameters published by the surveys from the ARTEMiS server:
-    sync_artemis_data_db(config,'pubpars')
+    sync_artemis_data_db(config,'pubpars',log)
 
     # Sync the event photometry data from the ARTEMiS server:
-    sync_artemis_data_db(config,'data')
+    sync_artemis_data_db(config,'data',log)
 
-
+    # Tidy up and finish:
+    log_utilities.end_day_log( log )
+    
 ###############################################
 # FUNCTION TO SYNC & PROCESS ARTEMiS DATA
-def sync_artemis_data_db(config,data_type):
+def sync_artemis_data_db(config,data_type,log):
     '''Function to sync a local copy of the ARTEMiS model fit files for all events from the
        server at the Univ. of St. Andrews.
     '''
     
-    verbose(config,'Syncing '+data_type+' from ARTEMiS server')
+    log.info('Syncing '+data_type+' from ARTEMiS server')
     
     # Rsync the contents of ARTEMiS' model files directory, creating a log file listing
     # all files which were updated as a result of this rsync and hence which have been
     # updated.
     rsync_log_path = rsync_data_log(config,data_type)
-    verbose(config,'-> downloaded datalog')
+    log.info('-> downloaded datalog')
 
     # Read the list of updated models:
     event_files = read_rsync_log(config,rsync_log_path,data_type)
-    verbose(config,'-> '+str(len(event_files))+' entries have been updated')
+    log.info('-> '+str(len(event_files))+' entries have been updated')
 
     
     # Loop over all updated models and update the database:
@@ -87,7 +91,7 @@ def sync_artemis_data_db(config,data_type):
         # For model files:
         # Query the DB to check whether the event exists in the database already:
         if data_type == 'model' and len(event_params) > 0 and int(config['update_db']) == 1:
-            verbose(config,'-> Updating database')
+            log.info('-> Updating database')
             event_exists = update_db.check_exists(event_params['long_name'])
 
             # If event is unknown to the DB, add it first:
@@ -125,7 +129,7 @@ def rsync_data_log(config,data_type):
     # Contruct and execute rsync commandline:
     ts = Time.now()          # Defaults to UTC
     ts = ts.now().iso.split('.')[0].replace(' ','T').replace(':','').replace('-','')
-    log_path = path.join( config['log_directory'], config[log_root_name] + '_' + ts + '.log' )
+    log_path = path.join( config['rsync_log_directory'], config[log_root_name] + '_' + ts + '.log' )
     command = 'rsync -azu ' + \
                config['user_id'] + '@' + config['url'] + config[remote_location] + ' ' + \
                config[local_location] + ' ' + \
@@ -199,13 +203,11 @@ def read_artemis_model_file(model_file_path):
             
             # In case of a file with zero content
             except IndexError: 
-                
                 pass
             
             # In case of mal-formed file content:
             except ValueError:
-                print lines[0], model_file_path
-                exit()
+                pass
                 
     return params
 
@@ -238,7 +240,6 @@ def read_artemis_data_file(data_file_path):
         p.wait()
         params['ndata'] = int(str(p.stdout.readline()).split()[0]) - 1
         
-        print params
     return params
 
 ################################

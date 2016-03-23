@@ -15,6 +15,7 @@ from sys import exit
 from os import path, stat
 #import update_db
 import utilities
+import log_utilities
 from datetime import datetime, timedelta
 import ftplib
 import survey_data_utilities
@@ -29,28 +30,32 @@ def sync_surveys():
     '''
 
     # Read script configuration:
-    config_file_path = '../configs/surveys_sync.xml'
+    config_file_path = '/home/robouser/.robonet_site/surveys_sync.xml'
     config = config_parser.read_config(config_file_path)
-    verbose(config,'Started sync of survey data')
+    
+    log = log_utilities.start_day_log( config, __name__ )
+    log.info( 'Started sync of survey data')
 
     # Harvest parameters of lenses detected by OGLE
-    ogle_data = get_ogle_parameters(config)
+    ogle_data = get_ogle_parameters(config, log)
 
 
 # Sync against database
 
     # Harvest MOA information
-    ogle_data = get_moa_parameters(config)
+    moa_data = get_moa_parameters(config, log)
 
 # Sync against database
 
     # Harvest KMTNet information
     # KMTNet are not producing alerts yet
     #get_kmtnet_parameters(config)
+    
+    log_utilities.end_day_log( log )
 
 ##################################################
 # FUNCTION GET OGLE PARAMETERS
-def get_ogle_parameters(config):
+def get_ogle_parameters(config, log):
     '''Function to download the parameters of lensing events from the OGLE survey. 
     OGLE make these available via anonymous FTP from ftp.astrouw.edu.pl in the form of two files.
     ogle/ogle4/ews/last.changed   contains a yyyymmdd.daydecimal timestamp of the time of last update
@@ -60,7 +65,7 @@ def get_ogle_parameters(config):
     This function returns the parameters of all the lenses as a dictionary, plus a datetime object of the last changed date.
     '''
 
-    verbose(config,'Syncing data from OGLE')
+    log.info('Syncing data from OGLE')
     ogle_data = survey_classes.SurveyData()
     years = [ '2014', '2015', '2016' ]
     
@@ -84,9 +89,9 @@ def get_ogle_parameters(config):
     
     ogle_data = survey_data_utilities.read_ogle_param_files( config )
         
-    verbose(config,'--> Last updated at: ' + \
+    log.info('--> Last updated at: ' + \
             ogle_data.last_changed.strftime("%Y-%m-%dT%H:%M:%S"))
-    verbose(config,'--> Downloaded index of ' + str(len(ogle_data.lenses)) + \
+    log.info('--> Downloaded index of ' + str(len(ogle_data.lenses)) + \
                         ' events')
 
 
@@ -94,12 +99,14 @@ def get_ogle_parameters(config):
                                         config['ogle_updated_file']  )
     ogle_data.last_updated = \
         survey_data_utilities.write_update_file( update_file_path )
-        
+    
+    log.info('-> Completed sync of data from OGLE')
+    
     return ogle_data
 
 ###################################################
 # FUNCTION GET MOA PARAMETERS
-def get_moa_parameters(config):
+def get_moa_parameters(config, log):
     '''Function to download the parameters of lensing events detected by the MOA survey.  
         MOA make these available via their websites:
         https://it019909.massey.ac.nz/moa/alert<year>/alert.html
@@ -124,7 +131,7 @@ def get_moa_parameters(config):
             classification = 'microlensing'
         return classification
         
-    verbose(config,'Syncing data from MOA')
+    log.info('Syncing data from MOA')
     moa_data = survey_classes.SurveyData()
     years = [ '2014', '2015', '2016' ]
     
@@ -197,12 +204,12 @@ def get_moa_parameters(config):
                     fileobj = open( ts_file_path, 'w' )
                     fileobj.write( t + '\n' )
                     fileobj.close()
-                    verbose(config,'--> Last updated at: '+t)
+                    log.info('--> Last updated at: '+t)
                     moa_data.last_changed = \
                         survey_data_utilities.time_stamp_file( ts_file_path, \
                                                 "%Y-%m-%dT%H:%M:%S" )
 
-    verbose(config,'--> Downloaded index of ' + str(len(moa_data.lenses)) + \
+    log.info('--> Downloaded index of ' + str(len(moa_data.lenses)) + \
                         ' events')
                         
     # The MOA download is read directly from the website and thus produces
@@ -221,6 +228,8 @@ def get_moa_parameters(config):
     moa_data.last_updated = \
         survey_data_utilities.write_update_file( update_file_path )
 
+    log.info('-> Completed sync of MOA data')    
+    
     return moa_data
 
 ####################################################

@@ -5,7 +5,6 @@ Created on Mon Feb  8 18:03:54 2016
 @author: rstreet
 """
 
-#!/usr/bin/python
 ######################################################################################################
 #                                   EXOFOP_PUBLISHER
 #
@@ -52,6 +51,9 @@ def exofop_publisher():
     # Read known false positives list:
     false_positives = get_false_positives( config )    
     
+    # Read known duplicate list:
+    known_duplicates = get_duplicate_events_list( config, log )
+    
     # Load TAP output:
     tap_data = load_tap_output( config )    
     
@@ -72,25 +74,19 @@ def exofop_publisher():
     # all these providers and compare to ensure the list is up to date.  
     # Produce master event dictionary events, but only include
     # those events found within the K2C9 superstamp.
-    log.info('Loading ARTEMiS event data')
-    artemis_events = load_artemis_event_data( config )
-    log.info(' -> ' + str(len(artemis_events)) + ' events from ARTEMiS')
-    log.info('Loading survey event data')
-    survey_events = load_survey_event_data( config, log )
-    log.info(' -> ' + str(len(survey_events)) + ' events from surveys')
+    artemis_events = load_artemis_event_data( config, log )
+    survey_events = load_survey_event_data( config, known_duplicates, log )
+    update_known_duplicates( config, known_duplicates )
     
     if output_target == True:
         log.info('SURVEY: '+survey_events[sid].summary(key_list)+'\n')
 
     # Select those events which are in the K2 footprint
     # Combine all available data on them
-    log.info('Combining data on all known events')
     known_events = \
             combine_K2C9_event_feed( known_events, false_positives, \
                                         artemis_events, survey_events, \
-                                            tap_data )
-    n_events = len(known_events['master_index'])
-    log.info(' -> total of ' + str(n_events) + ' events')  
+                                            tap_data, log )
     
     if output_target == True:
         log.info('COMBINED: '+known_events['master_index'][sidx].summary(key_list)+'\n')
@@ -112,24 +108,17 @@ def exofop_publisher():
     known_events = assign_identifiers( known_events )    
     
     # Extract findercharts for K2C9 objects:
-    log.info('Fetching findercharts for events within the K2 Campaign')
-    get_finder_charts( config, known_events )
+    get_finder_charts( config, known_events, log )
     
     # Now output the combined information stream in the format agreed on for 
     # the ExoFOP transfer
-    generate_exofop_output( config, known_events )
-    log.info('Output data for ExoFOP transfer')
+    generate_exofop_output( config, known_events, log )
     
     # Generate K2C9 event summary table:
-    log.info('Generating event summary tables')
-    generate_K2C9_events_table( config, known_events )
-    log.info('Completed event summary tables')
+    generate_K2C9_events_table( config, known_events, log )
     
     # Update the master list of known events, and those within the K2C9 footprint:
-    log.info('Identifying events within the footprint and outside the superstamp')
-    xsuperstamp_events = update_known_events( config, known_events )
-    log.info('-> Identified ' + str(len(xsuperstamp_events)) + \
-                ' events outside the superstamp' )
+    xsuperstamp_events = update_known_events( config, known_events, log )
     
     # Plot locations of events:
     log.info('Plotting event locations...')
@@ -260,8 +249,42 @@ def get_false_positives( config ):
             false_positives.append( line.replace('\n', '') )
     return false_positives
     
-def update_known_events( config, known_events ):
+def get_duplicate_events_list( config, log ):
+    """Function to read the list of known duplicate events. 
+    File format:
+        event_name  action  substitute_name
+            where action = { no_duplicate, keep_existing_event, substitute }
+            and substitute_name = { None, event_name }
+    """
+    
+    known_duplicates = {}
+    file_path = path.join( config['log_directory'], 'known_duplicates' )
+    if path.isfile(file_path) == True:
+        file_lines = open( file_path, 'r' ).readlines()
+        for line in file_lines:
+            entries = line.replace('\n','').split()
+            event_id = entries[0]
+            action = entries[1]
+            substitute = entries[2]
+            known_duplicates[event_id] = { 'action': action, 'substitute': substitute }
+        log.info('Read list of ' + str(len(known_duplicates)) + ' known duplicate events' )
+    
+    return known_duplicates
+
+def update_known_duplicates( config, known_duplicates ):
+    """Function to output the updated list of known event duplicates"""
+    file_path = path.join( config['log_directory'], 'known_duplicates' )
+    fileobj = open(file_path, 'w')
+    for event_id, params in known_duplicates.items():
+        output = event_id + ' ' + params['action'] + ' ' + \
+                                            params['substitute'] + '\n'
+        fileobj.write(output)
+    fileobj.close()
+    
+def update_known_events( config, known_events, log ):
     """Function to output a cross-identified list of all event identifiers"""
+    
+    log.info('Identifying events within the footprint and outside the superstamp')
     
     events_file = path.join( config['log_directory'], \
                             config['master_events_list'] )
@@ -293,6 +316,8 @@ def update_known_events( config, known_events ):
                 xsuperstamp_events[ event_id ] = event
                 
     fileobj.close()
+    log.info('-> Identified ' + str(len(xsuperstamp_events)) + \
+                ' events outside the superstamp' )
     
     return xsuperstamp_events    
 
@@ -307,8 +332,10 @@ def assign_identifiers( known_events ):
             known_events['master_index'][event_id] = event
     return known_events
     
-def load_artemis_event_data( config ):
+def load_artemis_event_data( config, log ):
     """Function to load the full list of events known to ARTEMiS."""
+
+    log.info('Loading ARTEMiS event data')    
     
     # List of keys in a K2C9Event which should be prefixed with
     # Signalmen:
@@ -317,7 +344,7 @@ def load_artemis_event_data( config ):
     # Make a dictionary of all events known to ARTEMiS based on the 
     # ASCII-format model files in its 'models' directory.
     search_str = path.join( config['models_local_location'], \
-            '?B1\[5-6\]????.model' )
+            '?B1[5-6]????.model' )
     model_file_list = glob.glob( search_str )
     
     artemis_events = {}
@@ -329,12 +356,15 @@ def load_artemis_event_data( config ):
             event.set_params( params )
             event.set_event_name( params )
             artemis_events[ params['long_name'] ] = event
-            
+    log.info(' -> Loaded data for ' + str(len(artemis_events)))
+    
     return artemis_events    
 
-def load_survey_event_data( config, log ):
+def load_survey_event_data( config, known_duplicates, log ):
     """Method to load the parameters of all events known from the surveys.
     """
+    
+    log.info('Loading survey event data')
     
     ogle_data = survey_data_utilities.read_ogle_param_files( config )
     moa_data = survey_data_utilities.read_moa_param_files( config )
@@ -352,22 +382,17 @@ def load_survey_event_data( config, log ):
         if ogle_id == 'OGLE-2016-BLG-0211':
             print 'GOT OGLE-2016-BLG-0211'
             print lens.summary()
+            
         # Check for duplicated events under different names. 
-        # Note: this filter removes the earlier 
-        (duplicate_event, status) = filter_duplicate_events( survey_events, lens )
+        # Note: this filter removes the later event
+        (duplicate_event, status, known_duplicates) = \
+                    filter_duplicate_events( survey_events, lens, known_duplicates )
         
         if duplicate_event != None:
             log.info('DUPLICATE EVENT')
-            log.info('New lens ' + ogle_id + ' RA,Dec:' + str(lens.ra) + ' ' + str(lens.dec))
-            if status == 'substitute':
-                replaced_event = survey_events.pop( duplicate_event )
-                log.info( 'Matches existing event ' + duplicate_event + ' RA,Dec: ' + \
-                    str(replaced_event.ogle_ra) + ' ' + str(replaced_event.ogle_dec) )
-            else:
-                log.info( 'Matches existing event ' + duplicate_event + ' RA,Dec: ' + \
-                    str(survey_events[duplicate_event].ogle_ra) + ' ' + \
-                    str(survey_events[duplicate_event].ogle_dec) )
-            log.info('Action: ' + status)
+            log.info('New lens ' + ogle_id + ' RA,Dec:' + str(lens.ra) + \
+                                ' ' + str(lens.dec) + ' matches position of ' + \
+                                duplicate_event + ' action: ' + status)
             
         if status in [ 'no_duplicate', 'substitute' ]:
             event = event_classes.K2C9Event()
@@ -381,12 +406,11 @@ def load_survey_event_data( config, log ):
     ogle_id_list = survey_events.keys()
     ogle_id_list.sort()
     
-        
     # Now work through MOA events, adding them to the dictionary:
     for moa_id, lens in moa_data.lenses.items():
         
         coords1 = ( lens.ra, lens.dec )
-            
+        
         # If this event matches one already in the dictionary, 
         # add the MOA parameters to the K2C9Event instance:
         i = 0
@@ -412,15 +436,14 @@ def load_survey_event_data( config, log ):
         if match == False:
 
             # Check for duplicate MOA event:
-            (duplicate_event, status) = filter_duplicate_events( survey_events, lens )
+            ( duplicate_event, status, known_duplicates ) = \
+                filter_duplicate_events( survey_events, lens, known_duplicates )
         
             if duplicate_event != None and status == 'substitute':
-                replaced_event = survey_events.pop( duplicate_event )
                 log.info('DUPLICATE EVENT')
-                log.info('New lens ' + moa_id + ' RA,Dec:' + str(lens.ra) + ' ' + str(lens.dec))
-                log.info('Matches existing event ' + duplicate_event + ' RA,Dec: ' + \
-                        str(replaced_event.moa_ra) + ' ' + str(replaced_event.moa_dec) )
-                log.info('Action: ' + status)
+                log.info('New lens ' + moa_id + ' RA,Dec:' + str(lens.ra) + \
+                                ' ' + str(lens.dec) + ' matches position of ' + \
+                                duplicate_event + ' action: ' + status)
                 
             if status in [ 'no_duplicate', 'substitute' ]: 
                 event = event_classes.K2C9Event()
@@ -431,7 +454,7 @@ def load_survey_event_data( config, log ):
                 event.classification = lens.classification
                 survey_events[ event.moa_name ] = event
 
-    
+    log.info(' -> ' + str(len(survey_events)) + ' events from surveys')
     return survey_events
     
     
@@ -474,7 +497,7 @@ def match_events_by_position( coords1, coords2, debug=False ):
     
     return match
 
-def filter_duplicate_events( survey_events, new_lens ):
+def filter_duplicate_events( survey_events, new_lens, known_duplicates ):
     """Function to filter out duplicate events identified multiple times by
     the same survey.  
     Possible return states:
@@ -489,38 +512,48 @@ def filter_duplicate_events( survey_events, new_lens ):
     
     """
     
-    new_origin = str(new_lens.name).split('-')[0].lower()
-    coords1 = ( new_lens.ra, new_lens.dec )
-    new_year = float(str(new_lens.name).split('-')[1])
-    new_number = float(str(new_lens.name).split('-')[-1])
-    duplicate_event = None
-    status = 'no_duplicate'
+    # First check to see if the event has already been filtered:
+    if new_lens.name in known_duplicates.keys():
+        status = known_duplicates[new_lens.name]['action']
+        duplicate_event = known_duplicates[new_lens.name]['substitute']
     
-    for event_name, event in survey_events.items():
-        origin = event.get_event_origin()
+    # If not, match events by location.  If this is the case, add
+    # the new event to the known_duplicates dictionary:
+    else:
+        new_origin = str(new_lens.name).split('-')[0].lower()
+        coords1 = ( new_lens.ra, new_lens.dec )
+        new_year = float(str(new_lens.name).split('-')[1])
+        new_number = float(str(new_lens.name).split('-')[-1])
+        duplicate_event = None
+        status = 'no_duplicate'
         
-        if origin == new_origin:
-            coords2 = event.get_location()
-            match = match_events_by_position( coords1, coords2 )
+        for event_name, event in survey_events.items():
+            origin = event.get_event_origin()
             
-            if match == True:
-                match_year = float(event_name.split('-')[1])
-                match_number = float(event_name.split('-')[-1])
-                duplicate_event = event_name
+            if origin == new_origin:
+                coords2 = event.get_location()
+                match = match_events_by_position( coords1, coords2 )
                 
-                if match_year > new_year:
-                    status = 'substitute'
-                
-                elif match_year < new_year:
-                    status = 'keep_existing_event'
+                if match == True:
+                    match_year = float(event_name.split('-')[1])
+                    match_number = float(event_name.split('-')[-1])
+                    duplicate_event = event_name
                     
-                else:
-                    if match_number > new_number:
+                    if match_year > new_year:
                         status = 'substitute'
-                    else:
+                    
+                    elif match_year < new_year:
                         status = 'keep_existing_event'
                         
-    return duplicate_event, status
+                    else:
+                        if match_number > new_number:
+                            status = 'substitute'
+                        else:
+                            status = 'keep_existing_event'
+        known_duplicates[new_lens.name] = { 'action': status, \
+                                            'substitute': str(duplicate_event)}
+                                            
+    return duplicate_event, status, known_duplicates
     
 def load_tap_output( configs ):
     """Function to load TAP prioritization output from the online table."""
@@ -563,61 +596,19 @@ def load_tap_output( configs ):
     return tap_data
     
 def combine_K2C9_event_feed( known_events, false_positives, \
-                                artemis_events, survey_events, tap_data  ):
+                                artemis_events, survey_events, tap_data, log ):
     """Function to produce a dictionary of just those events identified
     within the superstamp of K2C9."""
     
     prefix_keys = [ 'a0', 't0', 'sig_t0', 'te', 'sig_te', 'u0', 'sig_u0', \
                 'ra', 'dec' ]
     
-    # First review all events known to ARTEMiS:
-    for event_id, event in artemis_events.items():
-        
-        origin = str(event_id.split('-')[0]).lower()
-        
-        # Exclude known false positives:
-        if event_id not in false_positives:
-        
-            # Event already known:
-            if event_id in known_events[origin].keys():
-                event.master_index = known_events[origin][event_id]
-                if event.master_index in known_events['identifiers'].keys():
-                    event.identifier = known_events['identifiers'][event.master_index]
-                    
-                # Update event from known_events with ARTEMiS parametersXXX
-                
-                event.status = 'UPDATED'
-                
-            else:
-                # Generate a new master_index and add to the known_events index:
-                if len(known_events['master_index'].keys()) > 0:                
-                    event.master_index = np.array(known_events['master_index'].keys()).max() + 1
-                else:
-                    event.master_index = 1
-                event.status = 'NEW'
-                known_events[origin][event_id] = event.master_index
-                
-            # Is this event in the survey_events list?
-            # Theoretically it should always be, but if the surveys webservice
-            # gets out of sync for whatever reason, we should handle this case
-            # Events are listed by both OGLE and MOA names for easy look-up
-            # If an event is found, transfer the parameters from the survey data:
-            if event_id in survey_events.keys():
-                survey_data = survey_events[ event_id ]
-                params = survey_data.get_params()
-                params = set_key_names( params, prefix_keys, origin )
-                event.set_params( params )
-                
-            known_events['master_index'][ event.master_index ] = event
-        
-    # Now review all events reported by the survey as a double-check
-    # that ARTMEMiS isn't out of sync:
+    log.info('Combining data on all known events')
+    
+    # Review all events reported by the surveys:
     for event_name, event in survey_events.items():
         
         origin = str(event_name.split('-')[0]).lower()
-        if event_name == 'OGLE-2016-BLG-0211':
-            print 'COMBINING DATA on OGLE-2016-BLG-0211 ',event.classification, 
-            (event_name not in false_positives)
             
         # Exclude known false positives:
         if event_name not in false_positives and \
@@ -653,13 +644,16 @@ def combine_K2C9_event_feed( known_events, false_positives, \
                 
             # Always update the known_events with the most up to date event data
             known_events['master_index'][ event.master_index ] = event
-            if event_name == 'OGLE-2016-BLG-0211':
-                print 'HERE 1: ',event_name, event.master_index
-                
-    # Combine the complete listing of events with TAP's output:
+    
+    
+    # Combine the complete listing of events with ARTEMiS' and TAP's output:
+    sig_keys = [ 'signalmen_a0', 'signalmen_t0', 'signalmen_sig_t0', \
+                 'signalmen_te', 'signalmen_sig_te', 'signalmen_u0', \
+                 'signalmen_sig_u0', 'signalmen_anomaly' ]
     for event_id, event in known_events['master_index'].items():
         
         event_name = event.get_event_name()
+        
         if event_name in tap_data.keys():
             tap = tap_data[event_name]
             event.tap_priority = tap['priority']
@@ -669,6 +663,16 @@ def combine_K2C9_event_feed( known_events, false_positives, \
     
             known_events['master_index'][event_id] = event
             
+        if event_name in artemis_events.keys():
+            artemis_data = artemis_events[ event_name ]
+            params = artemis_data.get_params(key_list=sig_keys)  
+            event.set_params( params )
+            
+            known_events['master_index'][event_id] = event
+        
+    n_events = len(known_events['master_index'])
+    log.info(' -> total of ' + str(n_events) + ' events')
+    
     return known_events
     
 def set_identifier( known_events ):
@@ -698,9 +702,11 @@ def set_key_names( params, prefix_keys, prefix ):
             output[ key ] = value
     return output
 
-def get_finder_charts( config, known_events ):
+def get_finder_charts( config, known_events, log ):
     """Function to retrive the findercharts for known events within the K2
     footprint"""
+    
+    log.info('Fetching findercharts for events within the K2 Campaign')
     
     # Loop through all events, but only extract the finderchart data
     # for targets within the footprint, since its time consuming:
@@ -737,8 +743,10 @@ def get_finder_charts( config, known_events ):
                     open( file_path, 'w').write(page_data)
                 
 
-def generate_K2C9_events_table( config, known_events, debug=False ):
+def generate_K2C9_events_table( config, known_events, log, debug=False ):
     """Function to output a table of events in the K2C9 footprint"""
+    
+    log.info('Generating event summary tables')
     
     file_path = path.join( config['log_directory'], 'K2C9_events_table.dat' )
     fileobj1 = open( file_path, 'w' )
@@ -789,7 +797,6 @@ def generate_K2C9_events_table( config, known_events, debug=False ):
             if event.in_footprint == True and event.in_superstamp == False \
                 and event.during_campaign == True:
                 #if float(A0) > 0.0:
-                print 'Selected event class: ',name, classification
                 if 'microlensing' in classification and float(te) < 10000.0:
                     entry = entry + ' ' + npix + '\n'
                     file_list2.append(entry)
@@ -809,11 +816,14 @@ def generate_K2C9_events_table( config, known_events, debug=False ):
         fileobj2.write(line)
     fileobj2.write('\nTotal N pixels = ' + str(pixel_sum) + '\n')
     fileobj2.close()
+    log.info('Completed event summary tables')
     
-def generate_exofop_output( config, known_events ):
+def generate_exofop_output( config, known_events, log ):
     """Function to output datafiles for all events in the format agreed 
     with ExoFOP
     """
+    
+    log.info('Outputing data for ExoFOP transfer')
     
     # Open manifest file to describe documents for transfer:
     manifest_file = path.join( config['log_directory'], 'MANIFEST' )    

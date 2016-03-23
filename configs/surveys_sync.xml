@@ -48,8 +48,11 @@
     </parameter>
     
     <parameter name='log_directory'>
-        <value>/science/robonet/rob/Operations/Signalmen_output/Rsynclog</value>
-        <!-- <value>/Users/rstreet/RoboNet/Sandbox/</value> -->
+        <value>/science/robonet/rob/Operations/Logs/2016/</value>
+    </parameter>
+    
+    <parameter name='log_root_name'>
+        <value>survey_subscriber</value>
     </parameter>
     
     <parameter name='models_log_root_name'>

@@ -144,6 +144,9 @@ class K2Footprint():
         
         def check_in_superstamp( target ):
             (ra, dec) = target.get_location()
+            if ra == None or dec == None:
+                print target.summary([])
+                exit()
             result = c9.inMicrolensRegion(ra, dec)
             return result
 #            comm = 'K2inMicrolensRegion ' + str(ra) + ' ' + str(dec) 
