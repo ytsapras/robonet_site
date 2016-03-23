@@ -16,6 +16,7 @@ from sys import argv, exit
 import config_parser
 import glob
 import artemis_subscriber
+import rtmodel_subscriber
 import survey_data_utilities
 from astropy.time import Time
 import numpy as np
@@ -26,15 +27,18 @@ import log_utilities
 import logging
 from commands import getstatusoutput
 import ftplib
+from shutil import copy
 
 def exofop_publisher():
     """
-    Driver function to provide a live datafeed of microlensing events within the K2C9 superstamp to ExoFOP
+    Driver function to provide a live datafeed of microlensing events 
+    within the K2C9 superstamp to ExoFOP
     """
+    config_file_path = path.join(path.expanduser('~'),
+                                 '.robonet_site', 'exofop_publish.xml')
+    config = config_parser.read_config( config_file_path )
     
-    config = config_parser.read_config( '../configs/exofop_publish.xml' )
-    
-    log = log_utilities.start_day_log( config, __name__ )
+    log = log_utilities.start_day_log( config, __name__, console=False )
     log.info( 'Read script configuration\n' )
     
     # Remove the READY file from the transfer machine to stop IPAC 
@@ -70,38 +74,25 @@ def exofop_publisher():
                                                     config['k2_year'] )
     
     # Data are provided by combining datastreams from the providing surveys + 
-    # ARTEMiS.  First step is to read in a list of the event parameters from 
-    # all these providers and compare to ensure the list is up to date.  
+    # ARTEMiS, RTModel.  First step is to read in a list of the event parameters  
+    # from all these providers and compare to ensure the list is up to date.  
     # Produce master event dictionary events, but only include
     # those events found within the K2C9 superstamp.
-    artemis_events = load_artemis_event_data( config, log )
+    (artemis_events, artemis_renamed) = load_artemis_event_data( config, log )
+    rtmodels = rtmodel_subscriber.rtmodel_subscriber(log=log, \
+                                                    renamed=artemis_renamed)
     survey_events = load_survey_event_data( config, known_duplicates, log )
     update_known_duplicates( config, known_duplicates )
     
-    if output_target == True:
-        log.info('SURVEY: '+survey_events[sid].summary(key_list)+'\n')
-
     # Select those events which are in the K2 footprint
     # Combine all available data on them
     known_events = \
             combine_K2C9_event_feed( known_events, false_positives, \
                                         artemis_events, survey_events, \
-                                            tap_data, log )
+                                            rtmodels, tap_data, log )
     
-    if output_target == True:
-        log.info('COMBINED: '+known_events['master_index'][sidx].summary(key_list)+'\n')
-
     # Identify which events are within the K2 campaign footprint & dates:
-    log.info('Identifying events within the K2 Campaign')
-    events = known_events['master_index']
-    events = k2_campaign.targets_in_footprint( events, verbose=False )
-    if config['k2_campaign'] == str(9):    
-        events = k2_campaign.targets_in_superstamp( events, verbose=False )
-    events = k2_campaign.targets_in_campaign( events, verbose=False )
-    known_events['master_index']= events
-    
-    if output_target == True:
-        log.info('IDENTIFIED: '+known_events['master_index'][sidx].summary(key_list)+'\n')
+    known_events = targets_for_k2_campaign(config, known_events, k2_campaign, log)
     
     # Assign K2C9 identifiers to any events within the footprint which
     # do not yet have them:
@@ -341,6 +332,16 @@ def load_artemis_event_data( config, log ):
     # Signalmen:
     prefix_keys = [ 'a0', 't0', 'sig_t0', 'te', 'sig_te', 'u0', 'sig_u0' ]
     
+    # Load list of events renamed by Martin because they are from the
+    # previous year:
+    artemis_renamed = {}
+    file_path = path.join( config['log_directory'], 'artemis_renamed_events')
+    if path.isfile(file_path) == True:
+        file_lines = open(file_path,'r').readlines()
+        for line in file_lines:
+            (key,value) = line.split()
+            artemis_renamed[key] = value
+    
     # Make a dictionary of all events known to ARTEMiS based on the 
     # ASCII-format model files in its 'models' directory.
     search_str = path.join( config['models_local_location'], \
@@ -350,6 +351,8 @@ def load_artemis_event_data( config, log ):
     artemis_events = {}
     for model_file in model_file_list:
         params = artemis_subscriber.read_artemis_model_file( model_file )
+        if params['long_name'] in artemis_renamed.keys():
+            params['long_name'] = artemis_renamed[params['long_name']]
         params = set_key_names( params, prefix_keys, 'signalmen' )
         if len( params ) > 0:
             event = event_classes.K2C9Event()
@@ -358,7 +361,7 @@ def load_artemis_event_data( config, log ):
             artemis_events[ params['long_name'] ] = event
     log.info(' -> Loaded data for ' + str(len(artemis_events)))
     
-    return artemis_events    
+    return artemis_events, artemis_renamed
 
 def load_survey_event_data( config, known_duplicates, log ):
     """Method to load the parameters of all events known from the surveys.
@@ -388,7 +391,7 @@ def load_survey_event_data( config, known_duplicates, log ):
         (duplicate_event, status, known_duplicates) = \
                     filter_duplicate_events( survey_events, lens, known_duplicates )
         
-        if duplicate_event != None:
+        if status in ['substitute', 'keep_existing_event']:
             log.info('DUPLICATE EVENT')
             log.info('New lens ' + ogle_id + ' RA,Dec:' + str(lens.ra) + \
                                 ' ' + str(lens.dec) + ' matches position of ' + \
@@ -401,6 +404,7 @@ def load_survey_event_data( config, known_duplicates, log ):
             event.set_event_name( {'name': ogle_id} )
             event.set_params( params )
             event.classification = lens.classification
+            event.set_ogle_url( config )
             survey_events[ event.ogle_name ] = event
             
     ogle_id_list = survey_events.keys()
@@ -426,6 +430,7 @@ def load_survey_event_data( config, known_duplicates, log ):
                 moa_lens_params = set_key_names( moa_lens_params, prefix_keys, 'moa' )
                 #print moa_lens_params
                 ogle_event.set_params( moa_lens_params )
+                ogle_event.set_moa_url( config )
                 survey_events[ ogle_id_list[i] ] = ogle_event
                 survey_events[ moa_lens_params['moa_name'] ] = ogle_event
                 
@@ -452,6 +457,7 @@ def load_survey_event_data( config, known_duplicates, log ):
                 event.set_event_name( {'name': moa_id} )
                 event.set_params( moa_params )
                 event.classification = lens.classification
+                event.set_moa_url( config )
                 survey_events[ event.moa_name ] = event
 
     log.info(' -> ' + str(len(survey_events)) + ' events from surveys')
@@ -596,7 +602,8 @@ def load_tap_output( configs ):
     return tap_data
     
 def combine_K2C9_event_feed( known_events, false_positives, \
-                                artemis_events, survey_events, tap_data, log ):
+                                artemis_events, survey_events, rtmodels, \
+                                    tap_data, log ):
     """Function to produce a dictionary of just those events identified
     within the superstamp of K2C9."""
     
@@ -604,6 +611,7 @@ def combine_K2C9_event_feed( known_events, false_positives, \
                 'ra', 'dec' ]
     
     log.info('Combining data on all known events')
+    log.info(' -> Combining survey data')
     
     # Review all events reported by the surveys:
     for event_name, event in survey_events.items():
@@ -646,10 +654,14 @@ def combine_K2C9_event_feed( known_events, false_positives, \
             known_events['master_index'][ event.master_index ] = event
     
     
-    # Combine the complete listing of events with ARTEMiS' and TAP's output:
+    # Combine the complete listing of events with ARTEMiS', TAP's and 
+    # RTmodel's output:
+    log.info(' -> Combining data from ARTEMiS, TAP and RTModel')
+    
     sig_keys = [ 'signalmen_a0', 'signalmen_t0', 'signalmen_sig_t0', \
                  'signalmen_te', 'signalmen_sig_te', 'signalmen_u0', \
                  'signalmen_sig_u0', 'signalmen_anomaly' ]
+
     for event_id, event in known_events['master_index'].items():
         
         event_name = event.get_event_name()
@@ -665,13 +677,48 @@ def combine_K2C9_event_feed( known_events, false_positives, \
             
         if event_name in artemis_events.keys():
             artemis_data = artemis_events[ event_name ]
-            params = artemis_data.get_params(key_list=sig_keys)  
+            params = artemis_data.get_params(key_list=sig_keys)
             event.set_params( params )
             
             known_events['master_index'][event_id] = event
         
+        if event_name in rtmodels.keys():
+            model = rtmodels[event_name]
+            log.info( model.summary() )
+            params  = model.get_params()
+            event.set_params( params )
+            log.info('BOZZA_T0: ' + str(event.bozza_t0))
+            
+            known_events['master_index'][event_id] = event
+            
     n_events = len(known_events['master_index'])
     log.info(' -> total of ' + str(n_events) + ' events')
+    
+    return known_events
+
+def targets_for_k2_campaign(config, known_events, k2_campaign, log):
+    """Function to check whether targets are within the parameters of the
+    current K2 campaign"""
+    
+    log.info('Identifying events within the K2 Campaign')
+    
+    # First select only those events which we have not checked before:
+    events = {}
+    for event_id,event in known_events['master_index'].items():
+        if event.in_footprint == 'Unknown':
+            events[event_id] = event
+    log.info(' -> ' + str(len(events)) + \
+            ' events to check against K2 Campaign parameters')
+    
+    # Check each new target against the K2 Campaign parameters:
+    events = k2_campaign.targets_in_footprint( events, verbose=False )
+    if config['k2_campaign'] == str(9):
+        events = k2_campaign.targets_in_superstamp( events, verbose=False )
+    events = k2_campaign.targets_in_campaign( events, verbose=False )
+    
+    # Update the master event index:
+    for event_id, event in events.items():
+        known_events['master_index'][event_id] = event
     
     return known_events
     
@@ -832,27 +879,37 @@ def generate_exofop_output( config, known_events, log ):
     # Loop over all events, ensuring the correct data products are present
     # for events within the footprint only:
     for event_id, event in known_events['master_index'].items():
+        origin = event.get_event_origin()
+        event_name = getattr( event, origin.lower()+'_name' )
         
         if event.in_footprint  == True and event.during_campaign == True:
+            log.info(' -> Event ' + event_name + ' is within the campaign')
             output_file = str( event.identifier ) + '.param'
             output_path = path.join( config['log_directory'], output_file )
             
             # Output event parameter file:
             event.generate_exofop_data_file( output_path )
+            check_sum = utilities.md5sum( output_path )
+            manifest.write( output_file + ' ' + check_sum + '\n' )
+            log.info(' --> Transfered event parameter file')
             
-            # Update the transfer manifest:
-            manifest.write( output_file + '\n' )
-        
+            # Copy over the finderchart, if it isn't already there:
+            data_origin = origin.lower()+'_data_local_location'
+            src = path.join( config[data_origin], event_name + '_fchart.fits' )
+            dest = path.join( config['log_directory'], \
+                                        event_name + '_fchart.fits' )
+            if path.isfile(dest) == False:
+                copy(src,dest)
+            check_sum = utilities.md5sum( dest )
+            manifest.write( event_name + '_fchart.fits ' + check_sum + '\n' )
+            log.info(' --> Transfered event finder chart')
+            
     # Lightcurve data file:
     
     # Model lightcurve data file:
     
     # Colour-magnitude diagrams
     
-    # Finder charts:
-    
-    # End manifest by adding the Manifest to the list:
-    manifest.write( 'MANIFEST\n' )
     manifest.close()
 
 def ready_file( config, status ):
@@ -889,13 +946,19 @@ def sync_data_for_transfer( config ):
     ready_file( config, 'remove' )
     
     # Read and parse the manifest file to get a list of the files to be
-    # transfered:
+    # transfered.  The manifest itself is added to this list to ensure it too
+    # gets transfered.  
     manifest = path.join( config['log_directory'], 'MANIFEST' )
-    file_list = open( manifest, 'r' ).readlines()
+    file_lines = open( manifest, 'r' ).readlines()
+    file_lines.append( 'MANIFEST  None' )
     
     # Rsync everything in the Manifest:
-    for f in file_list:
-        file_path = path.join( config['log_directory'], f.replace('\n','') )
+    for line in file_lines:
+        f = line.split()[0]
+        try:
+            file_path = path.join( config['log_directory'], f.replace('\n','') )
+        except UnicodeDecodeError:
+            print config['log_directory'], f.replace('\n','')
         #print ' -> Syncing file ' + file_path
         if path.isfile( file_path ) == True:
             rsync_file( config, file_path )

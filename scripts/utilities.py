@@ -14,6 +14,7 @@ from urllib import urlencode
 import cookielib
 import ssl
 import numpy as np
+import hashlib
 
 ##################################
 # CONVERT SHORT TO LONG EVENT NAME
@@ -238,3 +239,20 @@ def separation_two_points(pointA,pointB):
     gamma = r2d( gamma )
     
     return gamma
+
+#####################################
+# MD5SUM
+def md5sum( file_path ):
+    """Function to calculate the MD5 checksum of a given file"""
+
+    def hash_file( file_path, hasher, blocksize=65536 ):
+        fileobj = open(file_path, 'rb')
+        buf = fileobj.read(blocksize)
+        while len(buf) > 0:
+            hasher.update(buf)
+            buf = fileobj.read(blocksize)
+        return hasher.hexdigest()
+        
+    check_sum = hash_file( file_path, hashlib.md5() )
+    return check_sum
+    

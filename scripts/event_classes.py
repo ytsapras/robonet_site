@@ -6,6 +6,7 @@ Created on Fri Feb 12 13:49:18 2016
 """
 
 from astropy.time import Time
+from os import path
 
 ##################################################
 # LENS CLASS DESCRIPTION
@@ -257,6 +258,23 @@ class K2C9Event():
         else:
             return None
     
+    def set_moa_url( self, params ):
+        """Method to set the MOA URL to a specific event, from its parameters"""
+        
+        year = str(self.moa_name).split('-')[1]
+        
+        self.moa_url = path.join( params['moa_root_url']+year, \
+                                    'display.php?id=' + self.moa_survey_id )
+    
+    def set_ogle_url( self, params ):
+        """Method to set the OGLE URL to a specific event page"""
+        
+        year = str(self.ogle_name).split('-')[1]
+        number = str(self.ogle_name).split('-')[-1]
+        
+        self.ogle_url = path.join( params['ogle_root_url'], year, \
+                            'blg-'+number+'.html')
+    
     def summary( self, key_list ):
         """Method to print a customizible summary of the information on
         a given K2C9Event instance, given a list of keys to output.
@@ -301,7 +319,7 @@ class K2C9Event():
                          'alertable', \
                          'classification', \
                          'tap_priority', 'omega_s_now', 'sig_omega_s_now', \
-                         'omega_s_peak'
+                         'omega_s_peak', 'set_moa_url', 'set_ogle_url'
                          ]
         for key in exclude_keys:
             if key in key_list or '__' in key:
@@ -374,19 +392,43 @@ class RTModel():
         self.pi_para = None
         self.sig_pi_para = None
         self.chisq = None
-    
+        self.url = None
+
     def summary(self):
         output = self.event_name
         key_list = [ 's', 'q', 'u0', 't0', 'tE', 'theta', 'rho', 'pi_perp', \
                 'pi_para', 'chisq']
         for key in key_list:
-            value = getattr(self,key)
-            try:
-                sigma = getattr(self,'sig_'+key)
-            except AttributeError:
-                sigma = None
+            (value,sigma) = self.get_par(key)
             if value != None:
                 output = output + ' ' + key + ' = ' + str(value)
                 if sigma != None:
                     output = output + '+/-' + str(sigma)
         return output
+
+    def get_par(self,key):
+        try:
+            value = getattr(self,key)
+        except AttributeError:
+            value = None
+        try:
+            sigma = getattr(self,'sig_'+key)
+        except AttributeError:
+            sigma = None
+        return value, sigma
+        
+    def get_params(self):
+        params = {}
+        key_list = [ 'event_name', 's', 'q', 'u0', 't0', 'tE', 'theta', \
+                     'rho', 'pi_perp', 'pi_para', 'chisq', 'url' ]
+        
+        for key in key_list:
+            (value,sigma) = self.get_par(key)
+            if value != None:
+                key_name = 'bozza_' + str(key).lower()
+                params[key_name] = value
+            if sigma != None:
+                key_name = 'bozza_sig_' + str(key).lower()
+                params[key_name] = sigma
+        return params
+        
