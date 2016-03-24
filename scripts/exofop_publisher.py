@@ -52,14 +52,13 @@ def exofop_publisher():
     n_events = len(known_events['master_index'])
     log.info( 'Read list of ' + str( n_events ) + ' known events' )
     
-    # Read known false positives list:
+    # Read in lists of previously-identified events so that we don't
+    # have to repeat time-consuming calculations later except where necessary:
     false_positives = get_false_positives( config )    
-    
-    # Read known duplicate list:
     known_duplicates = get_duplicate_events_list( config, log )
     
-    # Load TAP output:
-    tap_data = load_tap_output( config )    
+    # Load TAP output to provide the prioritization data:
+    tap_data = load_tap_output( config, log )    
     
     output_target = False
     if output_target == True:
@@ -71,7 +70,7 @@ def exofop_publisher():
     
     # Read in the information on the K2 campaign:
     k2_campaign = k2_footprint_class.K2Footprint( config['k2_campaign'], \
-                                                    config['k2_year'] )
+                                                    config['k2_year'], log=log )
     
     # Data are provided by combining datastreams from the providing surveys + 
     # ARTEMiS, RTModel.  First step is to read in a list of the event parameters  
@@ -561,7 +560,7 @@ def filter_duplicate_events( survey_events, new_lens, known_duplicates ):
                                             
     return duplicate_event, status, known_duplicates
     
-def load_tap_output( configs ):
+def load_tap_output( configs, log ):
     """Function to load TAP prioritization output from the online table."""
 
     tap_data = { }
@@ -599,6 +598,8 @@ def load_tap_output( configs ):
                                      'sig_omega_s_now': float(entry[11]), \
                                      'omega_s_peak': float(entry[12])
                                      }
+    log.info('Loaded TAP data for all events')
+    
     return tap_data
     
 def combine_K2C9_event_feed( known_events, false_positives, \

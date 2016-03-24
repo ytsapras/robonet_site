@@ -15,7 +15,7 @@ import lcogt_imagers
 class K2Footprint():
     """Class to parse the JSON file description of the K2 footprint"""
 
-    def __init__( self, campaign, year, debug=False ):
+    def __init__( self, config, campaign, year, debug=False, log=None ):
         
         def date_list_to_jd( date_list ):
             """Establish the dates of the campaign in JD"""
@@ -41,7 +41,7 @@ class K2Footprint():
         self.xsuperstamp_targets = {}
  
         # Read and parse the outline of the K2 footprint on sky:
-        k2_footprint_file = 'k2-footprint.json'
+        k2_footprint_file = config['k2_footprint_data']
         if path.isfile( k2_footprint_file ) == False:
             print 'Error: Cannot find JSON file of the K2 footprint'
             exit()
@@ -90,8 +90,10 @@ class K2Footprint():
         if debug == True:
             for channel, corners in self.k2_footprint.items():
                 print channel, ': ', corners
-
-    def targets_in_footprint( self, targets, verbose=False ):
+        if log != None:
+            log.info('Loaded K2 footprint for Campaign ' + str(campaign))
+            
+    def targets_in_footprint( self, config, targets, verbose=False ):
         """Method to determine whether a given target lies within the
         K2 footprint or not.
         Required parameters:
@@ -107,21 +109,23 @@ class K2Footprint():
             
         # Write the CSV file in the format required by K2onSilicon. 
         # This uses a default magnitude for the target, which we don't know.
-        fileobj = open( 'target.csv', 'w')
+        target_file = path.join(config['tmp_location'],'target.csv')
+        output_file = path.join(config['tmp_location'],'targets_siliconFlag.csv')
+        fileobj = open( target_file, 'w' )
         for target_id, target in targets.items():
             ( ra, dec ) = target.get_location()
             fileobj.write( str(ra) + ', ' + str(dec) + ', 11.0\n' )
         fileobj.close()
 	
         # Call K2onSilicon and harvest the output:
-        K2fov.K2onSilicon('target.csv', int(self.campaign))
+        K2fov.K2onSilicon( target_file, int(self.campaign) )
         #( iexec, coutput ) = getstatusoutput( 'K2onSilicon target.csv ' + \
         #            str(self.campaign) )
 	
         # Parse the output file, called targets_siliconFlag.csv'
         # The last column entry for each object indicates whether or not the object lies on silicon.
         # 0 = no, 2 = yes
-        file_lines = open( 'targets_siliconFlag.csv', 'r').readlines()
+        file_lines = open( output_file, 'r').readlines()
         for i,target_id in enumerate( targets.keys() ):
             target = targets[ target_id ]
             flag = None
@@ -326,10 +330,10 @@ class K2Footprint():
                                         [ 267.58464, -27.322087 ]\
                                     ] )
     
-    def load_ddt_targets( self ):
+    def load_ddt_targets( self, config ):
         """Method to load the locations of DDT targets"""
         
-        file_name = 'c9-ddt-targets-preliminary.csv'
+        file_name = config['ddt_target_data']
         file_lines = open(file_name, 'r').readlines()
         ddt_targets = []
         for line in file_lines:
@@ -340,11 +344,11 @@ class K2Footprint():
         ddt_targets = np.array( ddt_targets )
         return ddt_targets
     
-    def load_xsuperstamp_targets( self ):
+    def load_xsuperstamp_targets( self, config ):
         """Method to load the data for targets selected outside the 
         superstamp"""
         
-        file_data = open( 'xsuperstamp_targets.json', 'r').read()
+        file_data = open( config['xsuperstamp_target_data'], 'r' ).read()
         json_data = json.loads( file_data )
         for target, target_data in json_data['targets'].items():
             event = event_classes.K2C9Event()
@@ -460,8 +464,18 @@ class K2Footprint():
 
 #####################################################
 if __name__ == '__main__':
-    k2_campaign = K2Footprint( 9, 2016 )
-    k2_campaign.load_xsuperstamp_targets()
-    k2_campaign.plot_footprint(plot_file='test_k2_footprint.png', targets=\
+    config = { 'k2_footprint_data': \
+                '/home/robouser/Software/robonet_site/scripts/k2-footprint.json',
+               'xsuperstamp_target_data': \
+               '/home/robouser/Software/robonet_site/scripts/xsuperstamp_targets.json', 
+               'ddt_target_data': \
+               '/home/robouser/Software/robonet_site/scripts/c9-ddt-targets-preliminary.csv',
+               'tmp_location': \
+               '/home/robouser/Software/robonet_site/scripts/'
+              }
+    k2_campaign = K2Footprint( config, 9, 2016 )
+    k2_campaign.load_xsuperstamp_targets( config )
+    plot_file = path.join( config['tmp_location'], 'test_k2_footprint.png' )
+    k2_campaign.plot_footprint(plot_file=plot_file, targets=\
                 k2_campaign.xsuperstamp_targets)
                 
