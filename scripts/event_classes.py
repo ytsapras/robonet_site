@@ -7,6 +7,7 @@ Created on Fri Feb 12 13:49:18 2016
 
 from astropy.time import Time
 from os import path
+import numpy as np
 
 ##################################################
 # LENS CLASS DESCRIPTION
@@ -297,6 +298,7 @@ class K2C9Event():
         """Method to output a summary file of all parameters of an 
         instance of this class
         """
+                
         
         # First set timestamp of output:
         nt = Time.now()
@@ -431,4 +433,63 @@ class RTModel():
                 key_name = 'bozza_sig_' + str(key).lower()
                 params[key_name] = sigma
         return params
+
+class PSPL():
+    
+    def __init__(self):
+        self.event_name = None
+        self.t0 = None
+        self.u0 = None
+        self.te = None
+        self.tstart = None
+        self.tstop = None
+        self.mag0 = None
+        self.magt = None
+        self.t = None
+        self.ut = None
+        self.At = None
+    
+    def set_params(self, params, prefix=None):
+        if prefix != None:
+            for key, value in params.items():
+                if prefix in key:
+                    entry = params.pop(key)
+                    new_key = key.replace(prefix+'_','')
+                    params[new_key] = value
+        for key, value in params.items():
+            if key not in [ 'event_name', 'magt', 't', 'ut', 'At' ]:
+                setattr(self,key,float(value))
+            else:
+                setattr(self,key,value)
+                
+    def generate_lightcurve(self):
         
+        # Generate the timeline for the lightcurve:
+        self.t = np.arange( self.tstart, self.tstop, 0.01 )
+        
+        # Generate the impact parameter as a function of time
+        # For PSPL, we assume a static observer.
+        dt = ( self.t - self.t0 ) / self.te
+        self.ut = np.sqrt( ( dt * dt ) + \
+                     ( self.u0 * self.u0 ) )
+        
+        # Calculate the magnification as a function of time:
+        self.At = ( self.ut * self.ut + 2.0 ) \
+            / ( self.ut * np.sqrt( self.ut * self.ut + 4.0 ) )
+        
+        # Calculate the source brightness as a function of time:
+        self.magt = self.mag0 - 2.5 * np.log10( self.At )
+        
+    def output_model_lightcurve(self, file_path, identifier, event_name):
+        
+        fileobj= open( file_path, 'w' )
+        fileobj.write('# Model lightcurve data for ' + identifier + \
+                            ' = ' + event_name + '\n')
+        fileobj.write('#\n')
+        fileobj.write('# Column 1: Timestamps in HJD\n')
+        fileobj.write('# Column 2: Magnitudes\n')
+        for i in range(0,len(self.t),1):
+            fileobj.write( str(self.t[i]) + '   ' + str(self.magt[i]) + '\n' )
+        fileobj.close()
+        
+            

@@ -5,6 +5,8 @@ Created on Tue Mar 22 21:57:57 2016
 @author: robouser
 """
 import k2_footprint_class
+from datetime import datetime
+import log_utilities
 
 def test_cron():
     
@@ -14,12 +16,33 @@ def test_cron():
     fileobj.write('Completed imports\n')
     fileobj.flush()
     
-    k2_campaign = k2_footprint_class.K2Footprint( 9, 2016 )
+    config = { 'k2_footprint_data': \
+                '/home/robouser/Software/robonet_site/data/k2-footprint.json',
+               'xsuperstamp_target_data': \
+               '/home/robouser/Software/robonet_site/data/xsuperstamp_targets.json', 
+               'ddt_target_data': \
+               '/home/robouser/Software/robonet_site/data/c9-ddt-targets-preliminary.csv',
+               'tmp_location': \
+               '/home/robouser/Software/robonet_site/data/', \
+               'k2_campaign': 9, \
+               'k2_year': 2016, \
+               'log_directory': '/science/robonet/rob/Operations/ExoFOP', \
+               'log_root_name': 'test_cron'
+              }
+    fileobj.write('Set up config\n')
     
-    fileobj.write('Loaded K2 Campaign data')   
+    log = log_utilities.start_day_log( config, __name__, console=False )
+    fileobj.write('Started logging\n')
+    log.info('Started logging')
+    
+    k2_campaign = k2_footprint_class.K2Footprint( config, log=log )
+    log.info('Loaded K2 data')
+    
+    fileobj.write('Loaded K2 Campaign data\n')   
     fileobj.flush() 
     
     fileobj.close()
+    end_day_log( log )
     
 if __name__ == '__main__':
     test_cron()

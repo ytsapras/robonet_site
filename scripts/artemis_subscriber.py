@@ -86,7 +86,7 @@ def sync_artemis_data_db(config,data_type,log):
         
         # Read the fitting model parameters from the model file:
         if data_type in ['model', 'pubpars']: event_params = read_artemis_model_file(f)
-        else: event_params = read_artemis_data_file(f)
+        else: event_params = get_artemis_data_params(f)
         
         # For model files:
         # Query the DB to check whether the event exists in the database already:
@@ -106,8 +106,8 @@ def sync_artemis_data_db(config,data_type,log):
             status = update_db.single_lens_par( event_params['long_name'],
                                                 event_params['t0'],
                                                 event_params['sig_t0'],
-                                                event_params['tE'],
-                                                event_params['sig_tE'],
+                                                event_params['te'],
+                                                event_params['sig_te'],
                                                 event_params['u0'],
                                                 event_params['sig_u0'],
                                                 event_params['last_modified'] )
@@ -188,10 +188,10 @@ def read_artemis_model_file(model_file_path):
                 params['dec'] = entries[1]
                 params['short_name'] = entries[2]
                 params['long_name'] = utilities.short_to_long_name( params['short_name'] )
-                params['t0'] = float(entries[3])
+                params['t0'] = float(entries[3]) + 2450000.0
                 params['sig_t0'] = float(entries[4])
-                params['tE'] = float(entries[5])
-                params['sig_tE'] = float(entries[6])
+                params['te'] = float(entries[5])
+                params['sig_te'] = float(entries[6])
                 params['u0'] = float(entries[7])
                 params['sig_u0'] = float(entries[8])
                 params['chi2'] = float(entries[9])
@@ -214,7 +214,34 @@ def read_artemis_model_file(model_file_path):
 ###############################
 # READ ARTEMIS PHOTOMETRY FILE
 def read_artemis_data_file(data_file_path):
-    '''Function to read an ARTEMiS-format photometry data file.'''
+    """Function to read and parse the contents of an ARTEMiS-format 
+    photometry file.
+    """
+    allowed_providers = [ 'D', 'E', 'F', 'R', 'S', 'T', 'X', 'Y' ]
+    ndata = {}
+    data = []
+    if path.isfile(data_file_path) == True:
+        file_lines = open(data_file_path,'r').readlines()
+        
+        for line in file_lines:
+            entries = line.split()
+            provider = entries[3]
+            ts = entries[5]
+            mag = entries[6]
+            merr = entries[7]
+            if provider not in allowed_providers:
+                data.append( [ ts, mag, merr, provider] )
+            if provider not in ndata.keys():
+                ndata[provider] = 1
+            else:
+                ndata[provider] = ndata[provider] + 1
+        data = np.array(data)
+    
+    return ndata, data
+    
+def get_artemis_data_params(data_file_path):
+    '''Function to obtain information about the ARTEMiS-format photometry data file,
+    without reading the whole file.'''
 
     params = {}
     if path.isfile(data_file_path) == True:

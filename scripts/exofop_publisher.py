@@ -41,6 +41,11 @@ def exofop_publisher():
     log = log_utilities.start_day_log( config, __name__, console=False )
     log.info( 'Read script configuration\n' )
     
+    # Check for lock file to prevent multiple instances:
+    respect_locks = [ config['lock_file'] ]
+    utilities.lock( config, 'check', respect_locks, log )
+    utilities.lock( config, 'lock', respect_locks, log )
+    
     # Remove the READY file from the transfer machine to stop IPAC 
     # transfering data while the script is running. 
     ready_file( config, 'remove' )
@@ -60,17 +65,8 @@ def exofop_publisher():
     # Load TAP output to provide the prioritization data:
     tap_data = load_tap_output( config, log )    
     
-    output_target = False
-    if output_target == True:
-        sidx = 2518
-        sid = 'OGLE-2016-BLG-0211'
-        sorigin = 'ogle'
-        key_list = [ 'ogle_ra', 'ogle_dec', 'ogle_t0', 'ogle_te' ]
-        log.info( 'KNOWN: ' + known_events['master_index'][sidx].summary(key_list)+'\n' )
-    
     # Read in the information on the K2 campaign:
-    k2_campaign = k2_footprint_class.K2Footprint( config['k2_campaign'], \
-                                                    config['k2_year'], log=log )
+    k2_campaign = k2_footprint_class.K2Footprint( config, log=log )
     
     # Data are provided by combining datastreams from the providing surveys + 
     # ARTEMiS, RTModel.  First step is to read in a list of the event parameters  
@@ -129,29 +125,11 @@ def exofop_publisher():
     log.info('Syncing data to transfer directory')
     sync_data_for_transfer( config )  
     
+    utilities.lock( config, 'unlock', respect_locks, log )
     log_utilities.end_day_log( log )
     
 ###############################################################################
-# SERVICE FUNCTIONS
-def lock( config, state=None ):
-    """Function to create or remove the scripts lockfile"""
-    
-    lock_file = path.join( config['log_directory'], \
-                                'exofop_lock' )
-    if state == None:
-        return 0
-    elif state == 'create':
-        fileobj = open( lock_file, 'w' )
-        ts = Time.now()
-        fileobj.write( ts.isot + '\n' )
-        fileobj.close()
-        return 0
-    elif state == 'remove':
-        if path.isfile( lock_file ) == True:
-            remove( lock_file )
-            return 0
-    else:
-        return 0
+# FUNCTIONS
         
 def get_known_events( config ):
     """Function to load the list of known events within the K2 footprint.
@@ -381,9 +359,6 @@ def load_survey_event_data( config, known_duplicates, log ):
     prefix_keys = [ 'name', 'survey_id', 'a0', 't0', 'sig_t0', 'te', \
                 'sig_te', 'u0', 'sig_u0', 'ra', 'dec', 'i0' ]
     for ogle_id, lens in ogle_data.lenses.items():
-        if ogle_id == 'OGLE-2016-BLG-0211':
-            print 'GOT OGLE-2016-BLG-0211'
-            print lens.summary()
             
         # Check for duplicated events under different names. 
         # Note: this filter removes the later event
@@ -661,7 +636,7 @@ def combine_K2C9_event_feed( known_events, false_positives, \
     
     sig_keys = [ 'signalmen_a0', 'signalmen_t0', 'signalmen_sig_t0', \
                  'signalmen_te', 'signalmen_sig_te', 'signalmen_u0', \
-                 'signalmen_sig_u0', 'signalmen_anomaly' ]
+                 'signalmen_sig_u0', 'signalmen_anomaly', 'ndata' ]
 
     for event_id, event in known_events['master_index'].items():
         
@@ -680,7 +655,6 @@ def combine_K2C9_event_feed( known_events, false_positives, \
             artemis_data = artemis_events[ event_name ]
             params = artemis_data.get_params(key_list=sig_keys)
             event.set_params( params )
-            
             known_events['master_index'][event_id] = event
         
         if event_name in rtmodels.keys():
@@ -712,7 +686,7 @@ def targets_for_k2_campaign(config, known_events, k2_campaign, log):
             ' events to check against K2 Campaign parameters')
     
     # Check each new target against the K2 Campaign parameters:
-    events = k2_campaign.targets_in_footprint( events, verbose=False )
+    events = k2_campaign.targets_in_footprint( config, events, verbose=False )
     if config['k2_campaign'] == str(9):
         events = k2_campaign.targets_in_superstamp( events, verbose=False )
     events = k2_campaign.targets_in_campaign( events, verbose=False )
@@ -884,9 +858,23 @@ def generate_exofop_output( config, known_events, log ):
         event_name = getattr( event, origin.lower()+'_name' )
         
         if event.in_footprint  == True and event.during_campaign == True:
-            log.info(' -> Event ' + event_name + ' is within the campaign')
+            log.info(' -> Event ' + event_name + '=' + event.identifier + \
+                            ' is within the campaign')
             output_file = str( event.identifier ) + '.param'
             output_path = path.join( config['log_directory'], output_file )
+            
+            # DO THIS FIRST:
+            # Extract available lightcurve data from the appropriate 
+            # ARTEMiS file - provides counts of data from survey 
+            # providers,  
+            short_name = utilities.long_to_short_name(event_name)
+            file_path = path.join( config['models_local_location'], \
+                                        short_name+'.plotdata' )
+            (ndata, phot_data) = artemis_subscriber.read_artemis_data_file(file_path)
+            surveys = { 'O': 'ogle', 'K': 'moa' }
+            for code,key in surveys:    
+                if code in ndata.keys():
+                    setattr(event, key+'_ndata', ndata[code])
             
             # Output event parameter file:
             event.generate_exofop_data_file( output_path )
@@ -898,16 +886,36 @@ def generate_exofop_output( config, known_events, log ):
             data_origin = origin.lower()+'_data_local_location'
             src = path.join( config[data_origin], event_name + '_fchart.fits' )
             dest = path.join( config['log_directory'], \
-                                        event_name + '_fchart.fits' )
+                                        event.identifier + '_fchart.fits' )
             if path.isfile(dest) == False:
                 copy(src,dest)
             check_sum = utilities.md5sum( dest )
             manifest.write( event_name + '_fchart.fits ' + check_sum + '\n' )
             log.info(' --> Transfered event finder chart')
             
+            # Generate model PSPL lightcurve files based on ARTEMiS fits:
+            key_list = [ 'signalmen_t0', 'signalmen_u0', 'signalmen_te', \
+                            origin+'_i0' ]
+            params = event.get_params( key_list )
+            if None not in params.values():
+                params['tstart'] = event.signalmen_t0 - (3.0 * event.signalmen_te)
+                params['tstop'] = event.signalmen_t0 + (3.0 * event.signalmen_te)
+                model = event_classes.PSPL()
+                model.set_params( params, prefix='signalmen' )
+                model.mag0 = params[origin+'_i0']
+                model.generate_lightcurve()
+                lc_file = path.join( config['log_directory'], \
+                                    event.identifier + '.model' )
+                model.output_model_lightcurve( lc_file, event.identifier, \
+                                                            event_name )
+                
+                check_sum = utilities.md5sum( lc_file )
+                manifest.write( path.basename(lc_file) + ' ' + check_sum + '\n' )
+                log.info(' --> Generated ARTEMiS model lightcurve')
+            else:
+                log.info(' --> No Signalmen parameters available')
+            
     # Lightcurve data file:
-    
-    # Model lightcurve data file:
     
     # Colour-magnitude diagrams
     

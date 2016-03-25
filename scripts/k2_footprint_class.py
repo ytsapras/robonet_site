@@ -15,7 +15,10 @@ import lcogt_imagers
 class K2Footprint():
     """Class to parse the JSON file description of the K2 footprint"""
 
-    def __init__( self, config, campaign, year, debug=False, log=None ):
+    def __init__( self, config, debug=False, log=None ):
+        
+        if log != None:
+            log.info('Initializing K2 footprint data')
         
         def date_list_to_jd( date_list ):
             """Establish the dates of the campaign in JD"""
@@ -37,15 +40,23 @@ class K2Footprint():
             return alert_date.jd
 	    
         # Declare campaign number:
-        self.campaign = campaign
+        self.campaign = int(config['k2_campaign'])
         self.xsuperstamp_targets = {}
- 
+        if log != None:
+            log.info(' --> campaign ' + str(self.campaign))
+            
         # Read and parse the outline of the K2 footprint on sky:
         k2_footprint_file = config['k2_footprint_data']
         if path.isfile( k2_footprint_file ) == False:
-            print 'Error: Cannot find JSON file of the K2 footprint'
+            if log != None:
+                log.info('Error: Cannot find JSON file of the K2 footprint')
+            else:
+                print 'Error: Cannot find JSON file of the K2 footprint'
             exit()
 	
+        if log != None:
+            log.info('Found file defining K2 footprint')
+            
         file_data = open( k2_footprint_file, 'r').read()
         json_data = json.loads( file_data )
         json_data = json_data['c'+str(self.campaign)]
@@ -67,31 +78,43 @@ class K2Footprint():
             self.k2_footprint[channel] = corners
             self.channel_limits[channel] = [ ra_min, ra_max ,dec_min, dec_max ]
 	    
+        if log != None:
+            log.info(' --> Parsed K2 footprint data')
+            
         # Campaign and last alert dates reset to YEAR to simulate as if the events happened in 2016
         self.last_alert_dates = []
-        if campaign == 9: 
-            self.campaign_dates = [ [ str(year) + '-04-07', str(year) + '-05-19' ], \
-	                            [ str(year) + '-05-22', str(year) + '-07-02' ] ]
+        year = str(config['k2_year'])
+        if self.campaign == 9: 
+            self.campaign_dates = [ [ year + '-04-07', year + '-05-19' ], \
+	                            [ year + '-05-22', year + '-07-02' ] ]
         else:
-            self.campaign_dates = [ [ str(year) + json_data['start'][4:], \
-                                str(year) + json_data['stop'][4:] ] ]
+            self.campaign_dates = [ [ year + json_data['start'][4:], \
+                                year + json_data['stop'][4:] ] ]
+        if log != None:
+            log.info(' --> Identified campaign dates')
 	    
         if debug == True: print 'Campaign dates: ',self.campaign_dates
         for date_range in self.campaign_dates:
             self.last_alert_dates.append( calc_alert_date( year, date_range[0] ) )
         if debug == True: print 'Last alert dates: ',self.last_alert_dates
 	
+        if log != None:
+            log.info(' --> Identified last alert dates')
+            
         date_list = []
         for sub_campaign in self.campaign_dates:
             date_list.append( date_list_to_jd( sub_campaign ) )
         self.campaign_dates = date_list
         if debug == True: print 'Campaign dates, JD: ',self.campaign_dates
 	
+        if log != None:
+            log.info(' --> Identified sub-campaign dates')
+            
         if debug == True:
             for channel, corners in self.k2_footprint.items():
                 print channel, ': ', corners
         if log != None:
-            log.info('Loaded K2 footprint for Campaign ' + str(campaign))
+            log.info('Loaded K2 footprint for Campaign ' + str(self.campaign))
             
     def targets_in_footprint( self, config, targets, verbose=False ):
         """Method to determine whether a given target lies within the
@@ -110,7 +133,7 @@ class K2Footprint():
         # Write the CSV file in the format required by K2onSilicon. 
         # This uses a default magnitude for the target, which we don't know.
         target_file = path.join(config['tmp_location'],'target.csv')
-        output_file = path.join(config['tmp_location'],'targets_siliconFlag.csv')
+        output_file = path.join(config['software_location'],'targets_siliconFlag.csv')
         fileobj = open( target_file, 'w' )
         for target_id, target in targets.items():
             ( ra, dec ) = target.get_location()
@@ -465,15 +488,17 @@ class K2Footprint():
 #####################################################
 if __name__ == '__main__':
     config = { 'k2_footprint_data': \
-                '/home/robouser/Software/robonet_site/scripts/k2-footprint.json',
+                '/home/robouser/Software/robonet_site/data/k2-footprint.json',
                'xsuperstamp_target_data': \
-               '/home/robouser/Software/robonet_site/scripts/xsuperstamp_targets.json', 
+               '/home/robouser/Software/robonet_site/data/xsuperstamp_targets.json', 
                'ddt_target_data': \
-               '/home/robouser/Software/robonet_site/scripts/c9-ddt-targets-preliminary.csv',
+               '/home/robouser/Software/robonet_site/data/c9-ddt-targets-preliminary.csv',
                'tmp_location': \
-               '/home/robouser/Software/robonet_site/scripts/'
+               '/home/robouser/Software/robonet_site/data/', 
+               'k2_campaign': 9, 
+               'k2_year': 2016
               }
-    k2_campaign = K2Footprint( config, 9, 2016 )
+    k2_campaign = K2Footprint( config )
     k2_campaign.load_xsuperstamp_targets( config )
     plot_file = path.join( config['tmp_location'], 'test_k2_footprint.png' )
     k2_campaign.plot_footprint(plot_file=plot_file, targets=\
