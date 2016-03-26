@@ -926,6 +926,8 @@ def generate_exofop_output( config, known_events, artemis_renamed, log ):
             output_file = str( event.identifier ) + '.data'
             output_path = path.join( config['log_directory'], output_file ) 
             event.generate_exofop_data_file( phot_data, output_path, log )
+            check_sum = utilities.md5sum( output_path )
+            manifest.write( output_file + ' ' + check_sum + '\n' )
             
             # Copy over the finderchart, if it isn't already there:
             data_origin = origin.lower()+'_data_local_location'
