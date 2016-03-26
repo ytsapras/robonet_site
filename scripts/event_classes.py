@@ -130,6 +130,7 @@ class K2C9Event():
         self.moa_sig_u0 = None
         self.moa_i0 = None
         self.moa_sig_i0 = None
+        self.moa_ndata = None
         self.ndata = None
         self.moa_url = None
         self.kmt_name = None
@@ -294,7 +295,7 @@ class K2C9Event():
                 output = output + str( getattr(self,key) ) + ' '
         return output
 
-    def generate_exofop_data_file( self, output_path ):
+    def generate_exofop_param_file( self, output_path ):
         """Method to output a summary file of all parameters of an 
         instance of this class
         """
@@ -337,7 +338,54 @@ class K2C9Event():
                 f.write( key.upper() + '    ' + value + '\n' )
         
         f.close()
-    
+
+    def generate_exofop_data_file( self, phot_data, output_path, log ):
+        """Method to produce a data file of the public-access data to be 
+        sent to ExoFOP"""
+        
+        providers = {   'O': 'OGLE', 'K': 'MOA', \
+                        'L': 'Danish-1.54m', 'Z': 'Danish-1.54m', \
+                        'P': 'MONET-North', 'Q': 'MONET-South', \
+                        'H': 'LCOGT-Hawaii-2.0m', 'I': 'LCOGT-Australia-2.0m', \
+                        'J': 'Liverpool-2.0m', \
+                        'D': 'LCOGT-Chile-1.0m', 'E': 'LCOGT-Chile-1.0m', \
+                        'F': 'LCOGT-Chile-1.0m', \
+                        'R': 'LCOGT-SAfrica-1.0m', 'S': 'LCOGT-SAfrica-1.0m', \
+                        'T': 'LCOGT-SAfrica-1.0m', \
+                        'X': 'LCOGT-Australia-1.0m', 'Y': 'LCOGT-Australia-1.0m', \
+                        'U': 'UTas-1.0m', 'W': 'Perth-0.6m', 'A': 'SAAO-1.0m', \
+                        'C': 'CTIO-1.3m', 's': 'Salerno-0.35m', \
+                        'y': 'CTIO-1.0m', 'z': 'Hereford-Arizona-0.35m', \
+                        'l': 'Mt-Lemmon-1.0m', 'm': 'MDM-2.4m', 'o': 'Palomar-60inch', \
+                        'r': 'Regent-Lane', 'd': 'Possum-11inch', 'a': 'Auckland-0.4m', \
+                        'h': 'Hunters-Hill-0.35m', 't': 'Southern-Stars-11inch', \
+                        'f': 'Farm-Cove-0.35m', 'k': 'Kumeu-Obs-0.35m', \
+                        'v': 'Vintage-Lane-0.4m', 'p': 'CBA-Perth-0.25m', \
+                        'w': 'Wise-1.0m-E2V', 'i': 'Wise-1.0m-SITe', \
+                        'b': 'Bronberg-0.35m' }
+        
+        event_name = self.get_event_name()
+        ndata = len(phot_data)
+        if ndata > 0:
+            fileobj = open( output_path, 'w' )
+            fileobj.write('# Lightcurve data for ' + self.identifier + \
+                                ' = ' + event_name + '\n')
+            fileobj.write('#\n')
+            fileobj.write('# Column 1: Timestamps in HJD\n')
+            fileobj.write('# Column 2: Magnitudes\n')
+            fileobj.write('# Column 3: Magnitude error\n')
+            fileobj.write('# Column 4: Data provider\n')
+            for i in range(0,ndata,1):
+                entry = ' '.join( phot_data[i,0:3].tolist() )
+                p = providers[ phot_data[i,3] ]
+                entry = entry + ' ' + p + '\n'
+                fileobj.write(entry)
+            fileobj.close()
+            log.info(' -> Wrote data file of available public data')
+            
+        else:
+            log.info(' -> No available public data.  No data file produced')
+
     def get_location( self ):
         """Return coordinates of event"""
         

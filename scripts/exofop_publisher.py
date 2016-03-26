@@ -98,7 +98,7 @@ def exofop_publisher():
     
     # Now output the combined information stream in the format agreed on for 
     # the ExoFOP transfer
-    generate_exofop_output( config, known_events, log )
+    generate_exofop_output( config, known_events, artemis_renamed, log )
     
     # Generate K2C9 event summary table:
     generate_K2C9_events_table( config, known_events, log )
@@ -840,7 +840,7 @@ def generate_K2C9_events_table( config, known_events, log, debug=False ):
     fileobj2.close()
     log.info('Completed event summary tables')
     
-def generate_exofop_output( config, known_events, log ):
+def generate_exofop_output( config, known_events, artemis_renamed, log ):
     """Function to output datafiles for all events in the format agreed 
     with ExoFOP
     """
@@ -860,8 +860,6 @@ def generate_exofop_output( config, known_events, log ):
         if event.in_footprint  == True and event.during_campaign == True:
             log.info(' -> Event ' + event_name + '=' + event.identifier + \
                             ' is within the campaign')
-            output_file = str( event.identifier ) + '.param'
-            output_path = path.join( config['log_directory'], output_file )
             
             # DO THIS FIRST:
             # Extract available lightcurve data from the appropriate 
@@ -871,16 +869,63 @@ def generate_exofop_output( config, known_events, log ):
             file_path = path.join( config['models_local_location'], \
                                         short_name+'.plotdata' )
             (ndata, phot_data) = artemis_subscriber.read_artemis_data_file(file_path)
+            log.info(' --> Loaded data from ' + path.basename(file_path))
+            if event_name in artemis_renamed.values():
+                for key, value in artemis_renamed.items():
+                    if value == event_name:
+                        short_name = utilities.long_to_short_name(key)
+                        file_path = path.join( config['models_local_location'], \
+                                        short_name+'.plotdata' )
+                        (ndata2, phot_data2) = \
+                            artemis_subscriber.read_artemis_data_file(file_path)
+                        for key, value in ndata2.items():
+                            if key in ndata.keys():
+                                ndata[key] = ndata[key] + ndata2[key]
+                            else:
+                                ndata[key] = ndata2[key]
+                        phot_data = np.array( phot_data.tolist() + phot_data2.tolist() )
+                        log.info(' --> Loaded data from ' + path.basename(file_path))
+            if event.ogle_name != None and event.moa_name != None:
+                ogle_year = int(event.ogle_name.split('-')[1])
+                moa_year = int(event.moa_name.split('-')[1])
+                if ogle_year != moa_year:
+                    if 'OGLE' in event_name:
+                        short_name = utilities.long_to_short_name(event.moa_name)
+                    elif 'MOA' in event_name:
+                        short_name = utilities.long_to_short_name(event.ogle_name)
+                    file_path = path.join( config['models_local_location'], \
+                                        short_name+'.plotdata' )
+                    (ndata2, phot_data2) = \
+                            artemis_subscriber.read_artemis_data_file(file_path)
+                    for key, value in ndata2.items():
+                        if key in ndata.keys():
+                            ndata[key] = ndata[key] + ndata2[key]
+                        else:
+                            ndata[key] = ndata2[key]
+                    phot_data = np.array( phot_data.tolist() + phot_data2.tolist() )
+                    log.info(' --> Loaded data from ' + path.basename(file_path))
+            
             surveys = { 'O': 'ogle', 'K': 'moa' }
-            for code,key in surveys:    
+            for code,key in surveys.items():
                 if code in ndata.keys():
                     setattr(event, key+'_ndata', ndata[code])
+            ntotal = 0
+            for p, ncount in ndata.items():
+                ntotal = ntotal + ncount
+            event.ndata = ntotal
             
             # Output event parameter file:
-            event.generate_exofop_data_file( output_path )
+            output_file = str( event.identifier ) + '.param'
+            output_path = path.join( config['log_directory'], output_file )
+            event.generate_exofop_param_file( output_path )
             check_sum = utilities.md5sum( output_path )
             manifest.write( output_file + ' ' + check_sum + '\n' )
             log.info(' --> Transfered event parameter file')
+            
+            # Output datafiles of the data which can be shared:   
+            output_file = str( event.identifier ) + '.data'
+            output_path = path.join( config['log_directory'], output_file ) 
+            event.generate_exofop_data_file( phot_data, output_path, log )
             
             # Copy over the finderchart, if it isn't already there:
             data_origin = origin.lower()+'_data_local_location'

@@ -16,6 +16,7 @@ from os import path, stat
 import utilities
 from datetime import datetime
 import log_utilities
+from numpy import array
 
 ##############################
 # CONFIG INTERPRETATION
@@ -212,7 +213,7 @@ def read_artemis_model_file(model_file_path):
     return params
 
 ###############################
-# READ ARTEMIS PHOTOMETRY FILE
+# ARTEMIS PHOTOMETRY FILE IO
 def read_artemis_data_file(data_file_path):
     """Function to read and parse the contents of an ARTEMiS-format 
     photometry file.
@@ -229,16 +230,16 @@ def read_artemis_data_file(data_file_path):
             ts = entries[5]
             mag = entries[6]
             merr = entries[7]
-            if provider not in allowed_providers:
+            if provider in allowed_providers:
                 data.append( [ ts, mag, merr, provider] )
             if provider not in ndata.keys():
                 ndata[provider] = 1
             else:
                 ndata[provider] = ndata[provider] + 1
-        data = np.array(data)
+    data = array(data)
     
     return ndata, data
-    
+
 def get_artemis_data_params(data_file_path):
     '''Function to obtain information about the ARTEMiS-format photometry data file,
     without reading the whole file.'''
