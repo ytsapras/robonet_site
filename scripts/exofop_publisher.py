@@ -122,8 +122,7 @@ def exofop_publisher():
     log.info('Plotted event locations outside superstamp')
     
     # Sync data for transfer to IPAC with transfer location:
-    log.info('Syncing data to transfer directory')
-    sync_data_for_transfer( config )  
+    sync_data_for_transfer( config, log )  
     
     utilities.lock( config, 'unlock', respect_locks, log )
     log_utilities.end_day_log( log )
@@ -855,14 +854,18 @@ def generate_exofop_output( config, known_events, artemis_renamed, log ):
     manifest = open( manifest_file, 'w' )
     
     # Loop over all events, ensuring the correct data products are present
-    # for events within the footprint only:
+    # for events within the footprint only.  Exclude possible 
+    # duplicate event entries to the manifest.  
+    identifier_list = []
     for event_id, event in known_events['master_index'].items():
         origin = event.get_event_origin()
         event_name = getattr( event, origin.lower()+'_name' )
         
-        if event.in_footprint  == True and event.during_campaign == True:
+        if event.in_footprint  == True and event.during_campaign == True and \
+            event.identifier not in identifier_list:
             log.info(' -> Event ' + event_name + '=' + event.identifier + \
                             ' is within the campaign')
+            identifier_list.append( event.identifier )
             
             # DO THIS FIRST:
             # Extract available lightcurve data from the appropriate 
@@ -992,18 +995,21 @@ def ready_file( config, status ):
     c = 'ssh -X ' + str( config['transfer_user'] ) + ' ' + op + ' ' + ready_path
     (iexec, coutput) = getstatusoutput( c )
     
-def sync_data_for_transfer( config ):
+def sync_data_for_transfer( config, log ):
     """Function to scp data to the location from which it will be pulled by
     IPAC. """
     
-    def rsync_file( config, path_string ):
+    def rsync_file( config, path_string, log, i, nfiles ):
         """Function to rsync a single file"""
         
         c = 'rsync -av ' + path_string + ' ' + \
             str( config['transfer_user'] ) + ':' + \
                 str( config['transfer_location'] )
         (iexec, coutput) = getstatusoutput( c )
-        #print coutput
+        log.info( str(i) + ' out of ' + str(nfiles) + ': ' + \
+                    coutput.replace('\n',' ') )
+    
+    log.info('Syncing data to transfer directory')
     
     # Firstly, ensure any existing READY file has been removed to let
     # IPAC know all transfers should be suspended until its removed:
@@ -1015,17 +1021,18 @@ def sync_data_for_transfer( config ):
     manifest = path.join( config['log_directory'], 'MANIFEST' )
     file_lines = open( manifest, 'r' ).readlines()
     file_lines.append( 'MANIFEST  None' )
+    nfiles = len(file_lines)
+    log.info(' -> ' + str(nfiles) + ' files to transfer')
     
     # Rsync everything in the Manifest:
-    for line in file_lines:
+    for i,line in enumerate(file_lines):
         f = line.split()[0]
         try:
             file_path = path.join( config['log_directory'], f.replace('\n','') )
         except UnicodeDecodeError:
-            print config['log_directory'], f.replace('\n','')
-        #print ' -> Syncing file ' + file_path
+            log.info('Error: ' + config['log_directory'] + ' ' + f.replace('\n','') )
         if path.isfile( file_path ) == True:
-            rsync_file( config, file_path )
+            rsync_file( config, file_path, log, i, nfiles )
     
     # Set the READY FILE:
     ready_file( config, 'create' )
