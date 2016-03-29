@@ -287,5 +287,5 @@ def lock( config, state, respect_locks, log ):
                 log.info('Clashing lock file encountered ( ' + lock_name + \
                                 ' ), halting')
                 log_utilities.end_day_log( log )
-                exit()
+                sys.exit()
         log.info('Checked for clashing locks; found none')

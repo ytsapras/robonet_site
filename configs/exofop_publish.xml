@@ -6,6 +6,10 @@
         <value>True</value>
     </parameter>
     
+    <parameter name='software_location'>
+    	<value>/home/robouser/Software/robonet_site/scripts</value>
+    </parameter>
+    
     <parameter name='models_local_location'>
        <value>/science/robonet/rob/Operations/Signalmen_output/model</value>
        <!--<value>/Users/rstreet/RoboNet/Sandbox/models</value>-->
@@ -77,6 +81,10 @@
     	<value>exofop_publisher</value>
     </parameter>
     
+    <parameter name='lock_file'>
+    	<value>exofop.lock</value>
+    </parameter>
+    
     <parameter name='k2_campaign'>
         <value>9</value>
     </parameter>
@@ -115,5 +123,24 @@
     	<value>/data/archive/webfiles/IPAC/microlensing/</value>
     </parameter>
     
+    <parameter name='k2_footprint_data'>
+    	<value>/home/robouser/Software/robonet_site/data/k2-footprint.json</value>
+    </parameter>
+    
+    <parameter name='xsuperstamp_target_data'>
+    	<value>/home/robouser/Software/robonet_site/data/xsuperstamp_targets.json</value>
+    </parameter>
+    
+    <parameter name='ddt_target_data'>
+    	<value>/home/robouser/Software/robonet_site/data/c9-ddt-targets-preliminary.csv</value>
+    </parameter>
+    
+    <parameter name='tmp_location'>
+    	<value>/science/robonet/rob/Operations/ExoFOP</value>
+    </parameter>
+    
+    <parameter name='k2_campaign'>
+    	<value>9</value>
+    </parameter>
 
 </exofop_config>

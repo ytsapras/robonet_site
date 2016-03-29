@@ -686,10 +686,13 @@ def targets_for_k2_campaign(config, known_events, k2_campaign, log):
             ' events to check against K2 Campaign parameters')
     
     # Check each new target against the K2 Campaign parameters:
-    events = k2_campaign.targets_in_footprint( config, events, verbose=False )
+    events = k2_campaign.targets_in_footprint( config, events, log=log )
+    log.info(' --> Checked events against the whole footprint')
     if config['k2_campaign'] == str(9):
         events = k2_campaign.targets_in_superstamp( events, verbose=False )
+        log.info(' --> Checked events relative to the Campaign 9 superstamp')
     events = k2_campaign.targets_in_campaign( events, verbose=False )
+    log.info(' --> Check events occur during Campaign')
     
     # Update the master event index:
     for event_id, event in events.items():
@@ -864,7 +867,7 @@ def generate_exofop_output( config, known_events, artemis_renamed, log ):
             # DO THIS FIRST:
             # Extract available lightcurve data from the appropriate 
             # ARTEMiS file - provides counts of data from survey 
-            # providers,  
+            # providers required for later output. 
             short_name = utilities.long_to_short_name(event_name)
             file_path = path.join( config['models_local_location'], \
                                         short_name+'.plotdata' )
@@ -919,26 +922,31 @@ def generate_exofop_output( config, known_events, artemis_renamed, log ):
             output_path = path.join( config['log_directory'], output_file )
             event.generate_exofop_param_file( output_path )
             check_sum = utilities.md5sum( output_path )
-            manifest.write( output_file + ' ' + check_sum + '\n' )
-            log.info(' --> Transfered event parameter file')
+            manifest.write( path.basename(output_file) + ' ' + check_sum + '\n' )
+            log.info(' --> Generated event parameter file')
             
-            # Output datafiles of the data which can be shared:   
+            # Output datafiles of the data which can be shared.  Note this
+            # means that datafiles are sometimes NOT produced, and therefore
+            # not always included in the manifest
             output_file = str( event.identifier ) + '.data'
             output_path = path.join( config['log_directory'], output_file ) 
             event.generate_exofop_data_file( phot_data, output_path, log )
-            check_sum = utilities.md5sum( output_path )
-            manifest.write( output_file + ' ' + check_sum + '\n' )
+            if path.isfile( output_path ) == True:
+                check_sum = utilities.md5sum( output_path )
+                manifest.write( path.basename(output_file) + ' ' + check_sum + '\n' )
+                log.info(' --> Generated event data file')
             
             # Copy over the finderchart, if it isn't already there:
             data_origin = origin.lower()+'_data_local_location'
             src = path.join( config[data_origin], event_name + '_fchart.fits' )
             dest = path.join( config['log_directory'], \
-                                        event.identifier + '_fchart.fits' )
+                                        event.identifier + '.fchart.' + \
+                                        origin.upper() + '.fits' )
             if path.isfile(dest) == False:
                 copy(src,dest)
             check_sum = utilities.md5sum( dest )
-            manifest.write( event_name + '_fchart.fits ' + check_sum + '\n' )
-            log.info(' --> Transfered event finder chart')
+            manifest.write( path.basename(dest) + ' ' + check_sum + '\n' )
+            log.info(' --> Generated event finder chart')
             
             # Generate model PSPL lightcurve files based on ARTEMiS fits:
             key_list = [ 'signalmen_t0', 'signalmen_u0', 'signalmen_te', \

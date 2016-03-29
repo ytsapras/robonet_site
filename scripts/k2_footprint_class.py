@@ -1,5 +1,6 @@
 from sys import exit, argv
-from os import path
+from os import path, chdir, environ, getcwd
+from shutil import move
 import json
 import numpy as np
 from astropy.time import Time, TimeDelta
@@ -116,7 +117,7 @@ class K2Footprint():
         if log != None:
             log.info('Loaded K2 footprint for Campaign ' + str(self.campaign))
             
-    def targets_in_footprint( self, config, targets, verbose=False ):
+    def targets_in_footprint( self, config, targets, log=None ):
         """Method to determine whether a given target lies within the
         K2 footprint or not.
         Required parameters:
@@ -126,25 +127,48 @@ class K2Footprint():
         Returns:
             target_locations   
         """
-	
-        if verbose == True:
-            print ' -> Checking whether events are in the K2 campaign footprint'
+        
+        # Configure runtime environment.  This should only be necessary
+        # if the code is running under the cron, which has a restricted set
+        # of environment variables, but is necessary because K2onSilicon
+        # produces a plot and hence requires an X server and display
+        pkg_path = '/opt/anaconda.2.5.0/bin/K2onSilicon'
+        environ['PWD'] = config['tmp_location']
+        chdir(environ['PWD'])
+        if 'DISPLAY' not in environ.keys():
+            environ['DISPLAY'] = ':99'
+            
+        
+        if log != None:
+            log.info(' -> Checking whether events are in the K2 campaign footprint')
             
         # Write the CSV file in the format required by K2onSilicon. 
         # This uses a default magnitude for the target, which we don't know.
         target_file = path.join(config['tmp_location'],'target.csv')
-        output_file = path.join(config['software_location'],'targets_siliconFlag.csv')
+        output_file = path.join(config['tmp_location'],'targets_siliconFlag.csv')
         fileobj = open( target_file, 'w' )
         for target_id, target in targets.items():
             ( ra, dec ) = target.get_location()
             fileobj.write( str(ra) + ', ' + str(dec) + ', 11.0\n' )
         fileobj.close()
-	
+        if log != None:
+            log.info(' -> Wrote input file for ' + str(len(targets)) + \
+                            ' to ' + target_file )
+            
         # Call K2onSilicon and harvest the output:
-        K2fov.K2onSilicon( target_file, int(self.campaign) )
-        #( iexec, coutput ) = getstatusoutput( 'K2onSilicon target.csv ' + \
-        #            str(self.campaign) )
-	
+        #K2fov.K2onSilicon( target_file, int(self.campaign), outfile=output_file )
+        ( iexec, coutput ) = getstatusoutput( pkg_path + ' ' + target_file + \
+                    ' ' + str(self.campaign) )
+        
+        # K2onSilicon may produce its output file in the user's home directory
+        # Since this can't be changed in the software call, we move the output
+        # now.
+        
+        if log != None:
+            log.info(' -> Completed call to K2onSilicon, parsing output' )
+            log.info( coutput )
+            log.info(' -> Going to parse output ' + output_file )
+            
         # Parse the output file, called targets_siliconFlag.csv'
         # The last column entry for each object indicates whether or not the object lies on silicon.
         # 0 = no, 2 = yes
@@ -158,6 +182,8 @@ class K2Footprint():
                 target.in_footprint = True
             targets[ target_id ] = target
 	
+        if log != None:
+            log.info(' -> Completed parsing K2onSilicon output' )
         # Remove the temporary files:
  
         return targets
