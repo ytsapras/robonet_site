@@ -15,7 +15,7 @@ import imaplib
 from email import parser
 from datetime import datetime
 
-def harvest_events_from_email(data_dir,fetch_ogle=True,fetch_moa=True):
+def harvest_events_from_email(data_dir,fetch_ogle=True,fetch_moa=True,dbg=False):
 
     # Read back the log of known events, for speed:
     log_file = path.join(data_dir,'event_email_alerts.log')
@@ -31,24 +31,30 @@ def harvest_events_from_email(data_dir,fetch_ogle=True,fetch_moa=True):
     
     # Fetch and parse OGLE event data:
     if fetch_ogle == True:
-        imin = 173000
-        msg_index = get_msg_index(connect,'(FROM "OGLE-EWS")')
-        for i in msg_index[imin:]:
-            date = get_msg_date(connect,i)
-            event_list = parse_msg_body(connect,i,['OGLE-','-BLG-'])
-            for event in event_list:
-                event_alerts[event] = date
+        iyear = 173000
+        msg_index = get_msg_index(connect,'(FROM "OGLE EWS")')
+        if dbg==True: print len(msg_index),' messages from OGLE'
+        for i in msg_index:
+            if int(i) > iyear:
+                date = get_msg_date(connect,i)
+                event_list = parse_ogle_msg_body(connect,i,['OGLE-','-BLG-'])
+                for event in event_list:
+                    event_alerts[event] = date
+                    if dbg==True: print 'Message ',i,' ',date, ' ', event
         
     # Fetch and parse MOA event data:
     if fetch_moa == True:
-        imin = 172000
+        iyear = 172000
         msg_index = get_msg_index(connect,'(FROM "MOA transient alert")')
-        for i in msg_index[imin:]:
-            date = get_msg_date(connect,i)
-            event_list = parse_moa_msg_body(connect,i)
-            for event in event_list:
-                event_alerts[event] = date
-        
+        if dbg==True: print len(msg_index),' messages from MOA'
+        for i in msg_index:
+            if int(i) > iyear:
+                date = get_msg_date(connect,i)
+                event_list = parse_moa_msg_body(connect,i)
+                for event in event_list:
+                    event_alerts[event] = date
+                    if dbg==True: print 'Message ',i,' ',date, ' ', event
+                    
     # Output the updated event_alerts log:
     event_log = open(log_file,'w')
     event_log.write('# Log of event alerts received\n')
@@ -153,4 +159,4 @@ if __name__ == '__main__':
         data_dir = raw_input('Please enter output directory: ')
     else:
         data_dir = argv[1]
-    event_alerts = harvest_events_from_email(data_dir)
+    event_alerts = harvest_events_from_email(data_dir,dbg=False)
