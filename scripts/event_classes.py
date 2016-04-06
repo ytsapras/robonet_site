@@ -116,6 +116,7 @@ class K2C9Event():
         self.ogle_sig_i0 = None
         self.ogle_ndata = None
         self.ogle_url = None
+        self.ogle_alert = None
         self.moa_name = None
         self.moa_survey_id = None
         self.moa_ra = None
@@ -131,6 +132,7 @@ class K2C9Event():
         self.moa_i0 = None
         self.moa_sig_i0 = None
         self.moa_ndata = None
+        self.moa_alert = None
         self.ndata = None
         self.moa_url = None
         self.kmt_name = None
@@ -149,6 +151,7 @@ class K2C9Event():
         self.kmt_sig_i0 = None
         self.kmt_ndata = None
         self.kmt_url = None
+        self.kmt_alert = None
         self.classification = 'microlensing'
         self.signalmen_a0 = None
         self.signalmen_t0 = None
@@ -307,15 +310,13 @@ class K2C9Event():
         
         key_list = dir( self )
         exclude_keys = [ 'generate_exofop_data_file', \
+                         'generate_exofop_param_file',\
                          'get_valid_params', \
                          'set_event_name', \
                          'set_params',\
                          'get_par',\
                          'get_params',\
-                         'summary',\
-                         'in_superstamp',\
-                         'in_footprint',\
-                         'during_campaign',\
+                         'summary',
                          'get_location',\
                          'master_index',\
                          'check_in_k2', 'get_event_name', 'get_event_origin',\

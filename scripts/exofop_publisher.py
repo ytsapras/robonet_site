@@ -28,6 +28,7 @@ import logging
 from commands import getstatusoutput
 import ftplib
 from shutil import copy
+import email_harvester
 
 def exofop_publisher():
     """
@@ -56,6 +57,10 @@ def exofop_publisher():
     known_events = get_known_events( config )
     n_events = len(known_events['master_index'])
     log.info( 'Read list of ' + str( n_events ) + ' known events' )
+
+    # Read list of event alert dates:
+    event_alerts = email_harvester.harvest_events_from_email( config['log_directory'] )
+    log.info( 'Read/harvested event alert timestamps' )
     
     # Read in lists of previously-identified events so that we don't
     # have to repeat time-consuming calculations later except where necessary:
@@ -76,7 +81,8 @@ def exofop_publisher():
     (artemis_events, artemis_renamed) = load_artemis_event_data( config, log )
     rtmodels = rtmodel_subscriber.rtmodel_subscriber(log=log, \
                                                     renamed=artemis_renamed)
-    survey_events = load_survey_event_data( config, known_duplicates, log )
+    survey_events = load_survey_event_data( config, known_duplicates, \
+                                                event_alerts, log )
     update_known_duplicates( config, known_duplicates )
     
     # Select those events which are in the K2 footprint
@@ -170,20 +176,22 @@ def get_known_events( config ):
     for line in file_lines:
         if len(line) > 0 and line.lstrip()[0:1] != '#':
             entries = line.split()
-                  
-            if str(entries[5]).lower() != 'none':
-                event_name = str( entries[5] )
-                origin = 'ogle'
-            if str(entries[6]).lower() != 'none':
-                event_name = str( entries[6] )
-                origin = 'moa'
-            if str(entries[7]).lower() != 'none':
-                event_name = str( entries[7] )
-                origin = 'kmt'
+            survey_names = {}
             
-            if event_name not in known_events[origin].keys():
+            if str(entries[5]).lower() != 'none':
+                survey_names['ogle'] = str( entries[5] )
+            if str(entries[6]).lower() != 'none':
+                survey_names['moa'] = str( entries[6] )
+            if str(entries[7]).lower() != 'none':
+                survey_names['kmt'] = str( entries[7] )
+            
+            event_recog = False
+            for origin, ename in survey_names.items():
+                if ename in known_events[origin].keys():
+                    event_recog = True
+            
+            if event_recog == False:
                 event = event_classes.K2C9Event()
-                event.set_event_name( {'name': event_name} )
                 event.master_index = int(entries[0])
                 event.identifier = entries[1]
                 event.in_footprint = parse_boolean(entries[2])
@@ -192,7 +200,10 @@ def get_known_events( config ):
                 event.recommended_status = str(entries[8]).upper()
                 event.status = 'UPDATED'
                 
-                known_events[origin][event_name] = event.master_index
+                for origin, ename in survey_names.items():
+                    event.set_event_name( {'name': ename} )
+                    known_events[origin][ename] = event.master_index
+                    
                 known_events['identifiers'][event.master_index] = event.identifier
                 known_events['master_index'][event.master_index] = event
                 if str(event.identifier).lower() != 'none':
@@ -339,7 +350,7 @@ def load_artemis_event_data( config, log ):
     
     return artemis_events, artemis_renamed
 
-def load_survey_event_data( config, known_duplicates, log ):
+def load_survey_event_data( config, known_duplicates, event_alerts, log ):
     """Method to load the parameters of all events known from the surveys.
     """
     
@@ -378,6 +389,10 @@ def load_survey_event_data( config, known_duplicates, log ):
             event.set_params( params )
             event.classification = lens.classification
             event.set_ogle_url( config )
+            
+            if ogle_id in event_alerts:
+                event.ogle_alert = event_alerts[ogle_id].strftime("%Y-%m-%dT%H:%M:%S")
+                
             survey_events[ event.ogle_name ] = event
             
     ogle_id_list = survey_events.keys()
@@ -405,6 +420,10 @@ def load_survey_event_data( config, known_duplicates, log ):
                 ogle_event.set_params( moa_lens_params )
                 ogle_event.set_moa_url( config )
                 survey_events[ ogle_id_list[i] ] = ogle_event
+                
+                if moa_id in event_alerts:
+                    ogle_event.moa_alert = event_alerts[moa_id].strftime("%Y-%m-%dT%H:%M:%S")
+                
                 survey_events[ moa_lens_params['moa_name'] ] = ogle_event
                 
             i = i + 1
@@ -431,9 +450,14 @@ def load_survey_event_data( config, known_duplicates, log ):
                 event.set_params( moa_params )
                 event.classification = lens.classification
                 event.set_moa_url( config )
+                
+                if moa_id in event_alerts:
+                    event.moa_alert = event_alerts[moa_id].strftime("%Y-%m-%dT%H:%M:%S")
+                
                 survey_events[ event.moa_name ] = event
 
     log.info(' -> ' + str(len(survey_events)) + ' events from surveys')
+    
     return survey_events
     
     
@@ -577,8 +601,8 @@ def load_tap_output( configs, log ):
     return tap_data
     
 def combine_K2C9_event_feed( known_events, false_positives, \
-                                artemis_events, survey_events, rtmodels, \
-                                    tap_data, log ):
+                                artemis_events, survey_events, \
+                                    rtmodels, tap_data, log ):
     """Function to produce a dictionary of just those events identified
     within the superstamp of K2C9."""
     
@@ -592,11 +616,11 @@ def combine_K2C9_event_feed( known_events, false_positives, \
     for event_name, event in survey_events.items():
         
         origin = str(event_name.split('-')[0]).lower()
-            
+        
         # Exclude known false positives:
         if event_name not in false_positives and \
                 'microlensing' in event.classification:
-        
+            
             # Previously known events (K2C9Events):
             # THIS NEEDS TO CHECK FOR EVENTS UNDER BOTH SURVEYS
             if event_name in known_events[origin].keys():
@@ -613,7 +637,7 @@ def combine_K2C9_event_feed( known_events, false_positives, \
                 # Ensure event has the up to date parameters from the survey:
                 
                 event.status = 'UPDATED'
-                    
+                
             # New events:
             else:
                 
@@ -624,7 +648,8 @@ def combine_K2C9_event_feed( known_events, false_positives, \
                     event.master_index = 1
                 event.status = 'NEW'
                 known_events[origin][event_name] = event.master_index
-                
+
+            
             # Always update the known_events with the most up to date event data
             known_events['master_index'][ event.master_index ] = event
     
@@ -664,7 +689,8 @@ def combine_K2C9_event_feed( known_events, false_positives, \
             log.info('BOZZA_T0: ' + str(event.bozza_t0))
             
             known_events['master_index'][event_id] = event
-            
+        
+        
     n_events = len(known_events['master_index'])
     log.info(' -> total of ' + str(n_events) + ' events')
     
@@ -969,7 +995,8 @@ def generate_exofop_output( config, known_events, artemis_renamed, log ):
                 
                 check_sum = utilities.md5sum( lc_file )
                 manifest.write( path.basename(lc_file) + ' ' + check_sum + '\n' )
-                log.info(' --> Generated ARTEMiS model lightcurve')
+                log.info(' --> Generated ARTEMiS model lightcurve ' + \
+                        path.basename(lc_file))
             else:
                 log.info(' --> No Signalmen parameters available')
             
@@ -994,7 +1021,21 @@ def ready_file( config, status ):
     
     c = 'ssh -X ' + str( config['transfer_user'] ) + ' ' + op + ' ' + ready_path
     (iexec, coutput) = getstatusoutput( c )
+
+def clear_transfer_directory( config ):
+    """Function to clear the contents of the IPAC transfer directory to avoid
+    confusion with older data products. 
+    Note this does NOT clear the findercharts, on the grounds that these 
+    rarely change and are quite large    
+    """
+    search_strings = [ 'K2C9\*model', 'K2C9\*param' ]    
     
+    for file_name in search_strings:
+        file_path = path.join( config['transfer_location'], file_name )
+        c = 'ssh -X ' + str( config['transfer_user'] ) + ' \\rm ' + file_path
+        (iexec, coutput) = getstatusoutput( c )
+
+
 def sync_data_for_transfer( config, log ):
     """Function to scp data to the location from which it will be pulled by
     IPAC. """
@@ -1014,6 +1055,10 @@ def sync_data_for_transfer( config, log ):
     # Firstly, ensure any existing READY file has been removed to let
     # IPAC know all transfers should be suspended until its removed:
     ready_file( config, 'remove' )
+    
+    # Next, clear all old data products from the rsync directory to avoid
+    # confusion:
+    clear_transfer_directory( config )    
     
     # Read and parse the manifest file to get a list of the files to be
     # transfered.  The manifest itself is added to this list to ensure it too
