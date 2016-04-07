@@ -266,7 +266,7 @@ class K2Footprint():
 	    
         return targets
 
-    def targets_in_campaign( self, targets, verbose=False ):
+    def targets_in_campaign( self, targets, verbose=False, log=None ):
         """Method to check whether an event would be alerted in time to be included 
         in a K2 Campaign.  For this to happen the following criteria must be met:
             For events in footprint but outside superstamp:
@@ -307,14 +307,22 @@ class K2Footprint():
             tE = target.get_par( 'te' )
             tnow = Time( '2016-02-01T00:00:00', format='isot', scale='utc')
             try:
-                if t0 > tnow.jd:
+                #if t0 > tnow.jd:
+                #    target.during_campaign = True
+                #else:
+                if ( t0 + n_max_te*tE ) < campaign_start:
+                    target.during_campaign = False
+                elif ( t0 - n_min_te*tE ) < campaign_end and \
+                    ( t0 + n_max_te*tE ) > campaign_start:
                     target.during_campaign = True
                 else:
-                    if ( t0 - n_min_te*tE ) < campaign_end and \
-                        ( t0 + n_max_te*tE ) > campaign_start:
-                        target.during_campaign = True
-                    else:
-                        target.during_campaign = False
+                    target.during_campaign = False
+                #if target.ogle_name == 'OGLE-2016-BLG-0065':
+                #    log.info('DURATION: '+str(campaign_start)+', '+str(campaign_end))
+                #    log.info('DURATION: '+str( t0 - n_min_te*tE )+' : '+\
+                #                                str( t0 + n_max_te*tE ))
+                #    log.info('DURATION: '+str(t0)+', '+str(tE))
+                #    log.info('DURATION: '+str(target.during_campaign))
                     
                 # To be alertable, a target must:
                 # - Be within tE of the peak before the alert upload date

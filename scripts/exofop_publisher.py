@@ -708,7 +708,7 @@ def targets_for_k2_campaign(config, known_events, k2_campaign, log):
         if event.in_footprint == 'Unknown':
             events[event_id] = event
     log.info(' -> ' + str(len(events)) + \
-            ' events to check against K2 Campaign parameters')
+            ' events to check against K2 Campaign location parameters')
     
     # Check each new target against the K2 Campaign parameters:
     events = k2_campaign.targets_in_footprint( config, events, log=log )
@@ -716,8 +716,20 @@ def targets_for_k2_campaign(config, known_events, k2_campaign, log):
     if config['k2_campaign'] == str(9):
         events = k2_campaign.targets_in_superstamp( events, verbose=False )
         log.info(' --> Checked events relative to the Campaign 9 superstamp')
-    events = k2_campaign.targets_in_campaign( events, verbose=False )
-    log.info(' --> Check events occur during Campaign')
+    
+    # Update the master event index:
+    for event_id, event in events.items():
+        known_events['master_index'][event_id] = event
+    
+    # Now select all events within the field to (re)check their duration:
+    events = {}
+    for event_id,event in known_events['master_index'].items():
+        if event.in_footprint == True:
+            events[event_id] = event
+    log.info(' -> ' + str(len(events)) + \
+            ' events to check against K2 Campaign dates')
+    events = k2_campaign.targets_in_campaign( events, verbose=False, log=log )
+    log.info(' --> Checked events occur during Campaign')
     
     # Update the master event index:
     for event_id, event in events.items():
@@ -887,7 +899,7 @@ def generate_exofop_output( config, known_events, artemis_renamed, log ):
         origin = event.get_event_origin()
         event_name = getattr( event, origin.lower()+'_name' )
         
-        if event.in_footprint  == True and event.during_campaign == True and \
+        if event.in_footprint  == True and event.identifier != None and \
             event.identifier not in identifier_list:
             log.info(' -> Event ' + event_name + '=' + event.identifier + \
                             ' is within the campaign')
@@ -971,11 +983,11 @@ def generate_exofop_output( config, known_events, artemis_renamed, log ):
             dest = path.join( config['log_directory'], \
                                         event.identifier + '.fchart.' + \
                                         origin.upper() + '.fits' )
-            if path.isfile(dest) == False:
+            if path.isfile(dest) == False and path.isfile(src) == True:
                 copy(src,dest)
-            check_sum = utilities.md5sum( dest )
-            manifest.write( path.basename(dest) + ' ' + check_sum + '\n' )
-            log.info(' --> Generated event finder chart')
+                check_sum = utilities.md5sum( dest )
+                manifest.write( path.basename(dest) + ' ' + check_sum + '\n' )
+                log.info(' --> Generated event finder chart')
             
             # Generate model PSPL lightcurve files based on ARTEMiS fits:
             key_list = [ 'signalmen_t0', 'signalmen_u0', 'signalmen_te', \
