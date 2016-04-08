@@ -218,7 +218,8 @@ def read_artemis_data_file(data_file_path):
     """Function to read and parse the contents of an ARTEMiS-format 
     photometry file.
     """
-    allowed_providers = [ 'D', 'E', 'F', 'R', 'S', 'T', 'X', 'Y', 's' ]
+    allowed_providers = [ 'D', 'E', 'F', 'R', 'S', 'T', 'X', 'Y', \
+                        's', 'L', 'Z', 'P', 'Q' ]
     ndata = {}
     data = []
     if path.isfile(data_file_path) == True:
