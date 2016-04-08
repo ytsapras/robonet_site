@@ -27,7 +27,7 @@ class CameraFootprint:
             (ra_cen, dec_cen) = utilities.sex2decdeg( pointing )
         else:
             (ra_cen, dec_cen) = pointing
-            
+     
         corners = [
             [ (ra_cen + self.ra_dfov), (dec_cen + self.dec_dfov) ], 
             [ (ra_cen - self.ra_dfov), (dec_cen + self.dec_dfov) ],

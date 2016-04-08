@@ -13,9 +13,15 @@ import utilities
 def lcogt_pointings(tel, camera, pointings_file):
     """Function to over plot the LCOGT camera footprints on the K2 footprint"""
     
+    # Config:
+    config =     {'k2_campaign': 9, 'k2_year': 2016, \
+                    'k2_footprint_data': '../data/k2-footprint.json',\
+                    'xsuperstamp_target_data': '../data/xsuperstamp_targets.json'
+                }
+    
     # Load the K2C9 footprint
-    k2_campaign = K2Footprint( 9, 2016 )
-    k2_campaign.load_xsuperstamp_targets()
+    k2_campaign = k2_footprint_class.K2Footprint( config )
+    k2_campaign.load_xsuperstamp_targets( config )
     
     # Load the requested camera footprint:
     sinistro = lcogt_imagers.load_lcogt_footprints(tel='1m',camera='sinistro')
