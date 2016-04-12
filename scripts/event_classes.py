@@ -97,9 +97,10 @@ class K2C9Event():
     """
     def __init__( self ):
         self.identifier = None
+        self.official_name = None
         self.master_index = None
         self.status = 'NEW'
-        self.recommended_status = None
+        self.artemis_status = None
         self.ogle_name = None
         self.ogle_survey_id = None
         self.ogle_ra = None 
@@ -117,6 +118,7 @@ class K2C9Event():
         self.ogle_ndata = None
         self.ogle_url = None
         self.ogle_alert = None
+        self.ogle_alert_hjd = None
         self.moa_name = None
         self.moa_survey_id = None
         self.moa_ra = None
@@ -133,6 +135,7 @@ class K2C9Event():
         self.moa_sig_i0 = None
         self.moa_ndata = None
         self.moa_alert = None
+        self.moa_alert_hjd = None
         self.ndata = None
         self.moa_url = None
         self.kmt_name = None
@@ -152,6 +155,7 @@ class K2C9Event():
         self.kmt_ndata = None
         self.kmt_url = None
         self.kmt_alert = None
+        self.kmt_alert_hjd = None
         self.classification = 'microlensing'
         self.signalmen_a0 = None
         self.signalmen_t0 = None
@@ -239,6 +243,49 @@ class K2C9Event():
         if key in dir( self ):
             setattr(self, key, params[ name_key ] )
     
+    def set_official_name( self ):
+        """Method to determine the official microlensing designation, 
+        based on which survey alerted an event first
+        """
+        
+        # Extract the names from all surveys, and ensure any missing entries
+        # are handled as None object - this may not be the case if an event
+        # has been read in from the master_events_list:
+        names = {}
+        for survey in [ 'ogle', 'moa', 'kmt' ]:
+            name = getattr(self,survey+'_name')
+            if str(name).lower() == 'none': name = None
+            names[survey] = name
+        
+        n_names = len(names) - names.values().count(None)
+        
+        # First case: single-survey discovery:
+        if n_names == 1:
+            for survey, name in names.items():
+                if name != None:
+                    self.official_name = name
+        
+        # Second case: multiple survey discover same event:
+        elif n_names > 1:
+            alert_origin = []
+            alert_ts = []
+            for survey, name in names.items():
+                if name != None:
+                    ts = getattr(self,survey+'_alert')
+                    if ts != None:
+                        alert_origin.append(survey)
+                        alert_ts.append( Time(ts, format='isot', scale='utc') )
+            alert_ts = np.array(alert_ts)
+            alert_origin = np.array(alert_origin)
+            idx = alert_ts.argsort()
+            official_name = ''
+            for survey in alert_origin[idx]:
+                if len(official_name) > 0: 
+                    official_name = official_name + '/' + names[survey]
+                else:
+                    official_name = official_name + names[survey]
+            self.official_name = official_name
+            
     def get_event_name( self ):
         """Return the survey-allocated name of an event"""
         
@@ -298,6 +345,17 @@ class K2C9Event():
                 output = output + str( getattr(self,key) ) + ' '
         return output
 
+    def set_artemis_status( self ):
+        """Method to determine the appropriate status of an event based on 
+        anomaly flags from ARTEMiS and binary model availability from Bozza"""
+        
+        if self.signalmen_anomaly == 0 and self.bozza_te == None:
+            self.artemis_status = 'pspl'
+        elif self.bozza_te != None:
+            self.artemis_status = 'binary'
+        elif self.signalmen_anomaly == 1 and self.bozza_te == None:
+            self.artemis_status = 'anomaly'
+
     def generate_exofop_param_file( self, output_path ):
         """Method to output a summary file of all parameters of an 
         instance of this class
@@ -323,7 +381,8 @@ class K2C9Event():
                          'alertable', \
                          'classification', \
                          'tap_priority', 'omega_s_now', 'sig_omega_s_now', \
-                         'omega_s_peak', 'set_moa_url', 'set_ogle_url'
+                         'omega_s_peak', 'set_moa_url', 'set_ogle_url',\
+                         'set_artemis_status', 'set_official_name'
                          ]
         for key in exclude_keys:
             if key in key_list or '__' in key:

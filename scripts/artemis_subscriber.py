@@ -59,6 +59,9 @@ def sync_artemis():
     # Sync the event photometry data from the ARTEMiS server:
     sync_artemis_data_db(config,'data',log)
 
+    # Sync ARTEMiS' internal fileset, to gain access to the anomaly indicators:
+    rsync_internal_data(config)
+
     # Tidy up and finish:
     log_utilities.end_day_log( log )
     
@@ -143,6 +146,29 @@ def rsync_data_log(config,data_type):
 
     return log_path
 
+def rsync_internal_data(config):
+    """Function to rsync Signalmen's internal data files. 
+    Note: rsync connection to the ARTEMiS server at St. Andrews has the 
+    annoying habit of doing a peer-reset if the rsync of data takes longer
+    than ~15min. 
+    """
+    
+     # Construct config parameter keys to extract data locations and appropriate log file name:
+    local_location = config['internal_data_local_location']
+    ts = Time.now()          # Defaults to UTC
+    ts = ts.now().iso.split('.')[0].replace(' ','T').replace(':','').replace('-','')
+    log_path = path.join( config['rsync_log_directory'], config['log_root_name'] + '_' + ts + '.log' )
+
+    # Contruct and execute rsync commandline:
+    command = 'rsync -avzu --delete SignalmenLink@mlrsync-stand.net::Signalmen ' + \
+               local_location + ' --password-file=' + config['auth_internal'] + ' ' + \
+                '--log-file=' + log_path
+               
+    args = command.split()
+    p = subprocess.Popen(args)
+    p.wait()
+    
+    
 ###########################
 # READ RSYNC LOG
 def read_rsync_log(config,log_path,data_type):
@@ -268,6 +294,26 @@ def get_artemis_data_params(data_file_path):
         p = subprocess.Popen(args,stdout=subprocess.PIPE, bufsize=1)
         p.wait()
         params['ndata'] = int(str(p.stdout.readline()).split()[0]) - 1
+        
+    return params
+
+def check_anomaly_status(internal_data_path, params, log=None, debug=False):
+    """Function to check the ARTEMiS anomaly flag.  Adds parameter anomaly to 
+    the input dictionary, set to 0 for no anomaly or 1.  Input dictionary
+    requires short_name parameter.
+    """
+    
+    anomaly_file = path.join( internal_data_path, params['short_name']+'.anomaly' )
+    if log != None and debug == True:
+        log.info('Checking for ARTEMiS anomaly flag with file name: '+anomaly_file)
+        
+    if path.isfile(anomaly_file) == True:
+        params['anomaly'] = 1
+    else:
+        params['anomaly'] = 0
+        
+    if log != None and params['anomaly'] == 1 and debug == True:
+        log.info(' -> Got anomaly status = ' + str(params['anomaly']) )
         
     return params
 

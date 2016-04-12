@@ -17,6 +17,7 @@ import config_parser
 import glob
 import artemis_subscriber
 import rtmodel_subscriber
+import pylima_subscriber
 import survey_data_utilities
 from astropy.time import Time
 import numpy as np
@@ -69,7 +70,7 @@ def exofop_publisher():
     
     # Load TAP output to provide the prioritization data:
     tap_data = load_tap_output( config, log )    
-    
+
     # Read in the information on the K2 campaign:
     k2_campaign = k2_footprint_class.K2Footprint( config, log=log )
     
@@ -81,6 +82,8 @@ def exofop_publisher():
     (artemis_events, artemis_renamed) = load_artemis_event_data( config, log )
     rtmodels = rtmodel_subscriber.rtmodel_subscriber(log=log, \
                                                     renamed=artemis_renamed)
+    pylima_data = pylima_subscriber.load_pylima_output( config, log=log, \
+                                                    renamed=artemis_renamed )
     survey_events = load_survey_event_data( config, known_duplicates, \
                                                 event_alerts, log )
     update_known_duplicates( config, known_duplicates )
@@ -90,7 +93,7 @@ def exofop_publisher():
     known_events = \
             combine_K2C9_event_feed( known_events, false_positives, \
                                         artemis_events, survey_events, \
-                                            rtmodels, tap_data, log )
+                                            rtmodels, tap_data, pylima_data, log )
     
     # Identify which events are within the K2 campaign footprint & dates:
     known_events = targets_for_k2_campaign(config, known_events, k2_campaign, log)
@@ -193,7 +196,10 @@ def get_known_events( config ):
             if event_recog == False:
                 event = event_classes.K2C9Event()
                 event.master_index = int(entries[0])
-                event.identifier = entries[1]
+                if str(entries[1]).lower() == 'none':
+                    event.identifier = None
+                else:
+                    event.identifier = entries[1]
                 event.in_footprint = parse_boolean(entries[2])
                 event.in_superstamp = parse_boolean(entries[3])
                 event.during_campaign = parse_boolean(entries[4])
@@ -274,7 +280,7 @@ def update_known_events( config, known_events, log ):
                 str(event.in_footprint) + ' ' + str(event.in_superstamp) + ' '\
                 + str(event.during_campaign) + ' ' + str(event.ogle_name) + \
                 ' ' + str(event.moa_name) + ' ' + str(event.kmt_name) + \
-                ' ' + str(event.recommended_status).upper() + '\n'
+                ' ' + str(event.artemis_status).upper() + '\n'
         fileobj.write( line )
     fileobj.close()
 
@@ -317,7 +323,8 @@ def load_artemis_event_data( config, log ):
     
     # List of keys in a K2C9Event which should be prefixed with
     # Signalmen:
-    prefix_keys = [ 'a0', 't0', 'sig_t0', 'te', 'sig_te', 'u0', 'sig_u0' ]
+    prefix_keys = [ 'a0', 't0', 'sig_t0', 'te', 'sig_te', 'u0', 'sig_u0', \
+                    'anomaly' ]
     
     # Load list of events renamed by Martin because they are from the
     # previous year:
@@ -338,6 +345,8 @@ def load_artemis_event_data( config, log ):
     artemis_events = {}
     for model_file in model_file_list:
         params = artemis_subscriber.read_artemis_model_file( model_file )
+        params = artemis_subscriber.check_anomaly_status(config['internal_data_local_location'], \
+                                        params, log=log)
         if params['long_name'] in artemis_renamed.keys():
             params['long_name'] = artemis_renamed[params['long_name']]
         params = set_key_names( params, prefix_keys, 'signalmen' )
@@ -392,7 +401,8 @@ def load_survey_event_data( config, known_duplicates, event_alerts, log ):
             
             if ogle_id in event_alerts:
                 event.ogle_alert = event_alerts[ogle_id].strftime("%Y-%m-%dT%H:%M:%S")
-                
+                position = ( event.ogle_ra, event.ogle_dec )
+                event.ogle_alert_hjd = utilities.ts_to_hjd( event.ogle_alert, position )
             survey_events[ event.ogle_name ] = event
             
     ogle_id_list = survey_events.keys()
@@ -423,7 +433,8 @@ def load_survey_event_data( config, known_duplicates, event_alerts, log ):
                 
                 if moa_id in event_alerts:
                     ogle_event.moa_alert = event_alerts[moa_id].strftime("%Y-%m-%dT%H:%M:%S")
-                
+                    position = ( ogle_event.moa_ra, ogle_event.moa_dec )
+                    ogle_event.moa_alert_hjd = utilities.ts_to_hjd( ogle_event.moa_alert, position )
                 survey_events[ moa_lens_params['moa_name'] ] = ogle_event
                 
             i = i + 1
@@ -453,7 +464,9 @@ def load_survey_event_data( config, known_duplicates, event_alerts, log ):
                 
                 if moa_id in event_alerts:
                     event.moa_alert = event_alerts[moa_id].strftime("%Y-%m-%dT%H:%M:%S")
-                
+                    position = ( event.moa_ra, event.moa_dec )
+                    event.moa_alert_hjd = utilities.ts_to_hjd( event.moa_alert, position )
+
                 survey_events[ event.moa_name ] = event
 
     log.info(' -> ' + str(len(survey_events)) + ' events from surveys')
@@ -602,7 +615,7 @@ def load_tap_output( configs, log ):
     
 def combine_K2C9_event_feed( known_events, false_positives, \
                                 artemis_events, survey_events, \
-                                    rtmodels, tap_data, log ):
+                                    rtmodels, tap_data, pylima_data, log ):
     """Function to produce a dictionary of just those events identified
     within the superstamp of K2C9."""
     
@@ -654,8 +667,9 @@ def combine_K2C9_event_feed( known_events, false_positives, \
             known_events['master_index'][ event.master_index ] = event
     
     
-    # Combine the complete listing of events with ARTEMiS', TAP's and 
-    # RTmodel's output:
+    # Combine the complete listing of events with ARTEMiS', TAP's, PyLIMA's and  
+    # RTmodel's output.  Also now set the official event name and artemis status, 
+    # since we have combined all the data from all surveys and RTmodel:
     log.info(' -> Combining data from ARTEMiS, TAP and RTModel')
     
     sig_keys = [ 'signalmen_a0', 'signalmen_t0', 'signalmen_sig_t0', \
@@ -679,6 +693,7 @@ def combine_K2C9_event_feed( known_events, false_positives, \
             artemis_data = artemis_events[ event_name ]
             params = artemis_data.get_params(key_list=sig_keys)
             event.set_params( params )
+            
             known_events['master_index'][event_id] = event
         
         if event_name in rtmodels.keys():
@@ -689,7 +704,16 @@ def combine_K2C9_event_feed( known_events, false_positives, \
             log.info('BOZZA_T0: ' + str(event.bozza_t0))
             
             known_events['master_index'][event_id] = event
-        
+
+        if event_name in pylima_data.keys():
+            pars = pylima_data[event_name]
+            for key, value in pars.items():
+                setattr(event,str(key).lower(),value)
+                
+            known_events['master_index'][event_id] = event
+            
+        event.set_official_name()
+        event.set_artemis_status()
         
     n_events = len(known_events['master_index'])
     log.info(' -> total of ' + str(n_events) + ' events')
@@ -988,7 +1012,11 @@ def generate_exofop_output( config, known_events, artemis_renamed, log ):
                 check_sum = utilities.md5sum( dest )
                 manifest.write( path.basename(dest) + ' ' + check_sum + '\n' )
                 log.info(' --> Generated event finder chart')
-            
+            elif path.isfile(dest) == True:
+                check_sum = utilities.md5sum( dest )
+                manifest.write( path.basename(dest) + ' ' + check_sum + '\n' )
+                log.info(' --> Generated event finder chart')
+                
             # Generate model PSPL lightcurve files based on ARTEMiS fits:
             key_list = [ 'signalmen_t0', 'signalmen_u0', 'signalmen_te', \
                             origin+'_i0' ]
@@ -1012,10 +1040,34 @@ def generate_exofop_output( config, known_events, artemis_renamed, log ):
             else:
                 log.info(' --> No Signalmen parameters available')
             
-    # Lightcurve data file:
-    
-    # Colour-magnitude diagrams
-    
+            # Check for PyLIMA model output:
+            # PyLIMA follows ARTEMiS' naming convention, so need to check
+            # an event hasn't been renamed:
+            if event_name in artemis_renamed.values():
+                art_name = None
+                for ename, name in artemis_renamed.items():
+                    if name == event_name:
+                        art_name = ename
+            else:
+                art_name = event_name
+            log.info(' --> Checking for pyLIMA output under the name ' + \
+                            event_name + ' = ' + art_name)
+            files = { 
+                path.join( config['pylima_directory'], art_name+'_pyLIMA.lightcurve' ): \
+                path.join( config['log_directory'], \
+                                        event.identifier + '.pylima.lightcurve' ), 
+                path.join( config['pylima_directory'], art_name+'_pyLIMA.png' ): \
+                path.join( config['log_directory'], \
+                                        event.identifier + '.pylima.png' )
+                }
+            
+            for src, dest in files.items():
+                if path.isfile(src) == True:
+                    copy(src,dest)
+                    check_sum = utilities.md5sum( dest )
+                    manifest.write( path.basename( dest ) + ' ' + check_sum + '\n'   )
+                    log.info(' --> Fetched pyLIMA file ' + \
+                        path.basename(dest))
     manifest.close()
 
 def ready_file( config, status ):

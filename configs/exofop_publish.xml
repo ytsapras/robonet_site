@@ -25,6 +25,11 @@
         <!--<value>/Users/rstreet/RoboNet/Sandbox/data</value>-->
     </parameter>
     
+    <parameter name='internal_data_local_location'>
+        <value>/science/robonet/rob/Operations/Signalmen_output/signalmen_internal</value>
+        <!-- <value>/Users/rstreet/RoboNet/Sandbox/data</value> -->
+    </parameter>
+    
     
     <parameter name='ogle_data_local_location'>
         <value>/science/robonet/rob/Operations/SurveyData/OGLE</value>
@@ -68,8 +73,11 @@
     </parameter>
     
     <parameter name='auth'>
-        <value>/home/rstreet/.artemis-rsync</value>
-        <!--<value>/Users/rstreet/RoboNet/Sandbox/.artemis-rsync</value>-->
+        <value>XXX</value>
+    </parameter>
+    
+    <parameter name='auth_internal'>
+        <value>XXX</value>
     </parameter>
     
     <parameter name='log_directory'>
@@ -143,4 +151,8 @@
     	<value>9</value>
     </parameter>
 
+     <parameter name='pylima_directory'>
+        <value>/science/robonet/rob/Operations/PyLIMA</value>
+    </parameter>
+    
 </exofop_config>

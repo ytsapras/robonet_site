@@ -26,6 +26,10 @@
         <value>::PublishedParameters</value>
     </parameter>
     
+    <parameter name='internal_data_remote_location'>
+        <value>::Signalmen</value>
+    </parameter>
+    
     <parameter name='data_remote_location'>
         <value>::Data2016</value>
     </parameter>
@@ -45,9 +49,17 @@
         <!-- <value>/Users/rstreet/RoboNet/Sandbox/data</value> -->
     </parameter>
     
+    <parameter name='internal_data_local_location'>
+        <value>/science/robonet/rob/Operations/Signalmen_output/signalmen_internal</value>
+        <!-- <value>/Users/rstreet/RoboNet/Sandbox/data</value> -->
+    </parameter>
+    
     <parameter name='auth'>
-        <!--<value>/home/rstreet/.artemis-rsync</value>-->
-        <value>/home/robouser/.artemis-rsync</value>
+        <value>XXX</value>
+    </parameter>
+    
+    <parameter name='auth_internal'>
+        <value>XXX</value>
     </parameter>
     
     <parameter name='rsync_log_directory'>
@@ -75,5 +87,5 @@
     <parameter name='log_root_name'>
         <value>artemis_subscriber</value>
     </parameter>
-
+    
 </artemis_sync_config>

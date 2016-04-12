@@ -18,6 +18,9 @@ import hashlib
 import log_utilities
 from os import path, remove
 from datetime import datetime
+from astropy.time import Time
+from pyslalib import slalib as S
+from astropy import constants
 
 ##################################
 # CONVERT SHORT TO LONG EVENT NAME
@@ -242,6 +245,80 @@ def separation_two_points(pointA,pointB):
     gamma = r2d( gamma )
     
     return gamma
+    
+####################################
+# TIME UTILITIES
+def ts_to_hjd(ts, target_position, debug=False):
+    """Convert a UTC timestamp in YYYY-MM-DDTHH:MM:SS string format to HJD, 
+    for a given target position"""
+    
+    ra_rads = d2r( target_position[0] )
+    dec_rads = d2r( target_position[1] )
+    target_position = S.sla_dcs2c( ra_rads, dec_rads )
+    t = Time(ts, format='isot', scale='utc')
+    hjd = jd_to_hjd(t, target_position, debug=debug)
+    
+    return hjd
+    
+def jd_to_hjd(t, target_position, debug=False):
+    """Calculate the HJD timestamp corresponding to the JD given for the
+    current event. 
+    Inputs:
+        t is an astropy Time object
+        target_position is a tuple of (RA, Dec) in decimal degrees
+    Outputs:
+        hjd  float
+    """
+    
+    if debug == True:
+        print 'TIME JD: ',t, t.jd
+        
+    # Calculate the MJD (UTC) timestamp:
+    mjd_utc = t.jd - 2400000.5
+    if debug == True:
+        print 'TIME MJD_UTC: ',mjd_utc
+    
+    # Correct the MJD to TT:
+    mjd_tt = mjd_utc2mjd_tt(mjd_utc)
+    if debug == True:
+        print 'TIME MJD_TT: ',mjd_tt, t.tt.jd
+    
+    # Calculate Earth's position and velocity, both heliocentric
+    # and barycentric for this date
+    (earth_helio_position, vh, pb, vb) = S.sla_epv( mjd_tt )
+    if debug == True:
+        print 'Earth Cartesian position: ',earth_helio_position
+        print 'Target cartesian position: ', target_position
+    
+    # Calculate the light travel time delay from the target to 
+    # the Sun:
+    dv = S.sla_dvdv( earth_helio_position, target_position )            
+    tcorr = dv * ( constants.au.value / constants.c.value )
+    
+    if debug == True:
+        print 'TIME tcorr: ', tcorr, 's', (tcorr/60.0),'mins'
+    
+    # Calculating the HJD:
+    hjd = mjd_tt + tcorr/86400.0 + 2400000.5
+    if debug == True:
+        print 'TIME HJD: ',hjd,'\n'
+
+    return hjd
+    
+def mjd_utc2mjd_tt(mjd_utc, dbg=False):
+    '''Converts a MJD in UTC (MJD_UTC) to a MJD in TT (Terrestial Time) which is
+    needed for any position/ephemeris-based calculations.
+    UTC->TT consists of: UTC->TAI = 10s offset + 24 leapseconds (last one 2009 Jan 1.)
+    	    	    	 TAI->TT  = 32.184s fixed offset'''
+# UTC->TT offset
+    tt_utc = S.sla_dtt(mjd_utc)
+    if dbg: print 'TT-UTC(s)=', tt_utc
+
+# Correct MJD to MJD(TT)
+    mjd_tt = mjd_utc + (tt_utc/86400.0)
+    if dbg: print 'MJD(TT)  =  ', mjd_tt
+
+    return mjd_tt
 
 #####################################
 # MD5SUM
