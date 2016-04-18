@@ -3,7 +3,7 @@ from .models import Operator, Telescope, Instrument, Filter, Event, EventName, S
 from itertools import chain
 from django.http import HttpResponse, Http404
 from astropy.time import Time
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.shortcuts import render
 from bokeh.plotting import figure
 from bokeh.resources import CDN
@@ -41,6 +41,44 @@ def test(request):
    script, div = components(plot, CDN)
    context = {'the_script': script, 'the_div': div, 'lala': 'blah'}
    return render(request, 'events/test.html', context)
+
+##############################################################################################################
+def obs_log(request, date):
+   """
+   Will display the observation log for the given date.
+   Date must be provided in the format: YYYYMMDD
+   """
+   date_min = datetime(int(date[0:4]), int(date[4:6]), int(date[6:8]))
+   date_max = date_min + timedelta(hours=24)
+   try:
+      images = Image.objects.filter(date_obs__range=(date_min, date_max))
+      filenames = [k.image_name for k in images]
+      times = [k.date_obs for k in images]
+      objects = [EventName.objects.filter(event_id = k.event.pk)[0].name for k in images]
+      ras = [k.event.ev_ra for k in images]
+      decs = [k.event.ev_dec for k in images]
+      filts = [k.filt for k in images]
+      tels = [k.tel for k in images]
+      insts = [k.inst for k in images]
+      grp_ids = [k.grp_id for k in images]
+      track_ids = [k.track_id for k in images]
+      req_ids = [k.req_id for k in images]
+      airmasses = [k.airmass for k in images]
+      avg_fwhms = [k.avg_fwhm for k in images]
+      avg_skys = [k.avg_sky for k in images]
+      avg_sigskys = [k.avg_sigsky for k in images]
+      moon_seps = [k.moon_sep for k in images]
+      elongations = [k.elongation for k in images]
+      nstars = [k.nstars for k in images]
+      qualitys = [k.quality for k in images]
+      rows = zip(filenames, times, objects, ras, decs, filts, tels, insts, grp_ids, track_ids,
+                 req_ids, airmasses, avg_fwhms, avg_skys, avg_sigskys, moon_seps, elongations,
+		 nstars, qualitys)
+      rows = sorted(rows, key=lambda row: row[1])
+   except:
+      raise Http404("Encountered a problem while loading. Please contact the site administrator.")
+   context = {'rows': rows, 'date': date[0:4]+'-'+date[4:6]+'-'+date[6:8]}
+   return render(request, 'events/obs_log.html', context)
    
 ##############################################################################################################
 def list_all(request):

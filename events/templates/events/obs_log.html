@@ -1,0 +1,53 @@
+{% if rows %}
+  <h2>Observation Log: {{ date }}</h2>
+  <table class="sortable" border="0">
+  <tr>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">Image:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">Time:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">Object:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">Obj RA:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">Obj Dec:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">Filter:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">Telescope:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">Instrument:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">GroupID:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">TrackID:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">ReqID:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">Airmass:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">Avg FWHM:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">Sky BG:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">SD BG:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">Moon Separ:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">Elongation:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">NumStars:</b></td>
+     <td bgcolor="#990000"><b style="color: #FFFFCC ">Quality:</b></td>
+  <ul>
+  {% for row in rows %}
+  <tr bgcolor="#ffcc99">
+      <td>{{ row.0 }} </td>
+      <td>{{ row.1 }} </td>
+      <td>{{ row.2 }} </td>
+      <td>{{ row.3 }} </td>
+      <td>{{ row.4 }} </td>
+      <td>{{ row.5 }} </td>
+      <td>{{ row.6 }} </td>
+      <td>{{ row.7 }} </td>
+      <td>{{ row.8 }} </td>
+      <td>{{ row.9 }} </td>
+      <td>{{ row.10 }} </td>
+      <td>{{ row.11 }} </td>
+      <td>{{ row.12 }} </td>
+      <td>{{ row.13 }} </td>
+      <td>{{ row.14 }} </td>
+      <td>{{ row.15 }} </td>
+      <td>{{ row.16 }} </td>
+      <td>{{ row.17 }} </td>
+      <td>{{ row.18 }} </td>
+  </tr>
+  {% endfor %}
+  </ul>
+  </table>
+{% else %}
+    <p>No images found.</p>
+{% endif %}
+
