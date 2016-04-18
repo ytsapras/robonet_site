@@ -103,5 +103,5 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
        os.path.join(BASE_DIR, "static"),
-       '/home/Tux/ytsapras/robonet_site/events/static/events/',
+       '/home/robouser/Software/robonet_site/events/static/events/',
 ]

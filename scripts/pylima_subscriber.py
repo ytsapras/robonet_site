@@ -37,12 +37,17 @@ def load_pylima_output( configs, log=None, renamed=None ):
 def read_pylima_par_file( par_file ):
     """Function to read the PyLIMA parameter files"""
     
+    parse_keys = { 'AO': 'A0', 'TO': 'T0', 'UO': 'U0' }    
+    
     params = {}
     file_lines = open( par_file, 'r' ).readlines()
     for line in file_lines:
         if line[0:1] != '#':
             (key, value) = line.replace('\n','').split()
             key = key.replace('.','_')
+            for ikey, replace_key in parse_keys.items():
+                if ikey in key:
+                    key = key.replace(ikey,replace_key)
             value = float(value)
             if key == 'PYLIMA_TO': value = value + 2450000.0
             params[key] = value

@@ -1092,7 +1092,7 @@ def clear_transfer_directory( config ):
     Note this does NOT clear the findercharts, on the grounds that these 
     rarely change and are quite large    
     """
-    search_strings = [ 'K2C9\*model', 'K2C9\*param' ]    
+    search_strings = [ 'K2C9\*model', 'K2C9\*param', 'K2C9\*fchart\*' ]    
     
     for file_name in search_strings:
         file_path = path.join( config['transfer_location'], file_name )

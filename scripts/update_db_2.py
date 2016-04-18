@@ -9,7 +9,7 @@
 # Import dependencies
 import os
 import sys
-sys.path.append('/home/Tux/ytsapras/robonet_site/')
+sys.path.append('/home/robouser/Software/robonet_site/')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'robonet_site.settings')
 from django.core import management
 from django.conf import settings
@@ -232,18 +232,18 @@ def coords_exist(check_ra, check_dec):
 	 if separation < 2.5:
 	    match_found = True
 	    successful = True
-	    f = open('/home/Tux/ytsapras/Desktop/matches.txt','a')
-	    f.write('Coordinates '+check_ra+' '+check_dec+' match known object at '+event.ev_ra+' '+event.ev_dec)
+	    #f = open('/home/robouser/Desktop/matches.txt','a')
+	    #f.write('Coordinates '+check_ra+' '+check_dec+' match known object at '+event.ev_ra+' '+event.ev_dec)
 	    #print 'Found matching object at: '+event.ev_ra+' '+event.ev_dec
 	    matching_event = Event.objects.filter(ev_ra=event.ev_ra).filter(ev_dec=event.ev_dec)[0]
 	    known_names = EventName.objects.filter(event=event)
-	    f.write(' with event name(s): ')
+	    #f.write(' with event name(s): ')
 	    #print 'with event name(s):'
-	    for n in known_names:
-	       f.write(n.name)
+	    #for n in known_names:
+	    #   f.write(n.name)
 	    #   print n.name
-	    f.write('\n')
-	    f.close()
+	    #f.write('\n')
+	    #f.close()
 	    ra, dec = event.ev_ra, event.ev_dec
 	    break
    return successful, ra, dec
