@@ -119,7 +119,7 @@ def exofop_publisher():
     log.info('Plotting event locations...')
     plotname = path.join( config['log_directory'], 'k2_events_map.png' )
     k2_campaign.plot_footprint( plot_file=plotname, \
-                                targets=known_events['master_index'] )
+                                targets=known_events['master_index'], iplt=1 )
     log.info('Plotted K2C9 event locations')
     
     plotname = path.join( config['log_directory'], 
@@ -127,7 +127,7 @@ def exofop_publisher():
     k2_campaign.plot_footprint( plot_file=plotname, \
                                 targets=xsuperstamp_events, \
                                 plot_isolated_stars=True, \
-                                plot_dark_patches=True )
+                                plot_dark_patches=True, iplt=2 )
     log.info('Plotted event locations outside superstamp')
     
     # Sync data for transfer to IPAC with transfer location:
@@ -846,8 +846,6 @@ def generate_K2C9_events_table( config, known_events, log, debug=False ):
     
     pixel_sum = 0.0
     for event_id, event in known_events['master_index'].items():
-        if event.ogle_name == 'OGLE-2016-BLG-0095':
-            print event.summary()
         if event.in_footprint  == True and event.during_campaign == True:
             
             name = str(event.ogle_name) + ' ' + str(event.moa_name)
@@ -890,8 +888,6 @@ def generate_K2C9_events_table( config, known_events, log, debug=False ):
             
         #if debug == True:
          #   print '-> completed ',event.get_event_name()
-    
-        
     
     file_list1.sort()
     for line in file_list1:

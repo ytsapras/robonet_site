@@ -421,7 +421,7 @@ class K2Footprint():
     
     def plot_footprint( self, plot_file=None, targets=None, year = None, \
                        plot_isolated_stars=False, plot_dark_patches=False, \
-                       plot_ddt_targets=False, overlays={}):
+                       plot_ddt_targets=False, overlays={}, iplt=None):
         """Method to plot the footprint"""
         
         
@@ -463,13 +463,15 @@ class K2Footprint():
                 elif target.in_footprint == True and target.during_campaign == False: 
                     targets_outside_campaign = store_position(targets_outside_campaign, ra, dec)
         
-        fig = plt.figure(1,(12,12))
+        
+        if iplt == None: iplt = 1
+        fig = plt.figure(iplt,(12,12))
         font_pt = 18
         for channel, corners in self.k2_footprint.items():
             a = np.array( corners )
             plt.plot( a[:,0], a[:,1], 'k-' )
             (lx, ly) = get_label_loc(a)
-            plt.text( lx, ly, str(channel) )
+            plt.text( lx, ly, str(channel), fontsize=8 )
         
         if targets != None:
             ( ra, dec ) = targets_no_k2_data
@@ -480,7 +482,7 @@ class K2Footprint():
             plt.plot( ra, dec, 'c.' )
             ( ra, dec ) = targets_outside_campaign
             plt.plot( ra, dec, 'm.', markersize=2 )
-            
+        
         if plot_ddt_targets == True:
             plt.plot( ddt_targets[:,0], ddt_targets[:,1], 'k+', markersize=3 )            
             
@@ -511,9 +513,13 @@ class K2Footprint():
                     str(self.campaign) + ' footprint from ' + str(year) 
         plt.title( title, fontsize=font_pt )
         if plot_file == None: plot_file = 'k2-footprint.png'
-        (xmin,xmax,ymin,ymax) = plt.axis()
-        plt.axis( [xmax,xmin,ymin,ymax] )
         plt.axis('equal')
+        (xmin,xmax,ymin,ymax) = plt.axis()
+        xmin = max(xmin,255.0)
+        xmax = min(xmax,280.0)
+        ymin = max(ymin,-40.0)
+        ymax = min(ymax,-10.0)
+        plt.axis( [xmax,xmin,ymin,ymax] )
         plt.tick_params( labelsize=font_pt )
         plt.grid(True)
         plt.savefig( plot_file )

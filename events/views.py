@@ -9,11 +9,11 @@ from bokeh.plotting import figure
 from bokeh.resources import CDN
 from bokeh.embed import components
 import sys
-sys.path.append('/home/Tux/ytsapras/robonet_site/scripts/')
+sys.path.append('/home/robouser/Software/robonet_site/scripts/')
 from plotter import *
 
 # Path to ARTEMiS files
-artemis = "/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/"
+artemis = "/data/robonet/rob/ytsapras/"
 # Color & site definitions for plotting
 colors = artemis+"colours.sig.cfg"
 colordef = artemis+"colourdef.sig.cfg"
