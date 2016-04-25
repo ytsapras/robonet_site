@@ -86,6 +86,11 @@ def exofop_publisher():
                                                     renamed=artemis_renamed )
     survey_events = load_survey_event_data( config, known_duplicates, \
                                                 event_alerts, log )
+    if 'MOA-2016-BLG-205' in survey_events.keys():
+        log.info( 'Got MOA-2016-BLG-205')
+    else:
+        log.info( 'Missing MOA-2016-BLG-205 from survey data')
+        
     update_known_duplicates( config, known_duplicates )
     
     # Select those events which are in the K2 footprint
@@ -629,10 +634,10 @@ def combine_K2C9_event_feed( known_events, false_positives, \
     for event_name, event in survey_events.items():
         
         origin = str(event_name.split('-')[0]).lower()
-        
+        if event_name == 'MOA-2016-BLG-205':
+            log.info( 'Combining data on MOA-2016-BLG-205' )
         # Exclude known false positives:
-        if event_name not in false_positives and \
-                'microlensing' in event.classification:
+        if event_name not in false_positives:
             
             # Previously known events (K2C9Events):
             # THIS NEEDS TO CHECK FOR EVENTS UNDER BOTH SURVEYS
