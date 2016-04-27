@@ -421,7 +421,8 @@ class K2Footprint():
     
     def plot_footprint( self, plot_file=None, targets=None, year = None, \
                        plot_isolated_stars=False, plot_dark_patches=False, \
-                       plot_ddt_targets=False, overlays={}, iplt=None):
+                       plot_ddt_targets=False, label_xsuper_targets=False, \
+                       overlays={}, iplt=None, title=None):
         """Method to plot the footprint"""
         
         
@@ -439,6 +440,12 @@ class K2Footprint():
             target_list = [ ra_list, dec_list ]
             return target_list
         
+        def plot_overlay( fig, overlay ):
+            for name, field in overlay.items():
+                plt.plot( field[:,0], field[:,1], 'r-.' )
+                (lx, ly) = get_label_loc(field)
+                plt.text( lx, ly, str(name), fontsize=8, color='red' )
+
         if plot_ddt_targets == True:        
             ddt_targets = self.load_ddt_targets()        
         
@@ -496,19 +503,33 @@ class K2Footprint():
             self.load_isolated_stars()
             plt.plot( self.isolated_stars[:,0], \
                         self.isolated_stars[:,1],  'rd' )
+
+        if label_xsuper_targets == True:
+            overlay = {}
+            da = 10.0 / 60.0
+            dd = 10.0 / 60.0
+            for name, event in self.xsuperstamp_targets.items():
+                a = event.ogle_ra
+                d = event.ogle_dec
+                box =   [
+                        [ a + da, d + dd ],
+                        [ a - da, d + dd ],
+                        [ a - da, d - dd ],
+                        [ a + da, d - dd ],
+                        [ a + da, d + dd ],
+                        ]
+                overlay[ name ] = np.array( box )
+            plot_overlay( fig, overlay )
         
         if len(overlays) != 0:
-            for name, field in overlays.items():
-                plt.plot( field[:,0], field[:,1], 'r-.' )
-                (lx, ly) = get_label_loc(field)
-                plt.text( lx, ly, str(name), fontsize=8, color='red' )
-                            
+            plot_overlay( fig, overlays )
+
         plt.xlabel( 'RA [deg]', fontsize=font_pt )
         plt.ylabel( 'Dec [deg]', fontsize=font_pt  )
-        if year == None: 
+        if title == None and year == None: 
             title = 'Events within K2 Campaign ' + \
                     str(self.campaign) + ' footprint'
-        else: 
+        elif title == None and year != None: 
             title = 'Events within K2 Campaign ' + \
                     str(self.campaign) + ' footprint from ' + str(year) 
         plt.title( title, fontsize=font_pt )
@@ -530,7 +551,7 @@ if __name__ == '__main__':
     config = { 'k2_footprint_data': \
                 '/home/robouser/Software/robonet_site/data/k2-footprint.json',
                'xsuperstamp_target_data': \
-               '/home/robouser/Software/robonet_site/data/xsuperstamp_targets.json', 
+               '/home/robouser/Software/robonet_site/data/xsuperstamp_targets_C9b.json', 
                'ddt_target_data': \
                '/home/robouser/Software/robonet_site/data/c9-ddt-targets-preliminary.csv',
                'tmp_location': \
@@ -538,9 +559,11 @@ if __name__ == '__main__':
                'k2_campaign': 9, 
                'k2_year': 2016
               }
+    plot_title = 'Events selected for K2 outside the superstamp'
     k2_campaign = K2Footprint( config )
     k2_campaign.load_xsuperstamp_targets( config )
     plot_file = path.join( config['tmp_location'], 'test_k2_footprint.png' )
     k2_campaign.plot_footprint(plot_file=plot_file, targets=\
-                k2_campaign.xsuperstamp_targets)
+                k2_campaign.xsuperstamp_targets, label_xsuper_targets=True,\
+                title=plot_title)
                 

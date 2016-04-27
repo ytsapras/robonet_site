@@ -129,10 +129,13 @@ def exofop_publisher():
     
     plotname = path.join( config['log_directory'], 
                                  'k2_events_outside_superstamp_map.png' )
+    plot_title = 'Events selected for K2 outside the superstamp'
+    k2_campaign.load_xsuperstamp_targets( config )
     k2_campaign.plot_footprint( plot_file=plotname, \
-                                targets=xsuperstamp_events, \
-                                plot_isolated_stars=True, \
-                                plot_dark_patches=True, iplt=2 )
+                                targets=k2_campaign.xsuperstamp_targets, \
+                                label_xsuper_targets=True,\
+                                iplt=2, \
+                                title=plot_title )
     log.info('Plotted event locations outside superstamp')
     
     # Sync data for transfer to IPAC with transfer location:
