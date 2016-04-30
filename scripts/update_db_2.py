@@ -2,7 +2,7 @@
 # Collection of routines to update the RoboNet database tables
 # Keywords match the class model fields in ../robonet_site/events/models.py
 #
-# Written by Yiannis Tsapras Oct 2015
+# Written by Yiannis Tsapras Oct 2016
 # Last update: 
 #################################################################################
 
@@ -259,7 +259,7 @@ def add_single_lens(event_name, Tmax, e_Tmax, tau, e_tau, umin, e_umin, last_upd
    Keyword arguments:
    event_name  -- The event name. 
                  (string, required)
-        	 e.g. "OGLE-2015-BLG-1234"
+        	 e.g. "OGLE-2016-BLG-1234"
    Tmax -- Time of maximum magnification.
            (float, required)
             e.g. 2457135.422
@@ -288,7 +288,7 @@ def add_single_lens(event_name, Tmax, e_Tmax, tau, e_tau, umin, e_umin, last_upd
    modeler -- Name of the modeler.
               (string, optional, default='')
    last_updated -- datetime of last update. (datetime, required)
-        	 e.g. datetime(2015, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
+        	 e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    """
    if check_exists(event_name)==True:
       # Get event identifier
@@ -322,7 +322,7 @@ def add_binary_lens(event_name, Tmax, e_Tmax, tau, e_tau, umin, e_umin, last_upd
    Keyword arguments:
    event_name  -- The event name. 
                  (string, required)
-        	 e.g. "OGLE-2015-BLG-1234"
+        	 e.g. "OGLE-2016-BLG-1234"
    Tmax -- Time of maximum magnification.
            (float, required)
             e.g. 2457135.422
@@ -371,7 +371,7 @@ def add_binary_lens(event_name, Tmax, e_Tmax, tau, e_tau, umin, e_umin, last_upd
    modeler -- Name of the modeler.
               (string, optional, default='')
    last_updated -- datetime of last update. (datetime, required)
-        	 e.g. datetime(2015, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
+        	 e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    """
    # Try adding binary lens parameters to database
    if check_exists(event_name)==True:
@@ -416,12 +416,12 @@ def add_reduction(event_name, lc_file, timestamp, ref_image, target_found=False,
    Keyword arguments:
    event_name  -- The event name. 
                  (string, required)
-        	 e.g. "OGLE-2015-BLG-1234"
+        	 e.g. "OGLE-2016-BLG-1234"
    lc_file -- The lightcurve file. 
              (string, required)
    timestamp -- The date the lightcurve file was created. 
                 (datetime, required)
-                 e.g. datetime(2015, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
+                 e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    target_found -- Has the target been identified by the pipeline? 
                   (boolean, required, default=False)
    ref_image -- Reference image used. 
@@ -598,7 +598,7 @@ def add_request(event_name, t_sample, exptime, n_exp=1, timestamp=timezone.now()
    Keyword arguments:
    event_name -- The event name. 
                  (string, required)
-        	 e.g. "OGLE-2015-BLG-1234"
+        	 e.g. "OGLE-2016-BLG-1234"
    t_sample -- Sampling interval to use. (in minutes) 
               (float, required)
    exptime -- Exposure time to use. (in seconds) (integer, required) 
@@ -606,7 +606,7 @@ def add_request(event_name, t_sample, exptime, n_exp=1, timestamp=timezone.now()
             (integer, optional, default=1)
    timestamp -- The request submission time.
                 (datetime, optional, default=timezone.now())
-        	e.g. datetime(2015, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
+        	e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    time_expire -- When the request expires.
                   (datetime, optional, default=timezone.now()+24 hours)
    pfrm_on -- Observe on 0.4m network?
@@ -657,10 +657,10 @@ def add_status(event_name, timestamp=timezone.now(), status='AC', comment='',
    Keyword arguments:
    event_name -- The event name. 
                 (string, required)
-        	 e.g. "OGLE-2015-BLG-1234"
+        	 e.g. "OGLE-2016-BLG-1234"
    timestamp -- The request submission time.
                 (datetime, optional, default=timezone.now())
-        	e.g. datetime(2015, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
+        	e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    status -- Event status.
              (CH:check, AC:active, AN:anomaly, EI:eoi, BA:baseline, EX:expired)
              (string, optional, default='AC')
@@ -755,7 +755,7 @@ def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0,
                 (string, required)
    timestamp -- The request submission time.
                 (datetime, optional, default=timezone.now())
-        	e.g. datetime(2015, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
+        	e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    priority -- Priority flag for human observers. 
                [anomaly(A),high(H),medium(M),low(L)]
 	       (string, optional, default='L')
@@ -812,10 +812,10 @@ def add_image(event_name, image_name, date_obs, timestamp=timezone.now(), tel=''
                 (string, required)
    date_obs -- The date of observation.
                 (datetime, required)
-        	e.g. datetime(2015, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
+        	e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    timestamp -- The time the image was written/updated in the database.
                 (datetime, optional, default=timezone.now())
-        	e.g. datetime(2015, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
+        	e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    tel -- Telescope where the image was taken.
          (string, optional, default='')
    inst -- Instrument used for the observation.
@@ -900,10 +900,10 @@ def add_image(event_name, image_name, date_obs, timestamp=timezone.now(), tel=''
 ###################################################################################
 def run_test2():
    # Path to ARTEMiS files
-   artemis = "/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/"
+   artemis_col = "/data/robonet/rob/ytsapras/"
    # Color & site definitions for plotting
-   colors = artemis+"colours.sig.cfg"
-   colordef = artemis+"colourdef.sig.cfg"
+   colors = artemis_col+"colours.sig.cfg"
+   colordef = artemis_col+"colourdef.sig.cfg"
    # Set up and populate dictionaries
    col_dict = {}
    site_dict = {}
@@ -923,12 +923,13 @@ def run_test2():
   	 col_dict[key] = val
    
    # Populate Operator database
-   for s in ['OGLE', 'MOA', 'KMTNet', 'WISE', 'MOA', 'OGLE', 'KMTNet', 'PLANET', 'RoboNet', 'uFUN', 'uFUN', 'Other']:
+   for s in ['OGLE', 'MOA', 'KMTNet', 'PLANET', 'RoboNet', 'uFUN', 'Other']:
       add_operator(s)
    
    # Populate Telescope database
    from random import uniform
    for i in site_dict.keys():
+      #print i
       tel_name = site_dict[i][-1]
       if ('LCOGT' in tel_name) or ('Liverpool' in tel_name):
          # Get the appropriate pk for RoboNet
@@ -943,30 +944,76 @@ def run_test2():
       else:
          operator = Operator.objects.get(name='Other')
 	 site = ''
-      aperture = uniform(1.0,2.0)
+      aperture = float(tel_name.split()[-1][:-1])
+      #print operator, tel_name, aperture, site
       add_telescope(operator=operator, telescope_name=tel_name, aperture=aperture, site=site)
    
    # Populate Instrument database
    for i in Telescope.objects.all().values():
-      inst = i['name']+' CCD camera'
+      inst = i['name'] +' CCD camera'
       telescope = Telescope.objects.get(name=i['name'])
-      pixscale = uniform(0.1,1.4)
-      add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)
+      if all(x not in i['name'] for x in ['LCOGT', 'OGLE', 'MOA 1.8m', 'Faulkes']):
+         add_instrument(telescope=telescope, instrument_name=inst)
    
-   # Add a few test instruments at existing telescopes   
-   telescope = Telescope.objects.get(name='LCOGT SAAO 1m A')
-   inst = '!!!TEST SAA0 1m A NEW INST!!!'
-   pixscale = uniform(0.1,1.4)
+   # Add known instruments at existing telescopes   
+   telescope = Telescope.objects.get(name='Faulkes South 2.0m')
+   inst = 'fs01'
+   pixscale = 0.304
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
-   
+ 
    telescope = Telescope.objects.get(name='Faulkes North 2.0m')
-   inst = '!!!TEST FTN 2.0m NEW INST!!!'
-   pixscale = uniform(0.1,1.4)
+   inst = 'fs02'
+   pixscale = 0.301
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
-   
-   telescope = Telescope.objects.get(name='LCOGT CTIO 1m A')
-   inst = '!!!TEST CTIO 1m A NEW INST!!!'
-   pixscale = uniform(0.1,1.4)
+
+   telescope = Telescope.objects.get(name='LCOGT SSO B 1m')
+   inst = 'kb71'
+   pixscale = 0.467
+   add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
+
+   telescope = Telescope.objects.get(name='LCOGT SSO A 1m')
+   inst = 'kb??'
+   pixscale = 0.467
+   add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
+
+   telescope = Telescope.objects.get(name='LCOGT CTIO A 1m')
+   inst = 'kb78'
+   pixscale = 0.467
+   add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
+     
+   telescope = Telescope.objects.get(name='LCOGT CTIO B 1m')
+   inst = 'fl03'
+   pixscale = 0.387
+   add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
+
+   telescope = Telescope.objects.get(name='LCOGT CTIO C 1m')
+   inst = 'fl04'
+   pixscale = 0.387
+   add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
+
+   telescope = Telescope.objects.get(name='LCOGT SAAO A 1m')
+   inst = 'kb70'
+   pixscale = 0.467
+   add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
+     
+   telescope = Telescope.objects.get(name='LCOGT SAAO B 1m')
+   inst = 'kb76'
+   pixscale = 0.467
+   add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
+
+   telescope = Telescope.objects.get(name='LCOGT SAAO C 1m')
+   inst = 'kb??'
+   pixscale = 0.467
+   add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
+
+   telescope = Telescope.objects.get(name='OGLE 1.3m')
+   inst = 'OGLE-IV mosaic camera'
+   pixscale = 0.26
+   add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
+
+   telescope = Telescope.objects.get(name='MOA 1.8m')
+   inst = 'MOA-cam3'
+   pixscale = 0.58
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
    
    # Populate filter database
@@ -979,13 +1026,13 @@ def run_test2():
    # Populate Event database with OGLE event coordinates
    # and EventName database with OGLE event names
    from glob import glob
-   ogle_event_list = glob('/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/PublishedParameters/2015/OGLE/*.model')
+   ogle_event_list = glob('/science/robonet/rob/Operations/Signalmen_output/PublishedParameters/2016/OGLE/*.model')
    count = 0
    for i in ogle_event_list:
       data = open(i).read().split()
       ev_ra = data[0]
       ev_dec = data[1]
-      name = data[2].replace('OB15','OGLE-2015-BLG-')
+      name = data[2].replace('OB16','OGLE-2016-BLG-')
       #print 'Doing '+name
       #print 'Trying to add event ...'
       x = add_event(ev_ra=ev_ra, ev_dec=ev_dec)
@@ -1000,13 +1047,13 @@ def run_test2():
    # Populate Event database with MOA event coordinates
    # and EventName database with MOA event names
    from glob import glob
-   moa_event_list = glob('/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/PublishedParameters/2015/MOA/*.model')
+   moa_event_list = glob('/science/robonet/rob/Operations/Signalmen_output/PublishedParameters/2016/MOA/*.model')
    count = 0
    for i in moa_event_list:
       data = open(i).read().split()
       ev_ra = data[0]
       ev_dec = data[1]
-      name = data[2].replace('KB15','MOA-2015-BLG-')
+      name = data[2].replace('KB16','MOA-2016-BLG-')
       #print 'Doing '+name
       #print 'Trying to add event ...'
       x = add_event(ev_ra=ev_ra, ev_dec=ev_dec)
@@ -1021,12 +1068,12 @@ def run_test2():
    # Populate SingleLens model database from ARTEMiS model files
    from glob import glob
    from astropy.time import Time
-   ogle_event_pars = glob('/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/PublishedParameters/2015/OGLE/*.model')
+   ogle_event_pars = glob('/science/robonet/rob/Operations/Signalmen_output/PublishedParameters/2016/OGLE/*.model')
    for i in ogle_event_pars:
       data = open(i).read().split()
       ev_ra = data[0]
       ev_dec = data[1]
-      name = data[2].replace('OB15','OGLE-2015-BLG-')
+      name = data[2].replace('OB16','OGLE-2016-BLG-')
       event_id = EventName.objects.get(name=name).event_id
       event = Event.objects.get(id=event_id)
       Tmax, e_Tmax = float(data[3]), float(data[4])
@@ -1040,12 +1087,12 @@ def run_test2():
                       e_umin=e_umin, last_updated=last_updated, modeler=modeler, rho=None, 
 		      e_rho=None, pi_e_n=None, e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None)
    
-   moa_event_pars = glob('/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/PublishedParameters/2015/MOA/*.model')
+   moa_event_pars = glob('/science/robonet/rob/Operations/Signalmen_output/PublishedParameters/2016/MOA/*.model')
    for i in moa_event_pars:
       data = open(i).read().split()
       ev_ra = data[0]
       ev_dec = data[1]
-      name = data[2].replace('KB15','MOA-2015-BLG-')
+      name = data[2].replace('KB16','MOA-2016-BLG-')
       event_id = EventName.objects.get(name=name).event_id
       event = Event.objects.get(id=event_id)
       Tmax, e_Tmax = float(data[3]), float(data[4])
@@ -1059,86 +1106,156 @@ def run_test2():
                       e_umin=e_umin, last_updated=last_updated, modeler=modeler, rho=None, 
 		      e_rho=None, pi_e_n=None, e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None)
    
-   artemis_event_pars = glob('/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/model/*B15*.model')
+   artemis_event_pars = glob('/science/robonet/rob/Operations/Signalmen_output/model/*B16*.model')
    for i in artemis_event_pars:
-      data = open(i).read().split()
-      ev_ra = data[0]
-      ev_dec = data[1]
-      if data[2].startswith('KB15'):
-         name = data[2].replace('KB15','MOA-2015-BLG-')
-      if data[2].startswith('OB15'):
-         name = data[2].replace('OB15','OGLE-2015-BLG-')
-      event_id = EventName.objects.get(name=name).event_id
-      event = Event.objects.get(id=event_id)
-      Tmax, e_Tmax = float(data[3]), float(data[4])
-      tau, e_tau = float(data[5]), float(data[6])
-      umin, e_umin = float(data[7]), float(data[8])
-      #timestamp of most recent datapoint
-      time_last_datapoint = Time(float(data[12])+2450000.0, format='jd').datetime
-      last_updated = timezone.make_aware(time_last_datapoint, timezone.get_current_timezone())
-      modeler = 'ARTEMiS'
-      add_single_lens(event_name=name, Tmax=Tmax, e_Tmax=e_Tmax, tau=tau, e_tau=e_tau, umin=umin, 
-                      e_umin=e_umin, last_updated=last_updated, modeler=modeler, rho=None, 
-		      e_rho=None, pi_e_n=None, e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None)
+      # Exclude rogue files with incorrect entries
+      try:
+         data = open(i).read().split()
+ 	 ev_ra = data[0]
+ 	 ev_dec = data[1]
+ 	 if data[2].startswith('KB16'):
+ 	    name = data[2].replace('KB16','MOA-2016-BLG-')
+ 	 if data[2].startswith('OB16'):
+ 	    name = data[2].replace('OB16','OGLE-2016-BLG-')
+ 	 event_id = EventName.objects.get(name=name).event_id
+ 	 event = Event.objects.get(id=event_id)
+ 	 Tmax, e_Tmax = float(data[3]), float(data[4])
+ 	 tau, e_tau = float(data[5]), float(data[6])
+ 	 umin, e_umin = float(data[7]), float(data[8])
+ 	 #timestamp of most recent datapoint
+ 	 time_last_datapoint = Time(float(data[12])+2450000.0, format='jd').datetime
+ 	 last_updated = timezone.make_aware(time_last_datapoint, timezone.get_current_timezone())
+ 	 modeler = 'ARTEMiS'
+ 	 add_single_lens(event_name=name, Tmax=Tmax, e_Tmax=e_Tmax, tau=tau, e_tau=e_tau, umin=umin,
+ 	 		 e_umin=e_umin, last_updated=last_updated, modeler=modeler, rho=None,
+	 		 e_rho=None, pi_e_n=None, e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None)
+      except:
+         continue
+	 
+   # Populate RobonetReduction by reading the event directories in 
+   # ProcData
+   from lxml import etree
+   def todict(xml_file):
+      ''' Convert an xml tree into a dictionary. '''
+      d = {}
+      tree = etree.parse(xml_file)
+      root = tree.getroot()
+      for parameter in root.findall('parameter'):
+         name = parameter.get('name')
+	 val = parameter.find('value').text
+	 d[name] = val
+      return d
    
-   # Populate RobonetReduction
    count = 0
-   ogle_events_list = EventName.objects.filter(name__contains="OGLE")
-   for i in ogle_events_list:
-      event_name = i.name
-      lc_file = 'lc_'+event_name+'_ip.t'
-      timestamp = timezone.now()
-      ref_image = 'reference.fits'
-      add_reduction(event_name, lc_file, timestamp, ref_image, target_found=False, ron=0.0, gain=1.0,
-   		     oscanx1=1, oscanx2=50, oscany1=1, oscany2=500, imagex1=51, imagex2=1000,
-   		     imagey1=1, imagey2=1000, minval=1.0, maxval=55000.0, growsatx=0,
-   		     growsaty=0, coeff2=1.0e-06, coeff3=1.0e-12,
-   		     sigclip=4.5, sigfrac=0.5, flim=2.0, niter=4, use_reflist=0, max_nimages=1,
-   		     max_sky=5000.0, min_ell=0.8, trans_type='polynomial', trans_auto=0, replace_cr=0,
-   		     min_scale=0.99, max_scale=1.01,
-   		     fov=0.1, star_space=30, init_mthresh=1.0, smooth_pro=2, smooth_fwhm=3.0,
-   		     var_deg=1, det_thresh=2.0, psf_thresh=8.0, psf_size=8.0, psf_comp_dist=0.7,
-   		     psf_comp_flux=0.1, psf_corr_thresh=0.9, ker_rad=2.0, lres_ker_rad=2.0,
-   		     subframes_x=1, subframes_y=1, grow=0.0, ps_var=0, back_var=1, diffpro=0)
-      count = count + 1
-      print count
+   events_robonet = glob('/science/robonet/rob/Operations/ProcData/2016/*')
+   for i in events_robonet:
+       try:
+          event_name = i.split('/')[-1].split('_')[0]
+	  lc_file = glob(i+'/lc/*/rawlc/*.t')
+	  if lc_file:
+	     lc_file = lc_file[0]
+	     is_target_found = True
+	  else:
+	     lc_file = ''
+	     is_target_found = False
+	  timestamp = timezone.now()
+	  ref_image = glob(i+'/reflist.*.txt')
+	  if ref_image:
+	     ref_images = open(ref_image[0],'r').readlines()
+	     ref_image = ", ".join(["%s" % k.split('\n')[0] for k in ref_images])
+	  else:
+	     ref_image = ''
+	  ccdpar = glob(i+'/ccd.par')
+	  if ccdpar:
+	     lines = open(ccdpar[0],'r').readlines()
+	     ron = float(lines[0].split('#')[0])
+	     gain = float(lines[1].split('#')[0])
+	  else:
+	     ron = 0.0
+	     gain = 1.0
+	  s3par = glob(i+'/s3.*.par')
+	  if s3par:
+	     lines = open(s3par[0],'r').readlines()
+	     use_reflist = int(lines[0].split('#')[0])
+	     max_nimages = int(lines[1].split('#')[0])
+	     fov = float(lines[9].split('#')[0])
+	  else:
+	     use_reflist = 0
+	     max_nimages = 0
+	     fov = 0.0
+	  redconfig = glob(i+'/*.Red.Config')
+	  if redconfig:
+	     d = todict(redconfig[0])
+	     add_reduction(event_name, lc_file=lc_file, timestamp=timestamp, ref_image=ref_image, 
+	                    target_found=is_target_found, ron=ron, gain=gain,
+	     		    oscanx1=int(d['oscanx1']), oscanx2=int(d['oscanx2']), 
+			    oscany1=int(d['oscany1']), oscany2=int(d['oscany2']), 
+			    imagex1=int(d['imagex1']), imagex2=int(d['imagex2']),
+	     		    imagey1=int(d['imagey1']), imagey2=int(d['imagey2']), 
+			    minval=float(d['minval']), maxval=float(d['maxval']), 
+			    growsatx=int(float(d['growsatx'])), growsaty=int(float(d['growsaty'])), 
+			    coeff2=float(d['coeff2']), coeff3=float(d['coeff3']),
+	     		    sigclip=float(d['sigclip']), sigfrac=float(d['sigfrac']), 
+			    flim=float(d['flim']), niter=int(d['s2niter']), 
+			    use_reflist=use_reflist, max_nimages=max_nimages,
+	     		    max_sky=float(d['max_sky']), min_ell=float(d['min_ell']), 
+			    trans_type=d['transtype'], trans_auto=int(d['transauto']), 
+			    replace_cr=int(d['replacecr']), min_scale=float(d['min_scale']), 
+			    max_scale=float(d['max_scale']), fov=fov, star_space=int(float(d['star_space'])), 
+			    init_mthresh=float(d['init_mthresh']), smooth_pro=float(d['smooth_pro_s3']), 
+			    smooth_fwhm=float(d['smooth_fwhm_s3']),
+	     		    var_deg=int(d['var_deg']), det_thresh=float(d['det_thresh']), 
+			    psf_thresh=float(d['psf_thresh']), psf_size=float(d['psf_size']), 
+			    psf_comp_dist=float(d['psf_comp_dist']),
+	     		    psf_comp_flux=float(d['psf_comp_flux']), psf_corr_thresh=float(d['psf_corr_thresh']), 
+			    ker_rad=float(d['ker_rad']), lres_ker_rad=float(d['lres_ker_rad']),
+	     		    subframes_x=int(d['subframes_x']), subframes_y=int(d['subframes_y']), 
+			    grow=float(d['grow']), ps_var=int(d['ps_var']), 
+			    back_var=int(d['back_var']), diffpro=int(d['diffpro']))
+	  else:
+	     continue
+       except:
+          continue
+       count = count + 1
+       print count
 
    # Populate RobonetRequest
-   from datetime import datetime, timedelta
-   import random
-   count = 0
-   ogle_events_list = EventName.objects.filter(name__contains="OGLE")
-   for i in ogle_events_list:
-      event_name = i.name
-      t_sample = random.uniform(0.1,24.0)
-      exptime = random.randint(10,300)
-      n_exp = random.randint(1,10)
-      add_request(event_name, t_sample, exptime, n_exp, timestamp=timezone.now(),
-	    time_expire=timezone.now()+timedelta(hours=24), pfrm_on=False, 
-	    onem_on=True, twom_on=False, request_type='M', which_filter='',
-	    which_inst='', grp_id='', track_id='', req_id='')
-      count = count + 1
-      print count
+   #from datetime import datetime, timedelta
+   #import random
+   #count = 0
+   #ogle_events_list = EventName.objects.filter(name__contains="OGLE")
+   #for i in ogle_events_list:
+   #   event_name = i.name
+   #   t_sample = random.uniform(0.1,24.0)
+   #   exptime = random.randint(10,300)
+   #   n_exp = random.randint(1,10)
+   #   add_request(event_name, t_sample, exptime, n_exp, timestamp=timezone.now(),
+   #	    time_expire=timezone.now()+timedelta(hours=24), pfrm_on=False, 
+   #	    onem_on=True, twom_on=False, request_type='M', which_filter='',
+   #	    which_inst='', grp_id='', track_id='', req_id='')
+   #   count = count + 1
+   #   print count
 
    # Populate RobonetStatus 
-   count = 0
-   ogle_events_list = EventName.objects.filter(name__contains="OGLE")
-   for i in ogle_events_list:
-      event_name = i.name
-      add_status(event_name, timestamp=timezone.now(), status='AC', comment='', 
-	   updated_by='', rec_cad=0, rec_texp=0, rec_nexp=0, rec_telclass='')
-      count = count + 1
-      print count
+   #count = 0
+   #ogle_events_list = EventName.objects.filter(name__contains="OGLE")
+   #for i in ogle_events_list:
+   #   event_name = i.name
+   #   add_status(event_name, timestamp=timezone.now(), status='AC', comment='', 
+   #	   updated_by='', rec_cad=0, rec_texp=0, rec_nexp=0, rec_telclass='')
+   #   count = count + 1
+   #   print count
 
    # Populate DataFile database
    from astropy.time import Time
-   ogle_dat_list = glob('/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/data/*OB15*I.dat')
+   dat_list = glob('/science/robonet/rob/Operations/Signalmen_output/data/*B16*I.dat')
    count = 0
-   for i in ogle_dat_list:
+   for i in dat_list:
       data = open(i).readlines()
       data = data[1:]
       if (data != []):
-         event_name = i.split('/')[-1][1:-5].replace('OB15','OGLE-2015-BLG-')
+         event_name = i.split('/')[-1][1:-5].replace('OB16','OGLE-2016-BLG-')
+	 event_name = i.split('/')[-1][1:-5].replace('KB16','MOA-2016-BLG-')
          datafile = i
 	 last_upd = timezone.now()
          last_obs = Time(float('245'+data[-1].split()[2]), format='jd').datetime
@@ -1147,10 +1264,15 @@ def run_test2():
          ndata = len(data)-1
          tel_id = i.split('/')[-1][0:1]
 	 tel = site_dict[tel_id][-1]
-	 inst = 'default'
-	 filt = 'default'
-	 baseline = 22.0
-	 g = 0.0e-05
+	 try:
+	    align_file = open(i.split('data')[0]+'model/'+i.split('data')[1].split('.')[0][2:-1]+'.align','r').readlines()
+	    baseline = float(align_file[0].split()[1])
+	    g = float(align_file[0].split()[2])
+	 except:
+	    baseline = 22.0
+	    g = 0.0e-05
+	 inst = ''
+	 filt = ''
 	 add_datafile(event_name=event_name, datafile=datafile, last_upd=last_upd, 
 	              last_obs=last_obs,   last_mag=last_mag, tel=tel, ndata=ndata, 
 		      inst=inst, filt=filt, baseline=baseline, g=g)
@@ -1158,106 +1280,106 @@ def run_test2():
          print count
    
    # Populate Tap database
-   import random
-   count = 0
-   ogle_events_list = EventName.objects.filter(name__contains="OGLE")
-   for i in ogle_events_list:
-      event_name = i.name
-      timestamp = timezone.now()
-      priority = random.choice(['L','L','L','L','M','M','H','A'])
-      tsamp = random.uniform(0.1,24.0)
-      texp = random.randint(10,300)
-      nexp = random.randint(1,10)
-      telclass = random.choice(['1m','2m','0.4m'])
-      inst = 'default'
-      filt = 'default'
-      imag = random.uniform(14.0,20.0)
-      omega = random.uniform(0.0,10.0)
-      err_omega = random.uniform(0.0,6.0)
-      peak_omega = random.uniform(1.0,25.0)
-      blended = random.choice([True,False,False])
-      add_tap(event_name=event_name, timestamp=timestamp, priority=priority, tsamp=tsamp, 
-              texp=texp, nexp=nexp, telclass=telclass, imag=imag, omega=omega, 
-	      err_omega=err_omega, peak_omega=peak_omega, blended=blended) 
-      count = count + 1
-      print count
+   #import random
+   #count = 0
+   #ogle_events_list = EventName.objects.filter(name__contains="OGLE")
+   #for i in ogle_events_list:
+   #   event_name = i.name
+   #   timestamp = timezone.now()
+   #   priority = random.choice(['L','L','L','L','M','M','H','A'])
+   #   tsamp = random.uniform(0.1,24.0)
+   #   texp = random.randint(10,300)
+   #   nexp = random.randint(1,10)
+   #   telclass = random.choice(['1m','2m','0.4m'])
+   #   inst = 'default'
+   #   filt = 'default'
+   #   imag = random.uniform(14.0,20.0)
+   #   omega = random.uniform(0.0,10.0)
+   #   err_omega = random.uniform(0.0,6.0)
+   #   peak_omega = random.uniform(1.0,25.0)
+   #   blended = random.choice([True,False,False])
+   #   add_tap(event_name=event_name, timestamp=timestamp, priority=priority, tsamp=tsamp, 
+   #           texp=texp, nexp=nexp, telclass=telclass, imag=imag, omega=omega, 
+   #	      err_omega=err_omega, peak_omega=peak_omega, blended=blended) 
+   #   count = count + 1
+   #   print count
 
    # Populate Image database
-   import random
-   from datetime import datetime, timedelta
-   count = 0
-   ogle_events_list = EventName.objects.filter(name__contains="OGLE")
-   for i in ogle_events_list:
-      event_name = i.name
-      for cnt in range(10):
-   	 image_name = str(event_name)+'_img_'+str(cnt)
-   	 date_obs = timezone.now()+timedelta(hours=random.uniform(-1000,1000))
-   	 timestamp = timezone.now()
-   	 tel = random.choice(['LCOGT SAAO 1m A','LCOGT SAAO 1m B','LCOGT SAAO 1m C','LCOGT CTIO 1m A',
-   			      'LCOGT CTIO 1m B','LCOGT CTIO 1m C', 'LCOGT SSO 1m A', 'LCOGT SSO 1m B',
-   			      'Faulkes North 2.0m','Faulkes South 2.0m'])
-   	 inst = tel+' CCD camera'
-   	 filt = 'SDSS-i'
-   	 grp_id = 'RBN2015'+str(random.randint(1,10))+str(random.randint(1,30))+'T'+str(random.uniform(0,24))
-   	 track_id = '0000'+str(random.randint(10000,30000))
-   	 req_id = '0000'+str(random.randint(40000,60000))
-   	 airmass = random.uniform(1,2)
-   	 avg_fwhm = random.uniform(2,9)
-   	 avg_sky = random.uniform(1000,6000)
-   	 avg_sigsky = random.uniform(10,200)
-   	 moon_sep = random.uniform(15,40)
-   	 moon_phase = random.uniform(0,99)
-   	 moon_up = random.choice([True,False])
-   	 elongation = random.uniform(1,2)
-   	 nstars = random.randint(60,600)
-   	 ztemp = None
-   	 quality = random.choice(['rejected','accepted','accepted','accepted'])
-   	 target_hjd = None
-   	 target_mag = None
-   	 target_magerr = None
-   	 target_skybg = None
-   	 target_fwhm = None
-   	 add_image(event_name=event_name, image_name=image_name, date_obs=date_obs, timestamp=timestamp, 
-   		   tel=tel, inst=inst, filt=filt, grp_id=grp_id, track_id=track_id, req_id=req_id, 
-   		   airmass=airmass, avg_fwhm=avg_fwhm, avg_sky=avg_sky, avg_sigsky=avg_sigsky, 
-   		   moon_sep=moon_sep, moon_phase=moon_phase, moon_up=moon_up, elongation=elongation,
-   		   nstars=nstars, ztemp=ztemp, quality=quality, target_hjd=target_hjd, target_mag=target_mag, 
-   		   target_magerr=target_magerr, target_skybg=target_skybg, target_fwhm=target_fwhm) 
-      count = count + 1
-      print count
+   #import random
+   #from datetime import datetime, timedelta
+   #count = 0
+   #ogle_events_list = EventName.objects.filter(name__contains="OGLE")
+   #for i in ogle_events_list:
+   #   event_name = i.name
+   #   for cnt in range(10):
+   #	 image_name = str(event_name)+'_img_'+str(cnt)
+   #	 date_obs = timezone.now()+timedelta(hours=random.uniform(-1000,1000))
+   #	 timestamp = timezone.now()
+   #	 tel = random.choice(['LCOGT SAAO 1m A','LCOGT SAAO 1m B','LCOGT SAAO 1m C','LCOGT CTIO 1m A',
+   #			      'LCOGT CTIO 1m B','LCOGT CTIO 1m C', 'LCOGT SSO 1m A', 'LCOGT SSO 1m B',
+   #			      'Faulkes North 2.0m','Faulkes South 2.0m'])
+   #	 inst = tel+' CCD camera'
+   #	 filt = 'SDSS-i'
+   #	 grp_id = 'RBN2016'+str(random.randint(1,10))+str(random.randint(1,30))+'T'+str(random.uniform(0,24))
+   #	 track_id = '0000'+str(random.randint(10000,30000))
+   #	 req_id = '0000'+str(random.randint(40000,60000))
+   #	 airmass = random.uniform(1,2)
+   #	 avg_fwhm = random.uniform(2,9)
+   #	 avg_sky = random.uniform(1000,6000)
+   #	 avg_sigsky = random.uniform(10,200)
+   #	 moon_sep = random.uniform(15,40)
+   #	 moon_phase = random.uniform(0,99)
+   #	 moon_up = random.choice([True,False])
+   #	 elongation = random.uniform(1,2)
+   #	 nstars = random.randint(60,600)
+   #	 ztemp = None
+   #	 quality = random.choice(['rejected','accepted','accepted','accepted'])
+   #	 target_hjd = None
+   #	 target_mag = None
+   #	 target_magerr = None
+   #	 target_skybg = None
+   #	 target_fwhm = None
+   #	 add_image(event_name=event_name, image_name=image_name, date_obs=date_obs, timestamp=timestamp, 
+   #		   tel=tel, inst=inst, filt=filt, grp_id=grp_id, track_id=track_id, req_id=req_id, 
+   #		   airmass=airmass, avg_fwhm=avg_fwhm, avg_sky=avg_sky, avg_sigsky=avg_sigsky, 
+   #		   moon_sep=moon_sep, moon_phase=moon_phase, moon_up=moon_up, elongation=elongation,
+   #		   nstars=nstars, ztemp=ztemp, quality=quality, target_hjd=target_hjd, target_mag=target_mag, 
+   #		   target_magerr=target_magerr, target_skybg=target_skybg, target_fwhm=target_fwhm) 
+   #   count = count + 1
+   #   print count
 
-      # For event OGLE-2015-BLG-2054_img_9 add the target details
-      event_name = "OGLE-2015-BLG-2054"
-      image_name = str(event_name)+'_img_9'
-      date_obs = timezone.now()+timedelta(hours=random.uniform(-1000,1000))
-      timestamp = timezone.now()
-      tel = random.choice(['LCOGT SAAO 1m A','LCOGT SAAO 1m B','LCOGT SAAO 1m C','LCOGT CTIO 1m A',
-   			   'LCOGT CTIO 1m B','LCOGT CTIO 1m C', 'LCOGT SSO 1m A', 'LCOGT SSO 1m B',
-   			   'Faulkes North 2.0m','Faulkes South 2.0m'])
-      inst = tel+' CCD camera'
-      filt = 'SDSS-i'
-      grp_id = 'RBN2015'+str(random.randint(1,10))+str(random.randint(1,30))+'T'+str(random.uniform(0,24))
-      track_id = '0000'+str(random.randint(10000,30000))
-      req_id = '0000'+str(random.randint(40000,60000))
-      airmass = random.uniform(1,2)
-      avg_fwhm = random.uniform(2,9)
-      avg_sky = random.uniform(1000,6000)
-      avg_sigsky = random.uniform(10,200)
-      moon_sep = random.uniform(15,40)
-      moon_phase = random.uniform(0,99)
-      moon_up = random.choice([True,False])
-      elongation = random.uniform(1,2)
-      nstars = random.randint(60,600)
-      ztemp = None
-      quality = random.choice(['rejected','accepted','accepted','accepted'])
-      target_hjd = 2455891.4324
-      target_mag = 19.0
-      target_magerr = 0.01
-      target_skybg = 1000.0
-      target_fwhm = 4.5
-      add_image(event_name=event_name, image_name=image_name, date_obs=date_obs, timestamp=timestamp, 
-   		tel=tel, inst=inst, filt=filt, grp_id=grp_id, track_id=track_id, req_id=req_id, 
-   		airmass=airmass, avg_fwhm=avg_fwhm, avg_sky=avg_sky, avg_sigsky=avg_sigsky, 
-   		moon_sep=moon_sep, moon_phase=moon_phase, moon_up=moon_up, elongation=elongation,
-   		nstars=nstars, ztemp=ztemp, quality=quality, target_hjd=target_hjd, target_mag=target_mag, 
-   		target_magerr=target_magerr, target_skybg=target_skybg, target_fwhm=target_fwhm) 
+      # For event OGLE-2016-BLG-2054_img_9 add the target details
+   #   event_name = "OGLE-2016-BLG-2054"
+   #   image_name = str(event_name)+'_img_9'
+   #   date_obs = timezone.now()+timedelta(hours=random.uniform(-1000,1000))
+   #   timestamp = timezone.now()
+   #   tel = random.choice(['LCOGT SAAO 1m A','LCOGT SAAO 1m B','LCOGT SAAO 1m C','LCOGT CTIO 1m A',
+   #			   'LCOGT CTIO 1m B','LCOGT CTIO 1m C', 'LCOGT SSO 1m A', 'LCOGT SSO 1m B',
+   #			   'Faulkes North 2.0m','Faulkes South 2.0m'])
+   #   inst = tel+' CCD camera'
+   #   filt = 'SDSS-i'
+   #   grp_id = 'RBN2016'+str(random.randint(1,10))+str(random.randint(1,30))+'T'+str(random.uniform(0,24))
+   #   track_id = '0000'+str(random.randint(10000,30000))
+   #   req_id = '0000'+str(random.randint(40000,60000))
+   #   airmass = random.uniform(1,2)
+   #   avg_fwhm = random.uniform(2,9)
+   #   avg_sky = random.uniform(1000,6000)
+   #   avg_sigsky = random.uniform(10,200)
+   #   moon_sep = random.uniform(15,40)
+   #   moon_phase = random.uniform(0,99)
+   #   moon_up = random.choice([True,False])
+   #   elongation = random.uniform(1,2)
+   #   nstars = random.randint(60,600)
+   #   ztemp = None
+   #   quality = random.choice(['rejected','accepted','accepted','accepted'])
+   #   target_hjd = 2455891.4324
+   #   target_mag = 19.0
+   #   target_magerr = 0.01
+   #   target_skybg = 1000.0
+   #   target_fwhm = 4.5
+   #   add_image(event_name=event_name, image_name=image_name, date_obs=date_obs, timestamp=timestamp, 
+   #		tel=tel, inst=inst, filt=filt, grp_id=grp_id, track_id=track_id, req_id=req_id, 
+   #		airmass=airmass, avg_fwhm=avg_fwhm, avg_sky=avg_sky, avg_sigsky=avg_sigsky, 
+   #		moon_sep=moon_sep, moon_phase=moon_phase, moon_up=moon_up, elongation=elongation,
+   #		nstars=nstars, ztemp=ztemp, quality=quality, target_hjd=target_hjd, target_mag=target_mag, 
+   #		target_magerr=target_magerr, target_skybg=target_skybg, target_fwhm=target_fwhm) 

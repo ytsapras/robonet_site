@@ -16,7 +16,7 @@ def lcogt_pointings(tel, camera, pointings_file):
     # Config:
     config =     {'k2_campaign': 9, 'k2_year': 2016, \
                     'k2_footprint_data': '../data/k2-footprint.json',\
-                    'xsuperstamp_target_data': '../data/xsuperstamp_targets.json'
+                    'xsuperstamp_target_data': '../data/xsuperstamp_targets_C9b.json'
                 }
     
     # Load the K2C9 footprint
