@@ -901,6 +901,7 @@ def add_image(event_name, image_name, date_obs, timestamp=timezone.now(), tel=''
 
 ###################################################################################
 def run_test2():
+   year = str(datetime.now().year)
    # Path to ARTEMiS files
    artemis_col = get_conf('artemis_cols')
    artemis = get_conf('artemis')
@@ -1029,13 +1030,13 @@ def run_test2():
    # Populate Event database with OGLE event coordinates
    # and EventName database with OGLE event names
    from glob import glob
-   ogle_event_list = glob(artemis+'PublishedParameters/2016/OGLE/*.model')
+   ogle_event_list = glob(artemis+'PublishedParameters/'+year+'/OGLE/*.model')
    count = 0
    for i in ogle_event_list:
       data = open(i).read().split()
       ev_ra = data[0]
       ev_dec = data[1]
-      name = data[2].replace('OB16','OGLE-2016-BLG-')
+      name = data[2].replace('OB'+year[2:],'OGLE-'+year+'-BLG-')
       #print 'Doing '+name
       #print 'Trying to add event ...'
       x = add_event(ev_ra=ev_ra, ev_dec=ev_dec)
@@ -1056,7 +1057,7 @@ def run_test2():
       data = open(i).read().split()
       ev_ra = data[0]
       ev_dec = data[1]
-      name = data[2].replace('KB16','MOA-2016-BLG-')
+      name = data[2].replace('KB'+year[2:],'MOA-'+year+'-BLG-')
       #print 'Doing '+name
       #print 'Trying to add event ...'
       x = add_event(ev_ra=ev_ra, ev_dec=ev_dec)
@@ -1071,12 +1072,12 @@ def run_test2():
    # Populate SingleLens model database from ARTEMiS model files
    from glob import glob
    from astropy.time import Time
-   ogle_event_pars = glob(artemis+'PublishedParameters/2016/OGLE/*.model')
+   ogle_event_pars = glob(artemis+'PublishedParameters/'+year+'/OGLE/*.model')
    for i in ogle_event_pars:
       data = open(i).read().split()
       ev_ra = data[0]
       ev_dec = data[1]
-      name = data[2].replace('OB16','OGLE-2016-BLG-')
+      name = data[2].replace('OB'+year[2:],'OGLE-'+year+'-BLG-')
       event_id = EventName.objects.get(name=name).event_id
       event = Event.objects.get(id=event_id)
       Tmax, e_Tmax = float(data[3]), float(data[4])
@@ -1090,12 +1091,12 @@ def run_test2():
                       e_umin=e_umin, last_updated=last_updated, modeler=modeler, rho=None, 
 		      e_rho=None, pi_e_n=None, e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None)
       
-   moa_event_pars = glob(artemis+'PublishedParameters/2015/MOA/*.model')
+   moa_event_pars = glob(artemis+'PublishedParameters/'+year+'/MOA/*.model')
    for i in moa_event_pars:
       data = open(i).read().split()
       ev_ra = data[0]
       ev_dec = data[1]
-      name = data[2].replace('KB16','MOA-2016-BLG-')
+      name = data[2].replace('KB'+year[2:],'MOA-'+year+'-BLG-')
       event_id = EventName.objects.get(name=name).event_id
       event = Event.objects.get(id=event_id)
       Tmax, e_Tmax = float(data[3]), float(data[4])
@@ -1109,17 +1110,17 @@ def run_test2():
                       e_umin=e_umin, last_updated=last_updated, modeler=modeler, rho=None, 
 		      e_rho=None, pi_e_n=None, e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None)
       
-   artemis_event_pars = glob(artemis+'model/*B15*.model')
+   artemis_event_pars = glob(artemis+'model/*B'+year[2:]+'*.model')
    for i in artemis_event_pars:
       # Exclude rogue files with incorrect entries
       try:
          data = open(i).read().split()
  	 ev_ra = data[0]
  	 ev_dec = data[1]
- 	 if data[2].startswith('KB16'):
- 	    name = data[2].replace('KB16','MOA-2016-BLG-')
- 	 if data[2].startswith('OB16'):
- 	    name = data[2].replace('OB16','OGLE-2016-BLG-')
+ 	 if data[2].startswith('KB'+year[2:]):
+ 	    name = data[2].replace('KB'+year[2:],'MOA-'+year+'-BLG-')
+ 	 if data[2].startswith('OB'+year[2:]):
+ 	    name = data[2].replace('OB'+year[2:],'OGLE-'+year+'-BLG-')
  	 event_id = EventName.objects.get(name=name).event_id
  	 event = Event.objects.get(id=event_id)
  	 Tmax, e_Tmax = float(data[3]), float(data[4])
@@ -1150,7 +1151,7 @@ def run_test2():
       return d
    
    count = 0
-   events_robonet = glob('/science/robonet/rob/Operations/ProcData/2016/*')
+   events_robonet = glob('/science/robonet/rob/Operations/ProcData/'+year+'/*')
    for i in events_robonet:
        try:
           event_name = i.split('/')[-1].split('_')[0]
@@ -1257,8 +1258,8 @@ def run_test2():
       data = open(i).readlines()
       data = data[1:]
       if (data != []):
-         event_name = i.split('/')[-1][1:-5].replace('OB16','OGLE-2016-BLG-')
-	 event_name = i.split('/')[-1][1:-5].replace('KB16','MOA-2016-BLG-')
+         event_name = i.split('/')[-1][1:-5].replace('OB'+year[2:],'OGLE-'+year+'-BLG-')
+	 event_name = i.split('/')[-1][1:-5].replace('KB'+year[2:],'MOA-'+year+'-BLG-')
          datafile = i
 	 last_upd = timezone.now()
          last_obs = Time(float('245'+data[-1].split()[2]), format='jd').datetime
