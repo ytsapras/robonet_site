@@ -5,8 +5,9 @@ from bokeh.plotting import figure, show, output_file, gridplot, vplot
 from bokeh.resources import CDN
 from bokeh.embed import components
 from bokeh.models import PrintfTickFormatter, HoverTool, BoxZoomTool, PanTool,WheelZoomTool, PreviewSaveTool, ResetTool
+from local_conf import get_conf
 
-artemis = "/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/"
+artemis = get_conf('artemis')
 
 class MLplots():
 	def __init__(self,name) :
@@ -55,14 +56,14 @@ class MLplots():
     			return out_table, elements
                 
 		# Read in the colour definitions
-		artemis = "/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/"
-		(col_codes, nr_col) = rd_tables(artemis+'colourdef.sig.cfg')
+		artemis_col = get_conf('artemis_cols')
+		(col_codes, nr_col) = rd_tables(artemis_col+'colourdef.sig.cfg')
 		translation=dict(col_codes)
 		#import pdb; pdb.set_trace()    			
 		# Convert to dictionary
 		#col_cod = dict(col_codes)
 		# Read in the observatory colour tags
-		(obs_col, nr_obs) = rd_tables(artemis+'colours.sig.cfg')
+		(obs_col, nr_obs) = rd_tables(artemis_col+'colours.sig.cfg')
 		couleurs=np.array(obs_col)
 		couleurs=couleurs[:,[0,2]]
 		couleurs=couleurs.tolist()

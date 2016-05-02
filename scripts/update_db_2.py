@@ -9,7 +9,9 @@
 # Import dependencies
 import os
 import sys
-sys.path.append('/home/Tux/ytsapras/robonet_site/')
+from local_conf import get_conf
+robonet_site = get_conf('robonet_site')
+sys.path.append(robonet_site)
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'robonet_site.settings')
 from django.core import management
 from django.conf import settings
@@ -232,18 +234,18 @@ def coords_exist(check_ra, check_dec):
 	 if separation < 2.5:
 	    match_found = True
 	    successful = True
-	    f = open('/home/Tux/ytsapras/Desktop/matches.txt','a')
-	    f.write('Coordinates '+check_ra+' '+check_dec+' match known object at '+event.ev_ra+' '+event.ev_dec)
+	    #f = open('./matches.txt','a')
+	    #f.write('Coordinates '+check_ra+' '+check_dec+' match known object at '+event.ev_ra+' '+event.ev_dec)
 	    #print 'Found matching object at: '+event.ev_ra+' '+event.ev_dec
 	    matching_event = Event.objects.filter(ev_ra=event.ev_ra).filter(ev_dec=event.ev_dec)[0]
 	    known_names = EventName.objects.filter(event=event)
-	    f.write(' with event name(s): ')
+	    #f.write(' with event name(s): ')
 	    #print 'with event name(s):'
-	    for n in known_names:
-	       f.write(n.name)
+	    #for n in known_names:
+	    #   f.write(n.name)
 	    #   print n.name
-	    f.write('\n')
-	    f.close()
+	    #f.write('\n')
+	    #f.close()
 	    ra, dec = event.ev_ra, event.ev_dec
 	    break
    return successful, ra, dec
@@ -900,10 +902,11 @@ def add_image(event_name, image_name, date_obs, timestamp=timezone.now(), tel=''
 ###################################################################################
 def run_test2():
    # Path to ARTEMiS files
-   artemis = "/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/"
+   artemis_col = get_conf('artemis_cols')
+   artemis = get_conf('artemis')
    # Color & site definitions for plotting
-   colors = artemis+"colours.sig.cfg"
-   colordef = artemis+"colourdef.sig.cfg"
+   colors = artemis_col+"colours.sig.cfg"
+   colordef = artemis_col+"colourdef.sig.cfg"
    # Set up and populate dictionaries
    col_dict = {}
    site_dict = {}
@@ -979,7 +982,7 @@ def run_test2():
    # Populate Event database with OGLE event coordinates
    # and EventName database with OGLE event names
    from glob import glob
-   ogle_event_list = glob('/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/PublishedParameters/2015/OGLE/*.model')
+   ogle_event_list = glob(artemis+'PublishedParameters/2015/OGLE/*.model')
    count = 0
    for i in ogle_event_list:
       data = open(i).read().split()
@@ -1000,7 +1003,7 @@ def run_test2():
    # Populate Event database with MOA event coordinates
    # and EventName database with MOA event names
    from glob import glob
-   moa_event_list = glob('/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/PublishedParameters/2015/MOA/*.model')
+   moa_event_list = glob(artemis+'PublishedParameters/2015/MOA/*.model')
    count = 0
    for i in moa_event_list:
       data = open(i).read().split()
@@ -1021,7 +1024,7 @@ def run_test2():
    # Populate SingleLens model database from ARTEMiS model files
    from glob import glob
    from astropy.time import Time
-   ogle_event_pars = glob('/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/PublishedParameters/2015/OGLE/*.model')
+   ogle_event_pars = glob(artemis+'PublishedParameters/2015/OGLE/*.model')
    for i in ogle_event_pars:
       data = open(i).read().split()
       ev_ra = data[0]
@@ -1040,7 +1043,7 @@ def run_test2():
                       e_umin=e_umin, last_updated=last_updated, modeler=modeler, rho=None, 
 		      e_rho=None, pi_e_n=None, e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None)
    
-   moa_event_pars = glob('/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/PublishedParameters/2015/MOA/*.model')
+   moa_event_pars = glob(artemis+'PublishedParameters/2015/MOA/*.model')
    for i in moa_event_pars:
       data = open(i).read().split()
       ev_ra = data[0]
@@ -1059,7 +1062,7 @@ def run_test2():
                       e_umin=e_umin, last_updated=last_updated, modeler=modeler, rho=None, 
 		      e_rho=None, pi_e_n=None, e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None)
    
-   artemis_event_pars = glob('/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/model/*B15*.model')
+   artemis_event_pars = glob(artemis+'model/*B15*.model')
    for i in artemis_event_pars:
       data = open(i).read().split()
       ev_ra = data[0]
@@ -1132,7 +1135,7 @@ def run_test2():
 
    # Populate DataFile database
    from astropy.time import Time
-   ogle_dat_list = glob('/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/data/*OB15*I.dat')
+   ogle_dat_list = glob(artemis+'data/*OB15*I.dat')
    count = 0
    for i in ogle_dat_list:
       data = open(i).readlines()

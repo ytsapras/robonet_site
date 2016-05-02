@@ -1,0 +1,97 @@
+{% load staticfiles %}
+<html>
+	<head>
+            <meta charset="utf-8" />
+	    <meta http-equiv='content-type' content='text/html; charset=utf-8' />
+	    <title>RoboNet Observe</title>
+            <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+            <script src="http://cdn.rawgit.com/novus/nvd3/v1.8.1/build/nv.d3.min.js" charset="utf-8"></script>
+	    <script type="text/javascript" src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+            <link rel="stylesheet" href="http://cdn.rawgit.com/novus/nvd3/v1.8.1/build/nv.d3.css">
+	    <style>
+	    .button {
+	    	background-color: #f44336;
+		box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+	    	border: none;
+	    	color: white;
+	    	padding: 15px 32px;
+		width: 140px;
+	    	text-align: center;
+	    	text-decoration: none;
+	    	display: inline-block;
+	    	font-size: 16px;
+	    	margin: 4px 2px;
+	    	cursor: pointer;
+	    }
+	    </style>
+	</head>    
+<body bgcolor="#FFFFFF">
+  <center><br>
+  <b>Current Time:</b> {{ time_now }}
+  [HJD: {{ time_now_jd }}]
+  <table border="2" style="width:1100px">
+    <tr> 
+	<td width="200px" height="100px"><center><b><font size="5">ID</b></font><br> {{ event_id }}</center>
+	</td>
+	<td width="200px" height="100px"><center><b><font size="5">Field</font></b><br> {{ field }}</center>
+	</td>
+	<td width="200px" height="100px" bgcolor="#E6E6B8"><center><b><font size="5">Status</font></b><br> {{ status }}</center>
+	</td>
+	<td width="200px" height="100px" bgcolor="#FFD685"><center><b><font size="5">Cadence (hrs)</font></b><br>{{ cadence }}</center>
+	</td>
+    </tr>
+    <tr>
+	<td colspan=4 height="50px"><b> Event name:</b>
+	{% for name in event_name %}
+	   {% if ogle_url != '' and 'OGLE' in name.name %}
+	      <a href="{{ ogle_url }}">{{ name.name }}</a>
+	   {% else %}
+	      {{ name.name }}
+	   {% endif %}
+	{% endfor %}
+    </tr>
+    <tr>
+	<td height="50px"><b>RA:</b> {{ ev_ra }}</td>
+	<td height="50px"><b>Dec:</b> {{ ev_dec }}</td>
+	<td height="50px" bgcolor="#E6E6B8" colspan=2><b>Last observation:</b> {{ last_obs }}<br>
+	[HJD: {{ last_obs_hjd }}] from {{ last_obs_tel }}</td>
+    </tr>
+    <tr>
+       <td colspan=1 height="200px" bgcolor="#000000"><center>
+        <!-- // Begin Current Moon Phase HTML (c) MoonConnection.com // -->
+        <div style="width:200px">
+         <div style="padding:0px;background-color:#000000;border: 1px solid #000000">
+          <div style="padding:0px;padding-bottom:6px;padding-top:6px;border: 1px solid #000000" align="center">
+           <div style="padding-bottom:7px;color:#FFFFFF;font-family:arial,helvetica,sans-serif;font-size:11px;letter-spacing:.3em;">CURRENT MOON
+	   </div>
+           <script language="JavaScript" type="text/javascript">var ccm_cfg = { pth:"http://www.moonmodule.com/cs/", fn:"ccm_h1.swf", lg:"en", hs:1, tf:"tz", scs:1, df:"dmy", dfd:1, tc:"FFFFFF", bgc:"000000", mc:"000000", fw:184, fh:79, js:0, msp:0, u:"mc" }</script>
+           <script language="JavaScript" type="text/javascript" src="http://www.moonmodule.com/cs/ccm_fl.js"></script>
+          </div>
+         </div>
+        </div></center>
+        <!-- // end moon phase HTML // -->
+       </td>
+       <td> 
+         <img src="{% static 'events/pie.png' %}" alt="Data per Telescope" height="100" width="100"/>
+       </td>
+       <td colspan=2>
+        <center>
+           <img src="{% static 'events/blgvis_now.png' %}" alt="Bulge Visibility" height="260" width="400"/>
+	</center>
+       </td>
+    <tr>
+       <td>
+          <center>
+          <form action="url_to_redirect_to">
+             <input type="submit" class="button" value="Edit">
+          </form>
+	  <center>
+       </td>
+       <td colspan=3>
+       Requested vs Observed Plot
+       </td>
+    </tr>
+ </table>
+ </center>
+</body>
+</html>

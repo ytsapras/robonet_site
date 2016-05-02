@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
 <setup_config>
+     <!-- Path to static files -->
+    <parameter name='static_path'>
+        <value>/home/Tux/ytsapras/robonet_site/events/static/events/</value>
+    </parameter>
     <!-- Path to ARTEMiS files -->
     <parameter name='artemis_path'>
         <value>/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/</value>

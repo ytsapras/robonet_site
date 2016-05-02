@@ -1,7 +1,7 @@
 import MLPlots
-
+from local_conf import get_conf
 def plot_it(event):
-        artemis = '/work/Tux8/ytsapras/Data/RoboNet/ARTEMiS/'
+        artemis = get_conf('artemis')
 	Plot=MLPlots.MLplots(event)
  	Plot.path_lightcurves(artemis+'data/')
 	Plot.path_models(artemis+'model/')
