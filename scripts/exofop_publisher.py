@@ -86,6 +86,11 @@ def exofop_publisher():
                                                     renamed=artemis_renamed )
     survey_events = load_survey_event_data( config, known_duplicates, \
                                                 event_alerts, log )
+    if 'MOA-2016-BLG-205' in survey_events.keys():
+        log.info( 'Got MOA-2016-BLG-205')
+    else:
+        log.info( 'Missing MOA-2016-BLG-205 from survey data')
+        
     update_known_duplicates( config, known_duplicates )
     
     # Select those events which are in the K2 footprint
@@ -119,15 +124,18 @@ def exofop_publisher():
     log.info('Plotting event locations...')
     plotname = path.join( config['log_directory'], 'k2_events_map.png' )
     k2_campaign.plot_footprint( plot_file=plotname, \
-                                targets=known_events['master_index'] )
+                                targets=known_events['master_index'], iplt=1 )
     log.info('Plotted K2C9 event locations')
     
     plotname = path.join( config['log_directory'], 
                                  'k2_events_outside_superstamp_map.png' )
+    plot_title = 'Events selected for K2 outside the superstamp'
+    k2_campaign.load_xsuperstamp_targets( config )
     k2_campaign.plot_footprint( plot_file=plotname, \
-                                targets=xsuperstamp_events, \
-                                plot_isolated_stars=True, \
-                                plot_dark_patches=True )
+                                targets=k2_campaign.xsuperstamp_targets, \
+                                label_xsuper_targets=True,\
+                                iplt=2, \
+                                title=plot_title )
     log.info('Plotted event locations outside superstamp')
     
     # Sync data for transfer to IPAC with transfer location:
@@ -629,10 +637,10 @@ def combine_K2C9_event_feed( known_events, false_positives, \
     for event_name, event in survey_events.items():
         
         origin = str(event_name.split('-')[0]).lower()
-        
+        if event_name == 'MOA-2016-BLG-205':
+            log.info( 'Combining data on MOA-2016-BLG-205' )
         # Exclude known false positives:
-        if event_name not in false_positives and \
-                'microlensing' in event.classification:
+        if event_name not in false_positives:
             
             # Previously known events (K2C9Events):
             # THIS NEEDS TO CHECK FOR EVENTS UNDER BOTH SURVEYS
@@ -846,8 +854,6 @@ def generate_K2C9_events_table( config, known_events, log, debug=False ):
     
     pixel_sum = 0.0
     for event_id, event in known_events['master_index'].items():
-        if event.ogle_name == 'OGLE-2016-BLG-0095':
-            print event.summary()
         if event.in_footprint  == True and event.during_campaign == True:
             
             name = str(event.ogle_name) + ' ' + str(event.moa_name)
@@ -890,8 +896,6 @@ def generate_K2C9_events_table( config, known_events, log, debug=False ):
             
         #if debug == True:
          #   print '-> completed ',event.get_event_name()
-    
-        
     
     file_list1.sort()
     for line in file_list1:
@@ -1092,7 +1096,7 @@ def clear_transfer_directory( config ):
     Note this does NOT clear the findercharts, on the grounds that these 
     rarely change and are quite large    
     """
-    search_strings = [ 'K2C9\*model', 'K2C9\*param' ]    
+    search_strings = [ 'K2C9\*model', 'K2C9\*param', 'K2C9\*fchart\*' ]    
     
     for file_name in search_strings:
         file_path = path.join( config['transfer_location'], file_name )

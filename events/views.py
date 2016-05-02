@@ -15,6 +15,7 @@ from plotter import *
 
 # Path to ARTEMiS files
 artemis_col = get_conf('artemis_cols')
+
 # Color & site definitions for plotting
 colors = artemis_col+"colours.sig.cfg"
 colordef = artemis_col+"colourdef.sig.cfg"
