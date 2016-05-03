@@ -1,14 +1,15 @@
 from django.shortcuts import render
+from django.conf import settings
 from .models import Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel, RobonetReduction, RobonetRequest, RobonetStatus, DataFile, Tap, Image
 from itertools import chain
 from django.http import HttpResponse, Http404
 from astropy.time import Time
 from datetime import datetime, timedelta
-from django.shortcuts import render
 from bokeh.plotting import figure
 from bokeh.resources import CDN
 from bokeh.embed import components
 import sys, os
+
 #sys.path.append('/home/Tux/ytsapras/robonet_site/scripts/')
 sys.path.append(os.getcwd()+'/scripts/')
 from plotter import *
@@ -41,13 +42,54 @@ with open(colordef) as f:
        val = elem[1]
        col_dict[key] = val
 
+##############################################################################################################
 def test(request):
+   ########### ONLY FOR TESTING ################
    plot = figure(title='plot')
    plot.circle([1,2], [3,4])
    script, div = components(plot, CDN)
    context = {'the_script': script, 'the_div': div, 'lala': 'blah'}
    return render(request, 'events/test.html', context)
 
+##############################################################################################################
+def simple(request):
+   ########### ONLY FOR TESTING ################
+   tels = [u'LCOGT CTIO 1m A', u'LCOGT CTIO 1m B', u'LCOGT CTIO 1m C', u'LCOGT SAAO 1m A', 
+           u'LCOGT SAAO 1m B', u'LCOGT SAAO 1m C', u'LCOGT SSO 1m B']
+   cols =['#38FFB8', '#33285D', '#C04B31', '#DE96BC', '#C340AE', '#BD6D6F', '#151BE8']
+   num_obs = [21, 13, 15, 13, 16, 3, 0]
+   ndata = 30
+   event_id = 33
+   from pylab import figure, rcParams, title, legend, savefig, close, axes, pie, get_current_fig_manager
+   from local_conf import get_conf
+   from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+   import os
+   fig = figure(figsize=[10, 10])
+   ax = fig.add_subplot(111)  
+   rcParams['axes.titlesize'] = 10.0
+   rcParams['xtick.labelsize'] = 14.0
+   rcParams['legend.fontsize'] = 22.0
+   rcParams['font.size'] = 22.0
+   colors=cols
+   fracs=num_obs
+   patches = ax.pie(fracs, colors=cols, labels=tels, labeldistance=0.95, explode=None, autopct='%1.f%%', shadow=False)
+   for pie_wedge in patches[0]:
+      pie_wedge.set_edgecolor('white')
+   
+   title = "Observations: "+str(ndata)
+   legend([k[0]+': '+str(k[1]) for k in zip(tels, num_obs)],loc=(-.12,-.12), framealpha=0.4)
+   # Store image in a string buffer
+   #buffer_1 = StringIO.StringIO()
+   #canvas = get_current_fig_manager().canvas
+   #canvas.draw()
+   #pilImage = Image.fromstring("RGB", canvas.get_width_height(), canvas.tostring_rgb())
+   #pilImage.save(buffer_1, "PNG")
+   canvas = FigureCanvas(fig)
+   response = HttpResponse(content_type='image/png')
+   canvas.print_png(response)
+   #response = HttpResponse(buffer_1.getvalue(), content_type="image/png")
+   return response
+   
 ##############################################################################################################
 def obs_log(request, date):
    """
@@ -213,30 +255,35 @@ def event_obs_details(request, event_id):
    """
    Will set up a single event page with current observing details.
    """
-   
    # Define pie chart plotting
    # arguments are [telescopes], [colors], [number_observations], ndata
-   def pie_chart(tels, cols, num_obs, ndata):
+   def pie_chart(tels, cols, num_obs, ndata, event_id):
       from pylab import figure, rcParams, title, legend, savefig, close, axes, pie
-      fig = plt.figure(figsize=[10, 10])
-      ax = fig.add_subplot(111)	 
-      #rcParams['axes.titlesize'] = 14.0
-      #rcParams['xtick.labelsize'] = 12.0
-      #rcParams['legend.fontsize'] = 6.0
-      #rcParams['font.size'] = 10.0
+      from local_conf import get_conf
+      from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+      import os
+      fig = figure(num=11, figsize=[10, 10])
+      ax = fig.add_subplot(111)  
+      rcParams['axes.titlesize'] = 10.0
+      rcParams['xtick.labelsize'] = 14.0
+      rcParams['legend.fontsize'] = 22.0
+      rcParams['font.size'] = 22.0
       colors=cols
       fracs=num_obs
-      patches = ax.pie(fracs, colors=colors, labels=labels, labeldistance=1.05, explode=None, autopct='%1.f%%', shadow=False)
+      patches = ax.pie(fracs, colors=cols, labels=tels, labeldistance=0.95, explode=None, autopct='%1.f%%', shadow=False)
       for pie_wedge in patches[0]:
          pie_wedge.set_edgecolor('white')
       
       title = "Observations: "+str(ndata)
-      legend([k[0]+': '+str(k[1]) for k in zip(tels, num_obs)],loc=(-.12,-.12))
-      pltfilepath = path.join(evpages_path,'total_pie_rej_reas.png')
-      if ( path.exists(pltfilepath) ):
-          remove(pltfilepath)
-      # save the new file
-      savefig(pltfilepath)
+      legend([k[0]+': '+str(k[1]) for k in zip(tels, num_obs)],loc=(-.12,-.12), framealpha=0.4)
+      canvas = FigureCanvas(fig)
+      filename = settings.MEDIA_ROOT+str(event_id)+".png"
+      if (os.path.exists(filename) ):
+          os.remove(filename)
+      # save the new file    
+      canvas.print_figure(filename)
+      # close the figure
+      close(11)
          
    time_now = datetime.now()
    time_now_jd = Time(time_now).jd
@@ -287,7 +334,7 @@ def event_obs_details(request, event_id):
 	       labels.append(i.tel)
 	       values.append(i.ndata)
 	       try:
-	          colors.append(col_dict[site_dict[i.datafile.split('/')[-1][0]][1]])
+	          colors.append('#'+col_dict[site_dict[i.datafile.split('/')[-1][0]][1]])
 	       except:
 	          import random
 	          r = lambda: random.randint(0,255)
@@ -295,6 +342,11 @@ def event_obs_details(request, event_id):
 	          colors.append(rand_col)
          #ndata = sum([(i.ndata) for i in data]) # Contains ALL data from ALL telescopes
 	 ndata = sum(values) # Contains only LCOGT data
+	 pie_chart(labels, colors, values, ndata, event_id)
+	 if labels == []:
+	    my_pie = 'No RoboNet data'
+	 else:
+	    my_pie = '<img src="/media/%s.png" height="300" width="300">' % str(event_id)
 	 cadence = Tap.objects.filter(event_id=event_id)[0].tsamp
 	 # Generate the plot.ly pie chart
 	 ######### Online Mode #########
@@ -341,7 +393,8 @@ def event_obs_details(request, event_id):
 	 if "OGLE" in ev_name:
 	    ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])
       except:
-         pie_url = ''
+         #pie_url = ''
+	 my_pie = 'Image Failed to Load'
          cadence = 0
          ndata = 0
          last_obs = "N/A"
@@ -362,7 +415,9 @@ def event_obs_details(request, event_id):
          artemis_name = 'UNKNOWN EVENT'
       context = {'event_id': event_id, 'event_name': ev_names, 'field': field,
                  'ev_ra': ev_ra, 'ev_dec':ev_dec, 'cadence':cadence, 
-		 'pie_url':pie_url,'last_obs':last_obs, 'last_obs_hjd':last_obs_hjd, 
+		 #'pie_url':pie_url,
+		 'my_pie':my_pie,
+		 'last_obs':last_obs, 'last_obs_hjd':last_obs_hjd, 
 		 'status':possible_status[status],
 		 'last_obs_tel':last_obs_tel, 'ogle_url':ogle_url, 'time_now': time_now, 
 		 'time_now_jd': time_now_jd}

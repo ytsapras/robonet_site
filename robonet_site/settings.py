@@ -96,12 +96,15 @@ USE_L10N = True
 
 USE_TZ = True
 
+# Media files (Images, Videos)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
 
-# Static files (CSS, JavaScript, Images)
+# Static files (CSS, JavaScript)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-       os.path.join(BASE_DIR, "static"),
-       '/home/robouser/Software/robonet_site/events/static/events/',
+       os.path.join(BASE_DIR, "static/"),
+       os.path.join(BASE_DIR, "static/events/"),
 ]
