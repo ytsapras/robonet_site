@@ -129,6 +129,81 @@ def obs_log(request, date):
    return render(request, 'events/obs_log.html', context)
 
 ##############################################################################################################
+def tap(request):
+   """
+   Will load the TAP page.
+   """
+   try:
+      time_now = datetime.now()
+      time_now_jd = Time(time_now).jd
+      ##### TAP query goes here ###
+      selection_model = SingleModel.objects.filter(umin__lte=0.00001, tau__lte=30)
+      #####
+      ev_id = [k['event'] for k in selection_model.values('event')]
+      ra = []
+      dec = []
+      names_list = []
+      cadence = []
+      nexp = []
+      texp = []
+      priority = []
+      imag = []
+      tsamp = []
+      omega_s = []
+      sig_omega_s = []
+      omega_peak = []
+      colors = []
+      for i in ev_id:
+         evnm = EventName.objects.filter(event=i)
+	 names = [k.name for k in evnm]
+	 ev_ra = Event.objects.all().get(pk=i).ev_ra
+	 ev_dec = Event.objects.all().get(pk=i).ev_dec
+	 sampling_time = Tap.objects.all().get(pk=i).tsamp
+	 exposures = Tap.objects.all().get(pk=i).nexp
+	 time_exp = Tap.objects.all().get(pk=i).texp
+	 prior = Tap.objects.all().get(pk=i).priority
+	 if prior == 'A': 
+	    colors.append('#FE2E2E')
+	 elif prior == 'H':
+	    colors.append('#FA8258')
+	 elif prior == 'M':
+	    colors.append('#F4FA58')
+	 elif prior == 'L':
+	    colors.append('#A9F5A9')
+	 else:
+	    colors.append('#808080')
+	 baseline = Tap.objects.all().get(pk=i).imag
+	 oms = Tap.objects.all().get(pk=i).omega
+	 soms = Tap.objects.all().get(pk=i).err_omega
+	 omsp = Tap.objects.all().get(pk=i).peak_omega
+	 nexp.append(exposures)
+	 texp.append(time_exp)
+	 cadence.append('placeholder')
+	 tsamp.append(sampling_time)
+	 priority.append(prior)
+	 imag.append(baseline)
+	 omega_s.append(oms)
+	 sig_omega_s.append(soms)
+	 omega_peak.append(omsp)
+	 names_list.append(names)
+	 ra.append(ev_ra)
+	 dec.append(ev_dec)
+      #### TAP rows need to be defined here ####
+      rows = zip(colors, ev_id, names_list, ra, dec, cadence, nexp, texp, priority, tsamp, imag, omega_s, sig_omega_s, omega_peak)
+      rowsrej = rows[10:15]
+      rows = rows[:9]
+      time1 = 45 # This should be an estimate of when the target list will be uploaded next (in minutes)
+      time2 = 6 # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
+      nsite = 2 # The number of sites the bulge is visible from for time2 hours
+      occupy = '<font color="red"> Warning: dominated by EOIs</font>' # This should be a string (can include html)
+      ##########################################
+   except:
+      raise Http404("Encountered a problem while loading. Please contact the site administrator.")
+   context = {'rows': rows, 'rowsrej':rowsrej, 'time_now': time_now, 'time_now_jd': time_now_jd,
+              'time1':time1, 'time2':time2, 'nsite':nsite, 'occupy':occupy}
+   return render(request, 'events/tap.html', context)
+
+##############################################################################################################
 def list_all(request):
    """
    Will list all events in database. 
@@ -167,6 +242,7 @@ def show_event(request, event_id):
       ev_dec = Event.objects.get(pk=event_id).ev_dec
       ev_names = EventName.objects.filter(event_id=event_id)
       flag = 0
+      ev_ogle, ev_moa, ev_kmt = '', '', ''
       for name in ev_names:
          if 'OGLE' in name.name and flag==0:
             ev_ogle = name.name
@@ -177,15 +253,15 @@ def show_event(request, event_id):
 	    ev_kmt = name.name
       # Get the names for this event ID from all surveys
       # Keep just one so that we can generate the url link to /microlensing.zah.uni-heidelberg.de
-      if 'ev_ogle' in locals():
+      if 'ev_ogle':
          ev_name = ev_ogle
          survey_name = "OGLE"
          event_number = ev_name.split('-')[-1]
-      elif 'ev_moa' in locals():
+      elif 'ev_moa':
 	 ev_name = ev_moa
 	 survey_name = "MOA"
 	 event_number = ev_name.split('-')[-1]
-      elif 'ev_kmt' in locals():
+      elif 'ev_kmt':
 	 ev_name = ev_kmt
 	 survey_name = "KMT"
 	 event_number = ev_name.split('-')[-1]
@@ -196,9 +272,16 @@ def show_event(request, event_id):
          event = Event.objects.get(id=event_id)
          single_recent = SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')
 	 obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
-	 status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
+	 #status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
+	 status_recent = Event.objects.get(pk=event_id).status
          last_obs = obs_recent['last_obs']
 	 last_obs_hjd = Time(last_obs).jd
+	 tel_id = obs_recent['datafile'].split('/')[-1].split('_')
+	 if len(tel_id) == 2:
+	    tel_id = tel_id[0]+'_'
+	 else:
+	    tel_id = obs_recent['datafile'].split('/')[-1][0]
+	 last_obs_tel = site_dict[tel_id][-1]
          Tmax = single_recent['Tmax']
          e_Tmax = single_recent['e_Tmax']
          tau = single_recent['tau']
@@ -207,8 +290,7 @@ def show_event(request, event_id):
          e_umin = single_recent['e_umin']
          last_updated = single_recent['last_updated']
          last_updated_hjd =  Time(last_updated).jd
-	 last_obs_tel = site_dict['z'][-1]
-	 status = status_recent['status']
+	 status = status_recent
 	 ogle_url = ''
 	 if "OGLE" in ev_name:
 	    ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])
@@ -297,34 +379,38 @@ def event_obs_details(request, event_id):
       ev_ra = Event.objects.get(pk=event_id).ev_ra
       ev_dec = Event.objects.get(pk=event_id).ev_dec
       ev_names = EventName.objects.filter(event_id=event_id)
-      field = 'Unknown'
+      flag = 0
+      ev_ogle, ev_moa, ev_kmt = '', '', ''
       for name in ev_names:
-         if 'OGLE' in name.name:
+         if 'OGLE' in name.name and flag==0:
             ev_ogle = name.name
-	 if 'MOA' in name.name:
-	    ev_moa = name.name
-	 if 'KMT' in name.name:
-	    ev_kmt = name.name
+            flag = 1
+         if 'MOA' in name.name:
+            ev_moa = name.name
+         if 'KMT' in name.name:
+            ev_kmt = name.name
       # Get the names for this event ID from all surveys
       # Keep just one so that we can generate the url link to /microlensing.zah.uni-heidelberg.de
-      if 'ev_ogle' in locals():
+      if 'ev_ogle':
          ev_name = ev_ogle
          survey_name = "OGLE"
          event_number = ev_name.split('-')[-1]
-      elif 'ev_moa' in locals():
-	 ev_name = ev_moa
-	 survey_name = "MOA"
-	 event_number = ev_name.split('-')[-1]
-      elif 'ev_kmt' in locals():
-	 ev_name = ev_kmt
-	 survey_name = "KMT"
-	 event_number = ev_name.split('-')[-1]
+      elif 'ev_moa':
+         ev_name = ev_moa
+         survey_name = "MOA"
+         event_number = ev_name.split('-')[-1]
+      elif 'ev_kmt':
+         ev_name = ev_kmt
+         survey_name = "KMT"
+         event_number = ev_name.split('-')[-1]
+      field = 'Unknown'
       # Get list of all observations and select the one with the most recent time.
       try:
          event = Event.objects.get(id=event_id)
          single_recent = SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')
 	 obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
-	 status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
+	 #status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
+	 status_recent = Event.objects.get(pk=event_id).status
          data = DataFile.objects.filter(event_id=event_id)
 	 labels = []
 	 values = []
@@ -347,7 +433,10 @@ def event_obs_details(request, event_id):
 	    my_pie = 'No RoboNet data'
 	 else:
 	    my_pie = '<img src="/media/%s.png" height="300" width="300">' % str(event_id)
-	 cadence = Tap.objects.filter(event_id=event_id)[0].tsamp
+	 try:
+	    cadence = Tap.objects.filter(event_id=event_id)[0].tsamp
+	 except:
+	    cadence = 0
 	 # Generate the plot.ly pie chart
 	 ######### Online Mode #########
 	 #import plotly.plotly as py
@@ -387,8 +476,13 @@ def event_obs_details(request, event_id):
 	 last_obs_hjd = Time(last_obs).jd
          last_updated = single_recent['last_updated']
          last_updated_hjd =  Time(last_updated).jd
-	 last_obs_tel = site_dict['z'][-1]
-	 status = status_recent['status']
+	 tel_id = obs_recent['datafile'].split('/')[-1].split('_')
+	 if len(tel_id) == 2:
+	    tel_id = tel_id[0]+'_'
+	 else:
+	    tel_id = obs_recent['datafile'].split('/')[-1][0]
+	 last_obs_tel = site_dict[tel_id][-1]
+	 status = status_recent
 	 ogle_url = ''
 	 if "OGLE" in ev_name:
 	    ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])

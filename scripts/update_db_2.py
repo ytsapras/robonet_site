@@ -901,6 +901,7 @@ def add_image(event_name, image_name, date_obs, timestamp=timezone.now(), tel=''
 
 ###################################################################################
 def run_test2():
+   from astropy.time import Time
    year = str(datetime.now().year)
    # Path to ARTEMiS files
    artemis_col = get_conf('artemis_cols')
@@ -1039,7 +1040,13 @@ def run_test2():
       name = data[2].replace('OB'+year[2:],'OGLE-'+year+'-BLG-')
       #print 'Doing '+name
       #print 'Trying to add event ...'
-      x = add_event(ev_ra=ev_ra, ev_dec=ev_dec)
+      t = Time(datetime.now())
+      tjd = t.jd - 2450000.0
+      if abs(tjd-float(data[3])) >= 1.5*float(data[5]):
+         guess_status = 'AC'
+      else:
+         guess_status = 'EX'
+      x = add_event(ev_ra=ev_ra, ev_dec=ev_dec, status=guess_status)
       #print 'Trying to filter for event ...'
       event = Event.objects.filter(ev_ra=x[1]).filter(ev_dec=x[2])[0]
       operator = Operator.objects.get(name='OGLE')
@@ -1051,7 +1058,7 @@ def run_test2():
    # Populate Event database with MOA event coordinates
    # and EventName database with MOA event names
    from glob import glob
-   moa_event_list = glob(artemis+'PublishedParameters/2016/MOA/*.model')
+   moa_event_list = glob(artemis+'PublishedParameters/'+year+'/MOA/*.model')
    count = 0
    for i in moa_event_list:
       data = open(i).read().split()
@@ -1060,7 +1067,13 @@ def run_test2():
       name = data[2].replace('KB'+year[2:],'MOA-'+year+'-BLG-')
       #print 'Doing '+name
       #print 'Trying to add event ...'
-      x = add_event(ev_ra=ev_ra, ev_dec=ev_dec)
+      t = Time(datetime.now())
+      tjd = t.jd - 2450000.0
+      if abs(tjd-float(data[3])) >= 1.5*float(data[5]):
+         guess_status = 'AC'
+      else:
+         guess_status = 'EX'
+      x = add_event(ev_ra=ev_ra, ev_dec=ev_dec, status=guess_status)
       #print 'Trying to filter for event ...'
       event = Event.objects.filter(ev_ra=x[1]).filter(ev_dec=x[2])[0]
       operator = Operator.objects.get(name='MOA')
@@ -1252,14 +1265,18 @@ def run_test2():
 
    # Populate DataFile database
    from astropy.time import Time
+   from django.utils import timezone
    dat_list = glob(artemis+'data/*B16*I.dat')
    count = 0
    for i in dat_list:
       data = open(i).readlines()
       data = data[1:]
       if (data != []):
-         event_name = i.split('/')[-1][1:-5].replace('OB'+year[2:],'OGLE-'+year+'-BLG-')
-	 event_name = i.split('/')[-1][1:-5].replace('KB'+year[2:],'MOA-'+year+'-BLG-')
+         shorthand_name = i.split('/')[-1][1:-5]
+	 if 'OB' in shorthand_name:
+            event_name = shorthand_name.replace('OB'+year[2:],'OGLE-'+year+'-BLG-')
+	 if 'KB' in shorthand_name:
+	    event_name = shorthand_name.replace('KB'+year[2:],'MOA-'+year+'-BLG-')
          datafile = i
 	 last_upd = timezone.now()
          last_obs = Time(float('245'+data[-1].split()[2]), format='jd').datetime
