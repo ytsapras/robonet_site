@@ -45,12 +45,12 @@ def run_tap():
    ut_current=time.gmtime()
    t_current=gcal2jd(ut_current[0],ut_current[1],ut_current[2])[1]-49999.5+ut_current[3]/24.0+ut_current[4]/(1440.)
          
-   active_events_list=Event.objects.filter(status='AC')
-   for e in active_events_list:
-     
-      event_name=EventName.objects.filter(event=e)[0].name
+   active_events_list=Event.objects.select_related().filter(status='AC')
+   for event in active_events_list:
+      event_id=event.pk
+      event_name=EventName.objects.select_related().filter(event=event)[0].name
       
-      t0=float(SingleModel.objects.filter(event=e).values().latest('last_updated')['Tmax'])
+      t0=float(SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')['Tmax'])
       #print event_name,e,e.pk,t0#,DataFile.objects.filter(event=e.pk).values()
 
       timestamp = timezone.now()
@@ -58,13 +58,13 @@ def run_tap():
       inst= 'default'
       filt= 'default'
       
-      if DataFile.objects.filter(event_id=e).exists():
+      if DataFile.objects.filter(event=event).exists():
 
-         u0=float(SingleModel.objects.filter(event=e).values().latest('last_updated')['umin'])
-         te=float(SingleModel.objects.filter(event=e).values().latest('last_updated')['tau'])
-         t0=float(SingleModel.objects.filter(event=e).values().latest('last_updated')['Tmax'])
-         ibase=float(DataFile.objects.filter(event_id=e).values().latest('last_upd')['baseline'])
-         g=float(DataFile.objects.filter(event_id=e).values().latest('last_upd')['g'])
+         u0=float(SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')['umin'])
+         te=float(SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')['tau'])
+         t0=float(SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')['Tmax'])
+         ibase=float(DataFile.objects.select_related().filter(event=event).values().latest('last_upd')['baseline'])
+         g=float(DataFile.objects.select_related().filter(event=event).values().latest('last_upd')['g'])
 
 #         print u0,te,t0,ibase,g,e.pk,event_name,e
          k2=10.0**(0.4*(ibase-18.))
@@ -83,7 +83,7 @@ def run_tap():
             priority='M'
          if omega>10.:
             priority='H'
-         sig_te=float(SingleModel.objects.filter(event_id=e).values().latest('last_updated')['e_tau'])
+         sig_te=float(SingleModel.objects.filter(event=event).values().latest('last_updated')['e_tau'])
          winit=1./900
          if sig_te==0.:
             sig_te=0.001
