@@ -89,7 +89,39 @@ def simple(request):
    canvas.print_png(response)
    #response = HttpResponse(buffer_1.getvalue(), content_type="image/png")
    return response
-   
+
+##############################################################################################################
+def download_lc(request, event_id):
+   """
+   Will serve a tar file of the ARTEMiS lightcurves for this event for download.
+   """
+   def tar_lc(lightcurves):
+      import tarfile
+      import os
+      filename = settings.MEDIA_ROOT+str(event_id)+".tgz"
+      if (os.path.exists(filename) ):
+         os.remove(filename)
+      # Serve lightcurves at tgz
+      tar = tarfile.open(filename,"w:gz")
+      for lc in lightcurves:
+         # Ignore directory paths when tarring the files
+         tar.addfile(tarfile.TarInfo(lc.split('/')[-1]), file(lc))
+      tar.close()
+      return filename
+   event = Event.objects.get(id=event_id)
+   lightcurves = []
+   lightcurves_dictionary = DataFile.objects.select_related().filter(event=event).values('datafile')
+   for i in lightcurves_dictionary:
+      lightcurves.append(i['datafile'])
+   try:
+      filename = tar_lc(lightcurves)
+      download = open(filename,'rb')
+      response = HttpResponse(download.read(),content_type='application/x-tar')
+      response['Content-Disposition'] = 'attachment; filename="%s"' % filename.split('/')[-1]
+   except:
+      raise Http404("Encountered a problem while generating the tar file.")  
+   return response
+
 ##############################################################################################################
 def obs_log(request, date):
    """
@@ -338,7 +370,7 @@ def event_obs_details(request, event_id):
    Will set up a single event page with current observing details.
    """
    # Define pie chart plotting
-   # arguments are [telescopes], [colors], [number_observations], ndata
+   # arguments are [telescopes], [colors], [number_observations], ndata, event_id
    def pie_chart(tels, cols, num_obs, ndata, event_id):
       from pylab import figure, rcParams, title, legend, savefig, close, axes, pie
       from local_conf import get_conf
@@ -366,7 +398,7 @@ def event_obs_details(request, event_id):
       canvas.print_figure(filename)
       # close the figure
       close(11)
-         
+   
    time_now = datetime.now()
    time_now_jd = Time(time_now).jd
    possible_status = { 
@@ -409,8 +441,8 @@ def event_obs_details(request, event_id):
          event = Event.objects.get(id=event_id)
          single_recent = SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')
 	 obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
-	 #status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
 	 status_recent = Event.objects.get(pk=event_id).status
+	 #status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
          data = DataFile.objects.filter(event_id=event_id)
 	 labels = []
 	 values = []
@@ -436,7 +468,7 @@ def event_obs_details(request, event_id):
 	 try:
 	    cadence = Tap.objects.filter(event_id=event_id)[0].tsamp
 	 except:
-	    cadence = 0
+	    cadence = -1
 	 # Generate the plot.ly pie chart
 	 ######### Online Mode #########
 	 #import plotly.plotly as py
@@ -489,7 +521,7 @@ def event_obs_details(request, event_id):
       except:
          #pie_url = ''
 	 my_pie = 'Image Failed to Load'
-         cadence = 0
+         cadence = -1
          ndata = 0
          last_obs = "N/A"
 	 last_obs_hjd = "N/A"
