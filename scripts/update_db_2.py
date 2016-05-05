@@ -934,24 +934,63 @@ def run_test2():
    # Populate Telescope database
    from random import uniform
    for i in site_dict.keys():
-      #print i
       tel_name = site_dict[i][-1]
-      if ('LCOGT' in tel_name) or ('Liverpool' in tel_name):
+      print tel_name
+      if ('LCOGT' in tel_name) or ('Liverpool' in tel_name) or ('Faulkes' in tel_name):
          # Get the appropriate pk for RoboNet
          operator = Operator.objects.get(name='RoboNet')
-	 site = tel_name.split(' ')[1]
+	 if ('SSO' in tel_name) or ('Faulkes South' in tel_name):
+	    longitude = -31.27
+	    latitude = 149.07
+	    altitude = 1116.0
+	    site = 'COJ'
+	 elif 'CTIO' in tel_name:
+	    longitude = -30.17
+	    latitude = -70.81
+	    altitude = 2198.0
+	    site = 'LSC'
+	 elif 'SAAO' in tel_name:
+	    longitude = -32.38
+	    latitude = 20.81
+	    altitude = 1460.0
+	    site = 'CPT'
+	 elif 'Liverpool' in tel_name:
+	    longitude = 28.76
+	    latitude = -17.88
+	    altitude = 2396.0
+	    site = 'LAP'
+	 elif 'Faulkes North' in tel_name:
+	    longitude = 20.71
+	    latitude = -156.26
+	    altitude = 3055.0
+	    site = 'OGG'
+	 else:
+	    longitude = None
+	    latitude = None
+	    altitude = None
+	    site = ''
       elif 'OGLE' in tel_name:
          operator = Operator.objects.get(name='OGLE')
-	 site = 'CTIO'
+	 longitude = -29.01
+	 latitude = -70.70
+	 altitude = 2275.0
+	 site = 'LCO'
       elif 'MOA' in tel_name:
          operator = Operator.objects.get(name='MOA')
-	 site = 'New Zealand'
+	 longitude = -43.99
+	 latitude = 170.47
+	 altitude = 1029.0
+	 site = 'MJUO'
       else:
          operator = Operator.objects.get(name='Other')
+	 longitude = None
+	 latitude = None
+	 altitude = None
 	 site = ''
       aperture = float(tel_name.split()[-1][:-1])
       #print operator, tel_name, aperture, site
-      add_telescope(operator=operator, telescope_name=tel_name, aperture=aperture, site=site)
+      add_telescope(operator=operator, telescope_name=tel_name, longitude=longitude, 
+                    latitude=latitude, altitude=altitude, aperture=aperture, site=site)
    
    # Populate Instrument database
    for i in Telescope.objects.all().values():

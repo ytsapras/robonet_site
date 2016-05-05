@@ -258,6 +258,8 @@ def list_all(request):
 
 ##############################################################################################################
 def show_event(request, event_id):
+   from local_conf import get_conf
+   site_url = get_conf('site_url')
    """
    Will set up a single event page and display the lightcurve.
    """
@@ -353,8 +355,8 @@ def show_event(request, event_id):
          script, div = plot_it(artemis_name)
       except:
          script, div = '', 'Detected empty or corrupt datafile in list of lightcurve files.<br>Plotting disabled.'
-      context = {'event_id': event_id, 'event_name': ev_names, 
-                 'ev_ra': ev_ra, 'ev_dec':ev_dec, 'discussion':discussion, 'last_obs':last_obs, 
+      context = {'event_id':event_id, 'event_name':ev_names, 'site_url':site_url,
+                 'ev_ra':ev_ra, 'ev_dec':ev_dec, 'discussion':discussion, 'last_obs':last_obs, 
 		 'Tmax':Tmax, 'e_Tmax':e_Tmax, 'tau':tau, 'e_tau':e_tau, 'umin':umin, 
 		 'e_umin':e_umin, 'last_updated':last_updated, 'last_updated_hjd':last_updated_hjd,
 		 'last_obs':last_obs, 'last_obs_hjd':last_obs_hjd, 'status':possible_status[status],
