@@ -47,7 +47,7 @@ class Filter(models.Model):
 # Generic Events class
 class Event(models.Model):
    def __str__(self):
-      return "RA: "+str(self.ev_ra)+" Dec: "+str(self.ev_dec)
+      return "RA: "+str(self.ev_ra)+" Dec: "+str(self.ev_dec)+" ID: "+str(self.pk)
    ev_ra = models.CharField("RA", max_length=50)
    ev_dec = models.CharField("Dec", max_length=50)
    # does the event have a bright neighbour?
@@ -64,9 +64,10 @@ class Event(models.Model):
                              default='EX')
 
 # Generic Events Name class
+# EventName uses two foreign keys so related_name needs to be set
 class EventName(models.Model):
    def __str__(self):
-      return self.name
+      return "Name:"+str(self.name)+" ID: "+str(self.event_id)
    event = models.ForeignKey(Event, related_name="event_id")
    operator = models.ForeignKey(Operator, related_name="operator_id")
    name = models.CharField("Survey Event Name", max_length=50)
@@ -140,7 +141,7 @@ class BinaryModel(models.Model):
 # Reductions
 class RobonetReduction(models.Model):
    def __str__(self):
-      return str(self.lc_file)
+      return str(self.event)+' '+str(self.lc_file)
    event = models.ForeignKey(Event)
    # location of lightcurve file
    lc_file = models.CharField(max_length=1000)
@@ -286,7 +287,7 @@ class RobonetStatus(models.Model):
 # ARTEMiS data files (.dat)
 class DataFile(models.Model):
    def __str__(self):
-      return str((self.datafile).split('/')[-1])
+      return str(self.event)+' '+str((self.datafile).split('/')[-1])
    event = models.ForeignKey(Event)
    datafile = models.CharField(max_length=1000)
    # Date the file was last updated
@@ -310,7 +311,7 @@ class DataFile(models.Model):
 # TAP parameters
 class Tap(models.Model):
    def __str__(self):
-      return str(self.priority)
+      return str(self.event)+' priority: '+str(self.priority)
    event = models.ForeignKey(Event)
    possible_priority = (
       ('A','anomaly'),
@@ -343,7 +344,7 @@ class Tap(models.Model):
 # Image parameters
 class Image(models.Model):
    def __str__(self):
-      return str(self.image_name)
+      return str(self.event)+' Image: '+str(self.image_name)
    event = models.ForeignKey(Event)
    image_name = models.CharField(max_length=200)
    timestamp = models.DateTimeField('Date received')

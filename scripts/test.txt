@@ -1,0 +1,7 @@
+active_events = Event.objects.filter(status='AC')
+active_event_ids = [i.pk for i in active_events]
+for k in active_event_ids:
+  tau = SingleModel.objects.filter(event_id=k).values().latest('last_updated')['tau']
+  umin = SingleModel.objects.filter(event_id=k).values().latest('last_updated')['umin']
+  tmax = SingleModel.objects.filter(event_id=k).values().latest('last_updated')['tmax']
+  

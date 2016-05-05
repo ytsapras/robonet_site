@@ -1,0 +1,117 @@
+<html>
+<title>TAP</title>
+<head>
+<style>
+a:link {
+    color: #1C1C1C;
+    background-color: transparent;
+    text-decoration: none;
+}
+a:visited {
+    color: #1C1C1C;
+    background-color: transparent;
+    text-decoration: none;
+}
+a:hover {
+    color: #0101DF;
+    background-color: transparent;
+    text-decoration: underline;
+}
+a:active {
+    color: #1C1C1C;
+    background-color: transparent;
+    text-decoration: underline;
+}
+</style>
+</head>
+<body>
+<center><br>
+<b>Current Time:</b> {{ time_now }}
+[HJD: {{ time_now_jd }}]
+<h2> Target Priority: <font color="Blue">L</font><font color="Red">C</font><font color="Gold">O</font><font color="Blue">G</font><font color="Green">T</font> 1m network</h2>
+{% if rows %}
+{% load staticfiles %}
+    <script type="text/javascript" src="{% static 'events/sorttable.js' %}"></script>
+    <table style="border: 1px solid #000000; border-collapse: collapse;" border="1" cellpadding="4">
+       <tbody><tr><td>Target list upload (1m) in less than <b>{{ time1 }}</b> min </td>
+    </table>
+    <b> Bulge visibility: {{ time2 }} h on {{ nsite }} sites. <br>
+        Listed events occupy {{ occupy|safe }} of available time.</b><br>
+ <table class="sortable" border="0">
+ <tr>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">Event</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">RA</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">DEC</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">Cadence OGLE, KMTNet</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">N.Exp</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">Texp [s]</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">Priority</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">Tsamp [h]</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">Imag</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">&Omega;<sub>S</sub></b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">&sigma;<sub>&Omega;S</sub></b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">&Omega;<sub>S</sub>@peak</b></th>
+ </tr>
+ {% for row in rows %}
+ <tr bgcolor="{{ row.0 }}">
+   <td>{% for name in row.2 %}
+       <li><a href="/events/{{ row.1 }}/">{{ name }}</a><br>
+       {% endfor %}
+   </td>
+   <td>{{ row.3 }}</td>
+   <td>{{ row.4 }}</td>
+   <td>{{ row.5 }}</td>
+   <td>{{ row.6 }}</td>
+   <td>{{ row.7 }}</td>
+   <td>{{ row.8 }}</td>
+   <td>{{ row.9 }}</td>
+   <td>{{ row.10 }}</td>
+   <td>{{ row.11 }}</td>
+   <td>{{ row.12 }}</td>
+   <td>{{ row.13 }}</td>
+ </tr>
+ {% endfor %}
+ </table>
+ <b> Rejected events (> available observing time) LCOGT 1m network</b>
+ <br>
+ <table class="sortable" border="0">
+ <tr>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">Event</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">RA</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">DEC</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">Cadence OGLE, KMTNet</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">N.Exp</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">Texp [s]</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">Priority</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">Tsamp [h]</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">Imag</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">&Omega;<sub>S</sub></b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">&sigma;<sub>&Omega;S</sub></b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">&Omega;<sub>S</sub>@peak</b></th>
+ </tr>
+ {% for row in rowsrej %}
+ <tr bgcolor="{{ row.0 }}">
+   <td>{% for name in row.2 %}
+       <li><a href="/events/{{ row.1 }}/">{{ name }}</a><br>
+       {% endfor %}
+   </td>
+   <td>{{ row.3 }}</td>
+   <td>{{ row.4 }}</td>
+   <td>{{ row.5 }}</td>
+   <td>{{ row.6 }}</td>
+   <td>{{ row.7 }}</td>
+   <td>{{ row.8 }}</td>
+   <td>{{ row.9 }}</td>
+   <td>{{ row.10 }}</td>
+   <td>{{ row.11 }}</td>
+   <td>{{ row.12 }}</td>
+   <td>{{ row.13 }}</td>
+ </tr>
+ {% endfor %}
+ </table>
+{% else %}
+    <p>No events are available.</p>
+{% endif %}
+</center>
+</body>
+</html>

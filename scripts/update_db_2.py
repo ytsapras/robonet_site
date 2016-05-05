@@ -9,7 +9,9 @@
 # Import dependencies
 import os
 import sys
-sys.path.append('/home/robouser/Software/robonet_site/')
+from local_conf import get_conf
+robonet_site = get_conf('robonet_site')
+sys.path.append(robonet_site)
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'robonet_site.settings')
 from django.core import management
 from django.conf import settings
@@ -232,7 +234,7 @@ def coords_exist(check_ra, check_dec):
 	 if separation < 2.5:
 	    match_found = True
 	    successful = True
-	    #f = open('/home/robouser/Desktop/matches.txt','a')
+	    #f = open('./matches.txt','a')
 	    #f.write('Coordinates '+check_ra+' '+check_dec+' match known object at '+event.ev_ra+' '+event.ev_dec)
 	    #print 'Found matching object at: '+event.ev_ra+' '+event.ev_dec
 	    matching_event = Event.objects.filter(ev_ra=event.ev_ra).filter(ev_dec=event.ev_dec)[0]
@@ -899,8 +901,11 @@ def add_image(event_name, image_name, date_obs, timestamp=timezone.now(), tel=''
 
 ###################################################################################
 def run_test2():
+   from astropy.time import Time
+   year = str(datetime.now().year)
    # Path to ARTEMiS files
-   artemis_col = "/data/robonet/rob/ytsapras/"
+   artemis_col = get_conf('artemis_cols')
+   artemis = get_conf('artemis')
    # Color & site definitions for plotting
    colors = artemis_col+"colours.sig.cfg"
    colordef = artemis_col+"colourdef.sig.cfg"
@@ -1026,16 +1031,22 @@ def run_test2():
    # Populate Event database with OGLE event coordinates
    # and EventName database with OGLE event names
    from glob import glob
-   ogle_event_list = glob('/science/robonet/rob/Operations/Signalmen_output/PublishedParameters/2016/OGLE/*.model')
+   ogle_event_list = glob(artemis+'PublishedParameters/'+year+'/OGLE/*.model')
    count = 0
    for i in ogle_event_list:
       data = open(i).read().split()
       ev_ra = data[0]
       ev_dec = data[1]
-      name = data[2].replace('OB16','OGLE-2016-BLG-')
+      name = data[2].replace('OB'+year[2:],'OGLE-'+year+'-BLG-')
       #print 'Doing '+name
       #print 'Trying to add event ...'
-      x = add_event(ev_ra=ev_ra, ev_dec=ev_dec)
+      t = Time(datetime.now())
+      tjd = t.jd - 2450000.0
+      if abs(tjd-float(data[3])) >= 1.5*float(data[5]):
+         guess_status = 'AC'
+      else:
+         guess_status = 'EX'
+      x = add_event(ev_ra=ev_ra, ev_dec=ev_dec, status=guess_status)
       #print 'Trying to filter for event ...'
       event = Event.objects.filter(ev_ra=x[1]).filter(ev_dec=x[2])[0]
       operator = Operator.objects.get(name='OGLE')
@@ -1047,16 +1058,22 @@ def run_test2():
    # Populate Event database with MOA event coordinates
    # and EventName database with MOA event names
    from glob import glob
-   moa_event_list = glob('/science/robonet/rob/Operations/Signalmen_output/PublishedParameters/2016/MOA/*.model')
+   moa_event_list = glob(artemis+'PublishedParameters/'+year+'/MOA/*.model')
    count = 0
    for i in moa_event_list:
       data = open(i).read().split()
       ev_ra = data[0]
       ev_dec = data[1]
-      name = data[2].replace('KB16','MOA-2016-BLG-')
+      name = data[2].replace('KB'+year[2:],'MOA-'+year+'-BLG-')
       #print 'Doing '+name
       #print 'Trying to add event ...'
-      x = add_event(ev_ra=ev_ra, ev_dec=ev_dec)
+      t = Time(datetime.now())
+      tjd = t.jd - 2450000.0
+      if abs(tjd-float(data[3])) >= 1.5*float(data[5]):
+         guess_status = 'AC'
+      else:
+         guess_status = 'EX'
+      x = add_event(ev_ra=ev_ra, ev_dec=ev_dec, status=guess_status)
       #print 'Trying to filter for event ...'
       event = Event.objects.filter(ev_ra=x[1]).filter(ev_dec=x[2])[0]
       operator = Operator.objects.get(name='MOA')
@@ -1068,12 +1085,12 @@ def run_test2():
    # Populate SingleLens model database from ARTEMiS model files
    from glob import glob
    from astropy.time import Time
-   ogle_event_pars = glob('/science/robonet/rob/Operations/Signalmen_output/PublishedParameters/2016/OGLE/*.model')
+   ogle_event_pars = glob(artemis+'PublishedParameters/'+year+'/OGLE/*.model')
    for i in ogle_event_pars:
       data = open(i).read().split()
       ev_ra = data[0]
       ev_dec = data[1]
-      name = data[2].replace('OB16','OGLE-2016-BLG-')
+      name = data[2].replace('OB'+year[2:],'OGLE-'+year+'-BLG-')
       event_id = EventName.objects.get(name=name).event_id
       event = Event.objects.get(id=event_id)
       Tmax, e_Tmax = float(data[3]), float(data[4])
@@ -1086,13 +1103,13 @@ def run_test2():
       add_single_lens(event_name=name, Tmax=Tmax, e_Tmax=e_Tmax, tau=tau, e_tau=e_tau, umin=umin, 
                       e_umin=e_umin, last_updated=last_updated, modeler=modeler, rho=None, 
 		      e_rho=None, pi_e_n=None, e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None)
-   
-   moa_event_pars = glob('/science/robonet/rob/Operations/Signalmen_output/PublishedParameters/2016/MOA/*.model')
+      
+   moa_event_pars = glob(artemis+'PublishedParameters/'+year+'/MOA/*.model')
    for i in moa_event_pars:
       data = open(i).read().split()
       ev_ra = data[0]
       ev_dec = data[1]
-      name = data[2].replace('KB16','MOA-2016-BLG-')
+      name = data[2].replace('KB'+year[2:],'MOA-'+year+'-BLG-')
       event_id = EventName.objects.get(name=name).event_id
       event = Event.objects.get(id=event_id)
       Tmax, e_Tmax = float(data[3]), float(data[4])
@@ -1105,18 +1122,18 @@ def run_test2():
       add_single_lens(event_name=name, Tmax=Tmax, e_Tmax=e_Tmax, tau=tau, e_tau=e_tau, umin=umin, 
                       e_umin=e_umin, last_updated=last_updated, modeler=modeler, rho=None, 
 		      e_rho=None, pi_e_n=None, e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None)
-   
-   artemis_event_pars = glob('/science/robonet/rob/Operations/Signalmen_output/model/*B16*.model')
+      
+   artemis_event_pars = glob(artemis+'model/*B'+year[2:]+'*.model')
    for i in artemis_event_pars:
       # Exclude rogue files with incorrect entries
       try:
          data = open(i).read().split()
  	 ev_ra = data[0]
  	 ev_dec = data[1]
- 	 if data[2].startswith('KB16'):
- 	    name = data[2].replace('KB16','MOA-2016-BLG-')
- 	 if data[2].startswith('OB16'):
- 	    name = data[2].replace('OB16','OGLE-2016-BLG-')
+ 	 if data[2].startswith('KB'+year[2:]):
+ 	    name = data[2].replace('KB'+year[2:],'MOA-'+year+'-BLG-')
+ 	 if data[2].startswith('OB'+year[2:]):
+ 	    name = data[2].replace('OB'+year[2:],'OGLE-'+year+'-BLG-')
  	 event_id = EventName.objects.get(name=name).event_id
  	 event = Event.objects.get(id=event_id)
  	 Tmax, e_Tmax = float(data[3]), float(data[4])
@@ -1147,7 +1164,7 @@ def run_test2():
       return d
    
    count = 0
-   events_robonet = glob('/science/robonet/rob/Operations/ProcData/2016/*')
+   events_robonet = glob('/science/robonet/rob/Operations/ProcData/'+year+'/*')
    for i in events_robonet:
        try:
           event_name = i.split('/')[-1].split('_')[0]
@@ -1248,14 +1265,18 @@ def run_test2():
 
    # Populate DataFile database
    from astropy.time import Time
-   dat_list = glob('/science/robonet/rob/Operations/Signalmen_output/data/*B16*I.dat')
+   from django.utils import timezone
+   dat_list = glob(artemis+'data/*B16*I.dat')
    count = 0
    for i in dat_list:
       data = open(i).readlines()
       data = data[1:]
       if (data != []):
-         event_name = i.split('/')[-1][1:-5].replace('OB16','OGLE-2016-BLG-')
-	 event_name = i.split('/')[-1][1:-5].replace('KB16','MOA-2016-BLG-')
+         shorthand_name = i.split('/')[-1][1:-5]
+	 if 'OB' in shorthand_name:
+            event_name = shorthand_name.replace('OB'+year[2:],'OGLE-'+year+'-BLG-')
+	 if 'KB' in shorthand_name:
+	    event_name = shorthand_name.replace('KB'+year[2:],'MOA-'+year+'-BLG-')
          datafile = i
 	 last_upd = timezone.now()
          last_obs = Time(float('245'+data[-1].split()[2]), format='jd').datetime

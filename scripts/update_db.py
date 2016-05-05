@@ -9,7 +9,9 @@
 # Import dependencies
 import os
 import sys
-sys.path.append('/home/Tux/ytsapras/robonet_site/')
+from local_conf import get_conf
+robonet_site = get_conf('robonet_site')
+sys.path.append(robonet_site)
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'robonet_site.settings'
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'robonet_site.settings')
 from django.core import management
