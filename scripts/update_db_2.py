@@ -747,7 +747,8 @@ def add_datafile(event_name, datafile, last_upd, last_obs, last_mag, tel, ndata,
 
 ###################################################################################
 def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0, nexp=0,
-            telclass='', imag=22.0, omega=None, err_omega=None, peak_omega=None, blended=False):
+            telclass='', imag=22.0, omega=None, err_omega=None, peak_omega=None, blended=False,
+	    visibility=None, cost1m=None, cadence=None):
    """
    Add a TAP entry to the database.
    Assumes TAP has already evaluated the necessary parameters.
@@ -779,6 +780,12 @@ def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0,
                  (float, optional, default=None)
    blended -- target blended?
              (boolean, optional, default=False)
+   visibility -- Current target visibility (in hours)
+                 (float, optional, default=None)
+   cost1m -- Estimated observational cost per night for the 1m network (in minutes)
+                 (float, optional, default=None)
+   cadence -- Survey field cadence (in average number of visits per night)
+                 (float, optional, default=None)
    """
    # Check if the event already exists in the database.
    if check_exists(event_name)==True:
@@ -788,7 +795,8 @@ def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0,
       try:
          add_new = Tap(event=event, timestamp=timestamp, priority=priority, tsamp=tsamp, 
 	               texp=texp, nexp=nexp, telclass=telclass, imag=imag, omega=omega, 
-		       err_omega=err_omega, peak_omega=peak_omega, blended=blended)
+		       err_omega=err_omega, peak_omega=peak_omega, blended=blended,
+		       visibility=visibility, cost1m=cost1m, cadence=cadence)
 	 add_new.save()
 	 successful = True
       except:

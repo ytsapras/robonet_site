@@ -51,6 +51,7 @@ a:active {
   <th bgcolor="#990000"><b style="color: #FFFFCC ">&Omega;<sub>S</sub></b></th>
   <th bgcolor="#990000"><b style="color: #FFFFCC ">&sigma;<sub>&Omega;S</sub></b></th>
   <th bgcolor="#990000"><b style="color: #FFFFCC ">&Omega;<sub>S</sub>@peak</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">Visibility [h]</b></th>
  </tr>
  {% for row in rows %}
  <tr bgcolor="{{ row.0 }}">
@@ -69,6 +70,7 @@ a:active {
    <td>{{ row.11 }}</td>
    <td>{{ row.12 }}</td>
    <td>{{ row.13 }}</td>
+   <td>{{ row.14 }}</td>
  </tr>
  {% endfor %}
  </table>
@@ -88,6 +90,7 @@ a:active {
   <th bgcolor="#990000"><b style="color: #FFFFCC ">&Omega;<sub>S</sub></b></th>
   <th bgcolor="#990000"><b style="color: #FFFFCC ">&sigma;<sub>&Omega;S</sub></b></th>
   <th bgcolor="#990000"><b style="color: #FFFFCC ">&Omega;<sub>S</sub>@peak</b></th>
+  <th bgcolor="#990000"><b style="color: #FFFFCC ">Visibility [h]</b></th>
  </tr>
  {% for row in rowsrej %}
  <tr bgcolor="{{ row.0 }}">
@@ -106,6 +109,7 @@ a:active {
    <td>{{ row.11 }}</td>
    <td>{{ row.12 }}</td>
    <td>{{ row.13 }}</td>
+   <td>{{ row.14 }}</td>
  </tr>
  {% endfor %}
  </table>

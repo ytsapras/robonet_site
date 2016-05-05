@@ -170,9 +170,16 @@ def tap(request):
       time_now_jd = Time(time_now).jd
       ##### TAP query goes here ###
       #selection_model = SingleModel.objects.filter(umin__lte=0.00001, tau__lte=30)
-      selection_tap = Tap.objects.filter(omega__gte=5.0)
+      selection_tap = Tap.objects.filter(omega__gte=6.0).order_by('timestamp')
       #####
-      ev_id = [k['event'] for k in selection_tap.values('event')]
+      ev_id = []
+      timestamp = []
+      check_list = []
+      for f in selection_tap:
+         if f.event_id not in check_list:
+            ev_id.append(f.event_id)
+	    timestamp.append(f.timestamp)
+         check_list.append(f.event_id)
       ra = []
       dec = []
       names_list = []
@@ -186,15 +193,17 @@ def tap(request):
       sig_omega_s = []
       omega_peak = []
       colors = []
+      visibility = []
+      count = 0
       for i in ev_id:
          evnm = EventName.objects.filter(event=i)
 	 names = [k.name for k in evnm]
 	 ev_ra = Event.objects.all().get(pk=i).ev_ra
 	 ev_dec = Event.objects.all().get(pk=i).ev_dec
-	 sampling_time = Tap.objects.all().get(event=i).tsamp
-	 exposures = Tap.objects.all().get(event=i).nexp
-	 time_exp = Tap.objects.all().get(event=i).texp
-	 prior = Tap.objects.all().get(event=i).priority
+	 sampling_time = Tap.objects.all().get(event=i, timestamp=timestamp[count]).tsamp
+	 exposures = Tap.objects.all().get(event=i, timestamp=timestamp[count]).nexp
+	 time_exp = Tap.objects.all().get(event=i, timestamp=timestamp[count]).texp
+	 prior = Tap.objects.all().get(event=i, timestamp=timestamp[count]).priority
 	 if prior == 'A': 
 	    colors.append('#FE2E2E')
 	 elif prior == 'H':
@@ -205,10 +214,11 @@ def tap(request):
 	    colors.append('#A9F5A9')
 	 else:
 	    colors.append('#808080')
-	 baseline = Tap.objects.all().get(event=i).imag
-	 oms = Tap.objects.all().get(event=i).omega
-	 soms = Tap.objects.all().get(event=i).err_omega
-	 omsp = Tap.objects.all().get(event=i).peak_omega
+	 baseline = Tap.objects.all().get(event=i, timestamp=timestamp[count]).imag
+	 oms = Tap.objects.all().get(event=i, timestamp=timestamp[count]).omega
+	 soms = Tap.objects.all().get(event=i, timestamp=timestamp[count]).err_omega
+	 omsp = Tap.objects.all().get(event=i, timestamp=timestamp[count]).peak_omega
+	 vis = Tap.objects.all().get(event=i, timestamp=timestamp[count]).visibility
 	 nexp.append(exposures)
 	 texp.append(time_exp)
 	 cadence.append('Unknown')
@@ -219,10 +229,13 @@ def tap(request):
 	 sig_omega_s.append(soms)
 	 omega_peak.append(omsp)
 	 names_list.append(names)
+	 visibility.append(vis)
 	 ra.append(ev_ra)
 	 dec.append(ev_dec)
+	 count = count + 1
       #### TAP rows need to be defined here ####
-      rows = zip(colors, ev_id, names_list, ra, dec, cadence, nexp, texp, priority, tsamp, imag, omega_s, sig_omega_s, omega_peak)
+      rows = zip(colors, ev_id, names_list, ra, dec, cadence, nexp, texp, priority, tsamp, imag, omega_s, 
+                 sig_omega_s, omega_peak, visibility)
       rowsrej = ''
       time1 = 45 # This should be an estimate of when the target list will be uploaded next (in minutes)
       time2 = 6 # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
