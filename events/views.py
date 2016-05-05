@@ -169,9 +169,10 @@ def tap(request):
       time_now = datetime.now()
       time_now_jd = Time(time_now).jd
       ##### TAP query goes here ###
-      selection_model = SingleModel.objects.filter(umin__lte=0.00001, tau__lte=30)
+      #selection_model = SingleModel.objects.filter(umin__lte=0.00001, tau__lte=30)
+      selection_tap = Tap.objects.filter(omega__gte=5.0)
       #####
-      ev_id = [k['event'] for k in selection_model.values('event')]
+      ev_id = [k['event'] for k in selection_tap.values('event')]
       ra = []
       dec = []
       names_list = []
@@ -190,10 +191,10 @@ def tap(request):
 	 names = [k.name for k in evnm]
 	 ev_ra = Event.objects.all().get(pk=i).ev_ra
 	 ev_dec = Event.objects.all().get(pk=i).ev_dec
-	 sampling_time = Tap.objects.all().get(pk=i).tsamp
-	 exposures = Tap.objects.all().get(pk=i).nexp
-	 time_exp = Tap.objects.all().get(pk=i).texp
-	 prior = Tap.objects.all().get(pk=i).priority
+	 sampling_time = Tap.objects.all().get(event=i).tsamp
+	 exposures = Tap.objects.all().get(event=i).nexp
+	 time_exp = Tap.objects.all().get(event=i).texp
+	 prior = Tap.objects.all().get(event=i).priority
 	 if prior == 'A': 
 	    colors.append('#FE2E2E')
 	 elif prior == 'H':
@@ -204,13 +205,13 @@ def tap(request):
 	    colors.append('#A9F5A9')
 	 else:
 	    colors.append('#808080')
-	 baseline = Tap.objects.all().get(pk=i).imag
-	 oms = Tap.objects.all().get(pk=i).omega
-	 soms = Tap.objects.all().get(pk=i).err_omega
-	 omsp = Tap.objects.all().get(pk=i).peak_omega
+	 baseline = Tap.objects.all().get(event=i).imag
+	 oms = Tap.objects.all().get(event=i).omega
+	 soms = Tap.objects.all().get(event=i).err_omega
+	 omsp = Tap.objects.all().get(event=i).peak_omega
 	 nexp.append(exposures)
 	 texp.append(time_exp)
-	 cadence.append('placeholder')
+	 cadence.append('Unknown')
 	 tsamp.append(sampling_time)
 	 priority.append(prior)
 	 imag.append(baseline)
@@ -222,8 +223,7 @@ def tap(request):
 	 dec.append(ev_dec)
       #### TAP rows need to be defined here ####
       rows = zip(colors, ev_id, names_list, ra, dec, cadence, nexp, texp, priority, tsamp, imag, omega_s, sig_omega_s, omega_peak)
-      rowsrej = rows[10:15]
-      rows = rows[:9]
+      rowsrej = ''
       time1 = 45 # This should be an estimate of when the target list will be uploaded next (in minutes)
       time2 = 6 # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
       nsite = 2 # The number of sites the bulge is visible from for time2 hours
