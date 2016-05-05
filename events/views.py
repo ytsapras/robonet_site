@@ -170,7 +170,7 @@ def tap(request):
       time_now_jd = Time(time_now).jd
       ##### TAP query goes here ###
       #selection_model = SingleModel.objects.filter(umin__lte=0.00001, tau__lte=30)
-      selection_tap = Tap.objects.filter(omega__gte=6.0).order_by('timestamp')
+      selection_tap = Tap.objects.filter(omega__gte=1.0).order_by('timestamp').reverse()
       #####
       ev_id = []
       timestamp = []
@@ -459,7 +459,7 @@ def event_obs_details(request, event_id):
 	 status_recent = Event.objects.get(pk=event_id).status
 	 #status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
 	 # Make sure duplicate entries are avoided. Start adding by most recent files
-         data_all = DataFile.objects.filter(event_id=event_id).order_by('last_upd')
+         data_all = DataFile.objects.filter(event_id=event_id).order_by('last_upd').reverse()
 	 data = []
 	 check_list = []
 	 for f in data_all:
