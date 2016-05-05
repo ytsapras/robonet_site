@@ -50,7 +50,7 @@ def exofop_publisher():
     
     # Remove the READY file from the transfer machine to stop IPAC 
     # transfering data while the script is running. 
-    ready_file( config, 'remove' )
+    ready_file( config, 'remove', log )
     log.info( 'Removed the transfer READY file' )
     key_list = ['ogle_ra', 'ogle_dec']
     
@@ -110,16 +110,6 @@ def exofop_publisher():
     # Extract findercharts for K2C9 objects:
     get_finder_charts( config, known_events, log )
     
-    # Now output the combined information stream in the format agreed on for 
-    # the ExoFOP transfer
-    generate_exofop_output( config, known_events, artemis_renamed, log )
-    
-    # Generate K2C9 event summary table:
-    generate_K2C9_events_table( config, known_events, log )
-    
-    # Update the master list of known events, and those within the K2C9 footprint:
-    xsuperstamp_events = update_known_events( config, known_events, log )
-    
     # Plot locations of events:
     log.info('Plotting event locations...')
     plotname = path.join( config['log_directory'], 'k2_events_map.png' )
@@ -137,7 +127,17 @@ def exofop_publisher():
                                 iplt=2, \
                                 title=plot_title )
     log.info('Plotted event locations outside superstamp')
+
+    # Now output the combined information stream in the format agreed on for 
+    # the ExoFOP transfer
+    generate_exofop_output( config, known_events, artemis_renamed, log )
     
+    # Generate K2C9 event summary table:
+    generate_K2C9_events_table( config, known_events, log )
+    
+    # Update the master list of known events, and those within the K2C9 footprint:
+    xsuperstamp_events = update_known_events( config, known_events, log )
+         
     # Sync data for transfer to IPAC with transfer location:
     sync_data_for_transfer( config, log )  
     
@@ -1072,9 +1072,21 @@ def generate_exofop_output( config, known_events, artemis_renamed, log ):
                     manifest.write( path.basename( dest ) + ' ' + check_sum + '\n'   )
                     log.info(' --> Fetched pyLIMA file ' + \
                         path.basename(dest))
+            
+    # Add the maps of events in the K2 footprint:
+    maps = [ 'k2_events_map.png', 'k2_events_outside_superstamp_map.png' ]
+    for map_file in maps:
+        src = path.join( config['log_directory'], map_file )
+        if path.isfile(src) == True:
+            check_sum = utilities.md5sum( src )
+            manifest.write( path.basename( src ) + ' ' + check_sum + '\n'   )
+            log.info(' --> Added map file '+ map_file)
+        else:
+            log.info(' --> ERROR: Missing map file ' + map_file )
+            
     manifest.close()
 
-def ready_file( config, status ):
+def ready_file( config, status, log ):
     """Function to remove the READY file that indicates the data are
     ready for transfer to IPAC.
     Status can be either create or remove    
@@ -1089,6 +1101,7 @@ def ready_file( config, status ):
     
     c = 'ssh -X ' + str( config['transfer_user'] ) + ' ' + op + ' ' + ready_path
     (iexec, coutput) = getstatusoutput( c )
+    log.info('READY file status='+str(status)+' with result: ' + coutput )
 
 def clear_transfer_directory( config ):
     """Function to clear the contents of the IPAC transfer directory to avoid
@@ -1122,7 +1135,7 @@ def sync_data_for_transfer( config, log ):
     
     # Firstly, ensure any existing READY file has been removed to let
     # IPAC know all transfers should be suspended until its removed:
-    ready_file( config, 'remove' )
+    ready_file( config, 'remove', log )
     
     # Next, clear all old data products from the rsync directory to avoid
     # confusion:
@@ -1148,7 +1161,7 @@ def sync_data_for_transfer( config, log ):
             rsync_file( config, file_path, log, i, nfiles )
     
     # Set the READY FILE:
-    ready_file( config, 'create' )
+    ready_file( config, 'create', log )
     
 ###############################################################################
 # COMMANDLINE RUN SECTION
