@@ -445,7 +445,14 @@ def event_obs_details(request, event_id):
 	 obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
 	 status_recent = Event.objects.get(pk=event_id).status
 	 #status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
-         data = DataFile.objects.filter(event_id=event_id)
+	 # Make sure duplicate entries are avoided. Start adding by most recent files
+         data_all = DataFile.objects.filter(event_id=event_id).order_by('last_upd')
+	 data = []
+	 check_list = []
+	 for f in data_all:
+	    if f.datafile not in check_list:
+	       data.append(f)
+	    check_list.append(f.datafile)
 	 labels = []
 	 values = []
 	 colors = []
