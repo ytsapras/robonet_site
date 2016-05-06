@@ -170,7 +170,7 @@ def tap(request):
       time_now_jd = Time(time_now).jd
       ##### TAP query goes here ###
       #selection_model = SingleModel.objects.filter(umin__lte=0.00001, tau__lte=30)
-      selection_tap = Tap.objects.filter(omega__gte=1.0).order_by('timestamp').reverse()
+      selection_tap = Tap.objects.filter(omega__gte=6.0).order_by('timestamp').reverse()
       #####
       ev_id = []
       timestamp = []
@@ -237,10 +237,10 @@ def tap(request):
       rows = zip(colors, ev_id, names_list, ra, dec, cadence, nexp, texp, priority, tsamp, imag, omega_s, 
                  sig_omega_s, omega_peak, visibility)
       rowsrej = ''
-      time1 = 45 # This should be an estimate of when the target list will be uploaded next (in minutes)
-      time2 = 6 # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
-      nsite = 2 # The number of sites the bulge is visible from for time2 hours
-      occupy = '<font color="red"> Warning: dominated by EOIs</font>' # This should be a string (can include html)
+      time1 = 'Unknown' # This should be an estimate of when the target list will be uploaded next (in minutes)
+      time2 = 'Unknown' # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
+      nsite = 'Unknown' # The number of sites the bulge is visible from for time2 hours
+      occupy = '<font color="red"> Unknown</font>' # This should be a string (can include html)
       ##########################################
    except:
       raise Http404("Encountered a problem while loading. Please contact the site administrator.")

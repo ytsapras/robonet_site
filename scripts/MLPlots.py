@@ -33,9 +33,10 @@ class MLplots():
 		self.telescopes_names=glob.glob(self.lightcurves_path+'/*'+self.name+'*.dat')
 		for i in self.telescopes_names :
 			data=np.loadtxt(i)
-			index=np.where(data[:,2]>self.data_limits)[0]
-			self.lightcurves.append(data[index])
-			self.telescopes.append([i.replace(self.lightcurves_path,'')[0],i.replace(self.lightcurves_path,'')])
+			if len(np.shape(data))==2 and len(data) > 1:
+				index=np.where(data[:,2]>self.data_limits)[0]
+				self.lightcurves.append(data[index])
+				self.telescopes.append([i.replace(self.lightcurves_path,'')[0],i.replace(self.lightcurves_path,'')])
 
 	def load_models(self):
 		self.model=glob.glob(self.models_path+self.name+'.model')

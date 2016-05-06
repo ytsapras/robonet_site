@@ -109,7 +109,7 @@ def run_tap():
          munow=pspl(t_current,u0,te,t0)
          dailyvisibility=0.
          cost1m=0.
-         if omega<1.0:
+         if omega<6.0:
             priority='L'
          else:
             ##CALCULATE VISIBILITY FOR MEDIUM AND HIGH PRIORITY EVENTS
