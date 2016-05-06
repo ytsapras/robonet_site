@@ -170,9 +170,16 @@ def tap(request):
       time_now_jd = Time(time_now).jd
       ##### TAP query goes here ###
       #selection_model = SingleModel.objects.filter(umin__lte=0.00001, tau__lte=30)
-      selection_tap = Tap.objects.filter(omega__gte=5.0)
+      selection_tap = Tap.objects.filter(omega__gte=6.0).order_by('timestamp').reverse()
       #####
-      ev_id = [k['event'] for k in selection_tap.values('event')]
+      ev_id = []
+      timestamp = []
+      check_list = []
+      for f in selection_tap:
+         if f.event_id not in check_list:
+            ev_id.append(f.event_id)
+	    timestamp.append(f.timestamp)
+         check_list.append(f.event_id)
       ra = []
       dec = []
       names_list = []
@@ -186,15 +193,17 @@ def tap(request):
       sig_omega_s = []
       omega_peak = []
       colors = []
+      visibility = []
+      count = 0
       for i in ev_id:
          evnm = EventName.objects.filter(event=i)
 	 names = [k.name for k in evnm]
 	 ev_ra = Event.objects.all().get(pk=i).ev_ra
 	 ev_dec = Event.objects.all().get(pk=i).ev_dec
-	 sampling_time = Tap.objects.all().get(event=i).tsamp
-	 exposures = Tap.objects.all().get(event=i).nexp
-	 time_exp = Tap.objects.all().get(event=i).texp
-	 prior = Tap.objects.all().get(event=i).priority
+	 sampling_time = Tap.objects.all().get(event=i, timestamp=timestamp[count]).tsamp
+	 exposures = Tap.objects.all().get(event=i, timestamp=timestamp[count]).nexp
+	 time_exp = Tap.objects.all().get(event=i, timestamp=timestamp[count]).texp
+	 prior = Tap.objects.all().get(event=i, timestamp=timestamp[count]).priority
 	 if prior == 'A': 
 	    colors.append('#FE2E2E')
 	 elif prior == 'H':
@@ -205,10 +214,11 @@ def tap(request):
 	    colors.append('#A9F5A9')
 	 else:
 	    colors.append('#808080')
-	 baseline = Tap.objects.all().get(event=i).imag
-	 oms = Tap.objects.all().get(event=i).omega
-	 soms = Tap.objects.all().get(event=i).err_omega
-	 omsp = Tap.objects.all().get(event=i).peak_omega
+	 baseline = Tap.objects.all().get(event=i, timestamp=timestamp[count]).imag
+	 oms = Tap.objects.all().get(event=i, timestamp=timestamp[count]).omega
+	 soms = Tap.objects.all().get(event=i, timestamp=timestamp[count]).err_omega
+	 omsp = Tap.objects.all().get(event=i, timestamp=timestamp[count]).peak_omega
+	 vis = Tap.objects.all().get(event=i, timestamp=timestamp[count]).visibility
 	 nexp.append(exposures)
 	 texp.append(time_exp)
 	 cadence.append('Unknown')
@@ -219,15 +229,18 @@ def tap(request):
 	 sig_omega_s.append(soms)
 	 omega_peak.append(omsp)
 	 names_list.append(names)
+	 visibility.append(vis)
 	 ra.append(ev_ra)
 	 dec.append(ev_dec)
+	 count = count + 1
       #### TAP rows need to be defined here ####
-      rows = zip(colors, ev_id, names_list, ra, dec, cadence, nexp, texp, priority, tsamp, imag, omega_s, sig_omega_s, omega_peak)
+      rows = zip(colors, ev_id, names_list, ra, dec, cadence, nexp, texp, priority, tsamp, imag, omega_s, 
+                 sig_omega_s, omega_peak, visibility)
       rowsrej = ''
-      time1 = 45 # This should be an estimate of when the target list will be uploaded next (in minutes)
-      time2 = 6 # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
-      nsite = 2 # The number of sites the bulge is visible from for time2 hours
-      occupy = '<font color="red"> Warning: dominated by EOIs</font>' # This should be a string (can include html)
+      time1 = 'Unknown' # This should be an estimate of when the target list will be uploaded next (in minutes)
+      time2 = 'Unknown' # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
+      nsite = 'Unknown' # The number of sites the bulge is visible from for time2 hours
+      occupy = '<font color="red"> Unknown</font>' # This should be a string (can include html)
       ##########################################
    except:
       raise Http404("Encountered a problem while loading. Please contact the site administrator.")
@@ -445,7 +458,14 @@ def event_obs_details(request, event_id):
 	 obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
 	 status_recent = Event.objects.get(pk=event_id).status
 	 #status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
-         data = DataFile.objects.filter(event_id=event_id)
+	 # Make sure duplicate entries are avoided. Start adding by most recent files
+         data_all = DataFile.objects.filter(event_id=event_id).order_by('last_upd').reverse()
+	 data = []
+	 check_list = []
+	 for f in data_all:
+	    if f.datafile not in check_list:
+	       data.append(f)
+	    check_list.append(f.datafile)
 	 labels = []
 	 values = []
 	 colors = []

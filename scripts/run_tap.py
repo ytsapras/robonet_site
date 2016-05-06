@@ -18,13 +18,44 @@ from django.conf import settings
 from django.utils import timezone
 from django import setup
 import time
+from numpy import linspace,arange
 from datetime import datetime, timedelta
+from astropy import units as u
+from astropy.time import Time
+from astropy.coordinates import  SkyCoord, EarthLocation, AltAz, ICRS
+from astropy.coordinates import get_sun
+from scipy.interpolate import interp1d
 setup()
 
 from events.models import Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel 
 from events.models import RobonetReduction, RobonetRequest, RobonetStatus, DataFile, Tap, Image
 from update_db_2 import *
-
+import warnings
+warnings.filterwarnings('ignore',module='astropy.coordinates')
+ 
+def visibility(event,mlsites=['CPT','COJ','LSC']):
+   vis=0.
+   for site in mlsites:
+      lonrobo=float(Telescope.objects.filter(site=site).values('longitude')[0]['longitude'])*u.deg
+      latrobo=float(Telescope.objects.filter(site=site).values('latitude')[0]['latitude'])*u.deg
+      ###WARNING IF ASTROPY FIXES THAT BUG, LON AND LAT NEED TO BE CHANGED AT SOME POINT!!!!
+      RoboSite=EarthLocation(lat=lonrobo,lon=latrobo,height=float(Telescope.objects.filter(site=site).values('altitude')[0]['altitude'])*u.m)
+      mlcrd=SkyCoord(str(event.ev_ra)+' '+str(event.ev_dec),unit=(u.hourangle, u.deg))
+      time=Time(datetime.utcnow(),scale='utc')
+      mlalt=mlcrd.transform_to(AltAz(obstime=time,location=RoboSite))
+      delta_midnight=linspace(-12, 12, 24)*u.hour
+      mlaltazs=mlalt.transform_to(AltAz(obstime=time+delta_midnight,location=RoboSite))
+      times=time+delta_midnight
+      altazframe=AltAz(obstime=times,location=RoboSite)
+      sunaltazs=get_sun(times).transform_to(altazframe)
+      altsun = interp1d(times.jd2,sunaltazs.alt*u.deg,kind='linear',fill_value=0.,bounds_error=False)
+      altml = interp1d(times.jd2,mlaltazs.alt*u.deg,kind='linear',fill_value=0.,bounds_error=False)
+      deltat=1.0/200.
+      for timetest in arange(-0.5,+0.5,deltat):
+         if altsun(timetest)<-18. and altml(timetest)>30.:
+            vis+=deltat
+      print vis
+   return vis
 #RUN TAP
 def omegas(t,u0,te,t0,fs,fb,k2):
    k1=0.4
@@ -45,7 +76,7 @@ def run_tap():
    ut_current=time.gmtime()
    t_current=gcal2jd(ut_current[0],ut_current[1],ut_current[2])[1]-49999.5+ut_current[3]/24.0+ut_current[4]/(1440.)
          
-   active_events_list=Event.objects.select_related().filter(status='AC')
+   active_events_list=Event.objects.select_related().filter(status='AC') 
    for event in active_events_list:
       event_id=event.pk
       event_name=EventName.objects.select_related().filter(event=event)[0].name
@@ -76,9 +107,15 @@ def run_tap():
          peak_omega=omegas(t0,u0,te,t0,fs_ref,fb_ref,k2)
        
          munow=pspl(t_current,u0,te,t0)
-
+         dailyvisibility=0.
+         cost1m=0.
          if omega<6.0:
             priority='L'
+         else:
+            ##CALCULATE VISIBILITY FOR MEDIUM AND HIGH PRIORITY EVENTS
+            dailyvisibility=24.0*visibility(event)
+            print dailyvisibility,event
+
          if omega<10. and omega>6.:
             priority='M'
          if omega>10.:
@@ -112,13 +149,15 @@ def run_tap():
             if texp<60.:
                texp=6.
 	 #ALWAYS TAKE 2 EXPOSURES
-         nexp = 2
+         nexp = 2.
+         overhead=2.
+         cost1m=dailyvisibility/tsamp*(overhead+nexp*texp/60.)
          err_omega = 0.
 	 #DEFINE A BLENDED EVENT AS g>0.5
          blended = g>0.5
      	 add_tap(event_name=event_name, timestamp=timestamp, priority=priority, tsamp=tsamp, 
               texp=texp, nexp=nexp, telclass=telclass, imag=imag, omega=omega, 
-   	      err_omega=err_omega, peak_omega=peak_omega, blended=blended)
+   	         err_omega=err_omega, peak_omega=peak_omega, blended=blended, visibility=dailyvisibility, cost1m=cost1m)
 
  
   

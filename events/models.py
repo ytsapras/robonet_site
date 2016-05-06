@@ -53,12 +53,13 @@ class Event(models.Model):
    # does the event have a bright neighbour?
    bright_neighbour = models.BooleanField("Bright neighbour", default=False)
    # Event status (check, active, anomaly, rejected, expired)
-   possible_status = ( 
-   ('CH', 'check'),
-   ('AC', 'active'),
-   ('AN', 'anomaly'),
-   ('RE', 'rejected'),
-   ('EX', 'expired')
+   possible_status = (
+      ('CH', 'check'),
+      ('AC', 'active'),
+      ('AN', 'anomaly'),
+      ('EI', 'eoi'),
+      ('BA', 'baseline'),
+      ('EX', 'expired')
    )
    status = models.CharField("Event status", max_length=12, choices=possible_status,
                              default='EX')
@@ -340,7 +341,13 @@ class Tap(models.Model):
    peak_omega = models.DecimalField(max_digits=6,decimal_places=2, blank=True, null=True)
    # target blended?
    blended = models.BooleanField(default=False)
-
+   # visibility for the event now (in hours)
+   visibility = models.DecimalField(max_digits=6,decimal_places=2, blank=True, null=True)
+   # cost in minutes for the 1m network
+   cost1m = models.DecimalField(max_digits=6,decimal_places=2, blank=True, null=True)
+   # Survey field cadence (average number of visits per night)
+   cadence = models.DecimalField(max_digits=6,decimal_places=2, blank=True, null=True)
+   
 # Image parameters
 class Image(models.Model):
    def __str__(self):
