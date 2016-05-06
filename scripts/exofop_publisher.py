@@ -586,6 +586,7 @@ def load_tap_output( configs, log ):
     
     # Read the TAP output website:
     (tap_output,msg) = utilities.get_http_page( configs['tap_url'] )
+    log.info('--> Queried TAP URL with result '+msg)
     
     for line in tap_output.split('\n \n \n'):
         if len(line) > 0: 
