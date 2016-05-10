@@ -165,6 +165,7 @@ def tap(request):
    """
    Will load the TAP page.
    """
+   from blgvis import *
    try:
       time_now = datetime.now()
       time_now_jd = Time(time_now).jd
@@ -238,8 +239,8 @@ def tap(request):
                  sig_omega_s, omega_peak, visibility)
       rowsrej = ''
       time1 = 'Unknown' # This should be an estimate of when the target list will be uploaded next (in minutes)
-      time2 = 'Unknown' # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
-      nsite = 'Unknown' # The number of sites the bulge is visible from for time2 hours
+      time2 = str(blg_visibility(mlsites=['CPT','COJ','LSC'])) # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
+      nsite = '3' # The number of sites the bulge is visible from for time2 hours
       occupy = '<font color="red"> Unknown</font>' # This should be a string (can include html)
       ##########################################
    except:
