@@ -77,8 +77,9 @@ def add_telescope(operator, telescope_name, aperture=0.0, latitude=0.0,
 ##################################################################################
 def add_instrument(telescope, instrument_name, pixscale=0.0):
    """
-   Adds a new instrument name in the database. A single instrument can appear 
-   multiple times in this list as it can be moved to different telescopes.
+   Adds a new instrument name in the database for a specific telescope. 
+   A single instrument can appear multiple times as it can be moved to 
+   different telescopes.
    
    Keyword arguments:
    telescope -- The telescope 
@@ -88,20 +89,28 @@ def add_instrument(telescope, instrument_name, pixscale=0.0):
    pixscale -- The pixel scale of the CCD (arcsec/pix)
                 (float, optional)
    """
-   try:
-      add_new = Instrument(telescope=telescope, name=instrument_name, 
-                           pixscale=pixscale)
-      add_new.save()
-      successful = True
-   except:
+   # Is this a known instrument on this telescope?
+   known_tel_inst = Instrument.objects.filter(telescope=telescope).filter(name=instrument_name).exists()
+   # If it is a known instrument for this telescope do not try to add it
+   if (known_tel_inst==True):
       successful = False
+   # If it is a new unknown instrument try to add it
+   if (known_tel_inst==False):
+      try:
+         add_new = Instrument(telescope=telescope, name=instrument_name, 
+                              pixscale=pixscale)
+         add_new.save()
+         successful = True
+      except:
+         successful = False
    return successful
 
 ##################################################################################
 def add_filter(instrument, filter_name):
    """
-   Adds a new filter name in the database. A single filter can appear multiple 
-   times in this list as it can exist for different instruments.
+   Adds a new filter name in the database for a specific instrument.
+   A single filter can appear multiple times as it can exist for different 
+   instruments.
    
    Keyword arguments:
    instrument -- The instrument 
@@ -109,16 +118,23 @@ def add_filter(instrument, filter_name):
    filter_name -- The filter name 
                  (string, required)
    """
-   try:
-      add_new = Filter(instrument=instrument, name=filter_name)
-      add_new.save()
-      successful = True
-   except:
+   # Is this a known filter on this instrument?
+   known_inst_filt = Filter.objects.filter(instrument=instrument).filter(name=filter_name).exists()
+   # If it is a known filter for this instrument do not try to add it
+   if (known_inst_filt==True):
       successful = False
+   # If it is a new unknown filter try to add it
+   if (known_inst_filt==False):
+      try:
+         add_new = Filter(instrument=instrument, name=filter_name)
+         add_new.save()
+         successful = True
+      except:
+         successful = False
    return successful
 
 ##################################################################################
-def add_event(ev_ra, ev_dec, bright_neighbour = False, status='EX'):
+def add_event(ev_ra, ev_dec, bright_neighbour = False, status = 'NF', field = -1, anomaly_rank = -1.0):
    """
    Add a new event to the database. Will return successful = True/False
    and either the coordinates of the object itself or those of the closest 
@@ -131,14 +147,18 @@ def add_event(ev_ra, ev_dec, bright_neighbour = False, status='EX'):
         	   e.g. "-30:31:02.02"
    bright_neighbour -- Is there a bright neighbour? (boolean, optional, 
                                                      default=False)
-   status -- Events status (string, optional, default='EX')
+   status -- Events status (string, optional, default='NF')
                       Available choices: 
-		       'CH':'check'
+		       'NF':'Not in footprint'
   	               'AC':'active'
+	               'MO':'monitor'
   		       'AN':'anomaly'
-	               'RE':'rejected'
   		       'EX':'expired'
- 						     
+   field -- Which ROME field the event belongs to. -1 for none, or 1 to N (N=20)
+                                                 (integer, optional, default=-1)
+   anomaly_rank -- The relative importance of the anomaly. -1 for no anomaly, or 
+                                                       a positive decimal number. 
+		                                 (float, optional, default=-1.0)
    """
    ra, dec = ev_ra, ev_dec
    # Check whether an event already exists at these coordinates
@@ -147,7 +167,8 @@ def add_event(ev_ra, ev_dec, bright_neighbour = False, status='EX'):
       try:
          add_new = Event(ev_ra=ev_ra, ev_dec=ev_dec, 
                          bright_neighbour=bright_neighbour,
-		         status=status)
+		         status=status, field=field, 
+			 anomaly_rank=anomaly_rank)
          add_new.save()
          successful = True
       except:
@@ -651,7 +672,7 @@ def add_request(event_name, t_sample, exptime, n_exp=1, timestamp=timezone.now()
    return successful
 
 ################################################################################################################
-def add_status(event_name, timestamp=timezone.now(), status='AC', comment='', 
+def add_status(event_name, timestamp=timezone.now(), status='NF', comment='', 
                updated_by='', rec_cad=0, rec_texp=0, rec_nexp=0, rec_telclass=''):
    """
    Add robonet status to the database.
@@ -664,8 +685,8 @@ def add_status(event_name, timestamp=timezone.now(), status='AC', comment='',
                 (datetime, optional, default=timezone.now())
         	e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    status -- Event status.
-             (CH:check, AC:active, AN:anomaly, EI:eoi, BA:baseline, EX:expired)
-             (string, optional, default='AC')
+             (NF:not in footprint, AC:active, MO:monitor, AN:anomaly, EX:expired)
+             (string, optional, default='NF')
    comment -- Comment field. 
              (string, optional, default='')
    updated_by -- Updated by which user? 
@@ -677,7 +698,7 @@ def add_status(event_name, timestamp=timezone.now(), status='AC', comment='',
    rec_nexp -- Recommended number of exposures.
               (integer, optional, default=0)
    rec_telclass -- Recommended telescope class.
-              (string, optional, default=0)
+              (string, optional, default='')
    """
    if check_exists(event_name)==True:
       # Get event identifier
@@ -809,8 +830,9 @@ def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0,
 def add_image(event_name, image_name, date_obs, timestamp=timezone.now(), tel='', inst='',
               filt='', grp_id='', track_id='', req_id='', airmass=None, avg_fwhm=None, 
 	      avg_sky=None, avg_sigsky=None, moon_sep=None, moon_phase=None, moon_up=False,
-	      elongation=None, nstars=None, ztemp=None, quality='', target_hjd=None, 
-	      target_mag=None, target_magerr=None, target_skybg=None, target_fwhm=None):
+	      elongation=None, nstars=None, ztemp=None, quality='', rome_field=None, 
+	      target_hjd=None, target_mag=None, target_magerr=None, target_skybg=None, 
+	      target_fwhm=None):
    """
    Add or update an image entry to the database. If the image already exists, it only allows 
    the user to set the target_* parameters.
@@ -860,6 +882,8 @@ def add_image(event_name, image_name, date_obs, timestamp=timezone.now(), tel=''
                  (float, optional, default=None)   
    quality -- Image quality description.
                  (string, optional, default='')
+   rome_field -- ROME field identifier
+                 (integet, optional, default=None)
    # Parameters to be completed after target has been identified
    target_hjd -- Corrected HJD of image for target location.
                  (float, optional, default=None)
@@ -897,8 +921,9 @@ def add_image(event_name, image_name, date_obs, timestamp=timezone.now(), tel=''
 	 		  tel=tel, inst=inst, filt=filt, grp_id=grp_id, track_id=track_id, req_id=req_id, 
 	 		  airmass=airmass, avg_fwhm=avg_fwhm, avg_sky=avg_sky, avg_sigsky=avg_sigsky, 
          		  moon_sep=moon_sep, moon_phase=moon_phase, moon_up=moon_up, elongation=elongation,
-	 		  nstars=nstars, ztemp=ztemp, quality=quality, target_hjd=target_hjd, target_mag=target_mag, 
-	 		  target_magerr=target_magerr, target_skybg=target_skybg, target_fwhm=target_fwhm)
+	 		  nstars=nstars, ztemp=ztemp, quality=quality, rome_field=rome_field, 
+			  target_hjd=target_hjd, target_mag=target_mag, target_magerr=target_magerr, 
+			  target_skybg=target_skybg, target_fwhm=target_fwhm)
 	    add_new.save()
 	    successful = True
       	 except:
@@ -936,7 +961,7 @@ def run_test2():
   	 col_dict[key] = val
    
    # Populate Operator database
-   for s in ['OGLE', 'MOA', 'KMTNet', 'PLANET', 'RoboNet', 'uFUN', 'Other']:
+   for s in ['OGLE', 'MOA', 'KMTNet', 'PLANET', 'RomeRea', 'uFUN', 'Other']:
       add_operator(s)
    
    # Populate Telescope database
@@ -946,7 +971,7 @@ def run_test2():
       print tel_name
       if ('LCOGT' in tel_name) or ('Liverpool' in tel_name) or ('Faulkes' in tel_name):
          # Get the appropriate pk for RoboNet
-         operator = Operator.objects.get(name='RoboNet')
+         operator = Operator.objects.get(name='RomeRea')
 	 if ('SSO' in tel_name) or ('Faulkes South' in tel_name):
 	    longitude = -31.27
 	    latitude = 149.07
@@ -1018,19 +1043,19 @@ def run_test2():
    pixscale = 0.301
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
 
-   telescope = Telescope.objects.get(name='LCOGT SSO B 1m')
-   inst = 'kb71'
-   pixscale = 0.467
+   telescope = Telescope.objects.get(name='LCOGT SSO A 1m')
+   inst = 'fl12'
+   pixscale = 0.387
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
 
-   telescope = Telescope.objects.get(name='LCOGT SSO A 1m')
-   inst = 'kb??'
-   pixscale = 0.467
+   telescope = Telescope.objects.get(name='LCOGT SSO B 1m')
+   inst = 'fl11'
+   pixscale = 0.387
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
 
    telescope = Telescope.objects.get(name='LCOGT CTIO A 1m')
-   inst = 'kb78'
-   pixscale = 0.467
+   inst = 'fl15'
+   pixscale = 0.387
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
      
    telescope = Telescope.objects.get(name='LCOGT CTIO B 1m')
@@ -1044,18 +1069,18 @@ def run_test2():
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
 
    telescope = Telescope.objects.get(name='LCOGT SAAO A 1m')
-   inst = 'kb70'
-   pixscale = 0.467
+   inst = 'fl16'
+   pixscale = 0.387
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
      
    telescope = Telescope.objects.get(name='LCOGT SAAO B 1m')
-   inst = 'kb76'
-   pixscale = 0.467
+   inst = 'fl14'
+   pixscale = 0.387
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
 
    telescope = Telescope.objects.get(name='LCOGT SAAO C 1m')
-   inst = 'kb??'
-   pixscale = 0.467
+   inst = 'fl06'
+   pixscale = 0.387
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
 
    telescope = Telescope.objects.get(name='OGLE 1.3m')
@@ -1078,6 +1103,7 @@ def run_test2():
    # Populate Event database with OGLE event coordinates
    # and EventName database with OGLE event names
    from glob import glob
+   import numpy as np
    ogle_event_list = glob(artemis+'PublishedParameters/'+year+'/OGLE/*.model')
    count = 0
    for i in ogle_event_list:
@@ -1093,7 +1119,9 @@ def run_test2():
          guess_status = 'AC'
       else:
          guess_status = 'EX'
-      x = add_event(ev_ra=ev_ra, ev_dec=ev_dec, status=guess_status)
+      # generate a random field number between 1 to 20
+      rand_field = np.random.randint(1,20)
+      x = add_event(ev_ra=ev_ra, ev_dec=ev_dec, status=guess_status, field=-1, anomaly_rank = -1.0)
       #print 'Trying to filter for event ...'
       event = Event.objects.filter(ev_ra=x[1]).filter(ev_dec=x[2])[0]
       operator = Operator.objects.get(name='OGLE')
@@ -1120,7 +1148,9 @@ def run_test2():
          guess_status = 'AC'
       else:
          guess_status = 'EX'
-      x = add_event(ev_ra=ev_ra, ev_dec=ev_dec, status=guess_status)
+      # generate a random field number between 1 to 20
+      rand_field = np.random.randint(1,20)
+      x = add_event(ev_ra=ev_ra, ev_dec=ev_dec, status=guess_status, field=rand_field, anomaly_rank = -1.0)
       #print 'Trying to filter for event ...'
       event = Event.objects.filter(ev_ra=x[1]).filter(ev_dec=x[2])[0]
       operator = Operator.objects.get(name='MOA')
@@ -1379,6 +1409,7 @@ def run_test2():
    #ogle_events_list = EventName.objects.filter(name__contains="OGLE")
    #for i in ogle_events_list:
    #   event_name = i.name
+   #   rome_field = random.randint(1,20)
    #   for cnt in range(10):
    #	 image_name = str(event_name)+'_img_'+str(cnt)
    #	 date_obs = timezone.now()+timedelta(hours=random.uniform(-1000,1000))
@@ -1411,8 +1442,8 @@ def run_test2():
    #		   tel=tel, inst=inst, filt=filt, grp_id=grp_id, track_id=track_id, req_id=req_id, 
    #		   airmass=airmass, avg_fwhm=avg_fwhm, avg_sky=avg_sky, avg_sigsky=avg_sigsky, 
    #		   moon_sep=moon_sep, moon_phase=moon_phase, moon_up=moon_up, elongation=elongation,
-   #		   nstars=nstars, ztemp=ztemp, quality=quality, target_hjd=target_hjd, target_mag=target_mag, 
-   #		   target_magerr=target_magerr, target_skybg=target_skybg, target_fwhm=target_fwhm) 
+   #		   nstars=nstars, ztemp=ztemp, quality=quality, rome_field= rome_field, target_hjd=target_hjd, 
+   #               target_mag=target_mag, target_magerr=target_magerr, target_skybg=target_skybg, target_fwhm=target_fwhm) 
    #   count = count + 1
    #   print count
 

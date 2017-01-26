@@ -1,0 +1,91 @@
+# Go to /robonet_site/scripts/
+
+# start python
+
+from update_db_2 import *
+
+# List all Operators
+Operator.objects.all()
+# OGLE, MOA etc
+# Let's add a new one
+add_operator('RomeRea')
+
+# Let's try adding a second copy of a known operator
+add_operator('MOA')
+
+# Deleting an Operator: Operator.objects.filter(name='uFun').delete()
+
+# Print all known telescopes (known to the DB). 
+
+# Telescope list taken from the ARTEMiS config file (colours.sig.cfg).
+for i in Telescope.objects.all(): print i
+
+# Filter for only 1.0m LCOGT telescopes and print
+for i in Telescope.objects.filter(name__contains='LCOGT'): print i
+
+# List the instruments for a given telescope
+this_telescope = Telescope.objects.get(name='LCOGT CTIO C 1m')
+Instrument.objects.filter(telescope=this_telescope)
+
+# Try to add the same instrument at this telescope
+add_instrument(telescope=this_telescope, instrument_name='fl04', pixscale=0.387)
+
+# But say we move the instrument to another telescope and we try adding it
+this_telescope = Telescope.objects.get(name='LCOGT CTIO B 1m')
+Instrument.objects.filter(telescope=this_telescope)
+add_instrument(telescope=this_telescope, instrument_name='fl04', pixscale=0.387)
+
+# But since we haven't really moved that instrument there yet, let's just delete it
+Instrument.objects.filter(telescope=this_telescope).filter(name='fl04').delete()
+
+# Similar queries can be performed for the filter sets
+
+# Find SingleLens models for a specific event
+# First get the database ID for this event by EventName
+e = EventName.objects.get(name="OGLE-2016-BLG-0060").event_id
+
+# Now look at how many single lens models exist for this event and when they were last updated
+SingleModel.objects.filter(event_id=e)
+
+# To view the values for the models you can do
+SingleModel.objects.filter(event_id=e).values()
+
+# If you're only interested in the values of the most recent model
+SingleModel.objects.filter(event_id=e).values().latest('last_updated')
+
+# Find all ARTEMiS data files for a specific event (we'll use the same event as before)
+DataFile.objects.filter(event_id=e).values('datafile')
+
+# Suppose you want to get the latest known magnitude
+DataFile.objects.filter(event_id=e).values('last_mag').latest('last_obs')
+
+# Find all images taken within a date range
+Image.objects.filter(date_obs__range=(datetime(2017,3,7), datetime(2017,3,12)))
+
+# Find all images taken for a specific event within a date range
+f = Event.objects.get(id=e).field
+f
+Image.objects.filter(rome_field=f).filter(date_obs__range=(datetime(2017,3,7), datetime(2017,3,12)))
+
+# Just to double check
+Image.objects.filter(rome_field=f).filter(date_obs__range=(datetime(2017,3,7), datetime(2017,3,12))).values('date_obs')
+
+# Find out the total number of data points for an event (this is from the ARTEMiS files)
+data = DataFile.objects.filter(event_id = e)
+ndat = sum([(i.ndata) for i in data])
+
+# Perform complex queries
+DataFile.objects.filter(baseline__gte=20, last_obs__gte=datetime(2016,4,25)).order_by('last_obs')
+
+# Update some value in the class
+Event.objects.get(id=e).field
+Event.objects.filter(id=e).update(field=18)
+Event.objects.get(id=e).field
+
+##################################
+# Demo some views
+http://127.0.0.1:8000/events/
+http://127.0.0.1:8000/events/tap/
+http://127.0.0.1:8000/events/obs_log/20170307
+http://127.0.0.1:8000/events/7/
+http://127.0.0.1:8000/events/obs_details/7/

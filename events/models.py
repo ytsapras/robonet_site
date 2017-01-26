@@ -52,17 +52,23 @@ class Event(models.Model):
    ev_dec = models.CharField("Dec", max_length=50)
    # does the event have a bright neighbour?
    bright_neighbour = models.BooleanField("Bright neighbour", default=False)
-   # Event status (check, active, anomaly, rejected, expired)
+   # Event status (not in ROME footprint, active (in ROME footprint), monitor (60m REA cadence), 
+   #               anomaly (20m REA cadence), expired)
    possible_status = (
-      ('CH', 'check'),
+      ('NF', 'Not in footprint'),
       ('AC', 'active'),
+      ('MO', 'monitor'),
       ('AN', 'anomaly'),
-      ('EI', 'eoi'),
-      ('BA', 'baseline'),
       ('EX', 'expired')
    )
-   status = models.CharField("Event status", max_length=12, choices=possible_status,
-                             default='EX')
+   status = models.CharField("Event status", max_length=30, choices=possible_status,
+                             default='NF')
+   # Which ROME field does this event belong to? Options: -1 (None) or an integer from 1 to N,
+   # where N is the number of fields monitored (20)
+   field = models.IntegerField("Field Number", default=-1)
+   # What is the relative importance of the anomaly?
+   anomaly_rank = models.DecimalField("Anomaly Rank", max_digits=12, decimal_places=4, 
+                                      default=Decimal('-1.0'))
 
 # Generic Events Name class
 # EventName uses two foreign keys so related_name needs to be set
@@ -260,16 +266,15 @@ class RobonetStatus(models.Model):
       return str(self.event)+' updated at '+str(self.timestamp)
    event = models.ForeignKey(Event)
    possible_status = (
-      ('CH', 'check'),
+      ('NF', 'Not in footprint'),
       ('AC', 'active'),
+      ('MO', 'monitor'),
       ('AN', 'anomaly'),
-      ('EI', 'eoi'),
-      ('BA', 'baseline'),
       ('EX', 'expired')
    )
    timestamp = models.DateTimeField('date last updated')
    # Event status (check, active, anomaly, rejected, expired)
-   status = models.CharField(max_length=12, choices=possible_status, default='AC')
+   status = models.CharField(max_length=12, choices=possible_status, default='NF')
    # Comment (for internal RoboNet users)
    comment = models.CharField(max_length=200, default='--')
    # Updated by (<user>/automatic)?
@@ -383,6 +388,8 @@ class Image(models.Model):
    nstars = models.IntegerField(blank=True, null=True)
    ztemp = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
    quality = models.CharField(max_length=400, blank=True, default='')
+   # Which ROME field?
+   rome_field = models.IntegerField(blank=True, null=True)
    # Parameters to be completed after target has been identified
    target_hjd = models.DecimalField(max_digits=20, decimal_places=5, blank=True, null=True)
    target_mag = models.DecimalField(max_digits=15, decimal_places=5, blank=True, null=True)

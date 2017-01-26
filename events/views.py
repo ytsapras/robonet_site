@@ -280,10 +280,10 @@ def show_event(request, event_id):
    time_now = datetime.now()
    time_now_jd = Time(time_now).jd
    possible_status = { 
-      'CH':'check',
+      'NF':'Not in footprint',
       'AC':'active',
+      'MO':'monitor',
       'AN':'anomaly',
-      'RE':'rejected',
       'EX':'expired'}
    try:
       ev_ra = Event.objects.get(pk=event_id).ev_ra
@@ -418,10 +418,10 @@ def event_obs_details(request, event_id):
    time_now = datetime.now()
    time_now_jd = Time(time_now).jd
    possible_status = { 
-      'CH':'check',
+      'NF':'Not in footprint',
       'AC':'active',
+      'MO':'monitor',
       'AN':'anomaly',
-      'RE':'rejected',
       'EX':'expired'}
    try:
       ev_ra = Event.objects.get(pk=event_id).ev_ra
