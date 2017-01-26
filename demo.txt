@@ -44,6 +44,14 @@ Instrument.objects.filter(telescope=this_telescope).filter(name='fl04').delete()
 # First get the database ID for this event by EventName
 e = EventName.objects.get(name="OGLE-2016-BLG-0060").event_id
 
+# Check if an event exists in DB by name
+check_exists("OGLE-2016-BLG-0060")
+check_exists("OGLE-2013-BLG-0051")
+
+# Check if an event is exists in DB by coordinates
+coords_exist(check_ra="17:54:33.58", check_dec="-30:31:02.02")
+coords_exist(check_ra="18:09:38.33", check_dec="-26:35:49.7")
+
 # Now look at how many single lens models exist for this event and when they were last updated
 SingleModel.objects.filter(event_id=e)
 
