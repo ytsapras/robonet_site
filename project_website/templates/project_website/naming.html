@@ -1,0 +1,51 @@
+{% extends "index.html" %}
+{% block main_content %}
+<!-- === main content ====================================================== -->
+
+<div id="content">
+<a name="top"></a>
+<h2>Filename naming convention</h2>
+We use the following convention to uniquely identify data products from the <a href="http://lcogt.net">LCO</a> network.<br><hr>
+Name structure for lightcurve datafiles:<br>
+[<b>TargetName</b>]_[<b>network node</b>]_[<b>Filter</b>].t<br>
+where <br><b>network node</b> = [Site ID]-[Dome ID]-[Telescope ID]-[Instrument ID]<hr>
+
+<b>Site IDs:</b><br>
+South Africa = cpt<br>
+Chile = lsc<br>
+Hawaii = ogg<br>
+Australia = coj<br>
+La Palma (LT) = lap<br>
+Texas = elp<br>
+Sedgwick = sqa<hr>
+
+<b>Dome IDs:</b><br>
+For the 1m network, each observatory dome field can contain { doma, domb, domc }<br>
+For the 2m network, the dome field is { clma } for FTN and FTS and { lt } for the LT.<hr>
+
+<b>Telescope IDs:</b><br>
+2m network: 2m001, 2m002, lt (where 2m001=FTN and 2m002=FTS)<br>
+1m network: 1m0-03, 1m0-04, 1m0-05, 1m0-09, 1m0-10, 1m0-11, 1m0-12, 1m0-13 (so far, more to come)<hr>
+
+<b>Instrument IDs:</b><br>
+2m network: em03, em01, IO:O, fs03, fs02, fs01<br>
+1m network: kb05, kb70, kb71, kb75, kb76, fl02, fl03, fl04 (again, more to come)<hr>
+
+<b>Filters:</b><br>
+SDSS filter set gets abbreviated to a two letter code. This only applies to the 1m network. The 2ms use the full filternames.<br>
+SDSS-g = gp<br>
+SDSS-r = rp<br>
+SDSS-i = ip<br>
+Pan-STARRS-z = zs<br>
+Pan-STARRS-Y = ys<br>
+Otherwise, BVRI codes represent the Johnson-Cousins set.<hr>
+</div> <!-- content -->
+{% endblock %}
+
+{% block menu_list %}
+<li><a class="current" href={% url 'home_html' %}>Home</a></li>
+<li><a href={% url 'research_html' %}>Research</a></li>
+<li><a href={% url 'publications_html' %}>Publications</a></li>
+<li><a href={% url 'group_html' %}>Group</a></li>
+<li><a href={% url 'options_html' %}>Links</a></li>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends "index.html" %}
+{% block main_content %}
+<!-- === main content ====================================================== -->
+
+<div id="content">
+<a name="top"></a>
+
+<h2>Access to Operations</h2>
+
+<table width="100%" border="0" cellspacing="10">
+
+<tr>
+	<td width="48" valign="top"><img src="/static/img/lcogt_icon.png" width="40" height="40" align="top" /></td>
+	<td width="191" valign="top"><strong>Las Cumbres Observatory<br />
+	</strong>
+        <a href="https://lco.global/">LCO Home</a><br />
+	<a href="https://lco.global/observatory/instruments/" target="_blank">Instrumentation</a><br>
+	</td>
+	<td width="24" valign="top">&nbsp;</td>
+	<td width="43" valign="top"><img src="/static/img/robonet.png" width="40" height="40" /></td>
+	<td width="254" valign="top"><strong>ROME/REA Operations</strong><br />
+	   <a href="{% url 'calendar_html' %}" target="_blank">DayOps Calendar</a><br>
+	   <a href="https://romerea.slack.com/messages/general/" target="_blank">SLACK</a><br>
+	   <a href="https://github.com/ebachelet/pyLIMA" target="_blank">pyLIMA</a><br>
+	</td>
+</tr>
+
+<tr>
+    <td colspan="2" valign="top"><hr /></td>
+    <td valign="top">&nbsp;</td>
+    <td colspan="2" valign="top"><hr /></td>
+</tr>
+
+<tr>
+    <td valign="top"><img src="/static/img/robo_interact.png" width="40" height="40" /></td>
+    <td valign="top"><p><strong>ROME/REA Interactive</strong><br />
+	<a href="{% url 'list_all' %}" target="_blank">Event List</a><br>
+	<a href="{% url 'tap' %}" target="_blank">TAP</a><br>
+	</td>
+    <td valign="top">&nbsp;</td>
+    <td valign="top"><img src="/static/img/mlens_icon.png" width="40" height="40" /></td>
+    <td valign="top"><strong>Links to other groups</strong><br />
+      <a href="http://ogle.astrouw.edu.pl/ogle4/ews/ews.html" target="_blank">OGLE alerts</a><br>
+      <a href="https://it019909.massey.ac.nz/moa/" target="_blank">MOA alerts</a><br>
+      <a href="http://www.astronomy.ohio-state.edu/~microfun/" target="_blank">MicroFUN</a><br>
+      <a href="http://www.mindstep-science.org/" target="_blank">MiNDSTEp</a><br>
+      <a href="http://planet.iap.fr/" target="_blank">PLANET</a><br>
+      <a href="http://www.artemis-uk.org/plot.cgi" target="_blank">ARTEMiS</a><br>
+      </td>
+</tr>
+  
+<tr>
+    <td colspan="2" valign="top"><hr /></td>
+    <td valign="top">&nbsp;</td>
+    <td colspan="2" valign="top"><hr /></td>    
+</tr>
+
+<tr>
+    <td valign="top"><img src="/static/img/dayops.png" width="40" height="40" /></td>
+    <td valign="top"><strong>ROME/REA Forums</strong><br />
+      <!-- <a href="" target="_blank">Forums<a/><br> -->
+    <td valign="top">&nbsp;</td>
+    <td valign="top"><img src="/static/img/docu.png" width="40" height="40" /></td>
+    <td valign="top"><strong>Documentation</strong><br />
+       <!-- <a href="{% url 'docs_html' %}" target="top">ROME/REA Help</a><br> -->
+       <a href="http://www.danidl.co.uk/" target="_blank">DanIDL</a><br>
+       <a href="http://www.scipy.org/" target="_blank">SciPy</a><br>
+       <a href="http://idlastro.gsfc.nasa.gov/homepage.html" target="_blank">Astronomy Library </a><br />
+      </td>
+
+</tr>
+</table>
+
+
+<div class="hline"></div>
+
+<!-- ======================================================================= -->
+
+</div> <!-- content -->
+{% endblock %}
+
+{% block menu_list %}
+<li><a href={% url 'home_html' %}>Home</a></li>
+<li><a href={% url 'research_html' %}>Research</a></li>
+<li><a href={% url 'publications_html' %}>Publications</a></li>
+<li><a href={% url 'group_html' %}>Group</a></li>
+<li><a class="current" href={% url 'options_html' %}>Links</a></li>
+{% endblock %}

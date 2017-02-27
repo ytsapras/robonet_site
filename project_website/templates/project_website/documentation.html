@@ -1,0 +1,47 @@
+{% extends "index.html" %}
+{% block main_content %}
+<div id="content">
+<a name="top"></a>
+<table width="100%" border="0" cellspacing="10">
+<tr>
+   <td valign="top"><strong>Operations</strong><br>
+   To be updated.
+   </td>
+   <td valign="top"><strong>Observing System</strong><br>
+   To be updated.
+   </td>
+</tr>
+
+<tr>
+   <td colspan="2" valign="top"><hr /></td>
+   <td valign="top">&nbsp;</td>
+   <td colspan="2" valign="top"><hr /></td>
+</tr>
+
+<tr>
+   <td valign="top"><strong>DanDIA</strong><br>
+   To be updated.
+   </td>   
+   <td valign="top"><strong>Pipeline Help</strong><br>
+   To be updated.
+   </td>
+</tr>
+
+<tr>
+   <td colspan="2" valign="top"><hr /></td>
+   <td valign="top">&nbsp;</td>
+   <td colspan="2" valign="top"><hr /></td>
+</tr>
+
+</table>
+
+</div> <!-- content -->
+{% endblock %}
+
+{% block menu_list %}
+<li><a href={% url 'home_html' %}>Home</a></li>
+<li><a href={% url 'research_html' %}>Research</a></li>
+<li><a href={% url 'publications_html' %}>Publications</a></li>
+<li><a href={% url 'group_html' %}>Group</a></li>
+<li><a class="current" href={% url 'options_html' %}>Links</a></li>
+{% endblock %}

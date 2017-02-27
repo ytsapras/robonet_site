@@ -1,0 +1,77 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+{% load staticfiles %}
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta name="description" content="The ROME/REA project homepage" />
+<meta name="keywords" content="exoplanets, microlensing, extra-solar planets, RoboNet, LCOGT, exo-planets, Las Cumbres Observatory, astronomy" />
+<meta name="author" content="Yiannis Tsapras" />
+<link rel="stylesheet" type="text/css" href="/static/css/andreas.css" media="screen" />
+<!-- <link rel="stylesheet" type="text/css" href="/static/project_website/css/andreas.css" media="screen" /> -->	
+<title>Microlensing Key Project (2017-2020)</title>
+
+<script type="text/javascript" src="/static/project_website/src/jwplayer.js"></script>
+
+</head>
+
+<!-- ======================================================================= -->
+
+<body>
+
+<div id="wrap">
+
+	<div id="header">
+
+	<div class="vert-align">
+		<h1>ROME/REA</h1>
+		<h2>a window to planets beyond the snow-line</h2></div>
+	</div><!-- header -->
+
+	<!-- <img id="frontphoto" src="{{ STATIC_URL }}/img/banner.jpg" width="760" height="175" alt="" /> -->
+	<img id="frontphoto" src="/static/img/banner.jpg" width="760" height="175" alt="" />
+
+<!-- ======================================================================= -->
+  <div id="leftside">
+
+  <h2 class="hide">Menu:</h2>
+
+  <ul class="avmenu">
+
+      {% block menu_list %}
+<li><a class="current" href={% url 'home_html' %}>Home</a></li>
+<li><a href={% url 'research_html' %}>Research</a></li>
+<li><a href={% url 'publications_html' %}>Publications</a></li>
+<li><a href={% url 'group_html' %}>Group</a></li>
+<li><a href={% url 'options_html' %}>Links</a></li>
+     {% endblock %}
+  
+  </ul>
+
+  </div> <!-- leftside -->
+
+<!-- === main content ====================================================== -->
+
+   
+  {% block main_content %}{% endblock %}
+      
+
+<!-- ======================================================================= -->
+
+
+<div class="hline"></div>
+<p style="margin-bottom:30px;"><a href="#top">back to top</a></p>
+
+<!-- ======================================================================= -->
+
+	<div id="footer">
+		<!-- <p><span>&copy; 2011 <a href="http://robonet.lcogt.net">Y. Tsapras</a></span><br />
+
+		 Template design by <a href="http://andreasviklund.com/">Andreas Viklund</a></p>-->
+	</div>
+
+</div>
+</body>
+</html>

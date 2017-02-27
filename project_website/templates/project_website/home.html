@@ -1,0 +1,21 @@
+{% extends "index.html" %}
+{% block main_content %}
+<!-- === main content ====================================================== -->
+
+<div id="content">
+<a name="top"></a>
+<h2>The ROME/REA Key Project at LCO</h2>
+<p>
+Intensive observations of Galactic Bulge stars undergoing <a href="http://en.wikipedia.org/wiki/Gravitational_microlensing"> gravitational microlensing</a> provide the means to discover exoplanets in wide orbits. Hundreds of such events are routinely identified each year by the <a href="http://www.astrouw.edu.pl/~ogle/ogle3/ews/ews.html">OGLE</a> and <a href="http://www.phys.canterbury.ac.nz/moa/global_network.html">MOA</a> surveys. Our project uses the <a href="http://lcogt.net">LCO</a> robotic telescopes to observe pre-selected fields in the Galactic Bulge at regular intervals and we employ a reactive event assessment system that requests high-cadence observations when planet-like deviations are discovered in our data.<br></p>
+<b><font color=red>IMPORTANT</font></b>:<a href={% url 'naming_html' %}>Filename convention</a><br>
+<b><font color=red>IMPORTANT</font></b>:<a href={% url 'release_html' %}>Data Release Policy</a>
+</div> <!-- content -->
+{% endblock %}
+
+{% block menu_list %}
+<li><a class="current" href={% url 'home_html' %}>Home</a></li>
+<li><a href={% url 'research_html' %}>Research</a></li>
+<li><a href={% url 'publications_html' %}>Publications</a></li>
+<li><a href={% url 'group_html' %}>Group</a></li>
+<li><a href={% url 'options_html' %}>Links</a></li>
+{% endblock %}

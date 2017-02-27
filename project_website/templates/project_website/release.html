@@ -1,0 +1,20 @@
+{% extends "index.html" %}
+{% block main_content %}
+<!-- === main content ====================================================== -->
+
+<div id="content">
+<a name="top"></a>
+<h2>Data release policy</h2>
+<p>Our team uses the <a href="http://lcogt.net">LCO</a> global network of robotic telescopes to perform observations of <a href="http://en.wikipedia.org/wiki/Gravitational_microlensing">microlensing events</a> in the Galactic Bulge with the aim of discovering new extrasolar planets.<br><br>
+Continuous automated assessment of the observations and detection of anomalous features is provided by the <a href="http://www.artemis-uk.org/event_overview.cgi">ARTEMiS</a> system.
+Please note that the data available on these pages are based on <b><i>preliminary</i></b> reductions. These reductions are updated often, as and when new data become available. If you would like to use our data for publications, please contact us (ytsapras[at]ari.uni-heidelberg.de). We appreciate the opportunity  to collaborate and may require co-authorship where appropriate.</p>
+</div> <!-- content -->
+{% endblock %}
+
+{% block menu_list %}
+<li><a class="current" href={% url 'home_html' %}>Home</a></li>
+<li><a href={% url 'research_html' %}>Research</a></li>
+<li><a href={% url 'publications_html' %}>Publications</a></li>
+<li><a href={% url 'group_html' %}>Group</a></li>
+<li><a href={% url 'options_html' %}>Links</a></li>
+{% endblock %}
