@@ -38,6 +38,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'events',
+    'project_website',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -56,7 +57,10 @@ ROOT_URLCONF = 'robonet_site.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'templates'),
+	         os.path.join(BASE_DIR, 'events/templates'),
+	         os.path.join(BASE_DIR, 'project_website/templates'),
+		 os.path.join(BASE_DIR, 'project_website/templates/project_website'),],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -106,5 +110,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
        os.path.join(BASE_DIR, "static/"),
-       os.path.join(BASE_DIR, "static/events/"),
+       os.path.join(BASE_DIR, "events/static/events/"),
+       os.path.join(BASE_DIR, "project_website/static/project_website/"),
 ]
