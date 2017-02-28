@@ -339,7 +339,7 @@ def add_binary_lens(event_name, Tmax, e_Tmax, tau, e_tau, umin, e_umin, last_upd
 		    e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None, dsdt=None, 
 		    e_dsdt=None, dadt=None, e_dadt=None):
    """
-   Add Single Lens model parameters
+   Add Binary Lens model parameters
    to the database.
    
    Keyword arguments:
