@@ -14,15 +14,13 @@ RUN git clone https://github.com/ytsapras/robonet_site
 
 # will open port 80 for the webserver to be run on
 EXPOSE 80
+ENTRYPOINT["/init"]
 
 # install requirements
 COPY requirements.txt /var/www/html/
 RUN pip install -r /var/www/html/requirements.txt \
     && rm -rf ~/.cache ~/.pip
 
-COPY init init/
-COPY mycode /var/www/html/
 
+COPY robonet_site /var/www/html/.
 
-ENTRYPOINT["/init"]
-CMD /bin/tcsh
