@@ -7,7 +7,6 @@ from django.http import HttpResponse, Http404
 import sys, os
 
 local_path = os.getcwd()+'/project_website/templates/project_website/'
-#local_path = '/home/Tux/ytsapras/robonet_site/project_website/templates/project_website/'
 
 # Create your views here.
 def home_html(request):

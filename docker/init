@@ -1,0 +1,13 @@
+#!/bin/bash
+
+export PYTHONPATH="/var/www/robonetsite"
+export DJANGO_SETTINGS_MODULE="robonet_site.settings"
+
+# collect static files
+python /var/www/robonetsite/manage.py collectstatic --noinput
+
+# perform database migrations
+python /var/www/robonetsite/manage.py migrate --noinput
+
+# run under supervisord
+exec /usr/bin/supervisord -n -c /etc/supervisord.conf
