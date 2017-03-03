@@ -13,6 +13,7 @@ import sys, os
 #sys.path.append('/home/Tux/ytsapras/robonet_site/scripts/')
 sys.path.append(os.getcwd()+'/scripts/')
 from plotter import *
+from local_conf import get_conf
 
 # Path to ARTEMiS files
 artemis_col = get_conf('artemis_cols')
