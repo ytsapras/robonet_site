@@ -1,15 +1,19 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.conf import settings
-from .models import Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel, RobonetReduction, RobonetRequest, RobonetStatus, DataFile, Tap, Image
+from django.views.decorators.http import require_http_methods
+from .models import Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
+from .models import RobonetReduction, RobonetRequest, RobonetStatus, DataFile, Tap, Image
 from itertools import chain
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, HttpResponseRedirect
 from astropy.time import Time
 from datetime import datetime, timedelta
 from bokeh.plotting import figure
 from bokeh.resources import CDN
 from bokeh.embed import components
 import sys, os
-
+from .forms import OperatorForm, TelescopeForm, InstrumentForm, FilterForm 
+from .forms import EventForm, EventNameForm, SingleModelForm, BinaryModelForm, RobonetReductionForm
+from .forms import RobonetRequestForm, RobonetStatusForm, DataFileForm, TapForm, ImageForm
 #sys.path.append('/home/Tux/ytsapras/robonet_site/scripts/')
 sys.path.append(os.getcwd()+'/scripts/')
 from plotter import *
@@ -92,6 +96,42 @@ def simple(request):
    return response
 
 ##############################################################################################################
+@require_http_methods(['GET', 'POST'])
+def add_operator(request):
+   """
+   Adds a new operator name in the database.
+   This can be the survey name or the name of the follow-up group.
+   
+   Keyword arguments:
+   operator_name -- The operator name 
+                    (string, required)
+   """
+   #try:
+   form = OperatorForm(request.POST or None)
+   if request.POST and form.is_valid():
+      opname = Operator.objects.filter(name=request.POST['name'])
+      if len(opname) == 0:
+         form.save()
+	 return HttpResponse("New Operator successfully added.")
+      else:
+         return HttpResponse("An Operator with that name already exists.")
+   
+   d = {
+      'form': form,
+   }
+   #new_operator = Operator.objects.get_or_create(name=operator)
+   #new_operator.name = request.POST.get(operator)
+   #new_operator.save()
+   #if new_operator[-1] == False:
+   #   successful = False
+   #else:
+   #   successful = True
+   #except:
+   #   raise Http404("Encountered a problem while loading. Please contact the site administrator.")
+   #return HttpResponse("successful")
+   return render(request, 'add_operator.html', d)
+
+##############################################################################################################
 def download_lc(request, event_id):
    """
    Will serve a tar file of the ARTEMiS lightcurves for this event for download.
@@ -129,8 +169,11 @@ def obs_log(request, date):
    Will display the observation log for the given date.
    Date must be provided in the format: YYYYMMDD
    """
-   date_min = datetime(int(date[0:4]), int(date[4:6]), int(date[6:8]))
-   date_max = date_min + timedelta(hours=24)
+   try:
+      date_min = datetime(int(date[0:4]), int(date[4:6]), int(date[6:8]))
+      date_max = date_min + timedelta(hours=24)
+   except:
+      raise Http404("Encountered an error: Date must be provided in the format: YYYYMMDD")
    try:
       images = Image.objects.filter(date_obs__range=(date_min, date_max))
       filenames = [k.image_name for k in images]

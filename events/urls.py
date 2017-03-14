@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from . import views
 
 urlpatterns = [
+    url(r'^add_operator/$', views.add_operator, name='add_operator'),
     url(r'^simple.png$', views.simple),
     url(r'^test/$', views.test, name='test'),
     url(r'^(?P<event_id>[0-9]+)', views.show_event, name='show_event'),
