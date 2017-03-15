@@ -16,4 +16,4 @@ COPY requirements.txt /var/www/html/
 RUN pip install -r /var/www/html/requirements.txt \
     && rm -rf ~/.cache ~/.pip
 
-COPY robonet_site /var/www/html/.
+COPY . /var/www/robonetsite/
