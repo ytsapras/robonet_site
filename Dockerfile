@@ -11,9 +11,12 @@ RUN yum -y install epel-release \
 	&& yum -y update \
 	&& yum -y clean all
 
-# install requirements
+# install Python requirements
 COPY requirements.txt /var/www/html/
 RUN pip install -r /var/www/html/requirements.txt \
     && rm -rf ~/.cache ~/.pip
+
+# operating system configuration
+COPY docker/ /
 
 COPY . /var/www/robonetsite/
