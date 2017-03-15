@@ -7,7 +7,7 @@ ENTRYPOINT ["/init"]
 
 # install packages
 RUN yum -y install epel-release \ 
-        && yum -y install nginx python-pip supervisor uwsgi-plugin-python MySQL-python \
+        && yum -y install nginx python-pip supervisor uwsgi-plugin-python MySQL-python tkinter \
 	&& yum -y update \
 	&& yum -y clean all
 
