@@ -3,6 +3,9 @@
 export PYTHONPATH="/var/www/robonetsite"
 export DJANGO_SETTINGS_MODULE="robonet_site.settings"
 
+# create directory for static files
+mkdir -p /var/www/robonetsite/static
+
 # collect static files
 python /var/www/robonetsite/manage.py collectstatic --noinput
 
