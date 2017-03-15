@@ -64,7 +64,6 @@ def simple(request):
    ndata = 30
    event_id = 33
    from pylab import figure, rcParams, title, legend, savefig, close, axes, pie, get_current_fig_manager
-   from local_conf import get_conf
    from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
    import os
    fig = figure(figsize=[10, 10])
@@ -314,7 +313,6 @@ def list_all(request):
 
 ##############################################################################################################
 def show_event(request, event_id):
-   from local_conf import get_conf
    site_url = get_conf('site_url')
    """
    Will set up a single event page and display the lightcurve.
@@ -431,7 +429,6 @@ def event_obs_details(request, event_id):
    # arguments are [telescopes], [colors], [number_observations], ndata, event_id
    def pie_chart(tels, cols, num_obs, ndata, event_id):
       from pylab import figure, rcParams, title, legend, savefig, close, axes, pie
-      from local_conf import get_conf
       from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
       import os
       fig = figure(num=11, figsize=[10, 10])
