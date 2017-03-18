@@ -57,9 +57,9 @@ def parse_args(script_config):
 def read_config():
     """Function to read the XML configuration file for Obs_Control"""
     
-    fconfig = 'survey_config.xml'
-    lconfigsdir = '.survey'
-    (iexec, script_config) = config_parser.readxmlconfig(fconfig,lconfigsdir)
+    config_file_path = path.join(path.expanduser('~'),
+                                 '.robonet_site', 'obscontrol_config.xml')
+    script_config = config_parser.read_config(config_file_path)
     return script_config
 
 def rm_duplicate_obs(obs_requests, active_obs):
