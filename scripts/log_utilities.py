@@ -12,6 +12,7 @@ Created on Wed Feb 17 00:00:05 2016
 import logging
 from os import path
 from astropy.time import Time
+from datetime import datetime
 import glob
 
 def start_day_log( config, log_name, console=False ):
@@ -68,3 +69,33 @@ def end_day_log( log ):
     log.info( 'Processing complete\n' )
     logging.shutdown()
 
+def lock( script_config, state, log ):
+    """Method to create and release this script's lockfile and also to determine
+    whether another lock file exists which may prevent this script operating.    
+    """
+
+    lock_file = path.join( script_config['logdir'], 'obscontrol.lock' )    
+
+    if state == 'lock':
+        lock = open(lock_file,'w')
+        ts = datetime.utcnow()
+        lock.write( ts.strftime("%Y-%m-%dT%H:%M:%S") )
+        lock.close()
+        log.info('Created lock file')
+    
+    elif state == 'unlock':
+        if path.isfile(lock_file) == True:
+            remove( lock_file )
+            log.info('Removed lock file')
+    
+    elif state == 'check':
+        lock_list = [ 'obscontrol.lock' ]
+        for lock_name in lock_list:
+            lock_file = path.join( config['logdir'],lock_name )
+            if path.isfile( lock_file ) == True:
+                log.info('Clashing lock file encountered ( ' + lock_name + \
+                                ' ), halting')
+                log_utilities.end_day_log( log )
+                exit()
+        log.info('Checked for clashing locks; found none')
+      
