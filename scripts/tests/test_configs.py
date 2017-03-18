@@ -22,6 +22,16 @@ class TestConfigParser(unittest.TestCase):
         config_file_path = path.join('../../configs','obscontrol_config.xml')
         config = config_parser.read_config(config_file_path)
         self.assertTrue(len(config) > 0)
+    
+    def test_config_params(self):
+        """Test that example parameters are being correctly read from 
+        the XML config file"""
+        
+        config_file_path = path.join('../../configs','obscontrol_config.xml')
+        config = config_parser.read_config(config_file_path)
+        
+        self.assertIn('logdir',config.keys())
+
 
 if __name__ == '__main__':
     unittest.main()

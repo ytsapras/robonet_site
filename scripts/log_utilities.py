@@ -10,7 +10,8 @@ Created on Wed Feb 17 00:00:05 2016
 #############################################################################
 
 import logging
-from os import path
+from os import path, remove
+from sys import exit
 from astropy.time import Time
 from datetime import datetime
 import glob
@@ -24,15 +25,7 @@ def start_day_log( config, log_name, console=False ):
     all entries.  
     """
 
-    ts = Time.now()    
-    ts = ts.iso.split()[0]
-    
-    log_file = path.join( config['log_directory'], \
-                    config['log_root_name'] + '_' + ts + '.log' )
-
-    # Look for previous logs and rollover the date if the latest log
-    # isn't from the curent date:
-
+    log_file = get_log_path( config )
 
     # To capture the logging stream from the whole script, create
     # a log instance together with a console handler.  
@@ -61,7 +54,18 @@ def start_day_log( config, log_name, console=False ):
     
     log.info( '\n------------------------------------------------------\n')
     return log
+
+def get_log_path( config ):
+    """Function to determine the path and name of the log file, giving it
+    a date-stamp in UTC"""
     
+    ts = Time.now()    
+    ts = ts.iso.split()[0]
+    
+    log_file = path.join( config['log_directory'], \
+                    config['log_root_name'] + '_' + ts + '.log' )
+    return log_file
+
 def end_day_log( log ):
     """Function to cleanly shutdown logging functions with last timestamped
     entry"""
@@ -69,12 +73,12 @@ def end_day_log( log ):
     log.info( 'Processing complete\n' )
     logging.shutdown()
 
-def lock( script_config, state, log ):
+def lock( config, state, log ):
     """Method to create and release this script's lockfile and also to determine
     whether another lock file exists which may prevent this script operating.    
     """
 
-    lock_file = path.join( script_config['logdir'], 'obscontrol.lock' )    
+    lock_file = path.join( config['log_directory'], config['lock_file'] )    
 
     if state == 'lock':
         lock = open(lock_file,'w')
@@ -82,20 +86,24 @@ def lock( script_config, state, log ):
         lock.write( ts.strftime("%Y-%m-%dT%H:%M:%S") )
         lock.close()
         log.info('Created lock file')
-    
+        return 'lock_created'
+        
     elif state == 'unlock':
         if path.isfile(lock_file) == True:
             remove( lock_file )
             log.info('Removed lock file')
-    
+            return 'lock_removed'
+            
     elif state == 'check':
-        lock_list = [ 'obscontrol.lock' ]
+        lock_list = [ config['lock_file'] ]
         for lock_name in lock_list:
-            lock_file = path.join( config['logdir'],lock_name )
+            lock_file = path.join( config['log_directory'],lock_name )
             if path.isfile( lock_file ) == True:
                 log.info('Clashing lock file encountered ( ' + lock_name + \
                                 ' ), halting')
-                log_utilities.end_day_log( log )
-                exit()
+                end_day_log( log )
+                return 'clashing_lock'
+                
         log.info('Checked for clashing locks; found none')
-      
+        return 'unlocked'
+        
