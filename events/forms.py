@@ -4,7 +4,7 @@ from django import forms
 class OperatorForm(forms.ModelForm):
    class Meta:
       model = Operator
-      fields = ['name']
+      fields = '__all__'
 
 class TelescopeForm(forms.ModelForm):
    class Meta:

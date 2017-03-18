@@ -4,7 +4,7 @@ import glob
 from bokeh.plotting import figure, show, output_file, gridplot, vplot
 from bokeh.resources import CDN
 from bokeh.embed import components
-from bokeh.models import PrintfTickFormatter, HoverTool, BoxZoomTool, PanTool,WheelZoomTool, PreviewSaveTool, ResetTool
+from bokeh.models import PrintfTickFormatter, HoverTool, BoxZoomTool, PanTool,WheelZoomTool, ResetTool
 from local_conf import get_conf
 
 artemis = get_conf('artemis')

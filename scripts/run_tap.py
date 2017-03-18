@@ -7,28 +7,6 @@
 #################################################################################
 
 # Import dependencies
-import os
-import sys
-from local_conf import get_conf
-robonet_site = get_conf('robonet_site')
-sys.path.append(robonet_site)
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'robonet_site.settings')
-from django.core import management
-from django.conf import settings
-from django.utils import timezone
-from django import setup
-import time
-from numpy import linspace,arange
-from datetime import datetime, timedelta
-from astropy import units as u
-from astropy.time import Time
-from astropy.coordinates import  SkyCoord, EarthLocation, AltAz, ICRS
-from astropy.coordinates import get_sun
-from scipy.interpolate import interp1d
-setup()
-
-from events.models import Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel 
-from events.models import RobonetReduction, RobonetRequest, RobonetStatus, DataFile, Tap, Image
 from update_db_2 import *
 import warnings
 warnings.filterwarnings('ignore',module='astropy.coordinates')

@@ -1,8 +1,8 @@
 from django.shortcuts import render, get_object_or_404
 from django.conf import settings
 from django.views.decorators.http import require_http_methods
-from .models import Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
-from .models import RobonetReduction, RobonetRequest, RobonetStatus, DataFile, Tap, Image
+from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
+from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from itertools import chain
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from astropy.time import Time
@@ -11,14 +11,17 @@ from bokeh.plotting import figure
 from bokeh.resources import CDN
 from bokeh.embed import components
 import sys, os
-from .forms import OperatorForm, TelescopeForm, InstrumentForm, FilterForm 
-from .forms import EventForm, EventNameForm, SingleModelForm, BinaryModelForm, RobonetReductionForm
-from .forms import RobonetRequestForm, RobonetStatusForm, DataFileForm, TapForm, ImageForm
+#from events.forms import OperatorForm, TelescopeForm, InstrumentForm, FilterForm 
+#from events.forms import EventForm, EventNameForm, SingleModelForm, BinaryModelForm, RobonetReductionForm
+#from events.forms import RobonetRequestForm, RobonetStatusForm, DataFileForm, TapForm, ImageForm
 from scripts.plotter import *
 from scripts.local_conf import get_conf
+from scripts.blgvis import *
 
 # Path to ARTEMiS files
 artemis_col = get_conf('artemis_cols')
+robonet_site = get_conf('robonet_site')
+sys.path.append(robonet_site)
 
 # Color & site definitions for plotting
 colors = artemis_col+"colours.sig.cfg"
@@ -93,40 +96,40 @@ def simple(request):
    return response
 
 ##############################################################################################################
-@require_http_methods(['GET', 'POST'])
-def add_operator(request):
-   """
-   Adds a new operator name in the database.
-   This can be the survey name or the name of the follow-up group.
-   
-   Keyword arguments:
-   operator_name -- The operator name 
-                    (string, required)
-   """
-   #try:
-   form = OperatorForm(request.POST or None)
-   if request.POST and form.is_valid():
-      opname = Operator.objects.filter(name=request.POST['name'])
-      if len(opname) == 0:
-         form.save()
-	 return HttpResponse("New Operator successfully added.")
-      else:
-         return HttpResponse("An Operator with that name already exists.")
-   
-   d = {
-      'form': form,
-   }
-   #new_operator = Operator.objects.get_or_create(name=operator)
-   #new_operator.name = request.POST.get(operator)
-   #new_operator.save()
-   #if new_operator[-1] == False:
-   #   successful = False
-   #else:
-   #   successful = True
-   #except:
-   #   raise Http404("Encountered a problem while loading. Please contact the site administrator.")
-   #return HttpResponse("successful")
-   return render(request, 'add_operator.html', d)
+#@require_http_methods(['GET', 'POST'])
+#def add_operator(request):
+#   """
+#   Adds a new operator name in the database.
+#   This can be the survey name or the name of the follow-up group.
+#   
+#   Keyword arguments:
+#   operator_name -- The operator name 
+#                    (string, required)
+#   """
+#   #try:
+#   form = OperatorForm(request.POST or None)
+#   if request.POST and form.is_valid():
+#      opname = Operator.objects.filter(name=request.POST['name'])
+#      if len(opname) == 0:
+#         form.save()
+#	 return HttpResponse("New Operator successfully added.")
+#      else:
+#         return HttpResponse("An Operator with that name already exists.")
+#   
+#   d = {
+#       'form': form,
+#       }
+#   #new_operator = Operator.objects.get_or_create(name=operator)
+#   #new_operator.name = request.POST.get(operator)
+#   #new_operator.save()
+#   #if new_operator[-1] == False:
+#   #   successful = False
+#   #else:
+#   #   successful = True
+#   #except:
+#   #   raise Http404("Encountered a problem while loading. Please contact the site administrator.")
+#   #return HttpResponse("successful")
+#   return render(request, 'add_operator.html', d)
 
 ##############################################################################################################
 def download_lc(request, event_id):
@@ -206,7 +209,6 @@ def tap(request):
    """
    Will load the TAP page.
    """
-   from blgvis import *
    try:
       time_now = datetime.now()
       time_now_jd = Time(time_now).jd

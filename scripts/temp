@@ -1,6 +1,0 @@
-for i in tel_names:
-   data=np.loadtxt(i)
-   if len(data) > 2:
-      print data
-      print i.split('/')[-1]
-

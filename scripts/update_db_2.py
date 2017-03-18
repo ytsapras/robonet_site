@@ -20,8 +20,8 @@ from django import setup
 from datetime import datetime, timedelta
 setup()
 
-from events.models import Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel 
-from events.models import RobonetReduction, RobonetRequest, RobonetStatus, DataFile, Tap, Image
+from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
+from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 
 ##################################################################################
 def add_operator(operator_name):
@@ -33,6 +33,8 @@ def add_operator(operator_name):
    operator_name -- The operator name 
                     (string, required)
    """
+   # Make it upper-case - all Operators are upper case
+   operator_name = operator_name.upper()
    new_operator = Operator.objects.get_or_create(name=operator_name)
    if new_operator[-1] == False:
       successful = False
@@ -134,19 +136,46 @@ def add_filter(instrument, filter_name):
    return successful
 
 ##################################################################################
-def add_event(ev_ra, ev_dec, bright_neighbour = False, status = 'NF', field = -1, anomaly_rank = -1.0):
+def add_field(field_name = 'Outside ROMEREA footprint', field_ra = '', field_dec = ''):
+   """
+   Adds a new field name in the database.
+   
+   Keyword arguments:
+   field_name -- The field name 
+          (string, optional, default='Outside ROMEREA footprint')
+   field_ra -- Field RA. 
+        	   e.g. "17:54:33.58"
+          (string, optional, default='')
+   field_dec -- Field DEC.
+        	   e.g. "-30:31:02.02"
+          (string, optional, default='')
+   """
+   new_field = Field.objects.filter(name=field_name)
+   if len(new_field) == 1:
+      successful = False
+   else:
+      add_new = Field(name=field_name, field_ra=field_ra, field_dec=field_dec)
+      add_new.save()
+      successful = True
+   return successful
+
+##################################################################################
+def add_event(field_name, operator_name, ev_ra, ev_dec, status = 'NF', 
+              anomaly_rank = -1.0, year = str(datetime.now().year)):
    """
    Add a new event to the database. Will return successful = True/False
    and either the coordinates of the object itself or those of the closest 
    matching object.
    
    Keyword arguments:
+   field_name -- Field name 
+           (string, required)
+   operator -- Operator name
+           (string, required)
    ev_ra -- Event RA. (string, required)
         	   e.g. "17:54:33.58"
    ev_dec -- Event DEC. (string, required)
         	   e.g. "-30:31:02.02"
-   bright_neighbour -- Is there a bright neighbour? (boolean, optional, 
-                                                     default=False)
    status -- Events status (string, optional, default='NF')
                       Available choices: 
 		       'NF':'Not in footprint'
@@ -154,21 +183,37 @@ def add_event(ev_ra, ev_dec, bright_neighbour = False, status = 'NF', field = -1
 	               'MO':'monitor'
   		       'AN':'anomaly'
   		       'EX':'expired'
-   field -- Which ROME field the event belongs to. -1 for none, or 1 to N (N=20)
-                                                 (integer, optional, default=-1)
    anomaly_rank -- The relative importance of the anomaly. -1 for no anomaly, or 
                                                        a positive decimal number. 
 		                                 (float, optional, default=-1.0)
+   year -- Year of discovery. (string, optional, default=<current year>)
    """
    ra, dec = ev_ra, ev_dec
+   # Check that requested field name is a known field
+   unknown_field = 0
+   try:
+      field_id = Field.objects.get(name=field_name).ev_field_id
+      field = Field.objects.get(id=field_id)
+   except:
+      print 'Unknown Field: %s' % field_name
+      unknown_field = 1
+   # Check that requested operator name is a known operator
+   unknown_operator = 0
+   try:
+      operator_id = Operator.objects.get(name=operator_name).ev_operator_id
+      operator = Operator.objects.get(id=ev_operator_id)
+   except:
+      print 'Unknown Operator: %s' % operator_name
+      unknown_operator = 1
    # Check whether an event already exists at these coordinates
    coordinates_known = coords_exist(ev_ra, ev_dec)
-   if (coordinates_known[0]==False):
+   if (coordinates_known[0]==False and unknown_operator==0 and unknown_field==0):
       try:
-         add_new = Event(ev_ra=ev_ra, ev_dec=ev_dec, 
+         add_new = Event(field=field, operator=operator, ev_ra=ev_ra, ev_dec=ev_dec, 
                          bright_neighbour=bright_neighbour,
-		         status=status, field=field, 
-			 anomaly_rank=anomaly_rank)
+		         status=status, 
+			 anomaly_rank=anomaly_rank,
+			 year = year)
          add_new.save()
          successful = True
       except:
@@ -179,7 +224,7 @@ def add_event(ev_ra, ev_dec, bright_neighbour = False, status = 'NF', field = -1
    return successful, ra, dec
 
 ##################################################################################
-def add_event_name(event, operator, name):
+def add_event_name(field, event, operator, name):
    """
    Add a new event name to the database. Multiple event names can refer to a
    single event at specific coordinates.
@@ -274,7 +319,7 @@ def coords_exist(check_ra, check_dec):
 ###################################################################################
 def add_single_lens(event_name, Tmax, e_Tmax, tau, e_tau, umin, e_umin, last_updated, 
                     modeler='', rho=None, e_rho=None, pi_e_n=None, e_pi_e_n=None, 
-		    pi_e_e=None, e_pi_e_e=None):
+		    pi_e_e=None, e_pi_e_e=None, tap_omega=None):
    """
    Add Single Lens model parameters
    to the database.
@@ -312,6 +357,8 @@ def add_single_lens(event_name, Tmax, e_Tmax, tau, e_tau, umin, e_umin, last_upd
               (string, optional, default='')
    last_updated -- datetime of last update. (datetime, required)
         	 e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
+   tap_omega -- Omega value to be updated by TAP. 
+              (float, optional, default=None)
    """
    if check_exists(event_name)==True:
       # Get event identifier
@@ -323,7 +370,7 @@ def add_single_lens(event_name, Tmax, e_Tmax, tau, e_tau, umin, e_umin, last_upd
         		       e_tau=e_tau, umin=umin, e_umin=e_umin, rho=rho,
         		       e_rho=e_rho, pi_e_n=pi_e_n, e_pi_e_n=e_pi_e_n, 
         		       pi_e_e=pi_e_e, e_pi_e_e=e_pi_e_e, modeler=modeler,
-        		       last_updated=last_updated)
+        		       last_updated=last_updated, tap_omega=tap_omega)
          add_new.save()
          successful = True
       except:
@@ -583,7 +630,7 @@ def add_reduction(event_name, lc_file, timestamp, ref_image, target_found=False,
       event_id = EventName.objects.get(name=event_name).event_id
       event = Event.objects.get(id=event_id)
       try:
-         add_new = RobonetReduction(event=event, lc_file=lc_file,
+         add_new = EventReduction(event=event, lc_file=lc_file,
                            timestamp=timestamp, target_found=target_found, ref_image=ref_image,
 			   ron=ron, gain=gain, oscanx1=oscanx1,oscanx2=oscanx2,
 			   oscany1=oscany1, oscany2=oscany2, imagex1=imagex1,
@@ -611,22 +658,20 @@ def add_reduction(event_name, lc_file, timestamp, ref_image, target_found=False,
    return successful
 
 ################################################################################################################
-def add_request(event_name, t_sample, exptime, n_exp=1, timestamp=timezone.now(),
+def add_request(field_name, t_sample, exptime, n_exp=1, timestamp=timezone.now(),
                 time_expire=timezone.now()+timedelta(hours=24), pfrm_on = False,
-                onem_on=False, twom_on=False, request_type='M', which_filter='',
+                onem_on=False, twom_on=False, request_type='L', which_filter='',
 		which_inst='', grp_id='', track_id='', req_id=''):
    """
-   Add robonet observing request to the database.
+   Add observing request to the database.
    
    Keyword arguments:
-   event_name -- The event name. 
+   field_name -- The field name. 
                  (string, required)
-        	 e.g. "OGLE-2016-BLG-1234"
+        	 e.g. 'ROME-FIELD-17'
    t_sample -- Sampling interval to use. (in minutes) 
               (float, required)
    exptime -- Exposure time to use. (in seconds) (integer, required) 
-   n_exp -- Number of exposures to obtain.
-            (integer, optional, default=1)
    timestamp -- The request submission time.
                 (datetime, optional, default=timezone.now())
         	e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
@@ -639,8 +684,10 @@ def add_request(event_name, t_sample, exptime, n_exp=1, timestamp=timezone.now()
    twom_on -- Observe on 2m network? 
               (boolean, optional, default=False)
    request_type -- Observation request class 
-                   (string, optional, default='M')
-                   ('T':'ToO','M':'Monitor', 'S':'Single')
+                   (string, optional, default='L')
+                    'A':'REA High - 20 min cadence',
+		    'M':'REA Low - 60 min cadence', 
+		    'L':'ROME Standard - every 7 hours'
    which_filter -- Filter identifier string. 
                    (string, optional, default='')
    which_inst -- Instrument identifier string. 
@@ -651,18 +698,20 @@ def add_request(event_name, t_sample, exptime, n_exp=1, timestamp=timezone.now()
               (string, optional, default='')
    req_id -- Request ID  
             (string, optional, default='')
+   n_exp -- Number of exposures to obtain.
+            (integer, optional, default=1)
    """
-   if check_exists(event_name)==True:
-      # Get event identifier
-      event_id = EventName.objects.get(name=event_name).event_id
-      event = Event.objects.get(id=event_id)
+   if Field.objects.filter(name=field_name).exists()==True:
+      # Get field identifier
+      field = Field.objects.get(name=field_name)
+      field_object = Field.objects.get(id=field.id)
       try:
-         add_new = RobonetRequest(event=event, t_sample=t_sample, exptime=exptime, 
-                               n_exp=n_exp, timestamp=timestamp, time_expire=time_expire,
+         add_new = ObsRequest(field=field_object, t_sample=t_sample, exptime=exptime, 
+                               timestamp=timestamp, time_expire=time_expire,
                                pfrm_on= pfrm_on, onem_on=onem_on, twom_on=twom_on, 
 		               request_type=request_type, which_filter=which_filter,
 			       which_inst=which_inst, grp_id=grp_id, track_id=track_id,
-			       req_id=req_id)
+			       req_id=req_id, n_exp=n_exp)
          add_new.save()
          successful = True
       except:
@@ -675,7 +724,7 @@ def add_request(event_name, t_sample, exptime, n_exp=1, timestamp=timezone.now()
 def add_status(event_name, timestamp=timezone.now(), status='NF', comment='', 
                updated_by='', rec_cad=0, rec_texp=0, rec_nexp=0, rec_telclass=''):
    """
-   Add robonet status to the database.
+   Add event status to the database.
    
    Keyword arguments:
    event_name -- The event name. 
@@ -705,7 +754,7 @@ def add_status(event_name, timestamp=timezone.now(), status='NF', comment='',
       event_id = EventName.objects.get(name=event_name).event_id
       event = Event.objects.get(id=event_id)
       try:
-         add_new = RobonetStatus(event=event, timestamp=timestamp, status=status, 
+         add_new = EventStatus(event=event, timestamp=timestamp, status=status, 
 	                         comment=comment, updated_by=updated_by, rec_cad=rec_cad,
 				 rec_texp=rec_texp, rec_nexp=rec_nexp, 
 				 rec_telclass=rec_telclass)
@@ -737,8 +786,6 @@ def add_datafile(event_name, datafile, last_upd, last_obs, last_mag, tel, ndata,
                (float, required)
    tel -- Telescope identifier. 
          (string, required)
-   ndata -- Number of data points. 
-         (integer, required)
    inst -- Instrument used for the observations.
            (string, optional, default='')
    filt -- Filter used for the observations.
@@ -747,6 +794,8 @@ def add_datafile(event_name, datafile, last_upd, last_obs, last_mag, tel, ndata,
                (float, optional, default=22.0)
    g -- g blend parameter from ARTEMiS .align file.
         (float, optional, default=0.0)
+   ndata -- Number of data points. 
+         (integer, required)
    """
    # Check if the event already exists in the database.
    if check_exists(event_name)==True:
@@ -756,8 +805,8 @@ def add_datafile(event_name, datafile, last_upd, last_obs, last_mag, tel, ndata,
       try:
          add_new = DataFile(event=event, datafile=datafile, last_upd=last_upd, 
 	                    last_obs=last_obs, last_mag=last_mag, tel=tel, 
-			    ndata=ndata, inst=inst, filt=filt, baseline=baseline, 
-			    g=g)
+			    inst=inst, filt=filt, baseline=baseline, 
+			    g=g, ndata=ndata)
 	 add_new.save()
 	 successful = True
       except:
@@ -768,8 +817,8 @@ def add_datafile(event_name, datafile, last_upd, last_obs, last_mag, tel, ndata,
 
 ###################################################################################
 def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0, nexp=0,
-            telclass='', imag=22.0, omega=None, err_omega=None, peak_omega=None, blended=False,
-	    visibility=None, cost1m=None, cadence=None):
+            telclass='1m', imag=22.0, omega=None, err_omega=None, peak_omega=None, blended=False,
+	    visibility=None, cost1m=None, passband='SDSS-i'):
    """
    Add a TAP entry to the database.
    Assumes TAP has already evaluated the necessary parameters.
@@ -790,7 +839,7 @@ def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0,
    nexp -- Recommended number of exposures.
            (integer, optional, default=0)
    telclass --  Recommended telescope aperture class.
-                (string, optional, default='')
+                (string, optional, default='1m')
    imag -- Current I magnitude.
            (float, optional, default=22.0)
    omega -- omega_s.
@@ -805,8 +854,8 @@ def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0,
                  (float, optional, default=None)
    cost1m -- Estimated observational cost per night for the 1m network (in minutes)
                  (float, optional, default=None)
-   cadence -- Survey field cadence (in average number of visits per night)
-                 (float, optional, default=None)
+   passband -- Passband for which the priority function has been evaluated
+                 (string, optional, default='SDSS-i')
    """
    # Check if the event already exists in the database.
    if check_exists(event_name)==True:
@@ -817,7 +866,7 @@ def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0,
          add_new = Tap(event=event, timestamp=timestamp, priority=priority, tsamp=tsamp, 
 	               texp=texp, nexp=nexp, telclass=telclass, imag=imag, omega=omega, 
 		       err_omega=err_omega, peak_omega=peak_omega, blended=blended,
-		       visibility=visibility, cost1m=cost1m, cadence=cadence)
+		       visibility=visibility, cost1m=cost1m, passband=passband)
 	 add_new.save()
 	 successful = True
       except:
@@ -827,18 +876,16 @@ def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0,
    return successful
 
 ###################################################################################
-def add_image(event_name, image_name, date_obs, timestamp=timezone.now(), tel='', inst='',
+def add_image(field_name, image_name, date_obs, timestamp=timezone.now(), tel='', inst='',
               filt='', grp_id='', track_id='', req_id='', airmass=None, avg_fwhm=None, 
 	      avg_sky=None, avg_sigsky=None, moon_sep=None, moon_phase=None, moon_up=False,
-	      elongation=None, nstars=None, ztemp=None, quality='', rome_field=None, 
-	      target_hjd=None, target_mag=None, target_magerr=None, target_skybg=None, 
-	      target_fwhm=None):
+	      elongation=None, nstars=None, ztemp=None, quality=''):
    """
    Add or update an image entry to the database. If the image already exists, it only allows 
    the user to set the target_* parameters.
    
    Keyword arguments:
-   event_name -- The event name. 
+   field_name -- The field name. 
                 (string, required)
    image_name -- The name of the image.
                 (string, required)
@@ -882,52 +929,22 @@ def add_image(event_name, image_name, date_obs, timestamp=timezone.now(), tel=''
                  (float, optional, default=None)   
    quality -- Image quality description.
                  (string, optional, default='')
-   rome_field -- ROME field identifier
-                 (integet, optional, default=None)
-   # Parameters to be completed after target has been identified
-   target_hjd -- Corrected HJD of image for target location.
-                 (float, optional, default=None)
-   target_mag -- Target magnitude.
-                 (float, optional, default=None)
-   target_magerr -- Target magnitude uncertainty.
-                  (float, optional, default=None)
-   target_skybg -- Target sky background.
-                  (float, optional, default=None)
-   target_fwhm -- Target FWHM.
-                 (float, optional, default=None)
    """
-   # Check if the event already exists in the database.
-   if check_exists(event_name)==True:
-      # Get event identifier
-      event_id = EventName.objects.get(name=event_name).event_id
-      event = Event.objects.get(id=event_id)
-      # If the image exists then only update the existing entry
-      # for the target parameters once it's been identified
-      if Image.objects.filter(image_name=image_name).exists():
-         known_image = Image.objects.get(image_name=image_name)
-	 try:
-	    known_image.target_hjd = target_hjd
-	    known_image.target_mag = target_mag
-	    known_image.target_magerr = target_magerr
-	    known_image.target_skybg = target_skybg
-	    known_image.target_fwhm = target_fwhm
-	    known_image.save()
-	    successful = True
-	 except:
-	    successful = False
-      else:
-      	 try:
-      	    add_new = Image(event=event, image_name=image_name, date_obs=date_obs, timestamp=timestamp, 
-	 		  tel=tel, inst=inst, filt=filt, grp_id=grp_id, track_id=track_id, req_id=req_id, 
-	 		  airmass=airmass, avg_fwhm=avg_fwhm, avg_sky=avg_sky, avg_sigsky=avg_sigsky, 
-         		  moon_sep=moon_sep, moon_phase=moon_phase, moon_up=moon_up, elongation=elongation,
-	 		  nstars=nstars, ztemp=ztemp, quality=quality, rome_field=rome_field, 
-			  target_hjd=target_hjd, target_mag=target_mag, target_magerr=target_magerr, 
-			  target_skybg=target_skybg, target_fwhm=target_fwhm)
-	    add_new.save()
-	    successful = True
-      	 except:
-      	    successful = False
+   # Check if the field already exists in the database.
+   if Field.objects.filter(name=field_name).exists()==True:
+      # Get field identifier
+      field = Field.objects.get(name=field_name)
+      field_object = Field.objects.get(id=field.id)
+      try:
+      	 add_new = Image(field=field_object, image_name=image_name, date_obs=date_obs, timestamp=timestamp, 
+	 	         tel=tel, inst=inst, filt=filt, grp_id=grp_id, track_id=track_id, req_id=req_id, 
+	 		 airmass=airmass, avg_fwhm=avg_fwhm, avg_sky=avg_sky, avg_sigsky=avg_sigsky, 
+         		 moon_sep=moon_sep, moon_phase=moon_phase, moon_up=moon_up, elongation=elongation,
+	 		 nstars=nstars, ztemp=ztemp, quality=quality)
+	 add_new.save()
+	 successful = True
+      except:
+      	 successful = False
    else:
       successful = False
    return successful
@@ -961,7 +978,7 @@ def run_test2():
   	 col_dict[key] = val
    
    # Populate Operator database
-   for s in ['OGLE', 'MOA', 'KMTNet', 'PLANET', 'RomeRea', 'uFUN', 'Other']:
+   for s in ['OGLE', 'MOA', 'KMTNET', 'PLANET', 'ROMEREA', 'MICROFUN', 'OTHER']:
       add_operator(s)
    
    # Populate Telescope database
@@ -971,7 +988,7 @@ def run_test2():
       print tel_name
       if ('LCOGT' in tel_name) or ('Liverpool' in tel_name) or ('Faulkes' in tel_name):
          # Get the appropriate pk for RoboNet
-         operator = Operator.objects.get(name='RomeRea')
+         operator = Operator.objects.get(name='ROMEREA')
 	 if ('SSO' in tel_name) or ('Faulkes South' in tel_name):
 	    longitude = -31.27
 	    latitude = 149.07
@@ -1015,7 +1032,7 @@ def run_test2():
 	 altitude = 1029.0
 	 site = 'MJUO'
       else:
-         operator = Operator.objects.get(name='Other')
+         operator = Operator.objects.get(name='OTHER')
 	 longitude = None
 	 latitude = None
 	 altitude = None
@@ -1045,42 +1062,42 @@ def run_test2():
 
    telescope = Telescope.objects.get(name='LCOGT SSO A 1m')
    inst = 'fl12'
-   pixscale = 0.387
+   pixscale = 0.389
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
 
    telescope = Telescope.objects.get(name='LCOGT SSO B 1m')
    inst = 'fl11'
-   pixscale = 0.387
+   pixscale = 0.389
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
 
    telescope = Telescope.objects.get(name='LCOGT CTIO A 1m')
    inst = 'fl15'
-   pixscale = 0.387
+   pixscale = 0.389
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
      
    telescope = Telescope.objects.get(name='LCOGT CTIO B 1m')
    inst = 'fl03'
-   pixscale = 0.387
+   pixscale = 0.389
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
 
    telescope = Telescope.objects.get(name='LCOGT CTIO C 1m')
    inst = 'fl04'
-   pixscale = 0.387
+   pixscale = 0.389
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
 
    telescope = Telescope.objects.get(name='LCOGT SAAO A 1m')
    inst = 'fl16'
-   pixscale = 0.387
+   pixscale = 0.389
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
      
    telescope = Telescope.objects.get(name='LCOGT SAAO B 1m')
    inst = 'fl14'
-   pixscale = 0.387
+   pixscale = 0.389
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
 
    telescope = Telescope.objects.get(name='LCOGT SAAO C 1m')
    inst = 'fl06'
-   pixscale = 0.387
+   pixscale = 0.389
    add_instrument(telescope=telescope, instrument_name=inst, pixscale=pixscale)   
 
    telescope = Telescope.objects.get(name='OGLE 1.3m')
@@ -1099,7 +1116,14 @@ def run_test2():
    for i in Instrument.objects.all():
       for j in filters:
          add_filter(instrument=i, filter_name=j)
-
+   
+   # Populate Field database
+   from rome_fields_dict import field_dict
+   for i in field_dict.keys():
+      add_field(field_name=i, field_ra=field_dict[i][2], field_dec=field_dict[i][3])
+   # Add an empty field for outside footprint
+   add_field()
+   
    # Populate Event database with OGLE event coordinates
    # and EventName database with OGLE event names
    from glob import glob
@@ -1119,9 +1143,12 @@ def run_test2():
          guess_status = 'AC'
       else:
          guess_status = 'EX'
-      # generate a random field number between 1 to 20
-      rand_field = np.random.randint(1,20)
-      x = add_event(ev_ra=ev_ra, ev_dec=ev_dec, status=guess_status, field=-1, anomaly_rank = -1.0)
+      # generate a random field
+      rand_field = np.random.choice(field_dict.keys())
+      field_obj = Field.objects.get(name=rand_field)
+      add_event(field_name, operator_name, ev_ra, ev_dec, status = 'NF',
+	  anomaly_rank = -1.0, year = str(datetime.now().year)):
+      x = add_event(field=field_obj, ev_ra=ev_ra, ev_dec=ev_dec, status=guess_status, anomaly_rank = -1.0, year=year)
       #print 'Trying to filter for event ...'
       event = Event.objects.filter(ev_ra=x[1]).filter(ev_dec=x[2])[0]
       operator = Operator.objects.get(name='OGLE')
@@ -1317,13 +1344,13 @@ def run_test2():
    #from datetime import datetime, timedelta
    #import random
    #count = 0
-   #ogle_events_list = EventName.objects.filter(name__contains="OGLE")
-   #for i in ogle_events_list:
-   #   event_name = i.name
+   #field_list = Field.objects.all()
+   #for i in field_list:
+   #   field_name = i.name
    #   t_sample = random.uniform(0.1,24.0)
    #   exptime = random.randint(10,300)
    #   n_exp = random.randint(1,10)
-   #   add_request(event_name, t_sample, exptime, n_exp, timestamp=timezone.now(),
+   #   add_request(field_name, t_sample, exptime, n_exp, timestamp=timezone.now(),
    #	    time_expire=timezone.now()+timedelta(hours=24), pfrm_on=False, 
    #	    onem_on=True, twom_on=False, request_type='M', which_filter='',
    #	    which_inst='', grp_id='', track_id='', req_id='')
