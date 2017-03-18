@@ -6,9 +6,11 @@
     <tr>
        <td bgcolor="#990000"><b style="color: #FFFFCC ">ID:</b></td>
        <td bgcolor="#990000"><b style="color: #FFFFCC ">Known Names:</b></td>
+       <td bgcolor="#990000"><b style="color: #FFFFCC ">Field:</b></td>
        <td bgcolor="#990000"><b style="color: #FFFFCC ">RA:</b></td>
        <td bgcolor="#990000"><b style="color: #FFFFCC ">DEC:</b></td>
-       <td bgcolor="#990000"><b style="color: #FFFFCC ">Bright Neighbour:</b></td>
+       <td bgcolor="#990000"><b style="color: #FFFFCC ">Status:</b></td>
+       <td bgcolor="#990000"><b style="color: #FFFFCC ">Year of Discovery:</b></td>
     </tr>
     <ul>
     {% for row in rows %}
@@ -21,6 +23,8 @@
 	<td>{{ row.2 }} </td>
 	<td>{{ row.3 }} </td>
 	<td>{{ row.4 }} </td>
+	<td>{{ row.5 }} </td>
+	<td>{{ row.6 }} </td>
     </tr>
     {% endfor %}
     </ul>

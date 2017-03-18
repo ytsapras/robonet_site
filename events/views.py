@@ -299,17 +299,18 @@ def list_all(request):
    """
    events = Event.objects.all()
    ev_id = [k.pk for k in events]
+   field = [k.field for k in events]
    ra = [k.ev_ra for k in events]
    dec = [k.ev_dec for k in events]
-   bright_neighbour = [k.bright_neighbour for k in events]
+   status = [k.status for k in events]
+   year_disc = [k.year for k in events]
    names_list = []
    for i in range(len(events)):
       evnm = EventName.objects.filter(event=events[i])
       names = [k.name for k in evnm]
       names_list.append(names)
-   rows = zip(ev_id, names_list, ra, dec, bright_neighbour)
+   rows = zip(ev_id, names_list, field, ra, dec, status, year_disc)
    rows = sorted(rows, key=lambda row: row[1])
-   #context = {'evid': ev_id, 'event_names': names_list, 'ra': ra, 'dec': dec, 'bn': bright_neighbour}
    context = {'rows': rows}
    return render(request, 'events/list_events.html', context)
 
@@ -355,8 +356,8 @@ def show_event(request, event_id):
 	 ev_name = ev_kmt
 	 survey_name = "KMT"
 	 event_number = ev_name.split('-')[-1]
-      #discussion =  "https://microlensing.zah.uni-heidelberg.de/index.php#filter=1&%s&all&%s" % (survey_name, event_number)
-      discussion =  "https://microlensing.zah.uni-heidelberg.de/index.php?page=1&filterSurvey=%s&filterStatus=all&minMag=all&searchById=%s" % (survey_name, event_number)
+      field_id =  Event.objects.get(pk=event_id).field.id
+      field = Field.objects.get(id=field_id).name
       # Get list of all observations and select the one with the most recent time.
       try:
          event = Event.objects.get(id=event_id)
@@ -412,7 +413,7 @@ def show_event(request, event_id):
       except:
          script, div = '', 'Detected empty or corrupt datafile in list of lightcurve files.<br>Plotting disabled.'
       context = {'event_id':event_id, 'event_name':ev_names, 'site_url':site_url,
-                 'ev_ra':ev_ra, 'ev_dec':ev_dec, 'discussion':discussion, 'last_obs':last_obs, 
+                 'ev_ra':ev_ra, 'ev_dec':ev_dec, 'field':field, 'last_obs':last_obs, 
 		 'Tmax':Tmax, 'e_Tmax':e_Tmax, 'tau':tau, 'e_tau':e_tau, 'umin':umin, 
 		 'e_umin':e_umin, 'last_updated':last_updated, 'last_updated_hjd':last_updated_hjd,
 		 'last_obs':last_obs, 'last_obs_hjd':last_obs_hjd, 'status':possible_status[status],

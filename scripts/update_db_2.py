@@ -190,27 +190,26 @@ def add_event(field_name, operator_name, ev_ra, ev_dec, status = 'NF',
    """
    ra, dec = ev_ra, ev_dec
    # Check that requested field name is a known field
-   unknown_field = 0
+   unknown_field = False
    try:
-      field_id = Field.objects.get(name=field_name).ev_field_id
+      field_id = Field.objects.get(name=field_name).id
       field = Field.objects.get(id=field_id)
    except:
-      print 'Unknown Field: %s' % field_name
-      unknown_field = 1
+      print 'Event not added: Unknown Field: %s' % field_name
+      unknown_field = True
    # Check that requested operator name is a known operator
-   unknown_operator = 0
+   unknown_operator = False
    try:
-      operator_id = Operator.objects.get(name=operator_name).ev_operator_id
-      operator = Operator.objects.get(id=ev_operator_id)
+      operator_id = Operator.objects.get(name=operator_name).id
+      operator = Operator.objects.get(id=operator_id)
    except:
-      print 'Unknown Operator: %s' % operator_name
-      unknown_operator = 1
+      print 'Event not added: Unknown Operator: %s' % operator_name
+      unknown_operator = True
    # Check whether an event already exists at these coordinates
    coordinates_known = coords_exist(ev_ra, ev_dec)
-   if (coordinates_known[0]==False and unknown_operator==0 and unknown_field==0):
+   if (coordinates_known[0]==False and unknown_operator==False and unknown_field==False):
       try:
          add_new = Event(field=field, operator=operator, ev_ra=ev_ra, ev_dec=ev_dec, 
-                         bright_neighbour=bright_neighbour,
 		         status=status, 
 			 anomaly_rank=anomaly_rank,
 			 year = year)
@@ -224,7 +223,7 @@ def add_event(field_name, operator_name, ev_ra, ev_dec, status = 'NF',
    return successful, ra, dec
 
 ##################################################################################
-def add_event_name(field, event, operator, name):
+def add_event_name(event, operator, name):
    """
    Add a new event name to the database. Multiple event names can refer to a
    single event at specific coordinates.
@@ -1128,27 +1127,35 @@ def run_test2():
    # and EventName database with OGLE event names
    from glob import glob
    import numpy as np
+   from utilities import sex2decdeg
+   from field_check import romecheck
    ogle_event_list = glob(artemis+'PublishedParameters/'+year+'/OGLE/*.model')
    count = 0
+   operator_name = "OGLE"
    for i in ogle_event_list:
       data = open(i).read().split()
       ev_ra = data[0]
       ev_dec = data[1]
+      # Convert from sexagesimal to decimal degrees
+      ev_ra_deg, ev_dec_deg = sex2decdeg(ev_ra, ev_dec)
       name = data[2].replace('OB'+year[2:],'OGLE-'+year+'-BLG-')
       #print 'Doing '+name
       #print 'Trying to add event ...'
       t = Time(datetime.now())
       tjd = t.jd - 2450000.0
-      if abs(tjd-float(data[3])) >= 1.5*float(data[5]):
+      if abs(tjd-float(data[3])) <= 3.0*float(data[5]):
          guess_status = 'AC'
       else:
          guess_status = 'EX'
-      # generate a random field
-      rand_field = np.random.choice(field_dict.keys())
-      field_obj = Field.objects.get(name=rand_field)
-      add_event(field_name, operator_name, ev_ra, ev_dec, status = 'NF',
-	  anomaly_rank = -1.0, year = str(datetime.now().year)):
-      x = add_event(field=field_obj, ev_ra=ev_ra, ev_dec=ev_dec, status=guess_status, anomaly_rank = -1.0, year=year)
+      # Find field
+      id_field, rate = romecheck(ev_ra_deg, ev_dec_deg)
+      if id_field == -1:
+         field_name = "Outside ROMEREA footprint"
+	 guess_status = 'NF'
+      else:
+         field_name = sorted(field_dict.keys())[id_field]
+      x = add_event(field_name=field_name, operator_name=operator_name, ev_ra=ev_ra, ev_dec=ev_dec, 
+                    status=guess_status, anomaly_rank = -1.0, year=year)
       #print 'Trying to filter for event ...'
       event = Event.objects.filter(ev_ra=x[1]).filter(ev_dec=x[2])[0]
       operator = Operator.objects.get(name='OGLE')
@@ -1162,22 +1169,31 @@ def run_test2():
    from glob import glob
    moa_event_list = glob(artemis+'PublishedParameters/'+year+'/MOA/*.model')
    count = 0
+   operator_name = 'MOA'
    for i in moa_event_list:
       data = open(i).read().split()
       ev_ra = data[0]
       ev_dec = data[1]
+      # Convert from sexagesimal to decimal degrees
+      ev_ra_deg, ev_dec_deg = sex2decdeg(ev_ra, ev_dec)
       name = data[2].replace('KB'+year[2:],'MOA-'+year+'-BLG-')
       #print 'Doing '+name
       #print 'Trying to add event ...'
       t = Time(datetime.now())
       tjd = t.jd - 2450000.0
-      if abs(tjd-float(data[3])) >= 1.5*float(data[5]):
+      if abs(tjd-float(data[3])) <= 3.0*float(data[5]):
          guess_status = 'AC'
       else:
          guess_status = 'EX'
-      # generate a random field number between 1 to 20
-      rand_field = np.random.randint(1,20)
-      x = add_event(ev_ra=ev_ra, ev_dec=ev_dec, status=guess_status, field=rand_field, anomaly_rank = -1.0)
+      # Find field
+      id_field, rate = romecheck(ev_ra_deg, ev_dec_deg)
+      if id_field == -1:
+         field_name = "Outside ROMEREA footprint"
+	 guess_status = 'NF'
+      else:
+         field_name = sorted(field_dict.keys())[id_field]
+      x = add_event(field_name=field_name, operator_name=operator_name, ev_ra=ev_ra, ev_dec=ev_dec, 
+                    status=guess_status, anomaly_rank = -1.0, year=year)
       #print 'Trying to filter for event ...'
       event = Event.objects.filter(ev_ra=x[1]).filter(ev_dec=x[2])[0]
       operator = Operator.objects.get(name='MOA')
@@ -1185,6 +1201,7 @@ def run_test2():
       y = add_event_name(event=event, operator=operator, name=name)
       count = count + 1
       print count
+
       
    # Populate SingleLens model database from ARTEMiS model files
    from glob import glob
@@ -1252,8 +1269,34 @@ def run_test2():
 	 		 e_rho=None, pi_e_n=None, e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None)
       except:
          continue
-	 
-   # Populate RobonetReduction by reading the event directories in 
+   
+   pylima_event_pars =  glob(artemis+'PYLIMA_MODELS/*B'+year[2:]+'*_model')
+   for i in pylima_event_pars:
+      # Exclude rogue files with incorrect entries
+      try:
+         data = open(i).read().split()
+ 	 if data[2].startswith('KB'+year[2:]):
+ 	    name = data[2].replace('KB'+year[2:],'MOA-'+year+'-BLG-')
+ 	 if data[2].startswith('OB'+year[2:]):
+ 	    name = data[2].replace('OB'+year[2:],'OGLE-'+year+'-BLG-')
+ 	 event_id = EventName.objects.get(name=name).event_id
+ 	 event = Event.objects.get(id=event_id)
+	 ev_ra = event.ev_ra
+	 ev_dec = event.ev_dec
+ 	 Tmax, e_Tmax = float(data[3]), float(data[4])
+ 	 tau, e_tau = float(data[5]), float(data[6])
+ 	 umin, e_umin = float(data[7]), float(data[8])
+ 	 #timestamp of most recent datapoint
+ 	 time_last_datapoint = Time(float(data[12])+2450000.0, format='jd').datetime
+ 	 last_updated = timezone.make_aware(time_last_datapoint, timezone.get_current_timezone())
+ 	 modeler = 'pyLIMA'
+ 	 add_single_lens(event_name=name, Tmax=Tmax, e_Tmax=e_Tmax, tau=tau, e_tau=e_tau, umin=umin,
+ 	 		 e_umin=e_umin, last_updated=last_updated, modeler=modeler, rho=None,
+	 		 e_rho=None, pi_e_n=None, e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None)
+      except:
+         continue
+   
+   # Populate EventReduction by reading the event directories in 
    # ProcData
    from lxml import etree
    def todict(xml_file):
@@ -1370,7 +1413,7 @@ def run_test2():
    # Populate DataFile database
    from astropy.time import Time
    from django.utils import timezone
-   dat_list = glob(artemis+'data/*B16*I.dat')
+   dat_list = glob(artemis+'data/*B17*I.dat')
    count = 0
    for i in dat_list:
       data = open(i).readlines()
