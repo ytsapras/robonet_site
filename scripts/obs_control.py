@@ -9,6 +9,7 @@ import rome_obs
 import rea_obs
 import query_db
 import update_db_2
+import log_utilities
 
 def obs_control():
     """Observation Control Software for the LCO Network
@@ -23,8 +24,8 @@ def obs_control():
     log = log_utilities.start_day_log( script_config, 'obs_control' )
     log.info('Obs_control running in ' + script_config['MODE'] + ' mode')
     
-    lock( script_config, 'check', log )
-    lock( script_config, 'lock', log )
+    lock_state = log_utilities.lock( script_config, 'check', log )
+    lock_state = log_utilities.lock( script_config, 'lock', log )
 
     active_obs = query_db.get_active_obs()
     
@@ -38,7 +39,7 @@ def obs_control():
     submit_obs_requests(script_config,obs_requests,log=log)
     
     log.info('Obs_Control: finished requesting observations')
-    lock( script_config, 'unlock', log )
+    lock_state = log_utilities.lock( script_config, 'unlock', log )
     log_utilities.end_day_log( log )
 
 def parse_args(script_config):
