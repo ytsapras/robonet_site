@@ -13,8 +13,9 @@ RUN yum -y install epel-release \
 
 # install Python requirements
 COPY requirements.txt /var/www/html/
-RUN pip install --upgrade pip
-RUN pip install -r /var/www/html/requirements.txt \
+RUN pip install --upgrade pip \
+    && pip install numpy \
+    && pip install -r /var/www/html/requirements.txt \
     && rm -rf ~/.cache ~/.pip
 
 # Install sextractor under /usr/bin/sex
