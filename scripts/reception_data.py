@@ -49,7 +49,7 @@ class Image(object):
 		self.ellipticity = None
 		self.seeing = None
 		self.quality_flags = []
-                self.thumbnail_box_size = 30
+                self.thumbnail_box_size = 60
                 self.field_name = None
 
 		self.header_telescope_site = None
@@ -238,13 +238,15 @@ class Image(object):
            ascii.write(catalog,os.path.join(self.catalog_directory,catname))
 
         def create_image_control_region(self):
-               	import pdb; pdb.set_trace() 
+               	
                 w = wcs.WCS(self.header)
-                pxcrd = w.wcs_world2pix(np.array([self.x_center_thumbnail_world,self.y_center_thumbnail_world]))
-                try:
-                    self.thumbnail=self.data[pxcrd[1]-self.thumbnail_box_size/2:pxcrd[0]+self.thumbnail_box_size/2,pxcrd[0]-self.thumbnail_box_size/2:pxcrd[0]+self.thumbnail_box_size/2]
+                py,px = w.wcs_world2pix(self.x_center_thumbnail_world,self.y_center_thumbnail_world,1)
+		py = int(py)
+		px = int(px)                
+		try:
+                    self.thumbnail=self.data[px-self.thumbnail_box_size/2:px+self.thumbnail_box_size/2,py-self.thumbnail_box_size/2:py+self.thumbnail_box_size/2]
                 except:
-                    self.thumbnail=np.zeros((self.thumbnail_box_size,self.thumnail_box_size))
+                    self.thumbnail=np.zeros((self.thumbnail_box_size,self.thumbnail_box_size))
                     
 
         def compute_stats_from_catalog(self,catalog):
