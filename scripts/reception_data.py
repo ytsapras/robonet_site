@@ -1,4 +1,4 @@
-bimport glob
+import glob
 import Instrument
 from astropy.io import fits
 from numpy.fft import fft2, ifft2
@@ -24,11 +24,11 @@ class QuantityLimits(object):
 
 class Image(object):
 
-	def __init__(self, image_directory, image_name, data_structure_directory):
+	def __init__(self, image_directory, image_name, image_output_origin_directory):
 	
 		self.image_directory = image_directory
 		self.image_name = image_name
-		self.origin_directory = data_structure_directory 
+		self.origin_directory = image_output_origin_directory
 		
 	
 		image = fits.open(self.image_directory+self.image_name)
@@ -48,7 +48,15 @@ class Image(object):
 		self.quality_flags = []
 
 
+		self.header_telescope_site = None
+		self.header_group_id = None
+		self.header_track_id = None
+		self.header_request_id = None
+		self.header_object_name = None
+		self.field_name = None
 		self.header_moon_distance = None
+		self.header_moon_status = None
+		self.header_moon_fraction = None
 		self.header_airmass = None
 		self.header_seeing = None
 		self.header_ccd_temp = None
@@ -60,6 +68,7 @@ class Image(object):
 		
 
 		self.find_camera()
+		self.find_object_and_field_name()
 		self.quantity_limits =  QuantityLimits()
 
 		
@@ -118,33 +127,44 @@ class Image(object):
 		self.camera = Instrument.define_instrument(camera_name)
 		self.filter = self.header[self.camera.header_dictionnary['filter']]
 	
+	def find_object_and_field_name(self):
+		
+		self.object_name = self.header[self.camera.header_dictionnary['object']]
+		self.field_name = self.object_name.replace('ROME-','')	
+
 	def determine_the_output_directory(self):
 
 		origin_directory = self.origin_directory
 
 		if len(self.quality_flags) == 0:		
 		
-			quality_directory = 'Good/'
+			quality_directory = 'good/'
 		else:
 
-			quality_directory = 'Rejected/'	
+			quality_directory = 'bad/'	
 
-		object_name = self.object_name.split('-')
-		mode_directory = object_name[0]+'/'
 
-		site_directory = self.image_name[:3]
+		if 'ROME' in self.header_group_id:
+			
+			mode_directory = 'rome/'
+
+		else:
+
+			mode_directory = 'rea/'
+
+		
+		site_directory = self.header_telescope_site +'/'
 
 		the_filter = self.camera.filter_convention[self.filter] 
-
-		filter_directory = the_filter+'/'
+		filter_directory = the_filter +'/'
 	
-		camera_directory = self.camera.name+'/'
+		camera_directory = self.camera.name +'/'
 
-		field_directory = object_name[1]+'-'+object_name[2]+'/'
+		field_directory = self.field_name +'/'
 
 
 		output_directory = origin_directory + quality_directory + mode_directory + site_directory + \
-				   filter_directory + camera_directory + field_directory
+				   camera_directory + filter_directory +  + field_directory
 		
 
 		self.output_directory = output_directory
@@ -174,10 +194,10 @@ class Image(object):
                           'CLEAN':'Y',
                           'CLEAN_PARAM':1.0,
                           'PIXEL_SCALE':self.camera.pix_scale,
-                          'SATUR_LEVEL':self.ADU_high,
+                          'SATUR_LEVEL':self.camera.ADU_high,
                           'PHOT_APERTURES':10,
                           'DETECT_MINAREA':7,
-                          'GAIN':self.gain,
+                          'GAIN':self.camera.gain,
                           'SEEING_FWHM':2.5,
                           'BACK_FILTERSIZE':3}
            sew = sewpy.SEW(params=extractor_parameters,config=extractor_config,sexpath='/usr/bin/sextractor')
@@ -201,7 +221,8 @@ class Image(object):
 #           ascii.write(sewoutput['table'],'test.cat')
 
 
-        def compute_stats_from_catalog(self,catalog)
+        def compute_stats_from_catalog(self,catalog):
+
             self.sky_level=np.median(catalog['BACKGROUND'])
             self.sky_level_std=np.std(catalog['BACKGROUND'])
             self.sky_minimum_level=np.min(catalog['BACKGROUND'])
@@ -222,7 +243,7 @@ class Image(object):
 			except:
 
 				pass
-		self.object_name = self.header[self.camera.header_dictionnary['object']]
+		
 
 	def assess_image_quality(self):
 		
@@ -310,7 +331,7 @@ def find_frames_to_process(new_frames_directory):
 
 
 
-def process_new_images(new_frames_directory, data_structure_origin_directory):
+def process_new_images(new_frames_directory, image_output_origin_directory):
 
 
 	NewFrames = find_frames_to_process(new_frames_directory)
