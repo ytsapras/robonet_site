@@ -26,12 +26,12 @@ class QuantityLimits(object):
 class Image(object):
 
 	def __init__(self, image_directory, image_name, image_output_origin_directory):
-	
+		import pdb; pdb.set_trace()
 		self.image_directory = image_directory
 		self.image_name = image_name
 		self.origin_directory = image_output_origin_directory
 		
-		import pdb; pdb.set_trace()
+
 		image = fits.open(self.image_directory+self.image_name)
 		image = image[0]
 
@@ -48,14 +48,13 @@ class Image(object):
 		self.seeing = None
 		self.quality_flags = []
                 self.thumbnail_box_size = 30
-                
+                self.field_name = None
 
 		self.header_telescope_site = None
 		self.header_group_id = None
 		self.header_track_id = None
 		self.header_request_id = None
 		self.header_object_name = None
-		self.field_name = None
 		self.header_moon_distance = None
 		self.header_moon_status = None
 		self.header_moon_fraction = None
@@ -117,16 +116,16 @@ class Image(object):
 
 	def find_wcs_template(self):
 
-		object_name = self.object_name.split('-')
-		field_name = object_name[1] + '-' + object_name[2]
+
+		field_name = self.field_name
 		template_name = 'WCS_template_' + field_name + '.fits'
                 thumbnail_name = 'WCS_template_' + field_name + '.thumbnail'
                 
 		origin_directory = self.origin_directory
 		template_directory = origin_directory + 'WCStemplates/'
 
-		self.template_name = tenplate_name		
-		self.template_directory = tenplate_directory
+		self.template_name = template_name		
+		self.template_directory = template_directory
                 try:
                         coord=np.loadtxt(os.path.join(self.template_directory,thumnail_name))
                         self.x_center_thumbnail_world=coord[0]
@@ -345,7 +344,7 @@ class Image(object):
 
 def find_frames_to_process(new_frames_directory):
 
-	IncomingList = glob.glob('*.fits') 
+	IncomingList = glob.glob(new_frames_directory+'*.fits') 
 	
 	if len(IncomingList) == 0 :
 
@@ -366,11 +365,10 @@ def process_new_images(new_frames_directory, image_output_origin_directory):
 	NewFrames = find_frames_to_process(new_frames_directory)
 
 	if NewFrames :
-
+		
 		for newframe in NewFrames :
-	
-			image = open(newframe)
-			image = Image(image_directory, image_name, data_structure_origin_directory)
+			newframe = newframe.replace(new_frames_directory, '')
+			image = Image(new_frames_directory, newframe, image_output_origin_directory)
 			image.process_the_image(self)
 
 	else :

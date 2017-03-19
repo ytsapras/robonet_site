@@ -1,24 +1,27 @@
 ### Define Instruments for the LCO project
+
+
 import sys
 thismodule = sys.modules[__name__]
 
 
 def define_instrument(name):
-	""" Construct the correct instrument class according to the input name.
-	:param str name: a string which should match a class name.
+""" Construct the correct instrument class according to the input name.
+:param str name: a string which should match a class name.
 
-	:return: instrument
-	:rtype: instrument object like
-	"""
-	try:
-	
-		instrument = getattr(thismodule, '{}'.format(name))
+:return: instrument
+:rtype: instrument object like
+"""
 
-    	except AttributeError:
+    try:
 
-        	raise InstrumentException('Unknown instrument "{}"'.format(name))
+        instrument = getattr(thismodule, '{}'.format(name))
 
-   	return instrument()
+    except AttributeError:
+
+        raise InstrumentException('Unknown instrument "{}"'.format(name))
+
+    return instrument()
 
 
 class InstrumentException(Exception):
@@ -27,8 +30,8 @@ class InstrumentException(Exception):
 					
 
 class LCOSinistro(object):
-	""" Master class that defines common quantities for the LCO Sinistro cameras.      
-	"""
+""" Master class that defines common quantities for the LCO Sinistro cameras.      
+"""
 	def __init__(self):
 
 		self.name = None
@@ -60,17 +63,27 @@ class LCOSinistro(object):
 		self.header_dictionnary['ron'] = 'RDNOISE' 	
 		self.header_dictionnary['ro_speed'] = 'RDSPEED'
  		self.header_dictionnary['telescope_site'] = 'SITEID'
+		self.header_dictionnary['dome_id'] = 'ENCID'
+		self.header_dictionnary['track_id'] = 'TRACKNUM'
+		self.header_dictionnary['request_id'] = 'REQNUM'
+		self.header_dictionnary['group_id'] = 'GROUP'												
 		self.header_dictionnary['instrument'] = 'INSTRUME'
 		self.header_dictionnary['binning'] = 'CCDSUM'
 		self.header_dictionnary['ccd_temp'] = 'CCDATEMP'
 		self.header_dictionnary['object'] = 'OBJECT'
 		self.header_dictionnary['moon_distance'] = 'MOONDIST'
+		self.header_dictionnary['moon_status'] = 'MOONSTAT'
+		self.header_dictionnary['moon_frac'] = 'MOONFRAC'
 		self.header_dictionnary['seeing'] = 'AGFWHM'
 		self.header_dictionnary['ellipticity'] = 'L1ELLIP'
 		self.header_dictionnary['sky_temperature'] = 'WMSCLOUD'
 		self.header_dictionnary['sky_measured_mag'] = 'WMSSKYBR'
 		self.header_dictionnary['sky_expected_mag'] = 'SKYMAG'
-		
+
+
+
+
+
 	def update_values_from_header(self, image):
 		
 		from astropy.io import fits	
