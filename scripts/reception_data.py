@@ -1,5 +1,5 @@
 import glob
-import Instrument
+import operational_instruments
 from astropy.io import fits
 from numpy.fft import fft2, ifft2
 import sewpy
@@ -31,7 +31,7 @@ class Image(object):
 		self.image_name = image_name
 		self.origin_directory = image_output_origin_directory
 		
-	
+		import pdb; pdb.set_trace()
 		image = fits.open(self.image_directory+self.image_name)
 		image = image[0]
 
@@ -139,7 +139,7 @@ class Image(object):
 	def find_camera(self):
 
 		camera_name = self.image_name[9:13]
-		self.camera = Instrument.define_instrument(camera_name)
+		self.camera = operational_instruments.define_instrument(camera_name)
 		self.filter = self.header[self.camera.header_dictionnary['filter']]
 	
 	def find_object_and_field_name(self):
