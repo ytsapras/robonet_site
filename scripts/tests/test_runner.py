@@ -14,8 +14,6 @@ def run_all_tests():
     loader = unittest.TestLoader()
     start_dir = '.'
     suite = loader.discover(start_dir, 'test_*.py')
-    commands_dir = path.join(start_dir,'../../','events','management','commands','tests')
-    suite = loader.discover(start_dir, 'test_*.py')
     
     runner = unittest.TextTestRunner()
     runner.run(suite)

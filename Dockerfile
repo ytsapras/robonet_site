@@ -7,8 +7,9 @@ ENTRYPOINT ["/init"]
 
 # install packages
 RUN yum -y install epel-release \ 
-        && yum -y install nginx python-pip supervisor uwsgi-plugin-python MySQL-python tkinter wget gcc g++ gfortran\
-	&& yum -y update \
+        && yum -y install nginx python-pip supervisor python-devel git \
+	&& yum -y install uwsgi-plugin-python MySQL-python tkinter wget gcc g++ gcc-gfortran\
+	&& yum -y update  \
 	&& yum -y clean all
 
 # install Python requirements
@@ -24,11 +25,7 @@ RUN curl -q -O http://www.astromatic.net/download/sextractor/$SEX_PKG && \
     rpm --install --quiet $SEX_PKG 
 
 # Install sewpy
-RUN git clone https://github.com/megalut/sewpy/ sewpy/
-RUN cd sewpy/
-RUN python setup.py install
-RUN cd ..
-RUN rm -rf sewpy/
+RUN git clone https://github.com/megalut/sewpy/ && cd sewpy/ && python setup.py install && cd .. && rm -rf sewpy/
 
 # operating system configuration
 COPY docker/ /
