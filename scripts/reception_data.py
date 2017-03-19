@@ -7,6 +7,8 @@ from astropy import wcs
 from astropy.table import Table
 from astropy.io import ascii
 from astropy.time import Time
+import numpy as np
+
 
 class QuantityLimits(object):
 
@@ -26,7 +28,7 @@ class QuantityLimits(object):
 class Image(object):
 
 	def __init__(self, image_directory, image_name, image_output_origin_directory):
-		import pdb; pdb.set_trace()
+
 		self.image_directory = image_directory
 		self.image_name = image_name
 		self.origin_directory = image_output_origin_directory
@@ -65,7 +67,7 @@ class Image(object):
 		self.header_sky_level = None
 		self.header_sky_temperature = None
 		self.header_sky_measured_mag = None
-		self.header_sky_measured_mag = None
+
 		
 
 		self.find_camera()
@@ -178,7 +180,7 @@ class Image(object):
 
 
 		output_directory = origin_directory + quality_directory + mode_directory + site_directory + \
-				   camera_directory + filter_directory +  + field_directory
+				   camera_directory + filter_directory +  field_directory
 		
 
 		self.output_directory = output_directory
@@ -236,9 +238,9 @@ class Image(object):
            ascii.write(catalog,os.path.join(self.catalog_directory,catname))
 
         def create_image_control_region(self):
-                
+               	import pdb; pdb.set_trace() 
                 w = wcs.WCS(self.header)
-                pxcrd = w.wcs_world2pix([self.x_center_thumbnail_world,self.y_center_thumbnail_world])
+                pxcrd = w.wcs_world2pix(np.array([self.x_center_thumbnail_world,self.y_center_thumbnail_world]))
                 try:
                     self.thumbnail=self.data[pxcrd[1]-self.thumbnail_box_size/2:pxcrd[0]+self.thumbnail_box_size/2,pxcrd[0]-self.thumbnail_box_size/2:pxcrd[0]+self.thumbnail_box_size/2]
                 except:
@@ -369,8 +371,14 @@ def process_new_images(new_frames_directory, image_output_origin_directory):
 		for newframe in NewFrames :
 			newframe = newframe.replace(new_frames_directory, '')
 			image = Image(new_frames_directory, newframe, image_output_origin_directory)
-			image.process_the_image(self)
+			image.extract_header_statistics()
+			image.determine_the_output_directory()
+			image.find_wcs_template()
+			image.create_image_control_region()
 
+			import pdb; pdb.set_trace()
+			image.process_the_image(self)
+	
 	else :
 
 
