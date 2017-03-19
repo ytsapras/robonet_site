@@ -6,12 +6,15 @@ Created on Sat Mar 18 16:03:04 2017
 """
 
 import unittest
+from os import path
 
 def run_all_tests():
     """Function to run all unittests"""
 
     loader = unittest.TestLoader()
     start_dir = '.'
+    suite = loader.discover(start_dir, 'test_*.py')
+    commands_dir = path.join(start_dir,'../../','events','management','commands','tests')
     suite = loader.discover(start_dir, 'test_*.py')
     
     runner = unittest.TextTestRunner()

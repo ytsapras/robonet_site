@@ -1,8 +1,9 @@
 import glob
-import Instrument
+import operational_instruments
 from astropy.io import fits
 from numpy.fft import fft2, ifft2
 import sewpy
+from astropy import wcs
 from astropy.table import Table
 from astropy.io import ascii
 from astropy.time import Time
@@ -30,7 +31,7 @@ class Image(object):
 		self.image_name = image_name
 		self.origin_directory = image_output_origin_directory
 		
-	
+		import pdb; pdb.set_trace()
 		image = fits.open(self.image_directory+self.image_name)
 		image = image[0]
 
@@ -46,7 +47,8 @@ class Image(object):
 		self.ellipticity = None
 		self.seeing = None
 		self.quality_flags = []
-
+                self.thumbnail_box_size = 30
+                
 
 		self.header_telescope_site = None
 		self.header_group_id = None
@@ -76,6 +78,11 @@ class Image(object):
 
 		#self.extract_header_statistics()
 		#self.find_wcs_template()
+                #self.generate_sextractor_catalog()
+                #self.
+                #self.update_image_wcs()
+
+                #self.move_frame()
 		pass	
 
         def update_image_wcs(self):
@@ -113,18 +120,26 @@ class Image(object):
 		object_name = self.object_name.split('-')
 		field_name = object_name[1] + '-' + object_name[2]
 		template_name = 'WCS_template_' + field_name + '.fits'
-
-
+                thumbnail_name = 'WCS_template_' + field_name + '.thumbnail'
+                
 		origin_directory = self.origin_directory
 		template_directory = origin_directory + 'WCStemplates/'
 
 		self.template_name = tenplate_name		
 		self.template_directory = tenplate_directory
+                try:
+                        coord=np.loadtxt(os.path.join(self.template_directory,thumnail_name))
+                        self.x_center_thumbnail_world=coord[0]
+                        self.y_center_thumbnail_world=coord[1]
+                except:
+                        self.x_center_thumbnail_world=self.header['CRVAL1']
+                        self.y_center_thumbnail_world=self.header['CRVAL2']
+                        
 
 	def find_camera(self):
 
 		camera_name = self.image_name[9:13]
-		self.camera = Instrument.define_instrument(camera_name)
+		self.camera = operational_instruments.define_instrument(camera_name)
 		self.filter = self.header[self.camera.header_dictionnary['filter']]
 	
 	def find_object_and_field_name(self):
@@ -168,7 +183,7 @@ class Image(object):
 		
 
 		self.output_directory = output_directory
-
+                self.catalog_directory = output_directory.replace('images','catalog0')
 	
 
 	def find_WCS_offset(self):
@@ -218,8 +233,18 @@ class Image(object):
            #imag=instmag*1.0198562+28.13711
            #rmag=instmag*1.020762+28.854443
            self.compute_stats_from_catalog(catalog)
-#           ascii.write(sewoutput['table'],'test.cat')
+           catname=self.name.replace('.fits','.cat')
+           ascii.write(catalog,os.path.join(self.catalog_directory,catname))
 
+        def create_image_control_region(self):
+                
+                w = wcs.WCS(self.header)
+                pxcrd = w.wcs_world2pix([self.x_center_thumbnail_world,self.y_center_thumbnail_world])
+                try:
+                    self.thumbnail=self.data[pxcrd[1]-self.thumbnail_box_size/2:pxcrd[0]+self.thumbnail_box_size/2,pxcrd[0]-self.thumbnail_box_size/2:pxcrd[0]+self.thumbnail_box_size/2]
+                except:
+                    self.thumbnail=np.zeros((self.thumbnail_box_size,self.thumnail_box_size))
+                    
 
         def compute_stats_from_catalog(self,catalog):
 
@@ -299,6 +324,10 @@ class Image(object):
 		if self.seeing > self.quantity_limits.maximum_seeing:
 
 			self.quality_flags.append('Bad seeing')
+
+        def check_if_image_in_database(self):
+                
+                return None
 
 	def ingest_the_image_in_the_database(self):
 
