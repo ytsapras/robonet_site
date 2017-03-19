@@ -976,6 +976,30 @@ def run_test2():
   	 val = elem[1]
   	 col_dict[key] = val
    
+   #Populate User database
+   from django.contrib.auth.models import User
+   my_users = {
+               'rstreet':['romerea01', 'Rachel', 'Street', 'rstreet@lco.global', True, True],
+               'ebachelet':['romerea01', 'Etienne', 'Bachelet', 'etibachelet@gmail.com', True, True],
+               'mhundetmark':['romerea01', 'Markus', 'Hundertmark', 'markus.hundertmark@uni-heidelberg.de', True, True],
+               'dbramich':['romerea01', 'Dan', 'Bramich', 'dan.bramich@hotmail.co.uk', False, False],
+               'mdominik':['romerea01', 'Martin', 'Dominik', 'md35@st-andrews.ac.uk', False, False],
+               'khorne':['romerea01', 'Keith', 'Horne', 'kdh1@st-andrews.ac.uk', False, False],
+               'jwambsganss':['romerea01', 'Joachim', 'Wambsganss', 'jkw@ari.uni-heidelberg.de', False, False],
+               'vbozza':['romerea01', 'Valerio', 'Bozza', 'valboz@sa.infn.it', False, False],
+               'acassan':['romerea01', 'Arnaud', 'Cassan', 'cassan@iap.fr', False, False],
+               'smao':['romerea01', 'Shude', 'Mao', 'shude.mao@gmail.com', False, False],
+               'asaha':['romerea01', 'Abhijit', 'Saha', 'saha@noao.edu', False, False],
+               'zweichen':['romerea01', 'Zang', 'Weichen', '3130102785@zju.edu.cn', False, False],
+               'twang':['romerea01', 'Tianshu', 'Wang', 'wts15@mails.tsinghua.edu.cn', False, False]
+              }
+   for i in my_users.keys():
+      user = User.objects.create_user(i, password = my_users[i][0], first_name = my_users[i][1], 
+                                      last_name = my_users[i][2], email = my_users[i][3])
+      user.is_superuser = my_users[i][4]
+      user.is_staff = my_users[i][5]
+      user.save()
+   
    # Populate Operator database
    for s in ['OGLE', 'MOA', 'KMTNET', 'PLANET', 'ROMEREA', 'MICROFUN', 'OTHER']:
       add_operator(s)
@@ -1120,9 +1144,51 @@ def run_test2():
    from rome_fields_dict import field_dict
    for i in field_dict.keys():
       add_field(field_name=i, field_ra=field_dict[i][2], field_dec=field_dict[i][3])
+   
    # Add an empty field for outside footprint
    add_field()
    
+   # Populate Event database with MOA event coordinates
+   # and EventName database with MOA event names
+   from glob import glob
+   import numpy as np
+   from utilities import sex2decdeg
+   from field_check import romecheck
+   moa_event_list = glob(artemis+'PublishedParameters/'+year+'/MOA/*.model')
+   count = 0
+   operator_name = 'MOA'
+   for i in moa_event_list:
+      data = open(i).read().split()
+      ev_ra = data[0]
+      ev_dec = data[1]
+      # Convert from sexagesimal to decimal degrees
+      ev_ra_deg, ev_dec_deg = sex2decdeg(ev_ra, ev_dec)
+      name = data[2].replace('KB'+year[2:],'MOA-'+year+'-BLG-')
+      #print 'Doing '+name
+      #print 'Trying to add event ...'
+      t = Time(datetime.now())
+      tjd = t.jd - 2450000.0
+      if abs(tjd-float(data[3])) <= 5.0*float(data[5]):
+         guess_status = 'AC'
+      else:
+         guess_status = 'EX'
+      # Find field
+      id_field, rate = romecheck(ev_ra_deg, ev_dec_deg)
+      if id_field == -1:
+         field_name = "Outside ROMEREA footprint"
+	 guess_status = 'NF'
+      else:
+         field_name = sorted(field_dict.keys())[id_field]
+      x = add_event(field_name=field_name, operator_name=operator_name, ev_ra=ev_ra, ev_dec=ev_dec, 
+                    status=guess_status, anomaly_rank = -1.0, year=year)
+      #print 'Trying to filter for event ...'
+      event = Event.objects.filter(ev_ra=x[1]).filter(ev_dec=x[2])[0]
+      operator = Operator.objects.get(name='MOA')
+      #print 'Trying to add event name ...'
+      y = add_event_name(event=event, operator=operator, name=name)
+      count = count + 1
+      print count
+
    # Populate Event database with OGLE event coordinates
    # and EventName database with OGLE event names
    from glob import glob
@@ -1143,7 +1209,7 @@ def run_test2():
       #print 'Trying to add event ...'
       t = Time(datetime.now())
       tjd = t.jd - 2450000.0
-      if abs(tjd-float(data[3])) <= 3.0*float(data[5]):
+      if abs(tjd-float(data[3])) <= 5.0*float(data[5]):
          guess_status = 'AC'
       else:
          guess_status = 'EX'
@@ -1159,44 +1225,6 @@ def run_test2():
       #print 'Trying to filter for event ...'
       event = Event.objects.filter(ev_ra=x[1]).filter(ev_dec=x[2])[0]
       operator = Operator.objects.get(name='OGLE')
-      #print 'Trying to add event name ...'
-      y = add_event_name(event=event, operator=operator, name=name)
-      count = count + 1
-      print count
-
-   # Populate Event database with MOA event coordinates
-   # and EventName database with MOA event names
-   from glob import glob
-   moa_event_list = glob(artemis+'PublishedParameters/'+year+'/MOA/*.model')
-   count = 0
-   operator_name = 'MOA'
-   for i in moa_event_list:
-      data = open(i).read().split()
-      ev_ra = data[0]
-      ev_dec = data[1]
-      # Convert from sexagesimal to decimal degrees
-      ev_ra_deg, ev_dec_deg = sex2decdeg(ev_ra, ev_dec)
-      name = data[2].replace('KB'+year[2:],'MOA-'+year+'-BLG-')
-      #print 'Doing '+name
-      #print 'Trying to add event ...'
-      t = Time(datetime.now())
-      tjd = t.jd - 2450000.0
-      if abs(tjd-float(data[3])) <= 3.0*float(data[5]):
-         guess_status = 'AC'
-      else:
-         guess_status = 'EX'
-      # Find field
-      id_field, rate = romecheck(ev_ra_deg, ev_dec_deg)
-      if id_field == -1:
-         field_name = "Outside ROMEREA footprint"
-	 guess_status = 'NF'
-      else:
-         field_name = sorted(field_dict.keys())[id_field]
-      x = add_event(field_name=field_name, operator_name=operator_name, ev_ra=ev_ra, ev_dec=ev_dec, 
-                    status=guess_status, anomaly_rank = -1.0, year=year)
-      #print 'Trying to filter for event ...'
-      event = Event.objects.filter(ev_ra=x[1]).filter(ev_dec=x[2])[0]
-      operator = Operator.objects.get(name='MOA')
       #print 'Trying to add event name ...'
       y = add_event_name(event=event, operator=operator, name=name)
       count = count + 1
@@ -1298,92 +1326,92 @@ def run_test2():
    
    # Populate EventReduction by reading the event directories in 
    # ProcData
-   from lxml import etree
-   def todict(xml_file):
-      ''' Convert an xml tree into a dictionary. '''
-      d = {}
-      tree = etree.parse(xml_file)
-      root = tree.getroot()
-      for parameter in root.findall('parameter'):
-         name = parameter.get('name')
-	 val = parameter.find('value').text
-	 d[name] = val
-      return d
-   
-   count = 0
-   events_robonet = glob('/science/robonet/rob/Operations/ProcData/'+year+'/*')
-   for i in events_robonet:
-       try:
-          event_name = i.split('/')[-1].split('_')[0]
-	  lc_file = glob(i+'/lc/*/rawlc/*.t')
-	  if lc_file:
-	     lc_file = lc_file[0]
-	     is_target_found = True
-	  else:
-	     lc_file = ''
-	     is_target_found = False
-	  timestamp = timezone.now()
-	  ref_image = glob(i+'/reflist.*.txt')
-	  if ref_image:
-	     ref_images = open(ref_image[0],'r').readlines()
-	     ref_image = ", ".join(["%s" % k.split('\n')[0] for k in ref_images])
-	  else:
-	     ref_image = ''
-	  ccdpar = glob(i+'/ccd.par')
-	  if ccdpar:
-	     lines = open(ccdpar[0],'r').readlines()
-	     ron = float(lines[0].split('#')[0])
-	     gain = float(lines[1].split('#')[0])
-	  else:
-	     ron = 0.0
-	     gain = 1.0
-	  s3par = glob(i+'/s3.*.par')
-	  if s3par:
-	     lines = open(s3par[0],'r').readlines()
-	     use_reflist = int(lines[0].split('#')[0])
-	     max_nimages = int(lines[1].split('#')[0])
-	     fov = float(lines[9].split('#')[0])
-	  else:
-	     use_reflist = 0
-	     max_nimages = 0
-	     fov = 0.0
-	  redconfig = glob(i+'/*.Red.Config')
-	  if redconfig:
-	     d = todict(redconfig[0])
-	     add_reduction(event_name, lc_file=lc_file, timestamp=timestamp, ref_image=ref_image, 
-	                    target_found=is_target_found, ron=ron, gain=gain,
-	     		    oscanx1=int(d['oscanx1']), oscanx2=int(d['oscanx2']), 
-			    oscany1=int(d['oscany1']), oscany2=int(d['oscany2']), 
-			    imagex1=int(d['imagex1']), imagex2=int(d['imagex2']),
-	     		    imagey1=int(d['imagey1']), imagey2=int(d['imagey2']), 
-			    minval=float(d['minval']), maxval=float(d['maxval']), 
-			    growsatx=int(float(d['growsatx'])), growsaty=int(float(d['growsaty'])), 
-			    coeff2=float(d['coeff2']), coeff3=float(d['coeff3']),
-	     		    sigclip=float(d['sigclip']), sigfrac=float(d['sigfrac']), 
-			    flim=float(d['flim']), niter=int(d['s2niter']), 
-			    use_reflist=use_reflist, max_nimages=max_nimages,
-	     		    max_sky=float(d['max_sky']), min_ell=float(d['min_ell']), 
-			    trans_type=d['transtype'], trans_auto=int(d['transauto']), 
-			    replace_cr=int(d['replacecr']), min_scale=float(d['min_scale']), 
-			    max_scale=float(d['max_scale']), fov=fov, star_space=int(float(d['star_space'])), 
-			    init_mthresh=float(d['init_mthresh']), smooth_pro=float(d['smooth_pro_s3']), 
-			    smooth_fwhm=float(d['smooth_fwhm_s3']),
-	     		    var_deg=int(d['var_deg']), det_thresh=float(d['det_thresh']), 
-			    psf_thresh=float(d['psf_thresh']), psf_size=float(d['psf_size']), 
-			    psf_comp_dist=float(d['psf_comp_dist']),
-	     		    psf_comp_flux=float(d['psf_comp_flux']), psf_corr_thresh=float(d['psf_corr_thresh']), 
-			    ker_rad=float(d['ker_rad']), lres_ker_rad=float(d['lres_ker_rad']),
-	     		    subframes_x=int(d['subframes_x']), subframes_y=int(d['subframes_y']), 
-			    grow=float(d['grow']), ps_var=int(d['ps_var']), 
-			    back_var=int(d['back_var']), diffpro=int(d['diffpro']))
-	  else:
-	     continue
-       except:
-          continue
-       count = count + 1
-       print count
-
-   # Populate RobonetRequest
+   #from lxml import etree
+   #def todict(xml_file):
+   #   ''' Convert an xml tree into a dictionary. '''
+   #   d = {}
+   #   tree = etree.parse(xml_file)
+   #   root = tree.getroot()
+   #   for parameter in root.findall('parameter'):
+   #      name = parameter.get('name')
+   #	 val = parameter.find('value').text
+   # 	 d[name] = val
+   #   return d
+   #
+   #count = 0
+   #events_robonet = glob('/science/robonet/rob/Operations/ProcData/'+year+'/*')
+   #for i in events_robonet:
+   #    try:
+   #       event_name = i.split('/')[-1].split('_')[0]
+   #	  lc_file = glob(i+'/lc/*/rawlc/*.t')
+   #	  if lc_file:
+   #	     lc_file = lc_file[0]
+   #	     is_target_found = True
+   #	  else:
+   #	     lc_file = ''
+   #	     is_target_found = False
+   #	  timestamp = timezone.now()
+   #	  ref_image = glob(i+'/reflist.*.txt')
+   #	  if ref_image:
+   #	     ref_images = open(ref_image[0],'r').readlines()
+   #	     ref_image = ", ".join(["%s" % k.split('\n')[0] for k in ref_images])
+   #	  else:
+   #	     ref_image = ''
+   #	  ccdpar = glob(i+'/ccd.par')
+   #	  if ccdpar:
+   #	     lines = open(ccdpar[0],'r').readlines()
+   #	     ron = float(lines[0].split('#')[0])
+   #	     gain = float(lines[1].split('#')[0])
+   #	  else:
+   #	     ron = 0.0
+   #	     gain = 1.0
+   #	  s3par = glob(i+'/s3.*.par')
+   #	  if s3par:
+   #	     lines = open(s3par[0],'r').readlines()
+   #	     use_reflist = int(lines[0].split('#')[0])
+   #	     max_nimages = int(lines[1].split('#')[0])
+   #	     fov = float(lines[9].split('#')[0])
+   #	  else:
+   #	     use_reflist = 0
+   #	     max_nimages = 0
+   #	     fov = 0.0
+   #	  redconfig = glob(i+'/*.Red.Config')
+   #	  if redconfig:
+   #	     d = todict(redconfig[0])
+   #	     add_reduction(event_name, lc_file=lc_file, timestamp=timestamp, ref_image=ref_image, 
+   #			    target_found=is_target_found, ron=ron, gain=gain,
+   #			    oscanx1=int(d['oscanx1']), oscanx2=int(d['oscanx2']), 
+   #			    oscany1=int(d['oscany1']), oscany2=int(d['oscany2']), 
+   #			    imagex1=int(d['imagex1']), imagex2=int(d['imagex2']),
+   #			    imagey1=int(d['imagey1']), imagey2=int(d['imagey2']), 
+   #			    minval=float(d['minval']), maxval=float(d['maxval']), 
+   #			    growsatx=int(float(d['growsatx'])), growsaty=int(float(d['growsaty'])), 
+   #			    coeff2=float(d['coeff2']), coeff3=float(d['coeff3']),
+   #			    sigclip=float(d['sigclip']), sigfrac=float(d['sigfrac']), 
+   #			    flim=float(d['flim']), niter=int(d['s2niter']), 
+   #			    use_reflist=use_reflist, max_nimages=max_nimages,
+   #			    max_sky=float(d['max_sky']), min_ell=float(d['min_ell']), 
+   #			    trans_type=d['transtype'], trans_auto=int(d['transauto']), 
+   #			    replace_cr=int(d['replacecr']), min_scale=float(d['min_scale']), 
+   #			    max_scale=float(d['max_scale']), fov=fov, star_space=int(float(d['star_space'])), 
+   #			    init_mthresh=float(d['init_mthresh']), smooth_pro=float(d['smooth_pro_s3']), 
+   #			    smooth_fwhm=float(d['smooth_fwhm_s3']),
+   #			    var_deg=int(d['var_deg']), det_thresh=float(d['det_thresh']), 
+   #			    psf_thresh=float(d['psf_thresh']), psf_size=float(d['psf_size']), 
+   #			    psf_comp_dist=float(d['psf_comp_dist']),
+   #			    psf_comp_flux=float(d['psf_comp_flux']), psf_corr_thresh=float(d['psf_corr_thresh']), 
+   #			    ker_rad=float(d['ker_rad']), lres_ker_rad=float(d['lres_ker_rad']),
+   #			    subframes_x=int(d['subframes_x']), subframes_y=int(d['subframes_y']), 
+   #			    grow=float(d['grow']), ps_var=int(d['ps_var']), 
+   #			    back_var=int(d['back_var']), diffpro=int(d['diffpro']))
+   #	  else:
+   #	     continue
+   #   except:
+   #	  continue
+   #    count = count + 1
+   #    print count
+   #
+   ##Populate RobonetRequest
    #from datetime import datetime, timedelta
    #import random
    #count = 0
@@ -1399,7 +1427,7 @@ def run_test2():
    #	    which_inst='', grp_id='', track_id='', req_id='')
    #   count = count + 1
    #   print count
-
+   #
    # Populate RobonetStatus 
    #count = 0
    #ogle_events_list = EventName.objects.filter(name__contains="OGLE")
