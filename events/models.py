@@ -609,7 +609,7 @@ class ObsRequest(models.Model):
             (integer, optional, default=1)
    """
    def __str__(self):
-      return str(self.event)+' updated at '+str(self.timestamp)
+      return str(self.field)+' updated at '+str(self.timestamp)
    field = models.ForeignKey(Field)
    possible_types = (
    ('A', 'REA High - 20 min cadence'),
@@ -880,7 +880,7 @@ class Image(models.Model):
                  (string, optional, default='')
    """
    def __str__(self):
-      return str(self.event)+' Image: '+str(self.image_name)
+      return str(self.field)+' Image: '+str(self.image_name)
    field = models.ForeignKey(Field)
    image_name = models.CharField(max_length=200)
    timestamp = models.DateTimeField('Date received')

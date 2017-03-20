@@ -657,10 +657,10 @@ def add_reduction(event_name, lc_file, timestamp, ref_image, target_found=False,
    return successful
 
 ################################################################################################################
-def add_request(field_name, t_sample, exptime, n_exp=1, timestamp=timezone.now(),
+def add_request(field_name, t_sample, exptime, timestamp=timezone.now(),
                 time_expire=timezone.now()+timedelta(hours=24), pfrm_on = False,
                 onem_on=False, twom_on=False, request_type='L', which_filter='',
-		which_inst='', grp_id='', track_id='', req_id=''):
+		which_inst='', grp_id='', track_id='', req_id='',  n_exp=1):
    """
    Add observing request to the database.
    
@@ -1410,33 +1410,54 @@ def run_test2():
    #	  continue
    #    count = count + 1
    #    print count
-   #
-   ##Populate RobonetRequest
-   #from datetime import datetime, timedelta
-   #import random
-   #count = 0
-   #field_list = Field.objects.all()
-   #for i in field_list:
-   #   field_name = i.name
-   #   t_sample = random.uniform(0.1,24.0)
-   #   exptime = random.randint(10,300)
-   #   n_exp = random.randint(1,10)
-   #   add_request(field_name, t_sample, exptime, n_exp, timestamp=timezone.now(),
-   #	    time_expire=timezone.now()+timedelta(hours=24), pfrm_on=False, 
-   #	    onem_on=True, twom_on=False, request_type='M', which_filter='',
-   #	    which_inst='', grp_id='', track_id='', req_id='')
-   #   count = count + 1
-   #   print count
-   #
+   
+   #Populate ObsRequest
+   from datetime import datetime, timedelta
+   import random
+   count = 0
+   # Ignore the Outside ROMEREA field
+   field_list = Field.objects.all().order_by('name')[1:]
+   track_id = '0000'+str(random.randint(10000,30000))
+   req_id = '0000'+str(random.randint(40000,60000))   
+   for i in field_list:
+      field_name = i.name
+      request_type = random.choice(['A','M','M','L','L','L','L','L','L'])
+      if request_type == 'A':
+         t_sample = 20
+         exptime = random.randint(10,300)
+	 time_expire = timezone.now()+timedelta(hours=24)
+	 which_inst = random.choice(['fl03', 'fl14', 'fl11'])
+	 grp_id = 'REA_'+str(random.randint(1,10))+str(random.randint(1,30))+'T'+str(random.uniform(0,24))
+      elif request_type == 'M':
+         t_sample = 60
+         exptime = random.randint(10,300)
+	 time_expire = timezone.now()+timedelta(hours=24)
+ 	 which_inst = random.choice(['fl03', 'fl14', 'fl11'])
+	 grp_id = 'REA_'+str(random.randint(1,10))+str(random.randint(1,30))+'T'+str(random.uniform(0,24))
+      else:
+         t_sample = 420
+         exptime = 300
+	 time_expire = timezone.now()+timedelta(hours=24)
+	 which_inst = random.choice(['fl15', 'fl16', 'fl12'])
+	 grp_id = 'ROME_'+str(random.randint(1,10))+str(random.randint(1,30))+'T'+str(random.uniform(0,24))
+      
+      add_request(field_name=field_name, t_sample=t_sample, exptime=exptime, timestamp=timezone.now(),
+   		  time_expire=time_expire, pfrm_on = False,
+   		  onem_on=True, twom_on=False, request_type=request_type, which_filter='SDSS-i',
+   		  which_inst=which_inst, grp_id=grp_id, track_id=track_id, req_id=req_id,  n_exp=1)
+      
+      count = count + 1
+      print count
+   
    # Populate RobonetStatus 
-   #count = 0
-   #ogle_events_list = EventName.objects.filter(name__contains="OGLE")
-   #for i in ogle_events_list:
-   #   event_name = i.name
-   #   add_status(event_name, timestamp=timezone.now(), status='AC', comment='', 
-   #	   updated_by='', rec_cad=0, rec_texp=0, rec_nexp=0, rec_telclass='')
-   #   count = count + 1
-   #   print count
+   count = 0
+   ogle_events_list = EventName.objects.filter(name__contains="OGLE")
+   for i in ogle_events_list:
+      event_name = i.name
+      add_status(event_name, timestamp=timezone.now(), status='AC', comment='', 
+   	  updated_by='', rec_cad=0, rec_texp=0, rec_nexp=0, rec_telclass='')
+      count = count + 1
+      print count
 
    # Populate DataFile database
    from astropy.time import Time
@@ -1544,39 +1565,3 @@ def run_test2():
    #               target_mag=target_mag, target_magerr=target_magerr, target_skybg=target_skybg, target_fwhm=target_fwhm) 
    #   count = count + 1
    #   print count
-
-      # For event OGLE-2016-BLG-2054_img_9 add the target details
-   #   event_name = "OGLE-2016-BLG-2054"
-   #   image_name = str(event_name)+'_img_9'
-   #   date_obs = timezone.now()+timedelta(hours=random.uniform(-1000,1000))
-   #   timestamp = timezone.now()
-   #   tel = random.choice(['LCOGT SAAO 1m A','LCOGT SAAO 1m B','LCOGT SAAO 1m C','LCOGT CTIO 1m A',
-   #			   'LCOGT CTIO 1m B','LCOGT CTIO 1m C', 'LCOGT SSO 1m A', 'LCOGT SSO 1m B',
-   #			   'Faulkes North 2.0m','Faulkes South 2.0m'])
-   #   inst = tel+' CCD camera'
-   #   filt = 'SDSS-i'
-   #   grp_id = 'RBN2016'+str(random.randint(1,10))+str(random.randint(1,30))+'T'+str(random.uniform(0,24))
-   #   track_id = '0000'+str(random.randint(10000,30000))
-   #   req_id = '0000'+str(random.randint(40000,60000))
-   #   airmass = random.uniform(1,2)
-   #   avg_fwhm = random.uniform(2,9)
-   #   avg_sky = random.uniform(1000,6000)
-   #   avg_sigsky = random.uniform(10,200)
-   #   moon_sep = random.uniform(15,40)
-   #   moon_phase = random.uniform(0,99)
-   #   moon_up = random.choice([True,False])
-   #   elongation = random.uniform(1,2)
-   #   nstars = random.randint(60,600)
-   #   ztemp = None
-   #   quality = random.choice(['rejected','accepted','accepted','accepted'])
-   #   target_hjd = 2455891.4324
-   #   target_mag = 19.0
-   #   target_magerr = 0.01
-   #   target_skybg = 1000.0
-   #   target_fwhm = 4.5
-   #   add_image(event_name=event_name, image_name=image_name, date_obs=date_obs, timestamp=timestamp, 
-   #		tel=tel, inst=inst, filt=filt, grp_id=grp_id, track_id=track_id, req_id=req_id, 
-   #		airmass=airmass, avg_fwhm=avg_fwhm, avg_sky=avg_sky, avg_sigsky=avg_sigsky, 
-   #		moon_sep=moon_sep, moon_phase=moon_phase, moon_up=moon_up, elongation=elongation,
-   #		nstars=nstars, ztemp=ztemp, quality=quality, target_hjd=target_hjd, target_mag=target_mag, 
-   #		target_magerr=target_magerr, target_skybg=target_skybg, target_fwhm=target_fwhm) 
