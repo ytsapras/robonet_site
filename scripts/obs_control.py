@@ -72,11 +72,11 @@ def rm_duplicate_obs(obs_requests, active_obs):
     
     for obs in obs_requests:
         for active_req in active_obs:
-            if active_req.name == obs.name and \
-                active_req.filters == obs.filters and \
-                    active_req.req_type == obs.req_type:
-                i = obs_request.index(obs)
-                req = obs_request.pop(i)
+            if active_req.field.name == obs.name and \
+                active_req.which_filter in obs.filters and \
+                    active_req.request_type == obs.request_type:
+                i = obs_requests.index(obs)
+                req = obs_requests.pop(i)
     return obs_requests
 
 def submit_obs_requests(script_config,obs_requests,log=None):
@@ -94,7 +94,7 @@ def submit_obs_requests(script_config,obs_requests,log=None):
         
         for i in range(0,len(obs.exposure_times),1):
             status = update_db_2.add_request(obs.name, (obs.cadence*60.0), \
-            obs.exptime[i], obs.exposure_counts[i], timestamp=obs.ts_submit \
+            obs.exptime[i], obs.exposure_counts[i], timestamp=obs.ts_submit, \
                 time_expire=obs.ts_expire, pfrm_on = obs.pfrm, \
                 onem_on=obs.onem, twom_on=obs.twom, request_type=obs.req_type, \
                 which_filter=obs.filters[i], which_inst=obs.instrument, \

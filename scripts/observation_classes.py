@@ -8,7 +8,7 @@ Created on Fri Mar 17 18:07:21 2017
 from datetime import datetime, timedelta
 import urllib
 import utilities
-import instruments
+import instrument_overheads
 import json
 import httplib
 from sys import exit
@@ -114,7 +114,7 @@ class ObsRequest:
         if debug == True and log != None:
             log.info('Constraints dictionary: ' + str( constraints ))
             
-        imager = instruments.Instrument(self.tel, self.instrument)
+        imager = instrument_overheads.Overhead(self.tel, self.instrument)
         self.instrument_class = imager.instrument_class
         if debug == True and log != None:
             log.info('Instrument overheads ' + imager.summary() )

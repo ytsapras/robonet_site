@@ -20,7 +20,7 @@ setup()
 from events.models import ObsRequest
 
 
-def get_active_obs(self):
+def get_active_obs(debug=False):
     """Function to extract a list of the currently-active observations 
     requests from the database"""
 
@@ -29,5 +29,11 @@ def get_active_obs(self):
                     ).exclude(
                     timestamp__lte = datetime.utcnow()
                     )
-    print qs
+    
+    if debug == True:
+        for q in qs:
+            print q.field, q.request_type, q.timestamp, q.time_expire
     return qs
+
+if __name__ == '__main__':
+    get_active_obs(debug=True)

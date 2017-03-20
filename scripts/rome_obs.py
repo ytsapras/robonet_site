@@ -45,7 +45,7 @@ def build_rome_obs(script_config,log=None):
                 obs.user_id = script_config['user_id']
                 obs.proposal_id = script_config['proposal_id']
                 obs.focus_offset = obs_sequence['defocus']
-                obs.req_type = 'rome'
+                obs.req_type = 'L'
                 obs.req_origin = 'obscontrol'
                 
                 rome_obs.append(obs)
@@ -85,7 +85,7 @@ def rome_obs_sequence():
     obs_sequence = {
                     'exp_times': [ 300.0, 300.0, 300.0],
                     'exp_counts': [ 1, 1, 1 ],
-                    'filters':   [ 'gp', 'rp', 'ip'],
+                    'filters':   [ 'SDSS-g', 'SDSS-r', 'SDSS-i'],
                     'defocus':  [ 0.0, 0.0, 0.0],
                     'sites':        ['lsc', 'cpt', 'coj'],
                     'domes':        ['doma', 'doma', 'doma'],

@@ -5,7 +5,6 @@ Created on Sat Mar 18 12:16:03 2017
 @author: rstreet
 """
 
-import unittest
 from os import getcwd, path
 from sys import path as systempath
 cwd = getcwd()
