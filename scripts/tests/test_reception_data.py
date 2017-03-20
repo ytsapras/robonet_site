@@ -1,4 +1,8 @@
-import reception_data
+import os, sys
+lib_path = os.path.abspath(os.path.join('/home/etienne/Work/Microlensing/ROME/robonet_site/robonet_site/scripts'))
+sys.path.append(lib_path)
+
+from scripts import reception_data
 
 
 
