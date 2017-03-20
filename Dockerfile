@@ -16,6 +16,7 @@ RUN yum -y install epel-release \
 COPY requirements.txt /var/www/html/
 RUN pip install --upgrade pip \
     && pip install numpy \
+    && pip install pytest
     && pip install -r /var/www/html/requirements.txt \
     && rm -rf ~/.cache ~/.pip
 
