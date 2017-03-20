@@ -46,4 +46,44 @@ def test_rm_duplicate_obs():
     
     assert len(obs_requests) == 0
 
+def test_obs_submission():
+
+    config = { 'log_directory': '.', 'log_root_name': 'Obsrecord', \
+                'proposal_id': 'test_proposal', \
+                'user_id': 'tester@lco.global', \
+                'request_window': 24.0, \
+                'odin_access': 'XXXX', \
+                'simulate': True
+            }
+    robs = observation_classes.ObsRequest()
+    robs.name = 'test_field'
+    robs.group_id = 'system_testing'
+    robs.ra = '17:24:24.5'
+    robs.dec = '-27:19:19.5'
+    robs.site = 'lsc'
+    robs.observatory = 'doma'
+    robs.tel = '1m0'
+    robs.instrument = 'fl16'
+    robs.instrument_class = 'sinistro'
+    robs.filters = [ 'SDSS-g', 'SDSS-r', 'SDSS-i' ]
+    robs.group_type = 'single'
+    robs.exposure_times = [ 300.0, 300.0, 300.0 ]
+    robs.exposure_counts = [1, 1, 1]
+    robs.cadence = 24.0
+    robs.priority = 1.0
+    robs.user_id = 'rstreet@lco.global'
+    robs.ttl = 24.0
+    robs.focus_offset = [0.0, 0.0, 0.0]
+    robs.request_type = 'L'
+    robs.req_origin = 'test'
+    robs.pfrm = False
+    robs.onem = True
+    robs.twom = False
+    robs.submit_response = None
+    robs.submit_status = None
+    obs_requests = [ robs ]
+    
+    submit_status = obs_control.submit_obs_requests(config,obs_requests)
+    
+    assert submit_status[0] == 'SIM_add_OK'
     

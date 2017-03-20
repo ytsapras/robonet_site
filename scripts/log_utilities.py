@@ -143,3 +143,21 @@ def lock( config, state, log ):
         log.info('Checked for clashing locks; found none')
         return 'unlocked'
         
+def start_obs_record( config ):
+    """Function to initialize or open a daily record of submitted observations"""
+    
+    log_file = get_log_path( config )
+    
+    tnow = datetime.utcnow()
+    
+    if path.isfile(log_file) == True:
+        obsrecord = open(log_file,'a')
+    else:
+        obsrecord = open(log_file,'w')
+        obsrecord.write('# Log of Requested Observation Groups\n')
+        obsrecord.write('#\n')
+        obsrecord.write('# Log started: ' + tnow.strftime("%Y-%m-%dT%H:%M:%S") + '\n')
+        obsrecord.write('# Running at sba\n')
+        obsrecord.write('#\n')
+        obsrecord.write('# GrpID  TrackID  ReqID  Site  Obs  Tel  Instrum  Target  ReqType  RA(J2000)  Dec(J2000)  Filter  ExpTime  ExpCount  Cadence  Priority  TS_Submit  TS_Expire  TTL  FocusOffset  ReqOrigin  RCS_Report\n')
+    return obsrecord

@@ -31,7 +31,7 @@ class Overhead:
                                 str(self.instrument_class).upper()
         
         network_overheads = { 
-                    '1m0a':   {
+                    '1m0':   {
                             'sinistro': { 'front_padding': 240.0, 
                                           'filter_change': 2.0,
                                           'readout': 38.0
@@ -41,7 +41,7 @@ class Overhead:
                                           'readout': 15.5
                                         }
                             },
-                    '2m0a':   {
+                    '2m0':   {
                             'spectral': { 'front_padding': 240.0, 
                                           'filter_change': 2.0,
                                           'readout': ( (42.0/4.0) + 12.0 )                                         }

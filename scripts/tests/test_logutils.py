@@ -68,3 +68,20 @@ def test_lock_functions():
     assert path.isfile(path.join(config['log_directory'],config['lock_file'])) == False
     log_utilities.end_day_log( log )
     remove(log_path)
+    
+def test_obsrecord_start():
+    """Verify that the initialization function correctly starts
+    a date-stamped log file"""
+    
+    config = {'log_directory': '.',
+              'log_root_name': 'test'}
+    log = log_utilities.start_obs_record( config )
+    
+    ts = Time.now()    
+    ts = ts.iso.split()[0]
+    log_file = path.join( config['log_directory'], \
+                config['log_root_name'] + '_' + ts + '.log' )
+                
+    assert path.isfile(log_file) == True
+    remove(log_file)
+        
