@@ -23,6 +23,17 @@ def start_day_log( config, log_name, console=False ):
     to an existing file.
     This function also configures the log file to provide timestamps for 
     all entries.  
+    
+    Parameters:
+        config    dictionary    Script configuration including parameters
+                                log_directory  Directory path
+                                log_root_name  Name of the log file
+        log_name  string        Name applied to the logger Object 
+                                (not to be confused with the log_root_name)
+        console   Boolean       Switch to capture logging data from the 
+                                stdout.  Normally set to False.
+    Returns:
+        log       open logger object
     """
 
     log_file = get_log_path( config )
@@ -57,7 +68,15 @@ def start_day_log( config, log_name, console=False ):
 
 def get_log_path( config ):
     """Function to determine the path and name of the log file, giving it
-    a date-stamp in UTC"""
+    a date-stamp in UTC.
+    
+    Parameters:
+        config    dictionary    Script configuration including parameters
+                                log_directory  Directory path
+                                log_root_name  Name of the log file   
+    Returns:
+        log_file  string        Path/log_name string
+    """
     
     ts = Time.now()    
     ts = ts.iso.split()[0]
@@ -68,14 +87,31 @@ def get_log_path( config ):
 
 def end_day_log( log ):
     """Function to cleanly shutdown logging functions with last timestamped
-    entry"""
+    entry.
+    Parameters:
+        log     logger Object
+    Returns:
+        None
+    """
     
     log.info( 'Processing complete\n' )
     logging.shutdown()
 
 def lock( config, state, log ):
     """Method to create and release this script's lockfile and also to determine
-    whether another lock file exists which may prevent this script operating.    
+    whether another lock file exists which may prevent this script operating.  
+    
+    Parameters:
+        config    dictionary    Script configuration including parameters
+                                log_directory  Directory path
+                                lock_file      Name of the lock file
+        state     string        Action to take, one of:
+                                { lock, unlock, check }
+        log       logger object Open logger
+    
+    Returns:
+        state     string        Action taken, one of:
+                                { lock_created, lock_removed, clashing_lock }
     """
 
     lock_file = path.join( config['log_directory'], config['lock_file'] )    
