@@ -616,7 +616,7 @@ class ObsRequest(models.Model):
    ('M', 'REA Low - 60 min cadence'),
    ('L', 'ROME Standard - every 7 hours')
    )
-   timestamp = models.DateTimeField('date last updated', blank=True)
+   timestamp = models.DateTimeField('request submit date', blank=True)
    # observe on 0.4m telescopes?
    pfrm_on = models.BooleanField(default=False)
    # observe on 1m telescopes?
