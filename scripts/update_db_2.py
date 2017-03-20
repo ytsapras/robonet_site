@@ -1522,46 +1522,39 @@ def run_test2():
    #   print count
 
    # Populate Image database
-   #import random
-   #from datetime import datetime, timedelta
-   #count = 0
-   #ogle_events_list = EventName.objects.filter(name__contains="OGLE")
-   #for i in ogle_events_list:
-   #   event_name = i.name
-   #   rome_field = random.randint(1,20)
-   #   for cnt in range(10):
-   #	 image_name = str(event_name)+'_img_'+str(cnt)
-   #	 date_obs = timezone.now()+timedelta(hours=random.uniform(-1000,1000))
-   #	 timestamp = timezone.now()
-   #	 tel = random.choice(['LCOGT SAAO 1m A','LCOGT SAAO 1m B','LCOGT SAAO 1m C','LCOGT CTIO 1m A',
-   #			      'LCOGT CTIO 1m B','LCOGT CTIO 1m C', 'LCOGT SSO 1m A', 'LCOGT SSO 1m B',
-   #			      'Faulkes North 2.0m','Faulkes South 2.0m'])
-   #	 inst = tel+' CCD camera'
-   #	 filt = 'SDSS-i'
-   #	 grp_id = 'RBN2016'+str(random.randint(1,10))+str(random.randint(1,30))+'T'+str(random.uniform(0,24))
-   #	 track_id = '0000'+str(random.randint(10000,30000))
-   #	 req_id = '0000'+str(random.randint(40000,60000))
-   #	 airmass = random.uniform(1,2)
-   #	 avg_fwhm = random.uniform(2,9)
-   #	 avg_sky = random.uniform(1000,6000)
-   #	 avg_sigsky = random.uniform(10,200)
-   #	 moon_sep = random.uniform(15,40)
-   #	 moon_phase = random.uniform(0,99)
-   #	 moon_up = random.choice([True,False])
-   #	 elongation = random.uniform(1,2)
-   #	 nstars = random.randint(60,600)
-   #	 ztemp = None
-   #	 quality = random.choice(['rejected','accepted','accepted','accepted'])
-   #	 target_hjd = None
-   #	 target_mag = None
-   #	 target_magerr = None
-   #	 target_skybg = None
-   #	 target_fwhm = None
-   #	 add_image(event_name=event_name, image_name=image_name, date_obs=date_obs, timestamp=timestamp, 
-   #		   tel=tel, inst=inst, filt=filt, grp_id=grp_id, track_id=track_id, req_id=req_id, 
-   #		   airmass=airmass, avg_fwhm=avg_fwhm, avg_sky=avg_sky, avg_sigsky=avg_sigsky, 
-   #		   moon_sep=moon_sep, moon_phase=moon_phase, moon_up=moon_up, elongation=elongation,
-   #		   nstars=nstars, ztemp=ztemp, quality=quality, rome_field= rome_field, target_hjd=target_hjd, 
-   #               target_mag=target_mag, target_magerr=target_magerr, target_skybg=target_skybg, target_fwhm=target_fwhm) 
-   #   count = count + 1
-   #   print count
+   import random
+   from datetime import datetime, timedelta
+   count = 0
+   fields_list = Field.objects.all()
+   for i in fields_list:
+      field_name = fields_list[0].name
+      for cnt in range(10):
+   	 image_name = str(field_name)+'_img_'+str(cnt)
+   	 date_obs = timezone.now()+timedelta(hours=random.uniform(-1000,1000))
+   	 timestamp = timezone.now()
+         inst_list = Instrument.objects.filter(name__contains='fl')
+         inst_object = random.choice(inst_list)
+	 inst = inst_object.name
+	 tel = inst_object.telescope.name
+	 filt = 'SDSS-i'
+   	 grp_id = 'ROME017'+str(random.randint(1,10))+str(random.randint(1,30))+'T'+str(random.uniform(0,24))
+   	 track_id = '0000'+str(random.randint(10000,30000))
+   	 req_id = '0000'+str(random.randint(40000,60000))
+   	 airmass = random.uniform(1,2)
+   	 avg_fwhm_bob = random.uniform(2,9)
+   	 avg_sky = random.uniform(1000,6000)
+   	 avg_sigsky = random.uniform(10,200)
+   	 moon_sep = random.uniform(15,40)
+   	 moon_phase = random.uniform(0,99)
+   	 moon_up = random.choice([True,False])
+   	 elongation = random.uniform(1,2)
+   	 nstars = random.randint(60,600)
+   	 ztemp = None
+   	 quality = 'Rejected: High sky background'
+   	 add_image(field_name=field_name, image_name=image_name, date_obs=date_obs, timestamp=timestamp, tel=tel, inst=inst,
+   	 	   filt=filt, grp_id=grp_id, track_id=track_id, req_id=req_id, airmass=airmass, avg_fwhm=avg_fwhm_bob, 
+   	 	   avg_sky=avg_sky, avg_sigsky=avg_sigsky, moon_sep=moon_sep, moon_phase=moon_phase, moon_up=moon_up,
+   	 	   elongation=elongation, nstars=nstars, ztemp=ztemp, quality=quality)
+      
+      count = count + 1
+      print count
