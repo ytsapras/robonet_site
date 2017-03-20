@@ -19,7 +19,7 @@ from django.utils import timezone
 from django import setup
 from datetime import datetime, timedelta
 setup()
-import obs_control
+import obs_control, log_utilities
 from events.models import ObsRequest, Field
 import observation_classes
 
@@ -48,13 +48,16 @@ def test_rm_duplicate_obs():
 
 def test_obs_submission():
 
-    config = { 'log_directory': '.', 'log_root_name': 'Obsrecord', \
+    config = { 'log_directory': '.', 'log_root_name': 'Test', \
                 'proposal_id': 'test_proposal', \
                 'user_id': 'tester@lco.global', \
                 'request_window': 24.0, \
                 'odin_access': 'XXXX', \
                 'simulate': True
             }
+
+    log = log_utilities.start_day_log( config, 'Test' )
+    
     robs = observation_classes.ObsRequest()
     robs.name = 'test_field'
     robs.group_id = 'system_testing'
@@ -83,7 +86,9 @@ def test_obs_submission():
     robs.submit_status = None
     obs_requests = [ robs ]
     
-    submit_status = obs_control.submit_obs_requests(config,obs_requests)
+    submit_status = obs_control.submit_obs_requests(config,obs_requests,log=log)
     
     assert submit_status[0] == 'SIM_add_OK'
+    
+    log_utilities.end_day_log( log )
     

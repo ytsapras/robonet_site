@@ -38,7 +38,7 @@ def test_log_name():
     ts = ts.iso.split()[0]
     log_file = path.join( config['log_directory'], \
                 config['log_root_name'] + '_' + ts + '.log' )
-    chk_log_file = log_utilities.get_log_path(config)
+    chk_log_file = log_utilities.get_log_path(config, config['log_root_name'])
     assert log_file == chk_log_file
     
 def test_lock_functions():
@@ -52,7 +52,7 @@ def test_lock_functions():
     lock_state = log_utilities.lock( config, 'check', log )
     assert lock_state=='unlocked'
     
-    log_path = log_utilities.get_log_path(config)
+    log_path = log_utilities.get_log_path(config, config['log_root_name'])
     log_data = open(log_path,'r').readlines()
     assert 'Checked for clashing locks; found none' in log_data[-1]
     
@@ -74,7 +74,7 @@ def test_obsrecord_start():
     a date-stamped log file"""
     
     config = {'log_directory': '.',
-              'log_root_name': 'test'}
+              'log_root_name': 'Obsrecord'}
     log = log_utilities.start_obs_record( config )
     
     ts = Time.now()    
@@ -84,4 +84,4 @@ def test_obsrecord_start():
                 
     assert path.isfile(log_file) == True
     remove(log_file)
-        
+    
