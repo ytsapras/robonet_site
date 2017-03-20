@@ -9,13 +9,13 @@ from astropy.io import ascii
 from astropy.time import Time
 import numpy as np
 import os
-import time
-
+import time 
+import log_utilities
 class QuantityLimits(object):
 
 	def __init__(self):
 
-		self.sky_background_median_limit = 5000.0
+		self.sky_background_median_limit = 10000.0
 		self.sky_background_std_limit = 200
 		self.sky_background_minimum = 100
 		self.sky_background_maximum = 5000
@@ -28,16 +28,20 @@ class QuantityLimits(object):
 
 class Image(object):
 
-	def __init__(self, image_directory, image_name, image_output_origin_directory):
+	def __init__(self, image_directory,image_output_origin_directory, image_name, logger ):
 
 		self.image_directory = image_directory
 		self.image_name = image_name
 		self.origin_directory = image_output_origin_directory
+		self.logger = logger
 		
-
-		image = fits.open(self.image_directory+self.image_name)
-		image = image[0]
-
+		try:
+			image = fits.open(self.image_directory+self.image_name)
+			image = image[0]
+			logger.info('Image successfully loaded')
+		except:
+			logger.error('I can not load the image!')
+			
 		self.data = image.data
 		self.header = image.header
                 self.oldheader = image.header.copy()
@@ -88,34 +92,40 @@ class Image(object):
 		pass	
 
         def update_image_wcs(self):
+	    
+	    try:
+		    hdutemplate = fits.open(os.path.join(self.template_directory,self.template_name))
+		    templateheader=hdutemplate[0].header
+		    hdutemplate.close()
+		    imageheader=self.header
+		    #STORE OLD FITSHEADER AND ADJUST BASED ON TEMPLATE
+		    imageheader['DPXCORR'] = self.x_shift
+		    imageheader['DPYCORR'] = self.y_shift
+		    imageheader['WCSRFCAT']  =   templateheader['WCSRFCAT'] 
+		    imageheader['RA']        =   templateheader['RA']       
+		    imageheader['DEC']       =   templateheader['DEC']      
+		    imageheader['CRPIX1']    =   templateheader['CRPIX1'] 
+		    imageheader['CRPIX2']    =   templateheader['CRPIX2'] 
+		    imageheader['CRVAL1']    =   templateheader['CRVAL1'] 
+		    imageheader['CRVAL2']    =   templateheader['CRVAL2'] 
+		    imageheader['CD1_1']     =   templateheader['CD1_1']  
+		    imageheader['CD1_2']     =   templateheader['CD1_2']  
+		    imageheader['CD2_1']     =   templateheader['CD2_1']  
+		    imageheader['CD2_2']     =   templateheader['CD2_2']
+		    imageheader['CRPIX1']    =   self.x_new_center
+		    imageheader['CRPIX2']    =   self.y_new_center
+		    imageheader['CDELT1']    =   templateheader['CDELT1']   
+		    imageheader['CDELT2']    =   templateheader['CDELT2']   
+		    imageheader['CROTA1']    =   templateheader['CROTA1']   
+		    imageheader['CROTA2']    =   templateheader['CROTA2']   
+		    imageheader['SECPIX1']   =   templateheader['SECPIX1']  
+		    imageheader['SECPIX2']   =   templateheader['SECPIX2']   
+		    imageheader['WCSSEP']    =   templateheader['WCSSEP']
+		    
+		    self.logger.info('WCS header successfully updated')   
+	    except:
 
-            hdutemplate = fits.open(os.path.join(self.template_directory,self.template_name))
-            templateheader=hdutemplate[0].header
-            hdutemplate.close()
-            imageheader=self.header
-            #STORE OLD FITSHEADER AND ADJUST BASED ON TEMPLATE
-            imageheader['DPXCORR'] = self.x_shift
-            imageheader['DPYCORR'] = self.y_shift
-            imageheader['WCSRFCAT']  =   templateheader['WCSRFCAT'] 
-            imageheader['RA']        =   templateheader['RA']       
-            imageheader['DEC']       =   templateheader['DEC']      
-            imageheader['CRPIX1']    =   templateheader['CRPIX1'] 
-            imageheader['CRPIX2']    =   templateheader['CRPIX2'] 
-            imageheader['CRVAL1']    =   templateheader['CRVAL1'] 
-            imageheader['CRVAL2']    =   templateheader['CRVAL2'] 
-            imageheader['CD1_1']     =   templateheader['CD1_1']  
-            imageheader['CD1_2']     =   templateheader['CD1_2']  
-            imageheader['CD2_1']     =   templateheader['CD2_1']  
-            imageheader['CD2_2']     =   templateheader['CD2_2']
-            imageheader['CRPIX1']    =   self.x_new_center
-            imageheader['CRPIX2']    =   self.y_new_center
-            imageheader['CDELT1']    =   templateheader['CDELT1']   
-            imageheader['CDELT2']    =   templateheader['CDELT2']   
-            imageheader['CROTA1']    =   templateheader['CROTA1']   
-            imageheader['CROTA2']    =   templateheader['CROTA2']   
-            imageheader['SECPIX1']   =   templateheader['SECPIX1']  
-            imageheader['SECPIX2']   =   templateheader['SECPIX2']   
-            imageheader['WCSSEP']    =   templateheader['WCSSEP']   
+		    self.logger.error('WCS header successfully updated')
 
 	def find_wcs_template(self):
 
@@ -140,105 +150,141 @@ class Image(object):
 
 	def find_camera(self):
 
-		camera_name = self.image_name[9:13]
-		self.camera = operational_instruments.define_instrument(camera_name)
-		self.filter = self.header[self.camera.header_dictionnary['filter']]
-	
+		try:
+			camera_name = self.image_name[9:13]
+			self.camera = operational_instruments.define_instrument(camera_name)
+			self.filter = self.header[self.camera.header_dictionnary['filter']]
+			self.logger.info('Successfully find the associated camera')
+
+		except:
+
+			self.logger.error('I do not know this camera!')
+
 	def find_object_and_field_name(self):
 		
-		self.object_name = self.header[self.camera.header_dictionnary['object']]
-		self.field_name = self.object_name.replace('ROME-','')	
+		try:
+
+			self.object_name = self.header[self.camera.header_dictionnary['object']]
+			self.field_name = self.object_name.replace('ROME-','')	
+			self.logger.info('Object name is :'+self.object_name)
+			self.logger.info('And so the assiocated field :'+self.field_name)
+		except:
+
+			self.logger.error('I can not recognize the object name or/and field name!')
 
 	def determine_the_output_directory(self):
 
-		origin_directory = self.origin_directory
+		try:
+			origin_directory = self.origin_directory
 
-		if len(self.quality_flags) == 0:		
+			if len(self.quality_flags) == 0:		
 		
-			quality_directory = 'good/'
-		else:
+				quality_directory = 'good/'
+			else:
 
-			quality_directory = 'bad/'	
+				quality_directory = 'bad/'	
 
 
-		if 'ROME' in self.header_group_id:
+			if 'ROME' in self.header_group_id:
 			
-			mode_directory = 'rome/'
+				mode_directory = 'rome/'
 
-		else:
+			else:
 
-			mode_directory = 'rea/'
+				mode_directory = 'rea/'
 
 		
-		site_directory = self.header_telescope_site +'/'
+			site_directory = self.header_telescope_site +'/'
 
-		the_filter = self.camera.filter_convention[self.filter] 
-		filter_directory = the_filter +'/'
+			the_filter = self.camera.filter_convention[self.filter] 
+			filter_directory = the_filter +'/'
 	
-		camera_directory = self.camera.name +'/'
+			camera_directory = self.camera.name +'/'
 
-		field_directory = self.field_name +'/'
+			field_directory = self.field_name +'/'
 
 
-		output_directory = origin_directory + quality_directory + mode_directory + site_directory + \
-				   camera_directory + filter_directory +  field_directory
+			output_directory = origin_directory + quality_directory + mode_directory + site_directory + \
+					   camera_directory + filter_directory +  field_directory
 		
 
-		self.output_directory = output_directory
-                self.catalog_directory = output_directory.replace('images','catalog0')
+			self.output_directory = output_directory
+		        self.catalog_directory = output_directory.replace('images','catalog0')
+			self.logger.info('Successfully find the output directory :'+self.output_directory)
+			self.logger.info('Successfully find the catalog directory :'+self.catalog_directory)
 	
+		except:
+		
+			self.logger.error('I can not find the output directory or/and  output directory!')
 
 	def find_WCS_offset(self):
+		
+		try:
 
-           self.x_new_center,self.y_new_center,self.x_shift,self.y_shift = xycorr(os.path.join(self.template_directory,self.template_name), self.data, 0.4)
-           self.update_image_wcs()
-           
+		   self.x_new_center,self.y_new_center,self.x_shift,self.y_shift = xycorr(os.path.join(self.template_directory,self.template_name), self.data, 0.4)
+		   self.update_image_wcs()
+           	   self.logger.info('Successfully find the WCS correction')
 
+		except:
+
+		   self.logger.error('I failed to find the WCS correction')	
+			 	
+	
 	def generate_sextractor_catalog(self):
            '''
            extracting a catalog from a WCS-recalibrated (!) image
            calling it through logging to obtain an astropy
            compliant output with logging...
            '''
-           extractor_parameters=['X_IMAGE','Y_IMAGE','BACKGROUND',
-                              'ELLIPTICITY','FWHM_WORLD','X_WORLD',
-                              'Y_WORLD','MAG_APER','MAGERR_APER']
-           extractor_config={'DETECT_THRESH':2.5,
-                          'ANALYSIS_THRESH':2.5,
-                          'FILTER':'Y',
-                          'DEBLEND_NTHRESH':32,
-                          'DEBLEND_MINCOUNT':0.005,
-                          'CLEAN':'Y',
-                          'CLEAN_PARAM':1.0,
-                          'PIXEL_SCALE':self.camera.pix_scale,
-                          'SATUR_LEVEL':self.camera.ADU_high,
-                          'PHOT_APERTURES':10,
-                          'DETECT_MINAREA':7,
-                          'GAIN':self.camera.gain,
-                          'SEEING_FWHM':self.header_seeing,
-                          'BACK_FILTERSIZE':3}
-           sew = sewpy.SEW(params=extractor_parameters,config=extractor_config,sexpath='/usr/bin/sex')
-           sewoutput = sew(os.path.join(self.image_directory,self.image_name))
-           #APPEND JD, ATTEMPTING TO CALIBRATE MAGNITUDES..
-           catalog=sewoutput['table']     
-           tobs=Time([self.header['DATE-OBS']],format='isot',scale='utc')
-           calibration_pars={'gp':[1.0281267,29.315002],'ip':[1.0198562,28.13711],'rp':[1.020762,28.854443]}
-           if self.filter!=None:
-               calmag=catalog['MAG_APER']*calibration_pars[self.filter][0]+calibration_pars[self.filter][1]
-               calmag[np.where(catalog['MAG_APER']==99.)]=99.
-           catalog['MAG_APER_CAL']=calmag
-           catalog['FILTER']=[self.filter]*len(calmag)
-           catalog['JD']=np.ones(len(catalog))*tobs.jd
-           #APPEND JD AND CALIBRATED MAGNITUDES...
-           #ROUGH CALIBRATION TO VPHAS+
-           #gmag=instmag*1.0281267+29.315002
-           #imag=instmag*1.0198562+28.13711
-           #rmag=instmag*1.020762+28.854443
-	   import pdb; pdb.set_trace()
-           self.compute_stats_from_catalog(catalog)
-           catname=self.name.replace('.fits','.cat')
-           ascii.write(catalog,os.path.join(self.catalog_directory,catname))
+	   try:
 
+		   extractor_parameters=['X_IMAGE','Y_IMAGE','BACKGROUND',
+		                      'ELLIPTICITY','FWHM_WORLD','X_WORLD',
+		                      'Y_WORLD','MAG_APER','MAGERR_APER']
+		   extractor_config={'DETECT_THRESH':2.5,
+		                  'ANALYSIS_THRESH':2.5,
+		                  'FILTER':'Y',
+		                  'DEBLEND_NTHRESH':32,
+		                  'DEBLEND_MINCOUNT':0.005,
+		                  'CLEAN':'Y',
+		                  'CLEAN_PARAM':1.0,
+		                  'PIXEL_SCALE':self.camera.pix_scale,
+		                  'SATUR_LEVEL':self.camera.ADU_high,
+		                  'PHOT_APERTURES':10,
+		                  'DETECT_MINAREA':7,
+		                  'GAIN':self.camera.gain,
+		                  'SEEING_FWHM':self.header_seeing,
+		                  'BACK_FILTERSIZE':3}
+		   sew = sewpy.SEW(params=extractor_parameters,config=extractor_config,sexpath='/usr/bin/sex')
+		   sewoutput = sew(os.path.join(self.image_directory,self.image_name))
+		   #APPEND JD, ATTEMPTING TO CALIBRATE MAGNITUDES..
+		   catalog=sewoutput['table']     
+		   tobs=Time([self.header['DATE-OBS']],format='isot',scale='utc')
+		   calibration_pars={'gp':[1.0281267,29.315002],'ip':[1.0198562,28.13711],'rp':[1.020762,28.854443]}
+		   if self.filter!=None:
+		       calmag=catalog['MAG_APER']*calibration_pars[self.filter][0]+calibration_pars[self.filter][1]
+		       calmag[np.where(catalog['MAG_APER']==99.)]=99.
+		   catalog['MAG_APER_CAL']=calmag
+		   catalog['FILTER']=[self.filter]*len(calmag)
+		   catalog['JD']=np.ones(len(catalog))*tobs.jd
+		   #APPEND JD AND CALIBRATED MAGNITUDES...
+		   #ROUGH CALIBRATION TO VPHAS+
+		   #gmag=instmag*1.0281267+29.315002
+		   #imag=instmag*1.0198562+28.13711
+		   #rmag=instmag*1.020762+28.854443
+
+		   self.compute_stats_from_catalog(catalog)
+		   catname=self.image_name.replace('.fits','.cat')
+
+		   #ascii.write(catalog,os.path.join(self.catalog_directory,catname))
+		   ascii.write(catalog,os.path.join('./',catname))
+		   self.logger.info('Sextractor catalog successfully produce')
+		
+	   except:
+
+		    self.logger.error('I can not produce the Sextractor catalog!')
+
+		
         def create_image_control_region(self):
                	
                 w = wcs.WCS(self.header)
@@ -247,21 +293,32 @@ class Image(object):
 		px = int(px)                
 		try:
                     self.thumbnail=self.data[px-self.thumbnail_box_size/2:px+self.thumbnail_box_size/2,py-self.thumbnail_box_size/2:py+self.thumbnail_box_size/2]
+      		    self.logger.info('Thumbnail successfully produce around the good position')
                 except:
                     self.thumbnail=np.zeros((self.thumbnail_box_size,self.thumbnail_box_size))
-                    
+                    self.logger.info('Thumbnail successfully produce around the center of the image')
 
         def compute_stats_from_catalog(self,catalog):
 
-            self.sky_level=np.median(catalog['BACKGROUND'])
-            self.sky_level_std=np.std(catalog['BACKGROUND'])
-            self.sky_minimum_level=np.min(catalog['BACKGROUND'])
-            self.sky_maximum_level=np.max(catalog['BACKGROUND'])
-            self.number_of_stars=len(catalog)
-            self.ellipticity=np.median(catalog['ELLIPTICITY'])
-            self.seeing=np.median(catalog['FWHM_WORLD'])
+	    try:
+
+		    self.sky_level=np.median(catalog['BACKGROUND'])
+		    self.sky_level_std=np.std(catalog['BACKGROUND'])
+		    self.sky_minimum_level=np.min(catalog['BACKGROUND'])
+		    self.sky_maximum_level=np.max(catalog['BACKGROUND'])
+		    self.number_of_stars=len(catalog)
+		    self.ellipticity=np.median(catalog['ELLIPTICITY'])
+		    self.seeing=np.median(catalog['FWHM_WORLD'])
+		    self.logger.info('Image quality statistics well updated')
+
+	    except:
+
+		    self.logger.error('For some reason, I can not update the image quality statistics!')
+
+
 
 	def extract_header_statistics(self):
+
 
 		desired_quantities = [ key for key,value in self.__dict__.items() if 'header' in key]
 
@@ -273,17 +330,24 @@ class Image(object):
 			except:
 
 				pass
-		
+
+		self.logger.info('Image header_quality statistics well updated from the header')
+
 
 	def assess_image_quality(self):
 		
-		self.check_background()
-		self.check_Moon()
-		self.check_Nstars()
-		self.check_ellipticity()
-		self.check_seeing()
+		try:
 
-		
+			self.check_background()
+			self.check_Moon()
+			self.check_Nstars()
+			self.check_ellipticity()
+			self.check_seeing()
+			self.logger.info('Quality flags well produced')
+
+		except:
+
+			self.logger.error('I can not assess the image quality, no quality flags produced!')
 
 	def check_background(self):
 	
@@ -348,34 +412,39 @@ class Image(object):
 
 			return 'mkdir it'
 
-def find_frames_to_process(new_frames_directory):
+def find_frames_to_process(new_frames_directory, logger):
 
 	IncomingList = glob.glob(new_frames_directory+'*.fits') 
 	
 	if len(IncomingList) == 0 :
 
-		print 'NoNewData here'
+		
 		return
 
 	else :
-
+		logger.info('I found '+str(len(IncomingList))+' frames to treat')
 		return IncomingList
 
 
 
 
-
 def process_new_images(new_frames_directory, image_output_origin_directory):
+	
 
 
-	NewFrames = find_frames_to_process(new_frames_directory)
-
+	config = {'log_directory':'./', 'log_root_name':'test'}
+	logger = log_utilities. start_day_log( config, 'test', console=False )
+	NewFrames = find_frames_to_process(new_frames_directory, logger)
+	
 	if NewFrames :
-		
+		import pdb; pdb.set_trace()
 		for newframe in NewFrames :
+
 			start = time.time()
 			newframe = newframe.replace(new_frames_directory, '')
-			image = Image(new_frames_directory, newframe, image_output_origin_directory)
+			logger.info('')
+			logger.info('Start to work on frame: '+newframe)
+			image = Image(new_frames_directory, image_output_origin_directory, newframe, logger)
 			image.extract_header_statistics()
 			image.determine_the_output_directory()
 			image.find_wcs_template()
@@ -385,7 +454,7 @@ def process_new_images(new_frames_directory, image_output_origin_directory):
 			print image.image_name , image.x_shift, image.y_shift,time.time()-start
 			import pdb; pdb.set_trace()
 			#image.process_the_image(self)
-	
+		log_utilities. end_day_log(logger)
 	else :
 
 
