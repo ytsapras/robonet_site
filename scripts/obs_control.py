@@ -75,7 +75,7 @@ def read_config():
     
     return script_config
 
-def rm_duplicate_obs(obs_request_list, active_obs,log=None):
+def rm_duplicate_obs(obs_request_list, active_obs,log=None,debug=False):
     """Function to compare the list of observations to be requested with the
     Django QuerySet of those that have already been submitted. 
     Any duplicated observations are removed from the list of observations
@@ -87,11 +87,15 @@ def rm_duplicate_obs(obs_request_list, active_obs,log=None):
         
     obs_requests_final = []
     for obs in obs_request_list:
+        if debug==True: 
+            print obs.name, obs.filters, obs.request_type
         for active_req in active_obs:
+            if debug==True: 
+                print active_req.field.name, active_req.which_filter,\
+                    active_req.request_type
             if active_req.field.name == obs.name and \
                 active_req.which_filter in obs.filters and \
                     active_req.request_type == obs.request_type:
-                
                 if log != None:
                     log.info(obs.group_id + ': Found existing active ' + \
                             get_request_desc(active_req.request_type) + \
@@ -99,12 +103,13 @@ def rm_duplicate_obs(obs_request_list, active_obs,log=None):
                             ' with filter ' + active_req.which_filter + \
                             ', not submitting duplicate')
                 
-        else:
-            log.info(obs.group_id + ': No existing active ' + \
-                    get_request_desc(obs.request_type) + ' request for ' + obs.name + \
-                    ' with filter in ' + ' '.join(obs.filters) + \
-                    '; observation will be queued')
-            obs_requests_final.append(obs)
+            else:
+                if log != None:
+                    log.info(obs.group_id + ': No existing active ' + \
+                        get_request_desc(obs.request_type) + ' request for ' + obs.name + \
+                        ' with filter in ' + ' '.join(obs.filters) + \
+                        '; observation will be queued')
+                obs_requests_final.append(obs)
                     
     if log != None:
         log.info('\n')

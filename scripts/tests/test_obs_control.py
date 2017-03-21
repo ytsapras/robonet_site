@@ -59,7 +59,7 @@ def test_obs_submission():
     log = log_utilities.start_day_log( config, 'Test' )
     
     robs = observation_classes.ObsRequest()
-    robs.name = 'test_field'
+    robs.name = 'ROME-FIELD-01'
     robs.group_id = 'system_testing'
     robs.ra = '17:24:24.5'
     robs.dec = '-27:19:19.5'
@@ -85,7 +85,7 @@ def test_obs_submission():
     robs.submit_response = None
     robs.submit_status = None
     obs_requests = [ robs ]
-    
+
     submit_status = obs_control.submit_obs_requests(config,obs_requests,log=log)
     
     assert submit_status[0] == 'SIM_add_OK'

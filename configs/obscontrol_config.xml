@@ -1,17 +1,14 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
 <obscontrolconfig>
-    <parameter name='logdir'>
-      	<value>/home/rstreet/ROMEREA/Logs/2017</value>
+    <parameter name='log_directory'>
+      	<value>/data/robouser/Logs/2017</value>
     </parameter>
     <parameter name='log_root_name'>
-      	<value>sinistro_survey_obs</value>
+      	<value>obscontrol</value>
     </parameter>
     <parameter name='lock_file'>
 	<value>obscontrol.lock</value>
-    </parameter>
-    <parameter name='targetlist'>
-      	<value>TargetList_ROME</value>
     </parameter>
     <parameter name='proposal_id'>
       	<value>KEY2014A-004</value>

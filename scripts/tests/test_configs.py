@@ -26,5 +26,5 @@ def test_config_params():
     config_file_path = path.join('../../configs','obscontrol_config.xml')
     config = config_parser.read_config(config_file_path)
     
-    assert 'logdir' in config.keys()
+    assert 'log_directory' in config.keys()
 
