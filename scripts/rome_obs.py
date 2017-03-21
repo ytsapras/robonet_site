@@ -13,7 +13,7 @@ def build_rome_obs(script_config,log=None):
     microlensing program, based on the field pointing definitions and
     the pre-defined survey observation sequence"""
     
-    rome_fields = get_rome_fields()
+    rome_fields = get_rome_fields(testing=True)
     field_ids = rome_fields.keys()
     field_ids.sort()
     obs_sequence = rome_obs_sequence()
@@ -57,7 +57,7 @@ def build_rome_obs(script_config,log=None):
             
     return rome_obs
     
-def get_rome_fields():
+def get_rome_fields(testing=False):
     """Function to define the fields to be observed with the ROME strategy"""
     
     rome_fields={'ROME-FIELD-01':[ 267.835895375 , -30.0608178195 , '17:51:20.6149','-30:03:38.9442' ],
@@ -80,6 +80,10 @@ def get_rome_fields():
             'ROME-FIELD-18':[ 270.290886667 , -27.9986032778 , '18:01:09.8128','-27:59:54.9718' ],
             'ROME-FIELD-19':[ 270.312763708 , -29.0084241944 , '18:01:15.0633','-29:00:30.3271' ],
             'ROME-FIELD-20':[ 270.83674125 , -28.8431573889 , '18:03:20.8179','-28:50:35.3666' ]}
+    
+    if testing == True:
+        rome_fields={'ROME-FIELD-01':[ 267.835895375 , -30.0608178195 , '17:51:20.6149','-30:03:38.9442' ]}
+    
     return rome_fields
 
 def rome_obs_sequence():

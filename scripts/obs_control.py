@@ -4,7 +4,7 @@ Created on Fri Mar 17 15:56:00 2017
 
 @author: rstreet
 """
-from sys import argv
+from sys import argv, exit
 from os import path
 import config_parser
 import rome_obs
@@ -30,6 +30,9 @@ def obs_control():
     log.info('Obscontrol running in ' + script_config['MODE'] + ' mode')
     
     lock_state = log_utilities.lock( script_config, 'check', log )
+    if lock_state == 'clashing_lock':
+        log_utilities.end_day_log( log )
+        exit()
     lock_state = log_utilities.lock( script_config, 'lock', log )
 
     active_obs = query_db.get_active_obs(log=log)
@@ -84,7 +87,9 @@ def rm_duplicate_obs(obs_request_list, active_obs,log=None):
         
     obs_requests_final = []
     for obs in obs_request_list:
+        print obs.name, obs.filters, obs.request_type
         for active_req in active_obs:
+            print active_req.field.name, active_req.which_filter, active_req.request_type
             if active_req.field.name == obs.name and \
                 active_req.which_filter in obs.filters and \
                     active_req.request_type == obs.request_type:
@@ -96,12 +101,12 @@ def rm_duplicate_obs(obs_request_list, active_obs,log=None):
                             ' with filter ' + active_req.which_filter + \
                             ', not submitting duplicate')
                 
-            else:
-                log.info(obs.group_id + ': No existing active ' + \
-                        get_request_desc(obs.request_type) + ' observation for ' + obs.name + \
-                        ' with filter ' + active_req.which_filter + \
-                        '; observation will be queued')
-                obs_requests_final.append(obs)
+        else:
+            log.info(obs.group_id + ': No existing active ' + \
+                    get_request_desc(obs.request_type) + ' request for ' + obs.name + \
+                    ' with filter in ' + ' '.join(obs.filters) + \
+                    '; observation will be queued')
+            obs_requests_final.append(obs)
                     
     if log != None:
         log.info('\n')
@@ -155,8 +160,9 @@ def submit_obs_requests(script_config,obs_requests,log=None):
             if log != None: 
                 log.info('    => Updated DB with status ' + repr(status))
     obsrecord.close()
+
     if log != None: 
-    log.info('Finished requesting observations')
+        log.info('Finished requesting observations')
         log.info('\n')
     
     return submit_status
