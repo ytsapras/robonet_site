@@ -35,7 +35,7 @@ def get_active_obs(log=None):
         log.info('Queried DB for list of active observations:')
         for q in qs:
             log.info(' '.join([q.field.name,\
-                        get_request_desc(q.request_type), \
+                        parse_req_type(q.request_type), \
                         'submitted=',q.timestamp.strftime('%Y-%m-%dT%H:%M:%S'), \
                         'expires=',q.time_expire.strftime('%Y-%m-%dT%H:%M:%S')]))
         log.info('\n')
