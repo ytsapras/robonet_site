@@ -36,7 +36,7 @@ def obs_control():
     
     obs_requests = rm_duplicate_obs(obs_requests,active_obs,log=log)
 
-    submit_obs_requests(script_config,obs_requests,log=log)
+    submit_status = submit_obs_requests(script_config,obs_requests,log=log)
     
     log.info('Obs_Control: finished requesting observations')
     lock_state = log_utilities.lock( script_config, 'unlock', log )
@@ -72,35 +72,44 @@ def rm_duplicate_obs(obs_requests, active_obs):
     
     for obs in obs_requests:
         for active_req in active_obs:
-            if active_req.name == obs.name and \
-                active_req.filters == obs.filters and \
-                    active_req.req_type == obs.req_type:
-                i = obs_request.index(obs)
-                req = obs_request.pop(i)
+            if active_req.field.name == obs.name and \
+                active_req.which_filter in obs.filters and \
+                    active_req.request_type == obs.request_type:
+                i = obs_requests.index(obs)
+                req = obs_requests.pop(i)
     return obs_requests
 
 def submit_obs_requests(script_config,obs_requests,log=None):
     """Function to submit a list of observations requests"""
     
+    submit_status = []
     obsrecord = log_utilities.start_obs_record( script_config )
-    for obs in obs_request:
+    for obs in obs_requests:
         obs.build_json_request( script_config, log=log, debug=False )
-        log.info('Built observation request ' + field.group_id)
+        if log != None: 
+            log.info('Built observation request ' + field.group_id)
         
-        obs.submit_request(script_config, log=log, debug=False)
-        log.info('    => Status: ' + repr(obs.submit_status) + \
+        stat = obs.submit_request(script_config, log=log, debug=False)
+        submit_status.append(stat)
+        
+        if log != None: 
+            log.info('    => Status: ' + repr(obs.submit_status) + \
                                 ': ' + repr(obs.submit_response))
-        obsrecord.write( field.obs_record( script_config ) )
-        
+        obsrecord.write( obs.obs_record( script_config ) )
+
         for i in range(0,len(obs.exposure_times),1):
             status = update_db_2.add_request(obs.name, (obs.cadence*60.0), \
-            obs.exptime[i], obs.exposure_counts[i], timestamp=obs.ts_submit \
-                time_expire=obs.ts_expire, pfrm_on = obs.pfrm, \
-                onem_on=obs.onem, twom_on=obs.twom, request_type=obs.req_type, \
+                obs.exposure_times[i], obs.exposure_counts[i], \
+                time_expire=obs.ts_expire, \
+                pfrm_on = obs.pfrm, onem_on=obs.onem, twom_on=obs.twom, \
+                request_type=obs.request_type, \
                 which_filter=obs.filters[i], which_inst=obs.instrument, \
                 grp_id=obs.group_id, track_id='', req_id='')
-            log.info('    => Updated DB with status ' + repr(status))
+            if log != None: 
+                log.info('    => Updated DB with status ' + repr(status))
     obsrecord.close()
+    
+    return submit_status
     
 if __name__ == '__main__':
     obs_control()

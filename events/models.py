@@ -609,14 +609,14 @@ class ObsRequest(models.Model):
             (integer, optional, default=1)
    """
    def __str__(self):
-      return str(self.event)+' updated at '+str(self.timestamp)
+      return str(self.field)+' updated at '+str(self.timestamp)
    field = models.ForeignKey(Field)
    possible_types = (
    ('A', 'REA High - 20 min cadence'),
    ('M', 'REA Low - 60 min cadence'),
    ('L', 'ROME Standard - every 7 hours')
    )
-   timestamp = models.DateTimeField('date last updated', blank=True)
+   timestamp = models.DateTimeField('request submit date', blank=True)
    # observe on 0.4m telescopes?
    pfrm_on = models.BooleanField(default=False)
    # observe on 1m telescopes?
@@ -880,7 +880,7 @@ class Image(models.Model):
                  (string, optional, default='')
    """
    def __str__(self):
-      return str(self.event)+' Image: '+str(self.image_name)
+      return str(self.field)+' Image: '+str(self.image_name)
    field = models.ForeignKey(Field)
    image_name = models.CharField(max_length=200)
    timestamp = models.DateTimeField('Date received')

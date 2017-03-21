@@ -7,6 +7,9 @@ from astropy import wcs
 from astropy.table import Table
 from astropy.io import ascii
 from astropy.time import Time
+import numpy as np
+import os
+import time
 
 class QuantityLimits(object):
 
@@ -26,7 +29,7 @@ class QuantityLimits(object):
 class Image(object):
 
 	def __init__(self, image_directory, image_name, image_output_origin_directory):
-		import pdb; pdb.set_trace()
+
 		self.image_directory = image_directory
 		self.image_name = image_name
 		self.origin_directory = image_output_origin_directory
@@ -47,7 +50,7 @@ class Image(object):
 		self.ellipticity = None
 		self.seeing = None
 		self.quality_flags = []
-                self.thumbnail_box_size = 30
+                self.thumbnail_box_size = 60
                 self.field_name = None
 
 		self.header_telescope_site = None
@@ -65,7 +68,7 @@ class Image(object):
 		self.header_sky_level = None
 		self.header_sky_temperature = None
 		self.header_sky_measured_mag = None
-		self.header_sky_measured_mag = None
+
 		
 
 		self.find_camera()
@@ -178,7 +181,7 @@ class Image(object):
 
 
 		output_directory = origin_directory + quality_directory + mode_directory + site_directory + \
-				   camera_directory + filter_directory +  + field_directory
+				   camera_directory + filter_directory +  field_directory
 		
 
 		self.output_directory = output_directory
@@ -186,8 +189,8 @@ class Image(object):
 	
 
 	def find_WCS_offset(self):
-           
-           self.x_new_center,self.y_new_center,self.x_shift,self.y_shift = xycorr(os.path.join(self.template_directory,self.template_name), self.data, 0.3)
+
+           self.x_new_center,self.y_new_center,self.x_shift,self.y_shift = xycorr(os.path.join(self.template_directory,self.template_name), self.data, 0.4)
            self.update_image_wcs()
            
 
@@ -212,9 +215,9 @@ class Image(object):
                           'PHOT_APERTURES':10,
                           'DETECT_MINAREA':7,
                           'GAIN':self.camera.gain,
-                          'SEEING_FWHM':2.5,
+                          'SEEING_FWHM':self.header_seeing,
                           'BACK_FILTERSIZE':3}
-           sew = sewpy.SEW(params=extractor_parameters,config=extractor_config,sexpath='/usr/bin/sextractor')
+           sew = sewpy.SEW(params=extractor_parameters,config=extractor_config,sexpath='/usr/bin/sex')
            sewoutput = sew(os.path.join(self.image_directory,self.image_name))
            #APPEND JD, ATTEMPTING TO CALIBRATE MAGNITUDES..
            catalog=sewoutput['table']     
@@ -231,18 +234,21 @@ class Image(object):
            #gmag=instmag*1.0281267+29.315002
            #imag=instmag*1.0198562+28.13711
            #rmag=instmag*1.020762+28.854443
+	   import pdb; pdb.set_trace()
            self.compute_stats_from_catalog(catalog)
            catname=self.name.replace('.fits','.cat')
            ascii.write(catalog,os.path.join(self.catalog_directory,catname))
 
         def create_image_control_region(self):
-                
+               	
                 w = wcs.WCS(self.header)
-                pxcrd = w.wcs_world2pix([self.x_center_thumbnail_world,self.y_center_thumbnail_world])
-                try:
-                    self.thumbnail=self.data[pxcrd[1]-self.thumbnail_box_size/2:pxcrd[0]+self.thumbnail_box_size/2,pxcrd[0]-self.thumbnail_box_size/2:pxcrd[0]+self.thumbnail_box_size/2]
+                py,px = w.wcs_world2pix(self.x_center_thumbnail_world,self.y_center_thumbnail_world,1)
+		py = int(py)
+		px = int(px)                
+		try:
+                    self.thumbnail=self.data[px-self.thumbnail_box_size/2:px+self.thumbnail_box_size/2,py-self.thumbnail_box_size/2:py+self.thumbnail_box_size/2]
                 except:
-                    self.thumbnail=np.zeros((self.thumbnail_box_size,self.thumnail_box_size))
+                    self.thumbnail=np.zeros((self.thumbnail_box_size,self.thumbnail_box_size))
                     
 
         def compute_stats_from_catalog(self,catalog):
@@ -367,10 +373,19 @@ def process_new_images(new_frames_directory, image_output_origin_directory):
 	if NewFrames :
 		
 		for newframe in NewFrames :
+			start = time.time()
 			newframe = newframe.replace(new_frames_directory, '')
 			image = Image(new_frames_directory, newframe, image_output_origin_directory)
-			image.process_the_image(self)
-
+			image.extract_header_statistics()
+			image.determine_the_output_directory()
+			image.find_wcs_template()
+			image.create_image_control_region()
+			image.find_WCS_offset()
+			image.generate_sextractor_catalog()
+			print image.image_name , image.x_shift, image.y_shift,time.time()-start
+			import pdb; pdb.set_trace()
+			#image.process_the_image(self)
+	
 	else :
 
 
@@ -480,20 +495,20 @@ def convolve(image, psf, ft_psf=None, ft_image=None, no_ft=None, correlate=None,
    
    return np.roll(np.roll(conv, sc[0],0), sc[1],1)
 
-def correl_shift(refdata, imgdata):
+def correl_shift(reference, image):
     ''' This function calculates the revised
     central pixel coordinate for imgdata based
     on a cross correlation with refdata
     '''
-    xcen = np.shape(refdata[0].data)[0] / 2
-    ycen = np.shape(refdata[0].data)[1] / 2
-    correl = convolve.convolve(np.matrix(refdata[0].data),
-                               np.matrix(imgdata[0].data), correlate=1)
+    xcen = np.shape(reference)[0] / 2
+    ycen = np.shape(reference)[1] / 2
+    correl = convolve(np.matrix(reference),
+                               np.matrix(image), correlate=1)
     xshift, yshift = np.unravel_index(np.argmax(correl), np.shape(correl))
     half = np.shape(correl)[0] / 2
     return yshift-ycen,xshift-xcen
 
-def xycorr(pathref, pathimg, edgefraction):
+def xycorr(pathref, image, edgefraction):
     '''
     For a given reference image path pathref
     and a given image path pathimg
@@ -501,24 +516,24 @@ def xycorr(pathref, pathimg, edgefraction):
     edgefraction times full edge length is used
     to correlate a revised central pixel position
     '''
-    hduref = fits.open(pathref)
-    hdulist = fits.open(pathimg)
-    noff = np.shape(hduref[0].data)
-    if noff != np.shape(hdulist[0].data):
-        hduref.close()
-        hdulist.close()
-        return 0, 0, 0
-    xcen = np.shape(hduref[0].data)[0] / 2
-    ycen = np.shape(hduref[0].data)[1] / 2
-    halfx = int(edgefraction * float(noff[0]))
-    halfy = int(edgefraction * float(noff[1]))
 
-    hduref[0].data = hduref[0].data[
+    hduref = fits.open(pathref)
+    template_data = hduref[0].data
+    noff = np.shape(template_data)
+    if noff != np.shape(image):
+        hduref.close()
+
+        return 0, 0, 0, 0
+    xcen = np.shape(template_data)[0] / 2
+    ycen = np.shape(template_data)[1] / 2
+    halfx = int(edgefraction * float(noff[0]))/2
+    halfy = int(edgefraction * float(noff[1]))/2
+
+    reduce_template = template_data[
         xcen - halfx:xcen + halfx, ycen - halfy:ycen + halfy]
-    hdulist[0].data = hdulist[0].data[
+    reduce_image = image[
         xcen - halfx:xcen + halfx, ycen - halfy:ycen + halfy]
-    xc, yc = correl_shift(hduref, hdulist)
-    hdulist.close()
+    xc, yc = correl_shift(reduce_template, reduce_image)
     hduref.close()
-    return -xc + xcen ,-yc + ycen,xc,yc
+    return -xc + xcen , -yc + ycen, xc, yc
 
