@@ -18,21 +18,28 @@ from datetime import datetime, timedelta
 setup()
 
 from events.models import ObsRequest
+from observation_classes import get_request_desc
 
-
-def get_active_obs(debug=False):
+def get_active_obs(log=None):
     """Function to extract a list of the currently-active observations 
     requests from the database"""
-
+        
     qs = ObsRequest.objects.filter(
                     time_expire__gt = datetime.utcnow() 
                     ).exclude(
                     timestamp__lte = datetime.utcnow()
                     )
     
-    if debug == True:
+    if log != None:
+        log.info('\n')
+        log.info('Queried DB for list of active observations:')
         for q in qs:
-            print q.field, q.request_type, q.timestamp, q.time_expire
+            log.info(' '.join([q.field.name,\
+                        get_request_desc(q.request_type), \
+                        'submitted=',q.timestamp.strftime('%Y-%m-%dT%H:%M:%S'), \
+                        'expires=',q.time_expire.strftime('%Y-%m-%dT%H:%M:%S')]))
+        log.info('\n')
+                        
     return qs
 
 if __name__ == '__main__':

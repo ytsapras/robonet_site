@@ -20,13 +20,14 @@ from django import setup
 from datetime import datetime, timedelta
 setup()
 import update_db_2
+from events.models import Field
 
 def test_add_request():
     """Test the submission of new observation requests to the database"""
     
-    field_name = 'TEST'
+    field = Field(name='ROME-FIELD-01')
     t_sample = 60.0
-    exptime = 300.0
+    exptime = 300
     n_exp = 1
     ts_submit = timezone.now()
     ts_expire = ts_submit + timedelta(hours=24)
@@ -34,15 +35,15 @@ def test_add_request():
     onem = True
     twom = False
     request_type = 'L'
-    f = 'gp'
+    f = 'SDSS-g'
     i = 'fl16'
     group_id = 'TEST1'
     track_id = '0000012345'
     request_id = '000000123456'
-    status = update_db_2.add_request(field_name, t_sample, exptime, n_exp=n_exp, \
-                timestamp=ts_submit,time_expire=ts_expire, pfrm_on = pfrm,\
-                onem_on=onem, twom_on=twom, request_type=request_type, \
+    status = update_db_2.add_request(field.name, t_sample, \
+                exptime, timestamp=timezone.now(), time_expire=ts_expire, \
+                pfrm_on = pfrm, onem_on=onem, twom_on=twom, request_type=request_type, \
                 which_filter=f,which_inst=i, grp_id=group_id, \
-                track_id=track_id, req_id=request_id)
+                track_id=track_id, req_id=request_id,n_exp=n_exp)
     assert status == True
-        
+    

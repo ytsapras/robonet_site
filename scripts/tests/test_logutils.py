@@ -74,7 +74,7 @@ def test_obsrecord_start():
     a date-stamped log file"""
     
     config = {'log_directory': '.',
-              'log_root_name': 'Obsrecord'}
+              'log_root_name': 'obsrecord'}
     log = log_utilities.start_obs_record( config )
     
     ts = Time.now()    

@@ -36,7 +36,7 @@ def start_day_log( config, log_name, console=False ):
         log       open logger object
     """
 
-    log_file = get_log_path( config )
+    log_file = get_log_path( config, config['log_root_name'] )
 
     # To capture the logging stream from the whole script, create
     # a log instance together with a console handler.  
@@ -66,7 +66,7 @@ def start_day_log( config, log_name, console=False ):
     log.info( '\n------------------------------------------------------\n')
     return log
 
-def get_log_path( config ):
+def get_log_path( config, log_root_name ):
     """Function to determine the path and name of the log file, giving it
     a date-stamp in UTC.
     
@@ -82,7 +82,7 @@ def get_log_path( config ):
     ts = ts.iso.split()[0]
     
     log_file = path.join( config['log_directory'], \
-                    config['log_root_name'] + '_' + ts + '.log' )
+                    log_root_name + '_' + ts + '.log' )
     return log_file
 
 def end_day_log( log ):
@@ -146,7 +146,7 @@ def lock( config, state, log ):
 def start_obs_record( config ):
     """Function to initialize or open a daily record of submitted observations"""
     
-    log_file = get_log_path( config )
+    log_file = get_log_path( config, 'obsrecord' )
     
     tnow = datetime.utcnow()
     

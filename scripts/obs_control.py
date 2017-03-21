@@ -5,11 +5,16 @@ Created on Fri Mar 17 15:56:00 2017
 @author: rstreet
 """
 from sys import argv
+from os import path
+import config_parser
 import rome_obs
 import rea_obs
 import query_db
 import update_db_2
 import log_utilities
+from exceptions import IOError
+from observation_classes import get_request_desc
+import validation
 
 def obs_control():
     """Observation Control Software for the LCO Network
@@ -22,23 +27,22 @@ def obs_control():
     script_config = parse_args(script_config)
     
     log = log_utilities.start_day_log( script_config, 'obs_control' )
-    log.info('Obs_control running in ' + script_config['MODE'] + ' mode')
+    log.info('Obscontrol running in ' + script_config['MODE'] + ' mode')
     
     lock_state = log_utilities.lock( script_config, 'check', log )
     lock_state = log_utilities.lock( script_config, 'lock', log )
 
-    active_obs = query_db.get_active_obs()
+    active_obs = query_db.get_active_obs(log=log)
     
     if script_config['MODE'] == 'ROME':
-        obs_requests = build_rome_obs(script_config,log=log)
+        obs_requests = rome_obs.build_rome_obs(script_config,log=log)
     else:
-        obs_requests = build_rea_obs(script_config,log=log)
+        obs_requests = rea_obs.build_rea_obs(script_config,log=log)
     
     obs_requests = rm_duplicate_obs(obs_requests,active_obs,log=log)
 
     submit_status = submit_obs_requests(script_config,obs_requests,log=log)
     
-    log.info('Obs_Control: finished requesting observations')
     lock_state = log_utilities.lock( script_config, 'unlock', log )
     log_utilities.end_day_log( log )
 
@@ -53,6 +57,8 @@ def parse_args(script_config):
             script_config['MODE'] = 'ROME'
         else:
             script_config['MODE'] = 'REA'
+    else:
+        script_config['MODE'] = 'REA'
     return script_config
     
 def read_config():
@@ -60,34 +66,60 @@ def read_config():
     
     config_file_path = path.join(path.expanduser('~'),
                                  '.robonet_site', 'obscontrol_config.xml')
+    if path.isfile(config_file_path) == False:
+        raise IOError('Cannot find configuration file, looking for:'+config_file_path)
     script_config = config_parser.read_config(config_file_path)
+    
     return script_config
 
-def rm_duplicate_obs(obs_requests, active_obs):
+def rm_duplicate_obs(obs_request_list, active_obs,log=None):
     """Function to compare the list of observations to be requested with the
     Django QuerySet of those that have already been submitted. 
     Any duplicated observations are removed from the list of observations
     to be submitted.     
     """
     
-    for obs in obs_requests:
+    if log != None:
+        log.info('Checking for active observations duplicated by new requests')
+        
+    obs_requests_final = []
+    for obs in obs_request_list:
         for active_req in active_obs:
             if active_req.field.name == obs.name and \
                 active_req.which_filter in obs.filters and \
                     active_req.request_type == obs.request_type:
-                i = obs_requests.index(obs)
-                req = obs_requests.pop(i)
-    return obs_requests
+                
+                if log != None:
+                    log.info(obs.group_id + ': Found existing active ' + \
+                            get_request_desc(active_req.request_type) + \
+                            ' observation for ' + active_req.field.name + \
+                            ' with filter ' + active_req.which_filter + \
+                            ', not submitting duplicate')
+                
+            else:
+                log.info(obs.group_id + ': No existing active ' + \
+                        get_request_desc(obs.request_type) + ' observation for ' + obs.name + \
+                        ' with filter ' + active_req.which_filter + \
+                        '; observation will be queued')
+                obs_requests_final.append(obs)
+                    
+    if log != None:
+        log.info('\n')
+        
+    return obs_requests_final
 
 def submit_obs_requests(script_config,obs_requests,log=None):
     """Function to submit a list of observations requests"""
     
+    if log != None: 
+        log.info('Submitting observation requests')
+            
     submit_status = []
     obsrecord = log_utilities.start_obs_record( script_config )
     for obs in obs_requests:
         obs.build_json_request( script_config, log=log, debug=False )
         if log != None: 
-            log.info('Built observation request ' + field.group_id)
+            log.info(obs.group_id + ': Built json request')
         
         stat = obs.submit_request(script_config, log=log, debug=False)
         submit_status.append(stat)
@@ -98,16 +130,34 @@ def submit_obs_requests(script_config,obs_requests,log=None):
         obsrecord.write( obs.obs_record( script_config ) )
 
         for i in range(0,len(obs.exposure_times),1):
+            params = {'field_name':obs.name, 't_sample': (obs.cadence*60.0), \
+                    'exptime':int(obs.exposure_times[i]), \
+                    'timestamp': obs.ts_submit, 'time_expire': obs.ts_expire, \
+                    'pfrm_on': obs.pfrm,'onem_on': obs.onem, 'twom_on': obs.twom, \
+                    'request_type': obs.request_type, 'which_filter':obs.filters[i],\
+                    'which_inst':obs.instrument, 'grp_id':obs.group_id, \
+                    'track_id':obs.track_id, 'req_id':obs.req_id, \
+                    'n_exp':obs.exposure_counts[i]}
+                    
+            (status, msg) = validation.check_obs_request(params)
+            if log != None: 
+                log.info('    => Validation result: ' + repr(status) + ' ' + msg)
+            
             status = update_db_2.add_request(obs.name, (obs.cadence*60.0), \
-                obs.exposure_times[i], obs.exposure_counts[i], \
+                int(obs.exposure_times[i]), timestamp=obs.ts_submit, \
                 time_expire=obs.ts_expire, \
-                pfrm_on = obs.pfrm, onem_on=obs.onem, twom_on=obs.twom, \
+                pfrm_on=obs.pfrm, onem_on=obs.onem, twom_on=obs.twom, \
                 request_type=obs.request_type, \
-                which_filter=obs.filters[i], which_inst=obs.instrument, \
-                grp_id=obs.group_id, track_id='', req_id='')
+                which_filter=obs.filters[i],which_inst=obs.instrument, \
+                grp_id=obs.group_id, track_id=obs.track_id, req_id=obs.req_id,\
+                n_exp=obs.exposure_counts[i])
+                
             if log != None: 
                 log.info('    => Updated DB with status ' + repr(status))
     obsrecord.close()
+    if log != None: 
+    log.info('Finished requesting observations')
+        log.info('\n')
     
     return submit_status
     

@@ -4,14 +4,26 @@ Created on Fri Mar 17 18:07:21 2017
 
 @author: rstreet
 """
-
+from os import environ
+from sys import path as systempath
+from local_conf import get_conf
+robonet_site = get_conf('robonet_site')
+systempath.append(robonet_site)
+environ.setdefault('DJANGO_SETTINGS_MODULE', 'robonet_site.settings')
+from django.core import management
+from django.conf import settings
+from django.utils import timezone
+from django import setup
 from datetime import datetime, timedelta
+setup()
+
 import urllib
 import utilities
 import instrument_overheads
 import json
 import httplib
 from sys import exit
+from exceptions import ValueError
 
 class ObsRequest:
     
@@ -49,14 +61,15 @@ class ObsRequest:
         self.submit_status = None
 
     def get_group_id(self):
-        dateobj = datetime.utcnow()
+        dateobj = timezone.now()
         time = float(dateobj.hour) + (float(dateobj.minute)/60.0) + \
         (float(dateobj.second)/3600.0) + (float(dateobj.microsecond)/3600e6)
         time = round(time,8)
         ctime = str(time)
         date = dateobj.strftime('%Y%m%d')
         TS = date+'T'+ctime
-        self.group_id = str(self.req_origin).upper()+TS
+        req_type = get_request_desc(self.request_type)
+        self.group_id = str(req_type).upper().replace('-','')+TS
 
     def set_aperture_class(self):
         if '0m4' in self.tel:
@@ -68,12 +81,14 @@ class ObsRequest:
     
     def summary(self):
         exp_list = ''
-        for exp in self.exposures:
-            exp_list = exp_list + ' ' + str(exp)
+        f_list = ''
+        for i in range(0,len(self.exposure_counts),1):
+            exp_list = exp_list + ' ' + str(self.exposure_counts[i])
+            f_list = f_list + ' ' + self.filters[i]
             
         output = str(self.name) + ' ' + str(self.ra) + ' ' + str(self.dec) + \
                 ' ' + str(self.site) + ' ' + str(self.observatory) + ' ' + \
-                ' ' + str(self.instrument) + ' ' + str(self.filter) + ' ' + \
+                ' ' + str(self.instrument) + ' ' + f_list + ' ' + \
                 exp_list + ' ' + str(self.cadence)
         return output
 
@@ -123,7 +138,7 @@ class ObsRequest:
         ur = { 'group_id': self.group_id, 'operator': 'many' }
         reqList = []
         
-        self.ts_submit = datetime.utcnow() + timedelta(seconds=(10*60))
+        self.ts_submit = timezone.now() + timedelta(seconds=(10*60))
         self.ts_expire = self.ts_submit + timedelta(seconds=(self.ttl*24*60*60))
         
         request_start = self.ts_submit
@@ -196,6 +211,8 @@ class ObsRequest:
         if str(config['simulate']).lower() == 'true':
             self.submit_status = 'SIM_add_OK'
             self.submit_response = 'Simulated'
+            self.req_id = '9999999999'
+            self.track_id = '99999999999'
             if log != None:
                 log.info(' -> IN SIMULATION MODE: ' + self.submit_status)
             
@@ -276,3 +293,19 @@ class ObsRequest:
                 str(self.focus_offset[i]) + ' ' + str(self.req_origin) + ' '\
                 + str(report)+ '\n'
         return output
+        
+def get_request_desc(request_type):
+    """Function to parse the observation request_type from a
+    single-digit character into a short, human-readable description"""
+    
+    if request_type == 'L':
+        request_desc = 'rome'
+    elif request_type == 'A':
+        request_desc = 'rea-hi'
+    elif request_type == 'M':
+        request_desc = 'rea-lo'
+    else:
+        request_desc = 'unknown'
+        raise ValueError('Unknown observation request type, ' + request_type)
+    
+    return request_desc

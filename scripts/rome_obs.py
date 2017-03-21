@@ -13,44 +13,48 @@ def build_rome_obs(script_config,log=None):
     microlensing program, based on the field pointing definitions and
     the pre-defined survey observation sequence"""
     
-    rome_fields = rome_fields_def.get_rome_fields()
+    rome_fields = get_rome_fields()
     field_ids = rome_fields.keys()
     field_ids.sort()
-    obs_sequence = rome_fields.rome_obs_sequence()
-    
+    obs_sequence = rome_obs_sequence()
     rome_obs = []
-    for field in rome_fields:
-        obs = observation_classes.ObsRequest()
         
-        for s in range(0,len(obs_sequence['sites']),1):
+    for s in range(0,len(obs_sequence['sites']),1):
+        if log != None:
+                log.info('Building observation requests for site ' + \
+                        obs_sequence['sites'][s] + ':')
+        for f in field_ids:
+            field = rome_fields[f]
+            obs = observation_classes.ObsRequest()
+            obs.name = f
+            obs.ra = field[2]
+            obs.dec = field[3]
             obs.site = obs_sequence['sites'][s]
             obs.observatory= obs_sequence['domes'][s]
             obs.tel = obs_sequence['tels'][s]
             obs.instrument = obs_sequence['instruments'][s]
             obs.instrument_class = 'sinistro'
             obs.set_aperture_class()
+            obs.filters = obs_sequence['filters']
+            obs.exposure_times = obs_sequence['exp_times']
+            obs.exposure_counts = obs_sequence['exp_counts']
+            obs.cadence = obs_sequence['cadence_hrs']
+            obs.priority = 1.0
+            obs.ttl = obs_sequence['TTL_days']
+            obs.user_id = script_config['user_id']
+            obs.proposal_id = script_config['proposal_id']
+            obs.focus_offset = obs_sequence['defocus']
+            obs.request_type = 'L'
+            obs.req_origin = 'obscontrol'
+            obs.get_group_id()
             
-            for f in field_ids:
-                obs.name = f
-                obs.ra = rome_fields[f][2]
-                obs.dec = rome_fields[f][3]
-                obs.filters = obs_sequence['filters']
-                obs.exposure_times = obs_sequence['exp_times']
-                obs.exposure_counts = obs_sequence['exp_counts']
-                obs.cadence = obs_sequence['cadence_hrs']
-                obs.priority = 1.0
-                obs.ts_submit = datetime.utcnow()
-                obs.ttl = obs_sequence['TTL']
-                obs.ts_expire = obs.ts_submit + timedelta(days=obs.ttl)
-                obs.user_id = script_config['user_id']
-                obs.proposal_id = script_config['proposal_id']
-                obs.focus_offset = obs_sequence['defocus']
-                obs.req_type = 'L'
-                obs.req_origin = 'obscontrol'
-                
-                rome_obs.append(obs)
-                if log != None:
-                    log.info('Built observation request ' + obs.summary())
+            rome_obs.append(obs)
+            
+            if log != None:
+                log.info(obs.summary())
+        if log != None:
+            log.info('\n')
+            
     return rome_obs
     
 def get_rome_fields():
