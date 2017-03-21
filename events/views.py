@@ -17,6 +17,7 @@ import sys, os
 from scripts.plotter import *
 from scripts.local_conf import get_conf
 from scripts.blgvis import *
+from scripts.utilities import short_to_long_name
 
 # Path to ARTEMiS files
 artemis_col = get_conf('artemis_cols')
@@ -47,6 +48,8 @@ with open(colordef) as f:
        key = elem[0]
        val = elem[1]
        col_dict[key] = val
+
+##############################################################################################################
 
 ##############################################################################################################
 def test(request):
@@ -133,44 +136,20 @@ def simple(request):
 
 ##############################################################################################################
 def dashboard(request):
-   ########### ONLY FOR TESTING ################
-   tels = [u'LCOGT CTIO 1m A', u'LCOGT CTIO 1m B', u'LCOGT CTIO 1m C', u'LCOGT SAAO 1m A', 
-           u'LCOGT SAAO 1m B', u'LCOGT SAAO 1m C', u'LCOGT SSO 1m B']
-   cols =['#38FFB8', '#33285D', '#C04B31', '#DE96BC', '#C340AE', '#BD6D6F', '#151BE8']
-   num_obs = [21, 13, 15, 13, 16, 3, 0]
-   ndata = 30
-   event_id = 33
-   from pylab import figure, rcParams, title, legend, savefig, close, axes, pie, get_current_fig_manager
-   from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-   import os
-   fig = figure(figsize=[10, 10])
-   ax = fig.add_subplot(111)  
-   rcParams['axes.titlesize'] = 10.0
-   rcParams['xtick.labelsize'] = 14.0
-   rcParams['legend.fontsize'] = 22.0
-   rcParams['font.size'] = 22.0
-   colors=cols
-   fracs=num_obs
-   patches = ax.pie(fracs, colors=cols, labels=tels, labeldistance=0.95, explode=None, autopct='%1.f%%', shadow=False)
-   for pie_wedge in patches[0]:
-      pie_wedge.set_edgecolor('white')
-   
-   title = "Observations: "+str(ndata)
-   legend([k[0]+': '+str(k[1]) for k in zip(tels, num_obs)],loc=(-.12,-.12), framealpha=0.4)
-   # Store image in a string buffer
-   #buffer_1 = StringIO.StringIO()
-   #canvas = get_current_fig_manager().canvas
-   #canvas.draw()
-   #pilImage = Image.fromstring("RGB", canvas.get_width_height(), canvas.tostring_rgb())
-   #pilImage.save(buffer_1, "PNG")
-   canvas = FigureCanvas(fig)
-   response = HttpResponse(content_type='image/png')
-   canvas.print_png(response)
-   #response = HttpResponse(buffer_1.getvalue(), content_type="image/png")
-   return response
+   """
+   Will display the database front view (dashboard).
+   """
+   try:
+      status_time = datetime.now()
+      date_today = str(status_time.year)+str(status_time.month).zfill(2)+str(status_time.day).zfill(2)
+      status_time_jd = Time(status_time).jd 
+   except:
+      raise Http404("Encountered a problem while loading. Please contact the site administrator.")
+   context = {'status_time':status_time, 'status_time_jd':status_time_jd, 'date_today':date_today}
+   return render(request, 'events/dashboard.html', context)
    
 ##############################################################################################################
-def download_lc(request, event_id):
+def download_lc_by_id(request, event_id):
    """
    Will serve a tar file of the ARTEMiS lightcurves for this event for download.
    """
@@ -178,6 +157,42 @@ def download_lc(request, event_id):
       import tarfile
       import os
       filename = settings.MEDIA_ROOT+str(event_id)+".tgz"
+      if (os.path.exists(filename) ):
+         os.remove(filename)
+      # Serve lightcurves at tgz
+      tar = tarfile.open(filename,"w:gz")
+      for lc in lightcurves:
+         # Ignore directory paths when tarring the files
+         tar.addfile(tarfile.TarInfo(lc.split('/')[-1]), file(lc))
+      tar.close()
+      return filename
+   event = Event.objects.get(id=event_id)
+   lightcurves = []
+   lightcurves_dictionary = DataFile.objects.select_related().filter(event=event).values('datafile')
+   for i in lightcurves_dictionary:
+      lightcurves.append(i['datafile'])
+   try:
+      filename = tar_lc(lightcurves)
+      download = open(filename,'rb')
+      response = HttpResponse(download.read(),content_type='application/x-tar')
+      response['Content-Disposition'] = 'attachment; filename="%s"' % filename.split('/')[-1]
+   except:
+      raise Http404("Encountered a problem while generating the tar file.")  
+   return response
+
+##############################################################################################################
+def download_lc(request, event_name):
+   """
+   Will serve a tar file of the ARTEMiS lightcurves for this event for download.
+   """
+   # Convert shorthand format to long format to make compatible with the DB
+   event_name = short_to_long_name(event_name)
+   # Get the ID for this event
+   event_id = EventName.objects.get(name=event_name).event_id
+   def tar_lc(lightcurves):
+      import tarfile
+      import os
+      filename = settings.MEDIA_ROOT+str(event_name)+".tgz"
       if (os.path.exists(filename) ):
          os.remove(filename)
       # Serve lightcurves at tgz
@@ -353,7 +368,7 @@ def list_all(request):
    return render(request, 'events/list_events.html', context)
 
 ##############################################################################################################
-def show_event(request, event_id):
+def show_event_by_id(request, event_id):
    site_url = get_conf('site_url')
    """
    Will set up a single event page and display the lightcurve.
@@ -459,13 +474,138 @@ def show_event(request, event_id):
 		 'time_now_jd': time_now_jd, 'the_script': script, 'the_div': div}
    except Event.DoesNotExist:
       raise Http404("Event does not exist.")
-   return render(request, 'events/show_event.html', context)
+   return render(request, 'events/show_event_by_id.html', context)
 
 ##############################################################################################################
-def event_obs_details(request, event_id):
+def show_event(request, event_name):
+   """
+   Will set up a single event page and display the lightcurve.
+   """
+   time_now = datetime.now()
+   time_now_jd = Time(time_now).jd
+   possible_status = { 
+      'NF':'Not in footprint',
+      'AC':'active',
+      'MO':'monitor',
+      'AN':'anomaly',
+      'EX':'expired'}
+   try:
+      # Convert shorthand format to long format to make compatible with the DB
+      event_name = short_to_long_name(event_name)
+      this_event_number = event_name.split('-')[-1]
+      next_event_number = str(int(this_event_number)+1).zfill(4)
+      prev_event_number = str(int(this_event_number)-1).zfill(4)
+      next_name = event_name.replace(this_event_number, next_event_number)
+      prev_name = event_name.replace(this_event_number, prev_event_number)    
+      # Get the ID for this event
+      event_id = EventName.objects.get(name=event_name).event_id
+      ev_ra = Event.objects.get(pk=event_id).ev_ra
+      ev_dec = Event.objects.get(pk=event_id).ev_dec
+      ev_names = EventName.objects.filter(event_id=event_id)
+      flag = 0
+      ev_ogle, ev_moa, ev_kmt = '', '', ''
+      for name in ev_names:
+         if 'OGLE' in name.name and flag==0:
+            ev_ogle = name.name
+	    flag = 1
+	 if 'MOA' in name.name:
+	    ev_moa = name.name
+	 if 'KMT' in name.name:
+	    ev_kmt = name.name
+      # Get the names for this event ID from all surveys
+      # Keep just one so that we can generate the url link to /microlensing.zah.uni-heidelberg.de
+      if 'ev_ogle':
+         ev_name = ev_ogle
+         survey_name = "OGLE"
+         event_number = ev_name.split('-')[-1]
+      elif 'ev_moa':
+	 ev_name = ev_moa
+	 survey_name = "MOA"
+	 event_number = ev_name.split('-')[-1]
+      elif 'ev_kmt':
+	 ev_name = ev_kmt
+	 survey_name = "KMT"
+	 event_number = ev_name.split('-')[-1]
+      field_id =  Event.objects.get(pk=event_id).field.id
+      field = Field.objects.get(id=field_id).name
+      # Get list of all observations and select the one with the most recent time.
+      try:
+         event = Event.objects.get(id=event_id)
+         single_recent = SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')
+	 obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
+	 #status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
+	 status_recent = Event.objects.get(pk=event_id).status
+         last_obs = obs_recent['last_obs']
+	 last_obs_hjd = Time(last_obs).jd
+	 tel_id = obs_recent['datafile'].split('/')[-1].split('_')
+	 if len(tel_id) == 2:
+	    tel_id = tel_id[0]+'_'
+	 else:
+	    tel_id = obs_recent['datafile'].split('/')[-1][0]
+	 last_obs_tel = site_dict[tel_id][-1]
+         Tmax = single_recent['Tmax']
+         e_Tmax = single_recent['e_Tmax']
+         tau = single_recent['tau']
+         e_tau = single_recent['e_tau']
+         umin = single_recent['umin']
+         e_umin = single_recent['e_umin']
+         last_updated = single_recent['last_updated']
+         last_updated_hjd =  Time(last_updated).jd
+	 status = status_recent
+	 ogle_url = ''
+	 if "OGLE" in ev_name:
+	    ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])
+      except:
+         last_obs = "N/A"
+	 last_obs_hjd = "N/A"
+	 Tmax = "N/A"
+	 e_Tmax = "N/A"
+	 tau = "N/A"
+	 e_tau = "N/A"
+	 umin = "N/A"
+	 e_umin = "N/A"
+	 last_updated = "N/A"
+ 	 last_updated_hjd = "N/A"
+ 	 last_obs_tel = "N/A"
+ 	 status = 'EX'
+	 ogle_url = ''
+      # Convert the name to ARTEMiS format for bokeh plotting
+      if 'OGLE' in ev_name:
+         artemis_name = 'OB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
+      elif 'MOA' in ev_name:
+         artemis_name = 'KB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
+      elif 'KMT' in ev_name:
+         artemis_name = 'KM'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
+      else:
+         artemis_name = 'UNKNOWN EVENT'
+      try:
+         script, div = plot_it(artemis_name)
+      except:
+         script, div = '', 'Detected empty or corrupt datafile in list of lightcurve files.<br>Plotting disabled.'
+      context = {'event_id':event_id, 'event_names':ev_names, 
+                 'this_name':event_name, 
+		 'prev_name':prev_name, 'next_name':next_name,
+                 'ev_ra':ev_ra, 'ev_dec':ev_dec, 'field':field, 'last_obs':last_obs, 
+		 'Tmax':Tmax, 'e_Tmax':e_Tmax, 'tau':tau, 'e_tau':e_tau, 'umin':umin, 
+		 'e_umin':e_umin, 'last_updated':last_updated, 'last_updated_hjd':last_updated_hjd,
+		 'last_obs':last_obs, 'last_obs_hjd':last_obs_hjd, 'status':possible_status[status],
+		 'last_obs_tel':last_obs_tel, 'ogle_url':ogle_url, 'time_now': time_now, 
+		 'time_now_jd': time_now_jd, 'the_script': script, 'the_div': div}
+   except EventName.DoesNotExist:
+      raise Http404("Event does not exist in DB.")
+   except ValueError:
+      raise Http404("Unrecognized event name. Please provide name in standard short or long notation.")       
+   return render(request, 'events/show_event.html', context)
+   
+##############################################################################################################
+def event_obs_details(request, event_name):
    """
    Will set up a single event page with current observing details.
    """
+   # Convert shorthand format to long format to make compatible with the DB
+   event_name = short_to_long_name(event_name)
+   # Get the ID for this event
+   event_id = EventName.objects.get(name=event_name).event_id
    # Define pie chart plotting
    # arguments are [telescopes], [colors], [number_observations], ndata, event_id
    def pie_chart(tels, cols, num_obs, ndata, event_id):
@@ -531,7 +671,7 @@ def event_obs_details(request, event_id):
          ev_name = ev_kmt
          survey_name = "KMT"
          event_number = ev_name.split('-')[-1]
-      field = 'Unknown'
+      field = Event.objects.get(pk=event_id).field.name
       # Get list of all observations and select the one with the most recent time.
       try:
          event = Event.objects.get(id=event_id)

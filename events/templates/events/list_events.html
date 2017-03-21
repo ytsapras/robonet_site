@@ -17,7 +17,7 @@
     <tr bgcolor="#ffcc99">
         <td> {{ row.0 }} </td>
            <td>{% for name in row.1 %}
-	      <li><a href="/events/{{ row.0 }}/">{{ name }}</a><br>
+	      <li><a href={% url 'show_event' event_name=name %}>{{ name }}</a><br>
 	      {% endfor %}
 	   </td>
 	<td>{{ row.2 }} </td>

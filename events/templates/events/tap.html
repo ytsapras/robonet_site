@@ -56,7 +56,7 @@ a:active {
  {% for row in rows %}
  <tr bgcolor="{{ row.0 }}">
    <td>{% for name in row.2 %}
-       <li><a href="/events/{{ row.1 }}/">{{ name }}</a><br>
+       <li><a href={% url 'show_event_by_id' event_id=row.1 %}>{{ name }}</a><br>
        {% endfor %}
    </td>
    <td>{{ row.3 }}</td>
@@ -95,7 +95,7 @@ a:active {
  {% for row in rowsrej %}
  <tr bgcolor="{{ row.0 }}">
    <td>{% for name in row.2 %}
-       <li><a href="/events/{{ row.1 }}/">{{ name }}</a><br>
+       <li><a href={% url 'show_event_by_id' event_id=row.1 %}>{{ name }}</a><br>
        {% endfor %}
    </td>
    <td>{{ row.3 }}</td>

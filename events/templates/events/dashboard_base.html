@@ -1,0 +1,87 @@
+<html lang="en">
+<head>
+    <META HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE">
+    <title>ROME/REA Key Project Status</title>
+</head>
+  <STYLE>
+    strong.topnav {background: #FFFFCC; color: #0000FF; text-align: center; padding-bottom: 0
+.2em; font-family: arial, helvetica, times; font-size: 10pt}
+    a.plain {text-decoration:none; color: #0000FF} 
+    a:visited {text-decoration:none; color: blue} 
+    a.plain:hover {text-decoration:none; background: #990000; color: white}
+    BODY { font-family: arial, helvetica, times; background: #98AFC7; margin-left:0.2em; marg
+in-right: 1em}
+    .textheading {text-align: right; width: 70%; color: #990000; font-family: arial, helvetic
+a, times; margin-top: 1.5em}
+    .tablehead {color: #FFFFFF; text-align: center; font-family: arial, helvetica, times; fon
+t-weight: bold}
+    .tablecontent {margin-top: 0.3em; margin-left: 0.2em; margin-bottom: 0.2em; font-family: 
+arial, helvetica, times}
+    .generic {font-family: arial, helvetica, times}
+    .table {font-family: arial, helvetica, times; text-align: center}
+    a:link {text-decoration:none;} 
+    a:visited {text-decoration:none; color: blue} 
+    a:hover {text-decoration:none; color: #990000}
+  </STYLE>
+<body>
+<center>
+
+<!-- BEGIN WRAPPING TABLE -->
+<table border="2" width=900 bgcolor="#FFFFFF">
+<tr><td>
+<center>
+<!-- BEGIN MAP TABLE -->
+<h4 style="color: #000000">{% block title %}ROME/REA Key Project Status:{% endblock %}</h4>
+<!-- Uncomment to view without marks <img src="http://www.fourmilab.ch/cgi-bin/Earth?img=clou
+dy.bmp&imgsize=320&dynimg=y&opt=-p&lat=&lon=&alt=&tle=&date=0&utc=&jd=" width="560" border="2
+"/> -->
+<! -- Uncomment to view with marks-->
+<table>
+<tr>
+<td background="http://www.fourmilab.ch/cgi-bin/Earth?img=cloudy.bmp&imgsize=320&dynimg=y&opt=-p&lat=&lon=&alt=&tle=&date=0&utc=&jd=" width="640" height="320" valign=top>
+  {% ifequal coj_status "OPEN" %}
+    <DIV style="position: relative; top:186px; left:580px; width:20px; height:25px"><font color=green>*</font></DIV><!-- COJ -->
+  {% else %}
+    <DIV style="position: relative; top:186px; left:580px; width:20px; height:25px"><font color=yellow>*</font></DIV><!-- COJ -->
+  {% endifequal %}
+  {% ifequal lsc_status "OPEN" %}
+    <DIV style="position: relative; top:153px; left:188px; width:20px; height:25px"><font color=green>*</font></DIV><!-- LSC -->
+  {% else %}
+    <DIV style="position: relative; top:153px; left:188px; width:20px; height:25px"><font color=yellow>*</font></DIV><!-- LSC -->
+  {% endifequal %}
+  {% ifequal cpt_status "OPEN" %}
+    <DIV style="position: relative; top:131px; left:356px; width:20px; height:25px"><font color=green>*</font></DIV><!-- CPT -->
+  {% else %}
+    <DIV style="position: relative; top:131px; left:356px; width:20px; height:25px"><font color=yellow>*</font></DIV><!-- CPT -->
+  {% endifequal %}
+</td>
+</tr>
+</table>
+<!-- END MAP TABLE -->
+
+<br>
+<!-- uncomment to view without clouds and without marks
+<a href="http://www.fourmilab.ch/earthview/" target="_blank"> <img src ="http://www.fourmilab
+.ch/cgi-bin/Earth?img=learth.evif&imgsize=320&dynimg=y&opt=-p&lat=&lon=&alt=&tle=&date=0&utc=
+&jd=" width = "500" border="0"/>
+</a> --> 
+
+<!-- BEGIN TABLE ONE -->
+<table border="2" bgcolor="#FFFFFF">
+  <tr>
+   <!-- Column 1 -->
+   <td bgcolor="#E6E6B8"><b style="color: #000000"><a href={% url 'list_all' %} STYLE="text-decoration:none">List all events</a></b></td>
+   <!-- Column 2 -->
+   <td bgcolor="#E6E6B8"><b style="color: #000000"><a href={% url 'obs_log' date=date_today %} STYLE="text-decoration:none">Observations in last 24 hours</a></b></td>
+  </tr>
+</table>
+<!-- END TABLE ONE -->
+
+</center>
+</td></tr>
+</table>
+<!-- END WRAPPING TABLE -->
+
+</center>
+</body>
+</html>

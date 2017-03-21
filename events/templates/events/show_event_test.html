@@ -9,12 +9,12 @@
 <body bgcolor="#FFFFFF">
   <center><br>
   <b>
-    <a href={% url 'show_event' event_name=prev_name %} STYLE="text-decoration:none">&#11013; &nbsp;</a>
+    <a href={% url 'show_event_test' event_name=prev_name %} STYLE="text-decoration:none">&#11013; &nbsp;</a>
   </b>
   <b>Current Time:</b> {{ time_now }}
   [HJD: {{ time_now_jd }}]
   <b>
-    <a href={% url 'show_event' event_name=next_name %} STYLE="text-decoration:none">&nbsp; &#10145;</a>
+    <a href={% url 'show_event_test' event_name=next_name %} STYLE="text-decoration:none">&nbsp; &#10145;</a>
   </b>
   <table border="2" style="width:1100px">
     <tr> 
@@ -22,7 +22,7 @@
 	</td>
 	<td width="200px" height="100px">
 	<center>
-	   <a href={% url 'download_lc' event_name=this_name %} STYLE="text-decoration:none">Download lightcurves</a>
+	   <a href={% url 'download_lc_test' event_name=this_name %} STYLE="text-decoration:none">Download lightcurves</a>
 	</center>
 	</td>
 	<td width="200px" height="100px" bgcolor="#E6E6B8"><center><b><font size="5">Status</font></b><br> {{ status }}
@@ -67,13 +67,6 @@
     </tr>
     <tr>
 	<td bgcolor="#FFFFCC" height="50px"><b>u<sub>0</sub>:</b> {{ umin }}&plusmn;{{ e_umin }}</td>
-    </tr>
-    <tr>
-        <td></td>
-	<td colspan=3 height="50px"><b>
-	 <center>
-	  <a href={% url 'event_obs_details' event_name=this_name %} STYLE="text-decoration:none">Observing details for this event</a>
-	 </center>
     </tr>
  </table>
  </center>
