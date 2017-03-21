@@ -87,9 +87,7 @@ def rm_duplicate_obs(obs_request_list, active_obs,log=None):
         
     obs_requests_final = []
     for obs in obs_request_list:
-        print obs.name, obs.filters, obs.request_type
         for active_req in active_obs:
-            print active_req.field.name, active_req.which_filter, active_req.request_type
             if active_req.field.name == obs.name and \
                 active_req.which_filter in obs.filters and \
                     active_req.request_type == obs.request_type:
