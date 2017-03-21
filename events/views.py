@@ -132,6 +132,44 @@ def simple(request):
 #   return render(request, 'add_operator.html', d)
 
 ##############################################################################################################
+def dashboard(request):
+   ########### ONLY FOR TESTING ################
+   tels = [u'LCOGT CTIO 1m A', u'LCOGT CTIO 1m B', u'LCOGT CTIO 1m C', u'LCOGT SAAO 1m A', 
+           u'LCOGT SAAO 1m B', u'LCOGT SAAO 1m C', u'LCOGT SSO 1m B']
+   cols =['#38FFB8', '#33285D', '#C04B31', '#DE96BC', '#C340AE', '#BD6D6F', '#151BE8']
+   num_obs = [21, 13, 15, 13, 16, 3, 0]
+   ndata = 30
+   event_id = 33
+   from pylab import figure, rcParams, title, legend, savefig, close, axes, pie, get_current_fig_manager
+   from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+   import os
+   fig = figure(figsize=[10, 10])
+   ax = fig.add_subplot(111)  
+   rcParams['axes.titlesize'] = 10.0
+   rcParams['xtick.labelsize'] = 14.0
+   rcParams['legend.fontsize'] = 22.0
+   rcParams['font.size'] = 22.0
+   colors=cols
+   fracs=num_obs
+   patches = ax.pie(fracs, colors=cols, labels=tels, labeldistance=0.95, explode=None, autopct='%1.f%%', shadow=False)
+   for pie_wedge in patches[0]:
+      pie_wedge.set_edgecolor('white')
+   
+   title = "Observations: "+str(ndata)
+   legend([k[0]+': '+str(k[1]) for k in zip(tels, num_obs)],loc=(-.12,-.12), framealpha=0.4)
+   # Store image in a string buffer
+   #buffer_1 = StringIO.StringIO()
+   #canvas = get_current_fig_manager().canvas
+   #canvas.draw()
+   #pilImage = Image.fromstring("RGB", canvas.get_width_height(), canvas.tostring_rgb())
+   #pilImage.save(buffer_1, "PNG")
+   canvas = FigureCanvas(fig)
+   response = HttpResponse(content_type='image/png')
+   canvas.print_png(response)
+   #response = HttpResponse(buffer_1.getvalue(), content_type="image/png")
+   return response
+   
+##############################################################################################################
 def download_lc(request, event_id):
    """
    Will serve a tar file of the ARTEMiS lightcurves for this event for download.

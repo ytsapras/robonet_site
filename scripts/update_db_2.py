@@ -660,7 +660,7 @@ def add_reduction(event_name, lc_file, timestamp, ref_image, target_found=False,
 def add_request(field_name, t_sample, exptime, timestamp=timezone.now(),
                 time_expire=timezone.now()+timedelta(hours=24), pfrm_on = False,
                 onem_on=False, twom_on=False, request_type='L', which_filter='',
-		which_inst='', grp_id='', track_id='', req_id='',  n_exp=1):
+		which_inst='', grp_id='', track_id='', req_id='', n_exp=1):
    """
    Add observing request to the database.
    
