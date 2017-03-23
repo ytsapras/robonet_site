@@ -1,0 +1,12 @@
+{% extends 'login_base.html' %}
+
+{% block title %}ROME/REA DB Views{% endblock %}
+
+{% block content %}
+  <h2 style="font-family:verdana;">Log in:</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" style="font-family:verdana;">Log in</button>
+  </form>
+{% endblock %}

@@ -1,0 +1,28 @@
+# This will give you all Event objects that are within our footrpint and active.
+events = Event.objects.filter(status='AC')
+
+# Event status (not in ROME footprint, active (in ROME footprint), monitor (60m REA cadence), 
+#               anomaly (20m REA cadence), expired)
+REA/TAP decides what is active 'AC' and/or monitor 'MO'
+
+# Consider setting A>50 --> anomaly 'AN'
+REA/TAP will then need to set 'AN' to 'MO' and eventually back to 'AC' 
+(remormalize omega value to match LCO scheduler priority)
+
+# TAP sets expired 'EX' only for events in footrpint after 2tE
+Event.objects.filter(id=events[i].id).update(status="EX")
+
+TO DO:
+import numpy as np
+
+remove:
+#DEFINE BLENDED EVENT
+blended = g >0.5 # no longer needed
+
+add_tap(event_name=event_name, timestamp=timestamp, priority=priority, tsamp=tsamp, 
+     texp=texp, nexp=1, imag=imag, omega=omega, 
+	err_omega=err_omega, peak_omega=peak_omega, visibility=dailyvisibility, 
+	cost1m=cost1m)
+	
+Errors:
+NameError: global name 'calculate_exptime' is not defined

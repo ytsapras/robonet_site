@@ -11,5 +11,7 @@ def build_rea_obs(script_config,log=None):
     as recommended by TAP"""
     
     rea_obs = []
+    # Query DB for a list of targets
+    # Build obs_class objects for each target
     
     return rea_obs

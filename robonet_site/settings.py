@@ -76,15 +76,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'robonet_site.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        #'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        'NAME': '/data/robouser/robonet_site_db/db.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        #'NAME': '/data/robouser/robonet_site_db/db.sqlite3',
     }
 }
 
@@ -133,3 +132,5 @@ STATICFILES_DIRS = [
        os.path.join(BASE_DIR, "events/static/events/"),
        os.path.join(BASE_DIR, "project_website/static/project_website/"),
 ]
+
+LOGIN_REDIRECT_URL = 'dashboard'
