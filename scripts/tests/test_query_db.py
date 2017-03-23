@@ -20,4 +20,11 @@ def test_get_active_obs():
     assert len(qs) > 0
     if len(qs) > 0:
         assert hasattr(qs[0],'field') and hasattr(qs[0],'request_type')
-        
+
+def test_get_rea_targets():
+    
+    qs = query_db.get_rea_targets()
+    
+    assert len(qs) > 0
+    if len(qs) > 0:
+        assert hasattr(qs[0],'field') and hasattr(qs[0],'request_type')

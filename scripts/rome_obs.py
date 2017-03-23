@@ -13,7 +13,7 @@ def build_rome_obs(script_config,log=None):
     microlensing program, based on the field pointing definitions and
     the pre-defined survey observation sequence"""
     
-    rome_fields = get_rome_fields()
+    rome_fields = get_rome_fields(testing=True)
     field_ids = rome_fields.keys()
     field_ids.sort()
     obs_sequence = rome_obs_sequence()

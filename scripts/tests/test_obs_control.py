@@ -91,4 +91,6 @@ def test_obs_submission():
     assert submit_status[0] == 'SIM_add_OK'
     
     log_utilities.end_day_log( log )
+
+    
     

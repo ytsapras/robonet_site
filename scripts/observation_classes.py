@@ -26,7 +26,7 @@ import httplib
 from sys import exit
 from exceptions import ValueError
 
-LCO_API_URL = 'https://lcogt.net/observe/api/'
+LCO_API_URL = 'https://lco.global/observe/api/'
 
 class ObsRequest:
     
@@ -268,16 +268,14 @@ class ObsRequest:
                     self.submit_response = str(key) + ' = ' + str(value)
                     self.track_id = str(value)
                     self.submit_status = 'add_OK'
-                    self.req_id = '9999999999'
-                    #response = self.get_request_numbers(config,log=log)
+                    self.get_request_numbers(config,log=log)
                 except ValueError:
                     try:
                         (key,value) = entry.split('=')
                         self.submit_response = str(key) + ' = ' + str(value)
                         self.track_id = str(value)
                         self.submit_status = 'add_OK'
-                        self.req_id = '9999999999'
-                        #response = self.get_request_numbers(config,log=log)
+                        self.get_request_numbers(config,log=log)
                     except:
                         self.submit_response = str(submit_string)
                         self.submit_status = 'WARNING'
@@ -290,25 +288,17 @@ class ObsRequest:
     
     def get_request_numbers(self,config,log=None):
         
+        self.req_id = ''
         if self.track_id != None:
-            token = self.get_api_token(config)
-            headers = {'Authorization': 'Token ' + token}
-            url = path.join(LCO_API_URL,'user_requests',str(self.track_id))
+            token = config['token']
+            headers = {'Authorization': 'Token ' + config['token']}
+            url = path.join(LCO_API_URL,'user_requests',str(self.track_id)+'/')
             response = requests.get(url, headers=headers).json()
-            print response
+            if 'requests' in response.keys():
+                for r in response['requests']:
+                    self.req_id = self.req_id +':'+str(r['request_number'])
+                self.req_id = self.req_id +':'
             
-        return response
-    
-    def get_api_token(self,config):
-        url = path.join(LCO_API_URL,'api-token-auth/')
-        params = {'username': config['user_id'], 'password': config['odin_access']}
-        print url, params
-        response = requests.post(url,data=params).json()
-        print response
-        
-        token = response.get('token')
-        return token
-    
     def obs_record( self, config ):
         """Method to output a record, in standard format, of the current 
         observation request"""

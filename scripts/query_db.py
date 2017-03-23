@@ -17,7 +17,7 @@ from django import setup
 from datetime import datetime, timedelta
 setup()
 
-from events.models import ObsRequest
+from events.models import ObsRequest, Tap, Event
 from observation_classes import get_request_desc
 
 def get_active_obs(log=None):
@@ -35,12 +35,29 @@ def get_active_obs(log=None):
         log.info('Queried DB for list of active observations:')
         for q in qs:
             log.info(' '.join([q.field.name,\
-                        parse_req_type(q.request_type), \
+                        get_request_desc(q.request_type), \
                         'submitted=',q.timestamp.strftime('%Y-%m-%dT%H:%M:%S'), \
                         'expires=',q.time_expire.strftime('%Y-%m-%dT%H:%M:%S')]))
+        if len(qs) == 0:
+            log.info('DB returned no currently-active observation requests')
         log.info('\n')
                         
     return qs
 
-if __name__ == '__main__':
-    get_active_obs(debug=True)
+def get_rea_targets(log=None):
+    """Function to query the DB for a list of targets recommended for 
+    observation under the REA strategy."""
+    
+    qs = Tap.objects.filter(omega__gte=6.0).order_by('timestamp').reverse()
+    
+    if log != None:
+        log.info('\n')
+        log.info('Queried DB for list of current REA targets:')
+        for q in qs:
+            
+            log.info(' '.join([q.event.field.name,\
+                        'priority=',q.priority, \
+                        't_sample=',str(q.tsamp)]))
+        log.info('\n')
+                        
+    return qs

@@ -89,28 +89,37 @@ def rm_duplicate_obs(obs_request_list, active_obs,log=None,debug=False):
     for obs in obs_request_list:
         if debug==True: 
             print obs.name, obs.filters, obs.request_type
-        for active_req in active_obs:
-            if debug==True: 
-                print active_req.field.name, active_req.which_filter,\
-                    active_req.request_type
-            if active_req.field.name == obs.name and \
-                active_req.which_filter in obs.filters and \
-                    active_req.request_type == obs.request_type:
-                if log != None:
-                    log.info(obs.group_id + ': Found existing active ' + \
-                            get_request_desc(active_req.request_type) + \
-                            ' observation for ' + active_req.field.name + \
-                            ' with filter ' + active_req.which_filter + \
-                            ', not submitting duplicate')
-                
-            else:
-                if log != None:
-                    log.info(obs.group_id + ': No existing active ' + \
-                        get_request_desc(obs.request_type) + ' request for ' + obs.name + \
-                        ' with filter in ' + ' '.join(obs.filters) + \
-                        '; observation will be queued')
-                obs_requests_final.append(obs)
+        if len(active_obs) > 0:
+            for active_req in active_obs:
+                if debug==True: 
+                    print active_req.field.name, active_req.which_filter,\
+                        active_req.request_type
+                if active_req.field.name == obs.name and \
+                    active_req.which_filter in obs.filters and \
+                        active_req.request_type == obs.request_type:
+                    if log != None:
+                        log.info(obs.group_id + ': Found existing active ' + \
+                                get_request_desc(active_req.request_type) + \
+                                ' observation for ' + active_req.field.name + \
+                                ' with filter ' + active_req.which_filter + \
+                                ', not submitting duplicate')
                     
+                else:
+                    if log != None:
+                        log.info(obs.group_id + ': No existing active ' + \
+                            get_request_desc(obs.request_type) + ' request for ' + obs.name + \
+                            ' with filter in ' + ' '.join(obs.filters) + \
+                            '; observation will be queued')
+                    obs_requests_final.append(obs)
+                    
+        else:
+            if log != None:
+                log.info(obs.group_id + ': No existing active ' + \
+                    get_request_desc(obs.request_type) + ' request for ' + obs.name + \
+                    ' with filter in ' + ' '.join(obs.filters) + \
+                    '; observation will be queued')
+            obs_requests_final.append(obs)
+
     if log != None:
         log.info('\n')
         
@@ -146,7 +155,7 @@ def submit_obs_requests(script_config,obs_requests,log=None):
                     'which_inst':obs.instrument, 'grp_id':obs.group_id, \
                     'track_id':obs.track_id, 'req_id':obs.req_id, \
                     'n_exp':obs.exposure_counts[i]}
-                    
+            
             (status, msg) = validation.check_obs_request(params)
             if log != None: 
                 log.info('    => Validation result: ' + repr(status) + ' ' + msg)
