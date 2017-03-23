@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<tap_config>
+    <parameter name='log_directory'>
+      	<value>/data/robouser/Logs/2017</value>
+    </parameter>
+    <parameter name='log_root_name'>
+      	<value>tap</value>
+    </parameter>
+    <parameter name='lock_file'>
+	<value>tap.lock</value>
+    </parameter>
+</tap_config>
