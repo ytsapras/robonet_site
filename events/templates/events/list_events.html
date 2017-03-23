@@ -1,30 +1,41 @@
-{% if rows %}
+{% extends "base.html" %}
 {% load staticfiles %}
+{% block content %}
+{% if rows %}
+<center>
     <script type="text/javascript" src="{% static 'events/sorttable.js' %}"></script>
-    <h2>Events in database:</h2>
+    <h2>Events in database</h2>
     <table class="sortable" border="0">
     <tr>
-       <td bgcolor="#990000"><b style="color: #FFFFCC ">ID:</b></td>
-       <td bgcolor="#990000"><b style="color: #FFFFCC ">Known Names:</b></td>
-       <td bgcolor="#990000"><b style="color: #FFFFCC ">Field:</b></td>
-       <td bgcolor="#990000"><b style="color: #FFFFCC ">RA:</b></td>
-       <td bgcolor="#990000"><b style="color: #FFFFCC ">DEC:</b></td>
-       <td bgcolor="#990000"><b style="color: #FFFFCC ">Status:</b></td>
-       <td bgcolor="#990000"><b style="color: #FFFFCC ">Year of Discovery:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">ID:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Known Names:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Field:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">RA:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">DEC:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Status:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Discovered:</b></td>
     </tr>
     <ul>
     {% for row in rows %}
-    <tr bgcolor="#ffcc99">
+    <tr bgcolor="{% cycle '#E6E6B8' '#FFFFCC' %}">
         <td> {{ row.0 }} </td>
            <td>{% for name in row.1 %}
-	      <li><a href={% url 'show_event' event_name=name %}>{{ name }}</a><br>
+	      <a href={% url 'show_event' event_name=name %} STYLE="text-decoration:none">{{ name }}</a><br>
 	      {% endfor %}
 	   </td>
-	<td>{{ row.2 }} </td>
-	<td>{{ row.3 }} </td>
-	<td>{{ row.4 }} </td>
-	<td>{{ row.5 }} </td>
-	<td>{{ row.6 }} </td>
+	{% if row.2 == "Outside ROMEREA" %}
+	   <td style="color: #999999 ">{{ row.2 }} </td>
+	   <td style="color: #999999 ">{{ row.3 }} </td>
+	   <td style="color: #999999 ">{{ row.4 }} </td>
+	   <td style="color: #999999 ">{{ row.5 }} </td>
+	   <td style="color: #999999 ">{{ row.6 }} </td>
+	{% else %}
+	   <td>{{ row.2 }} </td>
+	   <td>{{ row.3 }} </td>
+	   <td>{{ row.4 }} </td>
+	   <td>{{ row.5 }} </td>
+	   <td>{{ row.6 }} </td>
+	{% endif %}
     </tr>
     {% endfor %}
     </ul>
@@ -32,3 +43,5 @@
 {% else %}
     <p>No events are available.</p>
 {% endif %}
+</center>
+{% endblock %}

@@ -76,7 +76,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'robonet_site.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 
@@ -133,3 +132,5 @@ STATICFILES_DIRS = [
        os.path.join(BASE_DIR, "events/static/events/"),
        os.path.join(BASE_DIR, "project_website/static/project_website/"),
 ]
+
+LOGIN_REDIRECT_URL = 'dashboard'

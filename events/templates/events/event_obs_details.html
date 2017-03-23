@@ -1,6 +1,6 @@
+{% extends "base.html" %}
 {% load staticfiles %}
-<html>
-	<head>
+{% block head_extras %}
             <meta charset="utf-8" />
 	    <meta http-equiv='content-type' content='text/html; charset=utf-8' />
 	    <title>RoboNet Observe</title>
@@ -24,12 +24,13 @@
 	    	cursor: pointer;
 	    }
 	    </style>
-	</head>    
-<body bgcolor="#FFFFFF">
+{% endblock %}
+
+{% block content %}
   <center><br>
   <b>Current Time:</b> {{ time_now }}
   [HJD: {{ time_now_jd }}]
-  <table border="2" style="width:1200px">
+  <table border="0" style="width:1200px" bgcolor="#FFFFFF">
     <tr> 
 	<td width="300px" height="100px"><center><b><font size="5">ID</b></font><br> {{ event_id }}</center>
 	</td>
@@ -94,5 +95,4 @@
     </tr>
  </table>
  </center>
-</body>
-</html>
+{% endblock %}

@@ -1,6 +1,6 @@
-<html>
+{% extends "base.html" %}
+{% block head_extras %}
 <title>TAP</title>
-<head>
 <style>
 a:link {
     color: #1C1C1C;
@@ -23,8 +23,9 @@ a:active {
     text-decoration: underline;
 }
 </style>
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
 <center><br>
 <b>Current Time:</b> {{ time_now }}
 [HJD: {{ time_now_jd }}]
@@ -117,5 +118,4 @@ a:active {
     <p>No events are available.</p>
 {% endif %}
 </center>
-</body>
-</html>
+{% endblock %}

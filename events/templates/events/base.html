@@ -4,7 +4,7 @@
     <meta HTTP-EQUIV="PRAGMA" content="NO-CACHE">
     <meta name="robots" content="NONE,NOARCHIVE" />
     <link rel="stylesheet" type="text/css" href={% static 'events/events.css' %} />
-    <title>ROME/REA Key Project Status</title>
+    {% block head_extras %}<title>ROME/REA Key Project</title>{% endblock %}
 </head>
 
 <body bgcolor="#98AFC7" style="font-family:verdana;">
@@ -30,6 +30,8 @@
     <!-- END Header --> 
 <!-- Content -->
 <div id="content">
+
+{% block content %}
 
 <center>
 <!-- BEGIN WRAPPING TABLE -->
@@ -89,6 +91,9 @@ dy.bmp&imgsize=320&dynimg=y&opt=-p&lat=&lon=&alt=&tle=&date=0&utc=&jd=" width="5
 <!-- END WRAPPING TABLE -->
 
 </center>
+
+{% endblock %}
+
 </div>
 <!-- End Content -->
 

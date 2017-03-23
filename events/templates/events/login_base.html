@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title style="font-family:verdana;">{% block title %}ROME/REA DB{% endblock %}</title>
+</head>
+<body bgcolor="#98AFC7" style="font-family:verdana;">
+  <header>
+    <h1>ROME/REA DB Views</h1>
+    {% if user.is_authenticated %}
+      Hi {{ user.first_name }},
+      <a href="{% url 'logout' %}">Click here to log out.</a>
+    {% else %}
+      <a href="{% url 'login' %}">Log in</a>
+    {% endif %}
+  </header>
+  <hr>
+  <main>
+    {% block content %}
+    {% endblock %}
+  </main>
+  <hr>
+</body>
+</html>

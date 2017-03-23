@@ -33,13 +33,13 @@ def romerea_visibility_3sites_40deg(jdi):
     return 0.
 
 def calculate_exptime_romerea(magin):
-   '''
-   This function calculates the required exposure time
-   for a given iband magnitude (e.g. OGLE I which also 
-   roughly matches SDSS i) based on a fit to the empiric
-   RMS diagram of DANDIA light curves from 2016. The
-   output is in seconds.
-   '''
+    '''
+    This function calculates the required exposure time
+    for a given iband magnitude (e.g. OGLE I which also 
+    roughly matches SDSS i) based on a fit to the empiric
+    RMS diagram of DANDIA light curves from 2016. The
+    output is in seconds.
+    '''
     if magin<14.7:
         mag=14.7
     else:
@@ -51,16 +51,16 @@ def calculate_exptime_romerea(magin):
 
 #at peak psi:
 def omegarea(t,u0,te,t0,fs,fb):
-   '''
-   This function calculates the priority for ranking
-   microlensing events based on the planet probability psi
-   as defined by Dominik 2009 and estimates the cost of 
-   observations based on an empiric RMS estimate 
-   obtained from a DANDIA reduction of K2C9 Sinistro
-   observations from 2016. It expects the overhead to be
-   60 seconds and also return the current Paczynski 
-   light curve magnification.
-   '''
+    '''
+    This function calculates the priority for ranking
+    microlensing events based on the planet probability psi
+    as defined by Dominik 2009 and estimates the cost of 
+    observations based on an empiric RMS estimate 
+    obtained from a DANDIA reduction of K2C9 Sinistro
+    observations from 2016. It expects the overhead to be
+    60 seconds and also return the current Paczynski 
+    light curve magnification.
+    '''
     usqr=u0**2+((t-t0)/te)**2
     pspl_deno=(usqr*(usqr+4.))**0.5
     psip=4.0/(pspl_deno)-2.0/(usqr+2.0+pspl_deno)
@@ -123,7 +123,7 @@ def run_tap():
 	 #DEFINE A BLENDED EVENT AS g>0.5
          blended = g>0.5
      	 add_tap(event_name=event_name, timestamp=timestamp, priority=priority, tsamp=tsamp, 
-              texp=texp, nexp=nexp, telclass=telclass, imag=imag, omega=omega, 
+              texp=texp, nexp=1, telclass=telclass, imag=imag, omega=omega, 
    	         err_omega=err_omega, peak_omega=peak_omega, blended=blended, visibility=dailyvisibility, cost1m=cost1m)
 
  

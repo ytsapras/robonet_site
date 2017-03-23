@@ -1,12 +1,13 @@
-<html>
-	<head>
+{% extends "base.html" %}
+	{% block head_extras %}
             <meta charset="utf-8" />
 	    <meta http-equiv='content-type' content='text/html; charset=utf-8' />
 	    <title>Microlensing Event</title>
             <script src="http://cdn.pydata.org/bokeh/release/bokeh-0.12.4.min.js"></script>	
             <link rel="stylesheet" href="http://cdn.pydata.org/bokeh/release/bokeh-0.12.4.min.css">
-	</head>    
-<body bgcolor="#FFFFFF">
+	{% endblock %}    
+
+{% block content %}
   <center><br>
   <b>
     <a href={% url 'show_event_by_id' event_id=event_id|add:-1 %} STYLE="text-decoration:none">&#11013; &nbsp;</a>
@@ -70,5 +71,4 @@
     </tr>
  </table>
  </center>
-</body>
-</html>
+{% endblock %}

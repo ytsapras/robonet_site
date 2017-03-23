@@ -1,0 +1,21 @@
+import urllib
+import httplib
+params ={'name':'MICROFUN'} 
+url_request = urllib.urlencode(params) 
+secure_connect = httplib.HTTPConnection("127.0.0.1:8000") 
+secure_connect.request("POST","/events/add_operator/",url_request)
+submit_string = secure_connect.getresponse().read() 
+
+import requests
+url = 'http://127.0.0.1:8000/events/add_operator/'
+
+client = requests.session()
+client.get(url)
+csrftoken = client.cookies['csrftoken']
+
+payload = {
+    'csrfmiddlewaretoken': csrftoken,
+    'name': 'MICROFUN'
+}
+
+r = client.post(url, data=payload, headers=dict(Referer=url))

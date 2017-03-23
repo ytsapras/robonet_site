@@ -815,7 +815,7 @@ def add_datafile(event_name, datafile, last_upd, last_obs, last_mag, tel, ndata,
    return successful
 
 ###################################################################################
-def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0, nexp=0,
+def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0, nexp=1,
             telclass='1m', imag=22.0, omega=None, err_omega=None, peak_omega=None, blended=False,
 	    visibility=None, cost1m=None, passband='SDSS-i'):
    """
@@ -836,7 +836,7 @@ def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0,
    texp -- Recommended exposure time (in seconds).
            (integer, optional, default=0)
    nexp -- Recommended number of exposures.
-           (integer, optional, default=0)
+           (integer, optional, default=1)
    telclass --  Recommended telescope aperture class.
                 (string, optional, default='1m')
    imag -- Current I magnitude.

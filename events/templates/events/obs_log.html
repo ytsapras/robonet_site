@@ -1,3 +1,6 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% block content %}
 {% if rows %}
   <h2>Observation Log: {{ date }}</h2>
   <table class="sortable" border="0">
@@ -50,4 +53,5 @@
 {% else %}
     <p>No images found.</p>
 {% endif %}
+{% endblock %}
 
