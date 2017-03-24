@@ -11,6 +11,10 @@ import numpy as np
 import os
 import time 
 import log_utilities
+
+import update_db_2 as update_db
+from django.utils import timezone
+
 class QuantityLimits(object):
 
 	def __init__(self):
@@ -57,6 +61,7 @@ class Image(object):
                 self.thumbnail_box_size = 60
                 self.field_name = None
 
+		self.header_date_obs = None
 		self.header_telescope_site = None
 		self.header_group_id = None
 		self.header_track_id = None
@@ -399,18 +404,51 @@ class Image(object):
                 return None
 
 	def ingest_the_image_in_the_database(self):
+	
+		quality_flag = ' ; '.join(self.quality_flags)
 
-		return None
+		ingest_succes = update_db.add_image(self.field_name, self.image_name, self.header_date_obs, timezone.now(), self.header_telescope_site,
+			      self.camera.name, self.header_group_id, self.header_track_id, self.header_request_id, self.header_airmass,
+			      self.seeing, self.sky_level, self.sky_level_std, self.header_moon_distance, self.header_moon_fraction,
+			      self.header_moon_status, self.ellipticity, self.number_of_stars, self.header_ccd_temp, quality_flag)  	
+		
+
+		if ingest_succes == True:
+
+			self.logger.info('Image successfully ingest in the DB')
+
+		else:
+
+			self.logger.warning('Image NOT ingest in the DB, the image probably already exists')
+
+		return ingest_success
 
 
 	def class_the_image_in_the_directory(self):
 		
-		try :
-			return 'copy it'
+		new_hdul = fits.HDUList()
+		
+		calibrated_image = fits.ImageHDU(self.data, header=self.header, name='calibrated')
 
+		thumbnail_image = fits.ImageHDU(self.thumbnail, header=self.header, name='thumbnail')
+
+		original_header = fits.PrimaryHDU(header=self.oldheader)
+
+
+		new_hdul.append(calibrated_image)
+		new_hdul.append(thumbnail_image)
+		new_hdul.append(original_header)
+
+
+	
+		try :
+			new_hdul.writeto(self.output_directory+self.image_name, clobber=True)
+			self.logger.info('Image '+self.image_name+' successfully place in the directory '+self.output_directory)
+		
 		except RaiseError :
 
-			return 'mkdir it'
+			self.logger.error('Something goes wrong when move the image to the directory!')
+
 
 def find_frames_to_process(new_frames_directory, logger):
 
@@ -428,16 +466,16 @@ def find_frames_to_process(new_frames_directory, logger):
 
 
 
-def process_new_images(new_frames_directory, image_output_origin_directory):
+def process_new_images(new_frames_directory, image_output_origin_directory, logs_directory):
 	
 
 
-	config = {'log_directory':'./', 'log_root_name':'test'}
-	logger = log_utilities. start_day_log( config, 'test', console=False )
+	config = {'log_directory':logs_directory, 'log_root_name':'reception_data'}
+	logger = log_utilities. start_day_log( config, 'reception', console=False )
 	NewFrames = find_frames_to_process(new_frames_directory, logger)
 	
 	if NewFrames :
-		import pdb; pdb.set_trace()
+
 		for newframe in NewFrames :
 
 			start = time.time()
@@ -451,14 +489,24 @@ def process_new_images(new_frames_directory, image_output_origin_directory):
 			image.create_image_control_region()
 			image.find_WCS_offset()
 			image.generate_sextractor_catalog()
-			print image.image_name , image.x_shift, image.y_shift,time.time()-start
-			import pdb; pdb.set_trace()
-			#image.process_the_image(self)
-		log_utilities. end_day_log(logger)
+			success = ingest_the_image_in_the_database()
+			
+			if success == True:
+
+				image.class_the_image_in_the_directory()
+				os.remove(new_frames_directory+newframe)
+
+			else:
+
+				pass	
+			
+			
+		log_utilities.end_day_log(logger)
 	else :
 
-
-		return 'Done'
+		logger.info('')
+		logger.info('No frames to treat, aboard!')
+		log_utilities.end_day_log(logger)
 
 
 
