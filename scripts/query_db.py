@@ -49,15 +49,20 @@ def get_rea_targets(log=None):
     observation under the REA strategy."""
     
     qs = Tap.objects.filter(omega__gte=6.0).order_by('timestamp').reverse()
+    print qs
+    for q in qs:
+        print q.event.ev_ra, q.tsamp,q.priority
     
     if log != None:
         log.info('\n')
         log.info('Queried DB for list of current REA targets:')
         for q in qs:
-            
             log.info(' '.join([q.event.field.name,\
                         'priority=',q.priority, \
                         't_sample=',str(q.tsamp)]))
         log.info('\n')
                         
     return qs
+
+if __name__ == '__main__':
+    get_rea_targets()
