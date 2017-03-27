@@ -1,7 +1,10 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.conf import settings
 from django.views.decorators.http import require_http_methods
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.forms import PasswordChangeForm
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
@@ -50,7 +53,29 @@ with open(colordef) as f:
        val = elem[1]
        col_dict[key] = val
 
-##############################################################################################################
+@login_required(login_url='/db/login/')
+def change_password(request):
+   """
+   Will allow a user to change their password.
+   """
+   if request.user.is_authenticated():
+      try:
+         if request.method == 'POST':
+ 	    form = PasswordChangeForm(request.user, request.POST)
+ 	    if form.is_valid():
+ 	       user = form.save()
+ 	       update_session_auth_hash(request, user)  # Important!
+ 	       messages.success(request, 'Your password was successfully updated!')
+ 	       return HttpResponseRedirect('/db')
+ 	    else:
+ 	       messages.error(request, 'Please correct the error below.')
+ 	 else:
+ 	    form = PasswordChangeForm(request.user)
+ 	 return render(request, 'events/change_password.html', {'form': form})
+      except:
+         raise Http404("Encountered a problem while rendering page.")  
+   else:
+      return HttpResponseRedirect('login')
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')

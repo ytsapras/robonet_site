@@ -791,6 +791,8 @@ class Tap(models.Model):
                  (float, optional, default=None)
    passband -- Passband for which the priority function has been evaluated
                  (string, optional, default='SDSS-i')
+   ipp -- Inter Proposal Priority Value
+          (float, optional, default='1.0')
    """
    def __str__(self):
       return str(self.event)+' priority: '+str(self.priority)
@@ -827,6 +829,8 @@ class Tap(models.Model):
    cost1m = models.DecimalField(max_digits=6,decimal_places=2, blank=True, null=True)
    # Passband for which the priority function has been evaluated
    passband = models.CharField(max_length=12, default='SDSS-i', blank=True)
+   # Inter Proposal Priority value
+   ipp = models.DecimalField(max_digits=10,decimal_places=3, blank=True, default=1.0)
    
 # Image parameters
 class Image(models.Model):
