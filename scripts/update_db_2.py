@@ -815,7 +815,7 @@ def add_datafile(event_name, datafile, last_upd, last_obs, last_mag, tel, ndata,
    return successful
 
 ###################################################################################
-def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0, nexp=1,
+def add_tap(event_name, timestamp=timezone.now(), priority='N', tsamp=0, texp=0, nexp=1,
             telclass='1m', imag=22.0, omega=None, err_omega=None, peak_omega=None, blended=False,
 	    visibility=None, cost1m=None, passband='SDSS-i', ipp=1.0):
    """
@@ -829,8 +829,11 @@ def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0,
                 (datetime, optional, default=timezone.now())
         	e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    priority -- Priority flag for human observers. 
-               [anomaly(A),high(H),medium(M),low(L)]
-	       (string, optional, default='L')
+	       (string, optional, default='N')
+	        'A':'REA High',
+		'L':'REA Low',
+		'B':'REA Post-High'
+		'N':'None'
    tsamp -- Recommended cadence (in hours).
             (float, optional, default=0)
    texp -- Recommended exposure time (in seconds).
