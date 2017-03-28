@@ -759,7 +759,7 @@ class Tap(models.Model):
    Keyword arguments:
    event -- The event object. 
                 (object, required) --ForeignKey object
-   timestamp -- The request submission time.
+   timestamp -- The TAP submission time.
                 (datetime, optional, default=timezone.now())
         	e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    priority -- Priority flag for human observers.

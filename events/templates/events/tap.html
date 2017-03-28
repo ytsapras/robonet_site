@@ -27,37 +27,35 @@ a:active {
 
 {% block content %}
 <center><br>
-<b>Current Time:</b> {{ time_now }}
+<b>Current Time:</b> {{ time_now }} UT
 [HJD: {{ time_now_jd }}]
-<h2> Target Priority: <font color="Blue">L</font><font color="Red">C</font><font color="Gold">O</font><font color="Blue">G</font><font color="Green">T</font> 1m network</h2>
+<h2> Target Priority: LCO 1m network</h2>
 {% if rows %}
 {% load staticfiles %}
     <script type="text/javascript" src="{% static 'events/sorttable.js' %}"></script>
     <table style="border: 1px solid #000000; border-collapse: collapse;" border="1" cellpadding="4">
-       <tbody><tr><td>Target list upload (1m) in less than <b>{{ time1 }}</b> min </td>
+       <tbody><tr bgcolor="#E6E6B8"><td>Target list upload (1m) in less than <b>{{ time1 }}</b> min </td>
     </table>
     <b> Bulge visibility: {{ time2 }} h on {{ nsite }} sites. <br>
         Listed events occupy {{ occupy|safe }} of available time.</b><br>
  <table class="sortable" border="0">
  <tr>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">Event</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">RA</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">DEC</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">Cadence OGLE, KMTNet</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">N.Exp</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">Texp [s]</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">Priority</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">Tsamp [h]</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">Imag</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">&Omega;<sub>S</sub></b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">&sigma;<sub>&Omega;S</sub></b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">&Omega;<sub>S</sub>@peak</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">Visibility [h]</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Event</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">RA</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">DEC</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Texp [s]</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Priority</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Tsamp [h]</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Imag</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">&Omega;<sub>S</sub></b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">&Omega;<sub>S</sub>@peak</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Visibility [h]</b></th>
  </tr>
  {% for row in rows %}
  <tr bgcolor="{{ row.0 }}">
    <td>{% for name in row.2 %}
-       <li><a href={% url 'show_event_by_id' event_id=row.1 %}>{{ name }}</a><br>
+            <a href={% url 'show_event' event_name=name %} STYLE="text-decoration:none">{{ name }}</a><br>
+       <!-- <li><a href={% url 'show_event_by_id' event_id=row.1 %}>{{ name }}</a><br> -->
        {% endfor %}
    </td>
    <td>{{ row.3 }}</td>
@@ -69,9 +67,6 @@ a:active {
    <td>{{ row.9 }}</td>
    <td>{{ row.10 }}</td>
    <td>{{ row.11 }}</td>
-   <td>{{ row.12 }}</td>
-   <td>{{ row.13 }}</td>
-   <td>{{ row.14 }}</td>
  </tr>
  {% endfor %}
  </table>
@@ -79,24 +74,22 @@ a:active {
  <br>
  <table class="sortable" border="0">
  <tr>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">Event</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">RA</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">DEC</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">Cadence OGLE, KMTNet</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">N.Exp</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">Texp [s]</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">Priority</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">Tsamp [h]</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">Imag</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">&Omega;<sub>S</sub></b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">&sigma;<sub>&Omega;S</sub></b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">&Omega;<sub>S</sub>@peak</b></th>
-  <th bgcolor="#990000"><b style="color: #FFFFCC ">Visibility [h]</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Event</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">RA</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">DEC</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Texp [s]</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Priority</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Tsamp [h]</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Imag</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">&Omega;<sub>S</sub></b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">&Omega;<sub>S</sub>@peak</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Visibility [h]</b></th>
  </tr>
  {% for row in rowsrej %}
  <tr bgcolor="{{ row.0 }}">
    <td>{% for name in row.2 %}
-       <li><a href={% url 'show_event_by_id' event_id=row.1 %}>{{ name }}</a><br>
+            <a href={% url 'show_event' event_name=name %} STYLE="text-decoration:none">{{ name }}</a><br>
+       <!-- <li><a href={% url 'show_event_by_id' event_id=row.1 %}>{{ name }}</a><br> -->
        {% endfor %}
    </td>
    <td>{{ row.3 }}</td>
@@ -108,9 +101,6 @@ a:active {
    <td>{{ row.9 }}</td>
    <td>{{ row.10 }}</td>
    <td>{{ row.11 }}</td>
-   <td>{{ row.12 }}</td>
-   <td>{{ row.13 }}</td>
-   <td>{{ row.14 }}</td>
  </tr>
  {% endfor %}
  </table>

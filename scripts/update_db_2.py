@@ -825,7 +825,7 @@ def add_tap(event_name, timestamp=timezone.now(), priority='N', tsamp=0, texp=0,
    Keyword arguments:
    event_name -- The event name. 
                 (string, required)
-   timestamp -- The request submission time.
+   timestamp -- The TAP submission time.
                 (datetime, optional, default=timezone.now())
         	e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    priority -- Priority flag for human observers. 

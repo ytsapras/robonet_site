@@ -314,7 +314,7 @@ def tap(request):
          time_now_jd = Time(time_now).jd
          ##### TAP query goes here ###
          #selection_model = SingleModel.objects.filter(umin__lte=0.00001, tau__lte=30)
-         selection_tap = Tap.objects.filter(omega__gte=6.0).order_by('timestamp').reverse()
+         selection_tap = Tap.objects.filter(omega__gte=0.01).order_by('timestamp').reverse()
          #####
          ev_id = []
          timestamp = []
@@ -345,7 +345,6 @@ def tap(request):
             ev_ra = Event.objects.all().get(pk=i).ev_ra
             ev_dec = Event.objects.all().get(pk=i).ev_dec
             sampling_time = Tap.objects.all().get(event=i, timestamp=timestamp[count]).tsamp
-            exposures = Tap.objects.all().get(event=i, timestamp=timestamp[count]).nexp
             time_exp = Tap.objects.all().get(event=i, timestamp=timestamp[count]).texp
             prior = Tap.objects.all().get(event=i, timestamp=timestamp[count]).priority
             if prior == 'A':
@@ -360,17 +359,13 @@ def tap(request):
                colors.append('#808080')
             baseline = Tap.objects.all().get(event=i, timestamp=timestamp[count]).imag
             oms = Tap.objects.all().get(event=i, timestamp=timestamp[count]).omega
-            soms = Tap.objects.all().get(event=i, timestamp=timestamp[count]).err_omega
             omsp = Tap.objects.all().get(event=i, timestamp=timestamp[count]).peak_omega
             vis = Tap.objects.all().get(event=i, timestamp=timestamp[count]).visibility
-            nexp.append(exposures)
             texp.append(time_exp)
-            cadence.append('Unknown')
             tsamp.append(sampling_time)
             priority.append(prior)
             imag.append(baseline)
             omega_s.append(oms)
-            sig_omega_s.append(soms)
             omega_peak.append(omsp)
             names_list.append(names)
             visibility.append(vis)
@@ -378,11 +373,12 @@ def tap(request):
             dec.append(ev_dec)
             count = count + 1
          #### TAP rows need to be defined here ####
-         rows = zip(colors, ev_id, names_list, ra, dec, cadence, nexp, texp, priority, tsamp, imag, omega_s,
-        	    sig_omega_s, omega_peak, visibility)
+         rows = zip(colors, ev_id, names_list, ra, dec, texp, priority, tsamp, imag, omega_s,
+        	    omega_peak, visibility)
          rowsrej = ''
          time1 = 'Unknown' # This should be an estimate of when the target list will be uploaded next (in minutes)
-         time2 = str(blg_visibility(mlsites=['CPT','COJ','LSC'])) # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
+         #time2 = str(blg_visibility(mlsites=['CPT','COJ','LSC'])) # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
+         time2 = 'test' # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
          nsite = '3' # The number of sites the bulge is visible from for time2 hours
          occupy = '<font color="red"> Unknown</font>' # This should be a string (can include html)
          ##########################################
