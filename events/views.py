@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
+from django.db.models import Max
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
@@ -310,11 +311,12 @@ def tap(request):
    """
    if request.user.is_authenticated():
       try:
+	 list_ev = Event.objects.filter(status__in=['MO']).annotate(latest_tap=Max('tap__timestamp'))
+	 latest_ev_tap = Tap.objects.filter(timestamp__in=[e.latest_tap for e in list_ev])
          time_now = datetime.now()
          time_now_jd = Time(time_now).jd
          ##### TAP query goes here ###
-         #selection_model = SingleModel.objects.filter(umin__lte=0.00001, tau__lte=30)
-         selection_tap = Tap.objects.filter(omega__gte=0.01).order_by('timestamp').reverse()
+	 selection_tap = latest_ev_tap.order_by('omega').reverse()
          #####
          ev_id = []
          timestamp = []
