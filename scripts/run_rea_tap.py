@@ -111,7 +111,7 @@ def assign_tap_priorities(logger):
     daily_visibility = 1.4 * full_visibility * 300. / 3198.
 
     # FILTER FOR ACTIVE EVENTS (BY DEFINITION WITHIN ROME FOOTPRINT0
-    active_events_list = Event.objects.select_related().filter(status='AC')
+    active_events_list = Event.objects.select_related().filter(status__in=['AC','MO'])
     logger.info('RoboTAP: Processing ' +
                 str(len(active_events_list)) + ' active events.')
 
@@ -158,6 +158,14 @@ def assign_tap_priorities(logger):
     #log_utilities.end_day_log(log)
 
 def run_tap_prioritization(logger):
+
+    """
+    Sort events on RoboTAP and check a request can be made with 
+    an assumed REA-LOW time allocation of 300 hours.
+    For very high priority events A_now>500, the anomaly status
+    can be set (not implemented yet).
+    """
+
     ut_current = time.gmtime()
     t_current = gcal2jd(ut_current[0], ut_current[1], ut_current[2])[
         1] - 49999.5 + ut_current[3] / 24.0 + ut_current[4] / (1440.)
@@ -190,14 +198,16 @@ def run_tap_prioritization(logger):
     for idx in range(len(sorted_list)):
         # CHECK CURRENT MAGNIFICATION IF >500 SET IT TO ANOMALOUS 
         #IF IT NEVER WAS ANOMALOUS BEFORE
-        if psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin'])>500.:
-            Event.objects.filter(event_id=sorted_list[idx]['event_id']).update(status="AN")
+        if psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin'])>5000.:
+            #Event.objects.filter(event_id=sorted_list[idx]['event_id']).update(status="AN")
+            pass
         
         elif SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['tau'] < 210.:
             tsys = 24. * (float(sorted_list[idx]['texp']) + toverhead) / 3600.
             if trun + tsys < daily_visibility:
-                logger.info('Amax '+str(round(psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin']),2))+' '+EventName.objects.select_related().filter(event=sorted_list[idx]['event_id'])[0].name)
+                logger.info('RoboTAP requests: Amax '+str(round(psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin']),2))+' '+EventName.objects.select_related().filter(event=sorted_list[idx]['event_id'])[0].name)
                 Event.objects.filter(event_id=sorted_list[idx]['event_id']).update(status="MO")
+                Tap.objects.filter(event_id=sorted_list[idx]['event_id']).values().update(priority='L')
                 trun = trun + tsys
 
 
@@ -211,6 +221,7 @@ if __name__ == '__main__':
     if lock_status == 'clashing_lock':
         log_utilities.end_day_log(logger)
         exit()
+    lock_status = log_utilities.lock( script_config, 'lock', logger)
     assign_tap_priorities(logger)
     run_tap_prioritization(logger)
     log_utilities.end_day_log(logger)
