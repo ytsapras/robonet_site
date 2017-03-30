@@ -11,6 +11,7 @@ urlpatterns = [
     #url(r'^test/$', views.test, name='test'),
     url(r'^login/$', auth_views.login, {'template_name':'events/registration/login.html'}, name='login'),
     url(r'^logout/$', auth_views.logout, {'next_page':'/'}, name='logout'),
+    url(r'^password/$', views.change_password, name='change_password'),
     url(r'^event/(?P<event_name>[\w-]+)', views.show_event, name='show_event'),
     url(r'^download_lc/(?P<event_name>[\w-]+)', views.download_lc, name='download_lc'),
     url(r'^event_by_id/(?P<event_id>[0-9]+)', views.show_event_by_id, name='show_event_by_id'),

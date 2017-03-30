@@ -759,14 +759,15 @@ class Tap(models.Model):
    Keyword arguments:
    event -- The event object. 
                 (object, required) --ForeignKey object
-   timestamp -- The request submission time.
+   timestamp -- The TAP submission time.
                 (datetime, optional, default=timezone.now())
         	e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    priority -- Priority flag for human observers.
-	       (string, optional, default='L')
+	       (string, optional, default='N')
 	        'A':'REA High',
 		'L':'REA Low',
 		'B':'REA Post-High'
+		'N':'None'
    tsamp -- Recommended cadence (in hours).
             (float, optional, default=0)
    texp -- Recommended exposure time (in seconds).
@@ -791,6 +792,8 @@ class Tap(models.Model):
                  (float, optional, default=None)
    passband -- Passband for which the priority function has been evaluated
                  (string, optional, default='SDSS-i')
+   ipp -- Inter Proposal Priority Value
+          (float, optional, default='1.0')
    """
    def __str__(self):
       return str(self.event)+' priority: '+str(self.priority)
@@ -798,11 +801,12 @@ class Tap(models.Model):
    possible_priority = (
       ('A','REA High'),
       ('L','REA Low'),
-      ('B','REA Post-High')
+      ('B','REA Post-High'),
+      ('N','None')
    )
    timestamp = models.DateTimeField('Date generated')
-   # Priority flag for human observers (anomaly, high, medium, low)
-   priority = models.CharField(max_length=12, choices=possible_priority, default='L')
+   # Priority flag for human observers (rea high, rea low, rea post-high, none)
+   priority = models.CharField(max_length=12, choices=possible_priority, default='N')
    # Recommended cadence (in hours): Can only take two possible values : 60 or 20 min
    tsamp = models.DecimalField(max_digits=6,decimal_places=2, default=0, blank=True)
    # Recommended exposure time (in seconds)
@@ -827,6 +831,8 @@ class Tap(models.Model):
    cost1m = models.DecimalField(max_digits=6,decimal_places=2, blank=True, null=True)
    # Passband for which the priority function has been evaluated
    passband = models.CharField(max_length=12, default='SDSS-i', blank=True)
+   # Inter Proposal Priority value
+   ipp = models.DecimalField(max_digits=10,decimal_places=3, blank=True, default=1.0)
    
 # Image parameters
 class Image(models.Model):

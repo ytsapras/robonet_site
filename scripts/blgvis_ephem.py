@@ -2,16 +2,18 @@
 import os
 import sys
 from time import gmtime, strftime
+from datetime import datetime
 from math import pi
 import numpy as np
 import ephem
 import matplotlib
 from matplotlib import pyplot as plt
 from jdcal import gcal2jd
-
+from matplotlib.cm import coolwarm
 
 def generate_visibility_plot():
     ut_current = gmtime()
+    t_current_string = datetime.utcnow().strftime('%B %d %Y - %H:%M')
     t_current = gcal2jd(ut_current[0], ut_current[1], ut_current[2])[
         1] - 49999.5 + ut_current[3] / 24.0 + ut_current[4] / (1440.)
     obj = ephem.readdb("ENTRY,f|M|F7," + "17:57:07.0" +
@@ -45,16 +47,21 @@ def generate_visibility_plot():
                     lat_plot.append(lat)
                     alt_plot.append(glob_alt)
 
-    worldmap = np.loadtxt('wrld.txt')
+    # downloading one of the examples on http://www.gnuplotting.org/plotting-the-world-revisited/ or any other world map contour can be used
+    worldmap = np.loadtxt('world_50m.txt')
     fig, ax = plt.subplots()
-    plt.xticks(np.arange(-180,180, 30.))
-    plt.yticks(np.arange(-90,90, 15.))
+    plt.xticks(np.arange(-180.001,180.001, 60.))
+    plt.yticks(np.arange(-90.001,90.001, 30.))
+    plt.title(str(round(t_current,2))+' '+t_current_string)
     plt.plot(worldmap[:, 0], worldmap[:, 1], '.',color='k', markersize=1)
-    plt.scatter(lon_plot, lat_plot, c=alt_plot, cmap='nipy_spectral')
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
+    tmp=plt.scatter(lon_plot, lat_plot, c=alt_plot, cmap=coolwarm)
+    #ax.set_xticklabels([])
+    #ax.set_yticklabels([])
     plt.grid(alpha=0.3)
-    plt.show()
+    cbar = plt.colorbar(tmp,cmap=coolwarm,orientation='vertical')
+    plt.clim(0.,90.)
+    plt.savefig('blgvis_now.png')
+#    plt.show()
 
 if __name__ == '__main__':
     generate_visibility_plot()

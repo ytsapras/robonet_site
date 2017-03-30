@@ -815,9 +815,9 @@ def add_datafile(event_name, datafile, last_upd, last_obs, last_mag, tel, ndata,
    return successful
 
 ###################################################################################
-def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0, nexp=1,
+def add_tap(event_name, timestamp=timezone.now(), priority='N', tsamp=0, texp=0, nexp=1,
             telclass='1m', imag=22.0, omega=None, err_omega=None, peak_omega=None, blended=False,
-	    visibility=None, cost1m=None, passband='SDSS-i'):
+	    visibility=None, cost1m=None, passband='SDSS-i', ipp=1.0):
    """
    Add a TAP entry to the database.
    Assumes TAP has already evaluated the necessary parameters.
@@ -825,12 +825,15 @@ def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0,
    Keyword arguments:
    event_name -- The event name. 
                 (string, required)
-   timestamp -- The request submission time.
+   timestamp -- The TAP submission time.
                 (datetime, optional, default=timezone.now())
         	e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    priority -- Priority flag for human observers. 
-               [anomaly(A),high(H),medium(M),low(L)]
-	       (string, optional, default='L')
+	       (string, optional, default='N')
+	        'A':'REA High',
+		'L':'REA Low',
+		'B':'REA Post-High'
+		'N':'None'
    tsamp -- Recommended cadence (in hours).
             (float, optional, default=0)
    texp -- Recommended exposure time (in seconds).
@@ -855,6 +858,8 @@ def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0,
                  (float, optional, default=None)
    passband -- Passband for which the priority function has been evaluated
                  (string, optional, default='SDSS-i')
+   ipp -- Inter Proposal Priority Value
+          (float, optional, default='1.0')
    """
    # Check if the event already exists in the database.
    if check_exists(event_name)==True:
@@ -865,7 +870,7 @@ def add_tap(event_name, timestamp=timezone.now(), priority='L', tsamp=0, texp=0,
          add_new = Tap(event=event, timestamp=timestamp, priority=priority, tsamp=tsamp, 
 	               texp=texp, nexp=nexp, telclass=telclass, imag=imag, omega=omega, 
 		       err_omega=err_omega, peak_omega=peak_omega, blended=blended,
-		       visibility=visibility, cost1m=cost1m, passband=passband)
+		       visibility=visibility, cost1m=cost1m, passband=passband, ipp=ipp)
 	 add_new.save()
 	 successful = True
       except:

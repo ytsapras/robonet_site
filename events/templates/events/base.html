@@ -19,11 +19,12 @@
 	        {% if user.is_authenticated %}
                 Welcome,
                 <strong>{{ user.first_name }}</strong>.
-                    <a href="{% url 'dashboard' %}">View DB</a> /
-                    <a href="{% url 'home_html' %}">Home</a> /
-                    <a href="{% url 'logout' %}">Log out</a>
+                    <a href="{% url 'dashboard' %}">VIEW DB</a> /
+                    <a href="{% url 'home_html' %}">HOME</a> /
+                    <a href="{% url 'change_password' %}">Change PWD</a> /
+                    <a href="{% url 'logout' %}">LOG OUT</a>
 		{% else %}
-                    <a href="{% url 'login' %}">Log in</a>
+                    <a href="{% url 'login' %}">LOG IN</a>
                 {% endif %}
         </div>
     </div>
