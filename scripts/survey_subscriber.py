@@ -38,14 +38,11 @@ def sync_surveys():
 
     # Harvest parameters of lenses detected by OGLE
     ogle_data = get_ogle_parameters(config, log)
-
-
-# Sync against database
+    ogle_data.update_lenses_db()
 
     # Harvest MOA information
     moa_data = get_moa_parameters(config, log)
-
-# Sync against database
+    moa_data.update_lenses_db()
 
     # Harvest KMTNet information
     # KMTNet are not producing alerts yet
@@ -67,7 +64,7 @@ def get_ogle_parameters(config, log):
 
     log.info('Syncing data from OGLE')
     ogle_data = survey_classes.SurveyData()
-    years = [ '2014', '2015', '2016' ]
+    years = [ '2017' ]
     
     # Fetch the parameter files from OGLE via anonymous FTP
     ftp = ftplib.FTP( config['ogle_ftp_server'] )
@@ -88,12 +85,11 @@ def get_ogle_parameters(config, log):
     ftp.quit()
     
     ogle_data = survey_data_utilities.read_ogle_param_files( config )
-        
+    
     log.info('--> Last updated at: ' + \
             ogle_data.last_changed.strftime("%Y-%m-%dT%H:%M:%S"))
     log.info('--> Downloaded index of ' + str(len(ogle_data.lenses)) + \
                         ' events')
-
 
     update_file_path = path.join( config['ogle_data_local_location'], \
                                         config['ogle_updated_file']  )

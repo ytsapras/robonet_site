@@ -6,8 +6,28 @@ Created on Fri Feb 12 13:49:18 2016
 """
 
 from astropy.time import Time
-from os import path
+from os import getcwd, path, remove, environ
+from sys import path as systempath
+cwd = getcwd()
+systempath.append(path.join(cwd,'..'))
 import numpy as np
+import update_db_2
+from field_check import romecheck
+from rome_fields_dict import field_dict
+from utilities import sex2decdeg
+import query_db
+
+from local_conf import get_conf
+robonet_site = get_conf('robonet_site')
+systempath.append(robonet_site)
+environ.setdefault('DJANGO_SETTINGS_MODULE', 'robonet_site.settings')
+from django.core import management
+from django.conf import settings
+from django.utils import timezone
+from django import setup
+from datetime import datetime, timedelta
+setup()
+from events.models import Event
 
 ##################################################
 # LENS CLASS DESCRIPTION
@@ -48,8 +68,32 @@ class Lens():
                 str(self.t0) + ' ' + str(self.te) + ' ' + str(self.u0) + '  ' +\
                 str(self.a0) + ' ' + str(self.i0) + ' ' + self.classification
 
-    def sync_event_with_DB(self):
+    def get_event_field_id(self):
+        """Method to identify which ROMEREA field the event lies in"""
+        ev_ra_deg, ev_dec_deg = sex2decdeg(self.ra, self.dec)
+        (id_field, rate) = romecheck(ev_ra_deg, ev_dec_deg)
+        if id_field == -1:
+            id_field = 'Outside ROMEREA footprint'
+        else:
+            id_field = sorted(field_dict.keys())[id_field]
+        return id_field, rate
+        
+    def sync_event_with_DB(self,last_updated):
         '''Method to sync the latest survey parameters with the database.'''
+        
+        (id_field,rate) = self.get_event_field_id()
+        (event_status, ev_ra, ev_dec) = update_db_2.add_event(id_field, \
+                                                    self.origin, \
+                                                    self.ra, self.dec)
+        event = Event.objects.filter(ev_ra=ev_ra).filter(ev_dec=ev_dec)[0]
+        
+        last_model = query_db.get_last_single_model(event,modeler=self.origin)
+        
+        if last_model == None or self.last_updated > last_model.last_updated:
+            model_status = update_db_2.add_single_lens(self.name, \
+                            self.t0, self.e_t0, self.te, self.e_te, \
+                            self.u0, self.e_u0, last_updated, 
+                            modeler=self.origin)
 
     def get_params(self):
         """Method to return the parameters of the current event in a 
@@ -61,35 +105,6 @@ class Lens():
         for key in key_list:
             params[ key ] = getattr( self, key )
         return params
-        
-# Check event is known by name to the DB
-# (possible outcomes: True or False)
-
-# Check event is known by coordinates to the DB
-# (possible outcomes: - event is known and has this survey's ID
-#                     - event is known at these coordinates with ID from other survey(s)
-#                     - event is unknown
-
-# If event is unknown:
-# - create a new entry in Event table
-# - create a new entry in the Single_Model table for this model provider
-
-# If event is known by this survey's ID:
-# - fetch the Event PK index
-# - fetch the Modeler PK for this survey
-# - fetch the most recent Single_Model for this Event from this Modeler and return its timestamp and parameters
-# - check whether the self.last_updated timestamp is more recent than the DB'd latest model
-# - check whether the parameter values have changed
-# - if self.last_updated > model_timestamp and parameter values != model_parameters then
-#   create a new Single_Model entry
-
-# If event is know but by another survey(s) ID:
-# - fetch the Event PK index by coordinate search
-# - fetch the Survey PK index
-# - fetch the Modeler PK index
-# - create a new entry in Event_Names table for this Event and Survey
-# - create a new Single_Model entry for this Event and Modeler with the parameters given
-
 
 class K2C9Event():
     """Class describing the parameters to be output for a microlensing event 
