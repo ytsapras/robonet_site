@@ -25,4 +25,7 @@
     <parameter name='request_window'>
       	<value>24.0</value>
     </parameter>
+    <parameter name='token'>
+        <value>94294335fe4d91ef714bd89a051139b22ab15ed8</value>
+    </parameter>
 </obscontrolconfig>

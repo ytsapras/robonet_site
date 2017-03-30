@@ -45,7 +45,7 @@ def build_rea_obs(script_config,log=None):
             obs.req_origin = 'obscontrol'
             obs.get_group_id()
             
-            rome_obs.append(obs)
+            rea_obs.append(obs)
             
             if log != None:
                 log.info(obs.summary())
