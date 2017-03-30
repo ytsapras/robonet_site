@@ -17,6 +17,7 @@ import utilities
 from datetime import datetime
 import log_utilities
 from numpy import array
+import event_classes
 
 ##############################
 # CONFIG INTERPRETATION
@@ -89,34 +90,15 @@ def sync_artemis_data_db(config,data_type,log):
     for f in event_files:
         
         # Read the fitting model parameters from the model file:
-        if data_type in ['model', 'pubpars']: event_params = read_artemis_model_file(f)
-        else: event_params = get_artemis_data_params(f)
+        if data_type in ['model', 'pubpars']: 
+            (event, last_modified) = read_artemis_model_file(f)
+        else: 
+            event_params = get_artemis_data_params(f)
         
-        # For model files:
-        # Query the DB to check whether the event exists in the database already:
-        if data_type == 'model' and len(event_params) > 0 and int(config['update_db']) == 1:
+        if data_type == 'model' and int(config['update_db']) == 1:
             log.info('-> Updating database')
-            event_exists = update_db.check_exists(event_params['long_name'])
+            event.sync_event_with_DB(last_modified)
 
-            # If event is unknown to the DB, add it first:
-            if event_exists == False:
-                status = update_db.add_new_event( event_params['long_name'],
-                                    event_params['ra'],
-                                    event_params['dec'],
-                                    bright_neighbour = False
-                                    )
-        
-            # Now submit the updated model parameters as a new model object:
-            status = update_db.single_lens_par( event_params['long_name'],
-                                                event_params['t0'],
-                                                event_params['sig_t0'],
-                                                event_params['te'],
-                                                event_params['sig_te'],
-                                                event_params['u0'],
-                                                event_params['sig_u0'],
-                                                event_params['last_modified'] )
-
-    # Log the update in the script log:
 
 ###########################
 # RSYNC FUNCTION
@@ -199,7 +181,7 @@ def read_rsync_log(config,log_path,data_type):
 def read_artemis_model_file(model_file_path):
     '''Function to read an ARTEMiS model file and parse the contents'''
 
-    params = {}
+    event = event_classes.Lens()
     
     if path.isfile(model_file_path) == True:
         file = open(model_file_path, 'r')
@@ -211,22 +193,23 @@ def read_artemis_model_file(model_file_path):
             
             try: 
                 entries = lines[0].split()
-                params['ra'] = entries[0]
-                params['dec'] = entries[1]
-                params['short_name'] = entries[2]
-                params['long_name'] = utilities.short_to_long_name( params['short_name'] )
-                params['t0'] = float(entries[3]) + 2450000.0
-                params['sig_t0'] = float(entries[4])
-                params['te'] = float(entries[5])
-                params['sig_te'] = float(entries[6])
-                params['u0'] = float(entries[7])
-                params['sig_u0'] = float(entries[8])
-                params['chi2'] = float(entries[9])
-                params['ndata'] = float(entries[10])
+                ra = entries[0]
+                dec = entries[1]
+                (ra_deg, dec_deg) = utilities.sex2decdeg(ra,dec)
+                event.set_par('ra',ra_deg)
+                event.set_par('dec',dec_deg)
+                short_name = entries[2]
+                event.set_par('name',utilities.short_to_long_name(short_name)
+                event.set_par('t0',float(entries[3]) + 2450000.0)
+                event.set_par('e_t0',float(entries[4]))
+                event.set_par('te',float(entries[5]))
+                event.set_par('e_te',float(entries[6]))
+                event.set_par('umin',float(entries[7]))
+                event.set_par('e_umin',float(entries[8]))
         
                 ts = path.getmtime(model_file_path)
                 ts = datetime.fromtimestamp(ts)
-                params['last_modified'] = ts
+                last_modified = ts
             
             # In case of a file with zero content
             except IndexError: 
@@ -236,7 +219,7 @@ def read_artemis_model_file(model_file_path):
             except ValueError:
                 pass
                 
-    return params
+    return event, last_modified
 
 ###############################
 # ARTEMIS PHOTOMETRY FILE IO
