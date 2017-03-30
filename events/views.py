@@ -21,7 +21,7 @@ import sys, os
 #from events.forms import RobonetRequestForm, RobonetStatusForm, DataFileForm, TapForm, ImageForm
 from scripts.plotter import *
 from scripts.local_conf import get_conf
-from scripts.blgvis import *
+from scripts.blgvis_ephem import *
 from scripts.utilities import short_to_long_name
 
 # Path to ARTEMiS files

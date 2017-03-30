@@ -10,6 +10,8 @@ import matplotlib
 from matplotlib import pyplot as plt
 from jdcal import gcal2jd
 from matplotlib.cm import coolwarm
+from local_conf import get_conf
+robonet_site = get_conf('robonet_site')
 
 def generate_visibility_plot():
     ut_current = gmtime()
@@ -48,7 +50,7 @@ def generate_visibility_plot():
                     alt_plot.append(glob_alt)
 
     # downloading one of the examples on http://www.gnuplotting.org/plotting-the-world-revisited/ or any other world map contour can be used
-    worldmap = np.loadtxt('world_50m.txt')
+    worldmap = np.loadtxt(robonet_site+'/events/static/events/world_50m.txt')
     fig, ax = plt.subplots()
     plt.xticks(np.arange(-180.001,180.001, 60.))
     plt.yticks(np.arange(-90.001,90.001, 30.))
@@ -60,7 +62,7 @@ def generate_visibility_plot():
     plt.grid(alpha=0.3)
     cbar = plt.colorbar(tmp,cmap=coolwarm,orientation='vertical')
     plt.clim(0.,90.)
-    plt.savefig('blgvis_now.png')
+    plt.savefig(robonet_site+'/events/static/events/blgvis_now.png')
 #    plt.show()
 
 if __name__ == '__main__':
