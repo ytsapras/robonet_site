@@ -16,6 +16,7 @@ from update_db_2 import *
 import numpy as np
 from jdcal import gcal2jd
 from django.db.models import Max
+import log_utilities
 
 warnings.filterwarnings('ignore', module='astropy.coordinates')
 
@@ -91,7 +92,7 @@ def psplrea(u):
     return amp
 
 
-def assign_tap_priorities():
+def assign_tap_priorities(logger):
     """
     This function runs TAP and updates entries in the database.
     It only calculates the priority for active events if the reported Einstein time
@@ -103,26 +104,16 @@ def assign_tap_priorities():
     are not provided by ARTEMiS and require another processing step.
     """
 
-    #script_config = read_config()
-    #script_config = parse_args(script_config)
-    #log = log_utilities.start_day_log(script_config, 'tap')
-
-    #lock_state = log_utilities.lock(script_config, 'check', log)
-    #if lock_state == 'clashing_lock':
-    #    log_utilities.end_day_log(log)
-    #    exit()
-    #lock_state = log_utilities.lock(script_config, 'lock', log)
-
     ut_current = time.gmtime()
     t_current = gcal2jd(ut_current[0], ut_current[1], ut_current[2])[
         1] - 49999.5 + ut_current[3] / 24.0 + ut_current[4] / (1440.)
-    dailyvisibility = 1.4 * \
-                romerea_visibility_3sites_40deg(t_current) * 300. / 3198.
+    full_visibility = romerea_visibility_3sites_40deg(t_current)
+    daily_visibility = 1.4 * full_visibility * 300. / 3198.
 
     # FILTER FOR ACTIVE EVENTS (BY DEFINITION WITHIN ROME FOOTPRINT0
-    active_events_list = Event.objects.select_related().filter(status='AC')
-    #log.info('RoboTAP: Processing ' +
-    #         str(len(active_events_list)) + ' active events.')
+    active_events_list = Event.objects.select_related().filter(status__in=['AC','MO'])
+    logger.info('RoboTAP: Processing ' +
+                str(len(active_events_list)) + ' active events.')
 
     for event in active_events_list:
         event_id = event.pk
@@ -156,22 +147,30 @@ def assign_tap_priorities():
             tsamp = 1.
             imag = -2.5 * np.log10(fs_pspl * amp_now + fb_pspl)
             texp = calculate_exptime_romerea(imag)
-            cost1m = dailyvisibility / tsamp * ((60. + texp) / 60.)
+            cost1m = daily_visibility / tsamp * ((60. + texp) / 60.)
             err_omega = 0.
             add_tap(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
                     texp=texp, nexp=1., imag=imag, omega=omega_now,
                     err_omega=err_omega, peak_omega=omega_peak,
-                    visibility=dailyvisibility, cost1m=cost1m)
+                    visibility=full_visibility, cost1m=cost1m)
 
     #lock_state = log_utilities.lock(script_config, 'unlock', log)
     #log_utilities.end_day_log(log)
 
-def run_tap_prioritization():
+def run_tap_prioritization(logger):
+
+    """
+    Sort events on RoboTAP and check a request can be made with 
+    an assumed REA-LOW time allocation of 300 hours.
+    For very high priority events A_now>500, the anomaly status
+    can be set (not implemented yet).
+    """
+
     ut_current = time.gmtime()
     t_current = gcal2jd(ut_current[0], ut_current[1], ut_current[2])[
         1] - 49999.5 + ut_current[3] / 24.0 + ut_current[4] / (1440.)
-    dailyvisibility = 1.4 * \
-        romerea_visibility_3sites_40deg(t_current) * 300. / 3198.
+    full_visibility = romerea_visibility_3sites_40deg(t_current)
+    daily_visibility = 1.4 * full_visibility * 300. / 3198.
 
     list_evnt = Event.objects.filter(status__in=['AC', 'MO'])
     output = []
@@ -182,16 +181,16 @@ def run_tap_prioritization():
             #print 'done', ev.id, ev.status
             output.append(latest_ev_tap_val)
         except:
-            #nth = 0
-            print 'skipping', ev.id, ev.status,
-            # EventName.objects.filter(event_id=ev.id)[0].name
+            logger.info('skipping '+str(ev.id)+' '+str(ev.status)+' '+str(EventName.objects.select_related().filter(event=ev.id)[0].name))
 
     sorted_list = sorted(output, key=lambda k: k['omega'], reverse=True)
 
     # FIRST RESET ALL MONITORING EVENTS TO ACTIVE
     Event.objects.filter(status='MO').update(status="AC")
     # RESET ANOMALIES (PERMITS RE-CHECK)
+    logger.info('revert anomalies to active - no anomaly trigger active!')
     Event.objects.filter(status='AN').update(status="AC")
+    
     toverhead = 60.
     trun = 0.
 
@@ -199,18 +198,31 @@ def run_tap_prioritization():
     for idx in range(len(sorted_list)):
         # CHECK CURRENT MAGNIFICATION IF >500 SET IT TO ANOMALOUS 
         #IF IT NEVER WAS ANOMALOUS BEFORE
-        if psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin'])>500.:
-            Event.objects.filter(event_id=sorted_list[idx]['event_id']).update(status="AN")
+        if psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin'])>5000.:
+            #Event.objects.filter(event_id=sorted_list[idx]['event_id']).update(status="AN")
+            pass
         
         elif SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['tau'] < 210.:
             tsys = 24. * (float(sorted_list[idx]['texp']) + toverhead) / 3600.
-            if trun + tsys < dailyvisibility:
-                print psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin'])
-                print EventName.objects.select_related().filter(event=sorted_list[idx]['event_id'])[0].name
+            if trun + tsys < daily_visibility:
+                logger.info('RoboTAP requests: Amax '+str(round(psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin']),2))+' '+EventName.objects.select_related().filter(event=sorted_list[idx]['event_id'])[0].name)
                 Event.objects.filter(event_id=sorted_list[idx]['event_id']).update(status="MO")
+                Tap.objects.filter(event_id=sorted_list[idx]['event_id']).values().update(priority='L')
                 trun = trun + tsys
 
 
 if __name__ == '__main__':
-    assign_tap_priorities()
-    run_tap_prioritization()
+   #DIRECTORY TO BE OBTAINED FROM XML...
+    logs_directory='.'
+    script_config = {'log_directory':logs_directory, 
+                     'log_root_name':'robotap_rea','lock_file':'robotap.lock'}
+    logger = log_utilities.start_day_log( script_config, 'robotap', console=False )
+    lock_status = log_utilities.lock(script_config, 'check', logger)
+    if lock_status == 'clashing_lock':
+        log_utilities.end_day_log(logger)
+        exit()
+    lock_status = log_utilities.lock( script_config, 'lock', logger)
+    assign_tap_priorities(logger)
+    run_tap_prioritization(logger)
+    log_utilities.end_day_log(logger)
+    lock_status = log_utilities.lock(script_config, 'unlock', logger)

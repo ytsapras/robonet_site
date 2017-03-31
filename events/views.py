@@ -21,7 +21,7 @@ import sys, os
 #from events.forms import RobonetRequestForm, RobonetStatusForm, DataFileForm, TapForm, ImageForm
 from scripts.plotter import *
 from scripts.local_conf import get_conf
-from scripts.blgvis import *
+from scripts.blgvis_ephem import *
 from scripts.utilities import short_to_long_name
 
 # Path to ARTEMiS files
@@ -54,6 +54,7 @@ with open(colordef) as f:
        val = elem[1]
        col_dict[key] = val
 
+##############################################################################################################
 @login_required(login_url='/db/login/')
 def change_password(request):
    """
