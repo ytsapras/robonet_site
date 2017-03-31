@@ -215,12 +215,15 @@ def add_event(field_name, operator_name, ev_ra, ev_dec, status = 'NF',
 			 year = year)
          add_new.save()
          successful = True
+	 response = 'OK'
       except:
          successful = False
+	 response = 'Failed to add new event.'
    else:
       successful = False
+      response = 'An event already exists with these coordinates.'
       ra, dec = coordinates_known[1], coordinates_known[2]
-   return successful, ra, dec
+   return successful, ra, dec, response
 
 ##################################################################################
 def add_event_name(event, operator, name):
@@ -242,11 +245,14 @@ def add_event_name(event, operator, name):
          add_new = EventName(event=event, operator=operator, name=name)
          add_new.save()
          successful = True
+	 response = 'OK'
       except:
          successful = False
+	 response = 'Failed to add a new event name.'
    else:
       successful = False
-   return successful
+      response = 'This name is already associated with an event.'
+   return successful, response
 
 ###################################################################################
 def check_exists(event_name):
@@ -316,9 +322,9 @@ def coords_exist(check_ra, check_dec):
    return successful, ra, dec
 
 ###################################################################################
-def add_single_lens(event_name, Tmax, e_Tmax, tau, e_tau, umin, e_umin, last_updated, 
+def add_single_lens(event_name, Tmax, e_Tmax=None, tau, e_tau=None, umin, e_umin=None, last_updated, 
                     modeler='', rho=None, e_rho=None, pi_e_n=None, e_pi_e_n=None, 
-		    pi_e_e=None, e_pi_e_e=None, tap_omega=None):
+		    pi_e_e=None, e_pi_e_e=None, tap_omega=None, chi_sq=None):
    """
    Add Single Lens model parameters
    to the database.
@@ -331,15 +337,15 @@ def add_single_lens(event_name, Tmax, e_Tmax, tau, e_tau, umin, e_umin, last_upd
            (float, required)
             e.g. 2457135.422
    e_Tmax -- Error in Tmax 
-            (float, required)
+            (float, optional, default=None)
    tau -- Event timescale (in days). 
           (float, required)
    e_tau -- error in tau. 
-           (float, required)
+            (float, optional, default=None)
    umin -- Minimum impact parameter (in units of R_E). 
           (float, required)
    e_umin -- Error in umin. 
-            (float, required)
+            (float, optional, default=None)
    rho -- Finite source size (in units of R_E).
           (float, optional, default=None)
    e_rho -- Error in rho.
@@ -358,6 +364,8 @@ def add_single_lens(event_name, Tmax, e_Tmax, tau, e_tau, umin, e_umin, last_upd
         	 e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    tap_omega -- Omega value to be updated by TAP. 
               (float, optional, default=None)
+   chi_sq -- Chi square of the fit
+              (float, optional, default=None)
    """
    if check_exists(event_name)==True:
       # Get event identifier
@@ -369,21 +377,24 @@ def add_single_lens(event_name, Tmax, e_Tmax, tau, e_tau, umin, e_umin, last_upd
         		       e_tau=e_tau, umin=umin, e_umin=e_umin, rho=rho,
         		       e_rho=e_rho, pi_e_n=pi_e_n, e_pi_e_n=e_pi_e_n, 
         		       pi_e_e=pi_e_e, e_pi_e_e=e_pi_e_e, modeler=modeler,
-        		       last_updated=last_updated, tap_omega=tap_omega)
+        		       last_updated=last_updated, tap_omega=tap_omega, chi_sq=chi_sq)
          add_new.save()
          successful = True
+	 response = 'OK'
       except:
          successful = False
+	 response = 'Failed to add new model.'
    else:
       successful = False
-   return successful
+      response = 'Event does not exist.'
+   return successful, response
 
 ###################################################################################
-def add_binary_lens(event_name, Tmax, e_Tmax, tau, e_tau, umin, e_umin, last_updated,
-                    mass_ratio, e_mass_ratio, separation, e_separation, angle_a, 
-		    e_angle_a,  modeler='', rho=None, e_rho=None, pi_e_n=None, 
+def add_binary_lens(event_name, Tmax, e_Tmax=None, tau, e_tau=None, umin, e_umin=None, last_updated,
+                    mass_ratio, e_mass_ratio=None, separation, e_separation=None, angle_a, 
+		    e_angle_a=None,  modeler='', rho=None, e_rho=None, pi_e_n=None, 
 		    e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None, dsdt=None, 
-		    e_dsdt=None, dadt=None, e_dadt=None):
+		    e_dsdt=None, dadt=None, e_dadt=None, chi_sq=None):
    """
    Add Binary Lens model parameters
    to the database.
@@ -441,6 +452,8 @@ def add_binary_lens(event_name, Tmax, e_Tmax, tau, e_tau, umin, e_umin, last_upd
               (string, optional, default='')
    last_updated -- datetime of last update. (datetime, required)
         	 e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
+   chi_sq -- Chi square of the fit
+              (float, optional, default=None)
    """
    # Try adding binary lens parameters to database
    if check_exists(event_name)==True:
@@ -456,14 +469,17 @@ def add_binary_lens(event_name, Tmax, e_Tmax, tau, e_tau, umin, e_umin, last_upd
         		       e_rho=e_rho, pi_e_n=pi_e_n, e_pi_e_n=e_pi_e_n, 
         		       pi_e_e=pi_e_e, e_pi_e_e=e_pi_e_e, modeler=modeler, 
         		       dsdt=dsdt, e_dsdt=e_dsdt, dadt=dadt, e_dadt=e_dadt,
-        		       last_updated=last_updated)
+        		       last_updated=last_updated, chi_sq=chi_sq)
          add_new.save()
          successful = True
+	 response = 'OK'
       except:
          successful = False
+	 response = 'Failed to add new model.'
    else:
       successful = False
-   return successful
+      response = 'Event does not exist.'
+   return successful, response
 
 ################################################################################################################
 def add_reduction(event_name, lc_file, timestamp, ref_image, target_found=False, ron=0.0, gain=1.0,
@@ -660,7 +676,7 @@ def add_reduction(event_name, lc_file, timestamp, ref_image, target_found=False,
 def add_request(field_name, t_sample, exptime, timestamp=timezone.now(),
                 time_expire=timezone.now()+timedelta(hours=24), pfrm_on = False,
                 onem_on=False, twom_on=False, request_type='L', which_filter='',
-		which_inst='', grp_id='', track_id='', req_id='', n_exp=1):
+		which_inst='', grp_id='', track_id='', req_id='', n_exp=1, request_status = 'AC'):
    """
    Add observing request to the database.
    
@@ -676,6 +692,8 @@ def add_request(field_name, t_sample, exptime, timestamp=timezone.now(),
         	e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    time_expire -- When the request expires.
                   (datetime, optional, default=timezone.now()+24 hours)
+   request_status -- Status of obs request (ACtive or EXpired)
+                   (string, optional, default='AC')
    pfrm_on -- Observe on 0.4m network?
               (Boolean, optional, default=False)
    onem_on -- Observe on 1m network? 
@@ -710,7 +728,7 @@ def add_request(field_name, t_sample, exptime, timestamp=timezone.now(),
                                pfrm_on= pfrm_on, onem_on=onem_on, twom_on=twom_on, 
 		               request_type=request_type, which_filter=which_filter,
 			       which_inst=which_inst, grp_id=grp_id, track_id=track_id,
-			       req_id=req_id, n_exp=n_exp)
+			       req_id=req_id, n_exp=n_exp, request_status=request_status)
          add_new.save()
          successful = True
       except:

@@ -195,15 +195,15 @@ class SingleModel(models.Model):
    Tmax -- Time of maximum magnification.
            (float, required)
    e_Tmax -- Error in Tmax 
-            (float, required)
+            (float, optional, default=None)
    tau -- Event timescale (in days). 
           (float, required)
    e_tau -- error in tau. 
-           (float, required)
+            (float, optional, default=None)
    umin -- Minimum impact parameter (in units of R_E). 
           (float, required)
    e_umin -- Error in umin. 
-            (float, required)
+            (float, optional, default=None)
    rho -- Finite source size (in units of R_E).
           (float, optional, default=None)
    e_rho -- Error in rho.
@@ -222,16 +222,21 @@ class SingleModel(models.Model):
         	 e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    tap_omega -- Omega value to be updated by TAP. 
               (float, optional, default=None)
+   chi_sq -- Chi square of the fit
+              (float, optional, default=None)
    """
    def __str__(self):
       return str(self.event)+' updated at '+str(self.last_updated)
    event = models.ForeignKey(Event)
    Tmax = models.DecimalField("Tmax", max_digits=12,decimal_places=4)
-   e_Tmax = models.DecimalField("sig(Tmax)", max_digits=12,decimal_places=4)
+   e_Tmax = models.DecimalField("sig(Tmax)", max_digits=12,decimal_places=4,
+                                     null=True, blank=True)
    tau = models.DecimalField("T_E", max_digits=12,decimal_places=4)
-   e_tau = models.DecimalField("sig(T_E)", max_digits=12,decimal_places=4)
+   e_tau = models.DecimalField("sig(T_E)", max_digits=12,decimal_places=4,
+                                     null=True, blank=True)
    umin = models.DecimalField("u_min", max_digits=12,decimal_places=4)
-   e_umin = models.DecimalField("sig(u_min)", max_digits=12,decimal_places=4)
+   e_umin = models.DecimalField("sig(u_min)", max_digits=12,decimal_places=4,
+                                     null=True, blank=True)
    rho = models.DecimalField("rho", max_digits=12,decimal_places=4,
                              null=True, blank=True)
    e_rho = models.DecimalField("sig(rho)", max_digits=12,decimal_places=4,
@@ -248,6 +253,8 @@ class SingleModel(models.Model):
    last_updated = models.DateTimeField('date last updated')
    tap_omega = models.DecimalField("TAP Omega", max_digits=12,decimal_places=4,
                                     null=True, blank=True)
+   chi_sq = models.DecimalField("Chi sq", max_digits=12,decimal_places=4,
+                                    null=True, blank=True)
    
 # Binary Lens parameters
 class BinaryModel(models.Model):
@@ -261,27 +268,28 @@ class BinaryModel(models.Model):
    Tmax -- Time of maximum magnification.
            (float, required)
    e_Tmax -- Trror in Tmax 
-            (float, required)
+            (float, optional, default=None)
    tau -- Tvent timescale (in days). 
           (float, required)
    e_tau -- Trror in tau. 
-           (float, required)
+           (float, optional, default=None)
    umin -- Minimum impact parameter (in units of R_E). 
           (float, required)
    e_umin -- Error in umin. 
-            (float, required)
+            (float, optional, default=None)
    mass_ratio -- Mass ratio q between the two lens components.
                  (float, required)
    e_mass_ratio -- Error in q
-                  (float, required)
+                  (float, optional, default=None)
    separation -- Separation between the two lens components
                  (in units of R_E)
 		 (float, required)
    e_separation -- Error in separation
+                  (float, optional, default=None)
    angle_a -- Trajectory angle with respect to the binary axis.
               (float, required)
    e_angle_a -- Error in trajectory angle.
-              (float, required)
+              (float, optional, default=None)
    dsdt -- Orbital motion ds/dt
            (float, optional, default=None)
    e_dsdt -- Error in ds/dt
@@ -306,22 +314,30 @@ class BinaryModel(models.Model):
               (string, optional, default='')
    last_updated -- datetime of last update. (datetime, required)
         	 e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
+   chi_sq -- Chi square of the fit
+              (float, optional, default=None)
    """
    def __str__(self):
       return str(self.event)+' updated at '+str(self.last_updated)
    event = models.ForeignKey(Event)
    Tmax = models.DecimalField("Tmax", max_digits=12,decimal_places=4)
-   e_Tmax = models.DecimalField("sig(Tmax)", max_digits=12,decimal_places=4)
+   e_Tmax = models.DecimalField("sig(Tmax)", max_digits=12,decimal_places=4,
+                                     null=True, blank=True)
    tau  = models.DecimalField("T_E", max_digits=12,decimal_places=4)
-   e_tau = models.DecimalField("sig(T_E)", max_digits=12,decimal_places=4)
+   e_tau = models.DecimalField("sig(T_E)", max_digits=12,decimal_places=4,
+                                     null=True, blank=True)
    umin = models.DecimalField("u_min", max_digits=12,decimal_places=4)
-   e_umin = models.DecimalField("u_min", max_digits=12,decimal_places=4)
+   e_umin = models.DecimalField("u_min", max_digits=12,decimal_places=4,
+                                     null=True, blank=True)
    mass_ratio = models.DecimalField("q", max_digits=12,decimal_places=4)
-   e_mass_ratio = models.DecimalField("q", max_digits=12,decimal_places=4)
+   e_mass_ratio = models.DecimalField("q", max_digits=12,decimal_places=4,
+                                     null=True, blank=True)
    separation = models.DecimalField("s", max_digits=12,decimal_places=4)
-   e_separation = models.DecimalField("s", max_digits=12,decimal_places=4)
+   e_separation = models.DecimalField("s", max_digits=12,decimal_places=4,
+                                     null=True, blank=True)
    angle_a = models.DecimalField("alpha", max_digits=12,decimal_places=4)
-   e_angle_a = models.DecimalField("sig(alpha)", max_digits=12,decimal_places=4)
+   e_angle_a = models.DecimalField("sig(alpha)", max_digits=12,decimal_places=4,
+                                     null=True, blank=True)
    rho = models.DecimalField("rho", max_digits=12,decimal_places=4,
                              null=True, blank=True)
    e_rho = models.DecimalField("sig(rho)", max_digits=12,decimal_places=4,
@@ -344,6 +360,8 @@ class BinaryModel(models.Model):
                                 null=True, blank=True)
    modeler = models.CharField("Modeler", max_length=25, blank=True, default="")
    last_updated = models.DateTimeField('date last updated')
+   chi_sq = models.DecimalField("Chi sq", max_digits=12,decimal_places=4,
+                                    null=True, blank=True)
 
 # Reductions
 class EventReduction(models.Model):
@@ -584,6 +602,8 @@ class ObsRequest(models.Model):
         	e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
    time_expire -- When the request expires.
                   (datetime, optional, default=timezone.now()+24 hours)
+   request_status -- Status of obs request (ACtive or EXpired)
+                   (string, optional, default='AC')
    pfrm_on -- Observe on 0.4m network?
               (Boolean, optional, default=False)
    onem_on -- Observe on 1m network? 
@@ -616,6 +636,10 @@ class ObsRequest(models.Model):
    ('M', 'REA Low - 60 min cadence'),
    ('L', 'ROME Standard - every 7 hours')
    )
+   status_choice = (
+   ('AC', 'ACTIVE'),
+   ('EX', 'EXPIRED')
+   )
    timestamp = models.DateTimeField('request submit date', blank=True)
    # observe on 0.4m telescopes?
    pfrm_on = models.BooleanField(default=False)
@@ -643,6 +667,7 @@ class ObsRequest(models.Model):
    req_id =  models.CharField(max_length=30, default='', blank=True)
    # Number of exposures requested
    n_exp = models.IntegerField(default=1)
+   request_status = models.CharField(max_length=40, choices=status_choice, default='AC')
 
 # Event status parameters
 class EventStatus(models.Model):
