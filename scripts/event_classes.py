@@ -82,7 +82,7 @@ class Lens():
         '''Method to sync the latest survey parameters with the database.'''
         
         (id_field,rate) = self.get_event_field_id()
-        (event_status, ev_ra, ev_dec) = update_db_2.add_event(id_field, \
+        (event_status, ev_ra, ev_dec,response) = update_db_2.add_event(id_field, \
                                                     self.origin, \
                                                     self.ra, self.dec)
         event = Event.objects.filter(ev_ra=ev_ra).filter(ev_dec=ev_dec)[0]
@@ -91,8 +91,7 @@ class Lens():
         
         if last_model == None or self.last_updated > last_model.last_updated:
             model_status = update_db_2.add_single_lens(self.name, \
-                            self.t0, self.e_t0, self.te, self.e_te, \
-                            self.u0, self.e_u0, last_updated, 
+                            self.t0, self.te, self.u0, last_updated, 
                             modeler=self.origin)
 
     def get_params(self):
