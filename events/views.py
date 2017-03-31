@@ -54,6 +54,7 @@ with open(colordef) as f:
        val = elem[1]
        col_dict[key] = val
 
+##############################################################################################################
 @login_required(login_url='/db/login/')
 def change_password(request):
    """

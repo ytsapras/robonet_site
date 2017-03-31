@@ -7,10 +7,10 @@ if 'cursa' in host_name:
    sys.path.append("/home/Tux/ytsapras/robonet_site/")
    site_url = 'http://127.0.0.1:8000/'
 elif 'einstein' in host_name:
-   sys.path.append("/var/www/robonet_site/")
+   sys.path.append("/var/www/robonetsite/")
    site_url = 'http://romerea.lco.global/'
 else:
-   sys.path.append("/var/www/robonet_site/")
+   sys.path.append("/var/www/robonetsite/")
    site_url = 'http://romerea.lco.global/'
 
 from django.conf import settings
