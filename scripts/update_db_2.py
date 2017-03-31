@@ -322,7 +322,8 @@ def coords_exist(check_ra, check_dec):
    return successful, ra, dec
 
 ###################################################################################
-def add_single_lens(event_name, Tmax, e_Tmax=None, tau, e_tau=None, umin, e_umin=None, last_updated, 
+def add_single_lens(event_name, Tmax, tau, umin, last_updated, 
+                    e_Tmax=None, e_tau=None, e_umin=None, 
                     modeler='', rho=None, e_rho=None, pi_e_n=None, e_pi_e_n=None, 
 		    pi_e_e=None, e_pi_e_e=None, tap_omega=None, chi_sq=None):
    """
@@ -390,11 +391,11 @@ def add_single_lens(event_name, Tmax, e_Tmax=None, tau, e_tau=None, umin, e_umin
    return successful, response
 
 ###################################################################################
-def add_binary_lens(event_name, Tmax, e_Tmax=None, tau, e_tau=None, umin, e_umin=None, last_updated,
-                    mass_ratio, e_mass_ratio=None, separation, e_separation=None, angle_a, 
-		    e_angle_a=None,  modeler='', rho=None, e_rho=None, pi_e_n=None, 
-		    e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None, dsdt=None, 
-		    e_dsdt=None, dadt=None, e_dadt=None, chi_sq=None):
+def add_binary_lens(event_name, Tmax, tau, umin, last_updated, mass_ratio, separation, angle_a,                     
+                    e_Tmax=None, e_tau=None, e_umin=None, e_mass_ratio=None, 
+                    e_separation=None, e_angle_a=None,  modeler='', rho=None, 
+                    e_rho=None, pi_e_n=None, e_pi_e_n=None, pi_e_e=None, 
+                    e_pi_e_e=None, dsdt=None, e_dsdt=None, dadt=None, e_dadt=None, chi_sq=None):
    """
    Add Binary Lens model parameters
    to the database.
@@ -1272,8 +1273,9 @@ def run_test2():
       time_last_datapoint = Time(float(data[12])+2450000.0, format='jd').datetime
       last_updated = timezone.make_aware(time_last_datapoint, timezone.get_current_timezone())
       modeler = 'OGLE'
-      add_single_lens(event_name=name, Tmax=Tmax, e_Tmax=e_Tmax, tau=tau, e_tau=e_tau, umin=umin, 
-                      e_umin=e_umin, last_updated=last_updated, modeler=modeler, rho=None, 
+      add_single_lens(event_name=name, Tmax=Tmax, tau=tau, umin=umin, 
+                      last_updated=last_updated, e_Tmax=e_Tmax, e_tau=e_tau, 
+                      e_umin=e_umin, modeler=modeler, rho=None, 
 		      e_rho=None, pi_e_n=None, e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None)
       
    moa_event_pars = glob(artemis+'PublishedParameters/'+year+'/MOA/*.model')
@@ -1291,8 +1293,8 @@ def run_test2():
       time_last_datapoint = Time(float(data[12])+2450000.0, format='jd').datetime
       last_updated = timezone.make_aware(time_last_datapoint, timezone.get_current_timezone())
       modeler = 'MOA'
-      add_single_lens(event_name=name, Tmax=Tmax, e_Tmax=e_Tmax, tau=tau, e_tau=e_tau, umin=umin, 
-                      e_umin=e_umin, last_updated=last_updated, modeler=modeler, rho=None, 
+      add_single_lens(event_name=name, Tmax=Tmax, tau=tau, umin=umin, last_updated=last_updated, 
+                      e_Tmax=e_Tmax, e_tau=e_tau, e_umin=e_umin, modeler=modeler, rho=None, 
 		      e_rho=None, pi_e_n=None, e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None)
       
    artemis_event_pars = glob(artemis+'model/*B'+year[2:]+'*.model')
@@ -1315,8 +1317,8 @@ def run_test2():
  	 time_last_datapoint = Time(float(data[12])+2450000.0, format='jd').datetime
  	 last_updated = timezone.make_aware(time_last_datapoint, timezone.get_current_timezone())
  	 modeler = 'ARTEMiS'
- 	 add_single_lens(event_name=name, Tmax=Tmax, e_Tmax=e_Tmax, tau=tau, e_tau=e_tau, umin=umin,
- 	 		 e_umin=e_umin, last_updated=last_updated, modeler=modeler, rho=None,
+ 	 add_single_lens(event_name=name, Tmax=Tmax, tau=tau, umin=umin, last_updated=last_updated, 
+                   e_Tmax=e_Tmax, e_tau=e_tau, e_umin=e_umin, modeler=modeler, rho=None,
 	 		 e_rho=None, pi_e_n=None, e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None)
       except:
          continue
@@ -1341,8 +1343,8 @@ def run_test2():
  	 time_last_datapoint = Time(float(data[12])+2450000.0, format='jd').datetime
  	 last_updated = timezone.make_aware(time_last_datapoint, timezone.get_current_timezone())
  	 modeler = 'pyLIMA'
- 	 add_single_lens(event_name=name, Tmax=Tmax, e_Tmax=e_Tmax, tau=tau, e_tau=e_tau, umin=umin,
- 	 		 e_umin=e_umin, last_updated=last_updated, modeler=modeler, rho=None,
+ 	 add_single_lens(event_name=name, Tmax=Tmax, tau=tau, umin=umin, last_updated=last_updated, 
+                   e_Tmax=e_Tmax, e_tau=e_tau, e_umin=e_umin, modeler=modeler, rho=None,
 	 		 e_rho=None, pi_e_n=None, e_pi_e_n=None, pi_e_e=None, e_pi_e_e=None)
       except:
          continue
