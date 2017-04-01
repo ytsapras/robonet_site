@@ -8,3 +8,4 @@ pyslalib==1.0.4
 lxml>=3.7,<3.8
 ephem==3.7.6
 jdcal
+pytest
