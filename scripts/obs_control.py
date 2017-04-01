@@ -25,7 +25,7 @@ def obs_control():
     ROME and REA microlensing observing programs.
     """
 
-    version = 'obs_control_0.91'    
+    version = 'obs_control_0.92'    
     
     script_config = read_config()
     script_config = parse_args(script_config)
