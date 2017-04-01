@@ -23,11 +23,13 @@ from observation_classes import get_request_desc
 def get_active_obs(log=None):
     """Function to extract a list of the currently-active observations 
     requests from the database"""
-        
+    
     qs = ObsRequest.objects.filter(
                     time_expire__gt = datetime.utcnow() 
                     ).filter(
                     timestamp__lte = datetime.utcnow()
+                    ).filter(
+                    request_status='AC'
                     )
                     
     if log != None:

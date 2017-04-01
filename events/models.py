@@ -665,7 +665,7 @@ class ObsRequest(models.Model):
    # Track ID
    track_id = models.CharField(max_length=30, default='', blank=True)
    # Request ID
-   req_id =  models.CharField(max_length=30, default='', blank=True)
+   req_id =  models.CharField(max_length=300, default='', blank=True)
    # Number of exposures requested
    n_exp = models.IntegerField(default=1)
    request_status = models.CharField(max_length=40, choices=status_choice, default='AC')
