@@ -31,15 +31,16 @@ def get_active_obs(log=None):
                     ).filter(
                     request_status='AC'
                     )
-                    
+    
     if log != None:
         log.info('\n')
         log.info('Queried DB for list of active observations:')
         for q in qs:
-            log.info(' '.join([q.field.name,\
+            log.info(' '.join([q.grp_id, q.field.name,\
                         get_request_desc(q.request_type), \
                         'submitted=',q.timestamp.strftime('%Y-%m-%dT%H:%M:%S'), \
-                        'expires=',q.time_expire.strftime('%Y-%m-%dT%H:%M:%S')]))
+                        'expires=',q.time_expire.strftime('%Y-%m-%dT%H:%M:%S'),\
+                        'status=',q.request_status]))
         if len(qs) == 0:
             log.info('DB returned no currently-active observation requests')
         log.info('\n')

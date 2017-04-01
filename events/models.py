@@ -629,7 +629,8 @@ class ObsRequest(models.Model):
             (integer, optional, default=1)
    """
    def __str__(self):
-      return str(self.field)+' updated at '+str(self.timestamp)
+      #return str(self.field)+' updated at '+str(self.timestamp)
+      return str(self.grp_id)+' '+str(self.field)+' status='+str(self.request_status)
    field = models.ForeignKey(Field)
    possible_types = (
    ('A', 'REA High - 20 min cadence'),
