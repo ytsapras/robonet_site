@@ -16,7 +16,7 @@ from astropy.time import Time
 from datetime import datetime
 import glob
 
-def start_day_log( config, log_name, console=False ):
+def start_day_log( config, log_name, console=False, version=None ):
     """Function to initialize a new log file.  The naming convention for the
     file is [log_name]_[UTC_date].log.  A new file is automatically created 
     if none for the current UTC day already exist, otherwise output is appended
@@ -64,6 +64,9 @@ def start_day_log( config, log_name, console=False ):
             log.addHandler( console_handler )
     
     log.info( '\n------------------------------------------------------\n')
+    if version != None:
+        log.info('Software version: '+version+'\n')
+        
     return log
 
 def get_log_path( config, log_root_name ):

@@ -24,11 +24,13 @@ def obs_control():
     This package is responsible for submitting the observations for the
     ROME and REA microlensing observing programs.
     """
+
+    version = 'obs_control_0.9'    
     
     script_config = read_config()
     script_config = parse_args(script_config)
     
-    log = log_utilities.start_day_log( script_config, 'obs_control' )
+    log = log_utilities.start_day_log( script_config, 'obs_control', version=version )
     log.info('Obscontrol running in ' + script_config['MODE'] + ' mode')
     
     lock_state = log_utilities.lock( script_config, 'check', log )
