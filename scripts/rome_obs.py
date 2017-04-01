@@ -14,7 +14,7 @@ def build_rome_obs(script_config,log=None):
     microlensing program, based on the field pointing definitions and
     the pre-defined survey observation sequence"""
     
-    rome_fields = get_rome_fields()
+    rome_fields = get_rome_fields(testing=True)
     field_ids = rome_fields.keys()
     field_ids.sort()
     if log != None:
@@ -38,16 +38,18 @@ def build_rome_obs(script_config,log=None):
             obs.observatory= obs_sequence['domes'][s]
             obs.tel = obs_sequence['tels'][s]
             obs.instrument = obs_sequence['instruments'][s]
-            obs.instrument_class = 'sinistro'
+            obs.instrument_class = '1M0-SCICAM-SINISTRO'
             obs.set_aperture_class()
             obs.filters = obs_sequence['filters']
             obs.exposure_times = obs_sequence['exp_times']
             obs.exposure_counts = obs_sequence['exp_counts']
             obs.cadence = obs_sequence['cadence_hrs']
+            obs.jitter = obs_sequence['jitter_hrs']
             obs.priority = 1.0
             obs.ttl = obs_sequence['TTL_days']
             obs.user_id = script_config['user_id']
             obs.proposal_id = script_config['proposal_id']
+            obs.pswd = script_config['lco_access']
             obs.focus_offset = obs_sequence['defocus']
             obs.request_type = 'L'
             obs.req_origin = 'obscontrol'
@@ -85,7 +87,8 @@ def rome_obs_sequence():
                     'domes':        ['doma', 'doma', 'doma'],
                     'tels':         [ '1m0', '1m0', '1m0' ],
                     'instruments':  ['fl15', 'fl16', 'fl12'],
-                    'cadence_hrs': 24.0,
+                    'cadence_hrs': 7.0,
+                    'jitter_hrs': 1.0,
                     'TTL_days': 7.0,
                     }
     return obs_sequence

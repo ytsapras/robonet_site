@@ -142,11 +142,11 @@ def submit_obs_requests(script_config,obs_requests,log=None):
     submit_status = []
     obsrecord = log_utilities.start_obs_record( script_config )
     for obs in obs_requests:
-        obs.build_json_request( script_config, log=log, debug=False )
+        ur = obs.build_cadence_request( log=log, debug=True )
         if log != None: 
             log.info(obs.group_id + ': Built json request')
         
-        stat = obs.submit_request(script_config, log=log, debug=False)
+        stat = obs.submit_request(ur, script_config, log=log)
         submit_status.append(stat)
         
         if log != None: 

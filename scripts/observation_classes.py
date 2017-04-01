@@ -47,11 +47,13 @@ class ObsRequest:
         self.exposure_times = []
         self.exposure_counts = []
         self.cadence = None
+        self.jitter = None
         self.priority = 1.0
         self.json_request = None
         self.ts_submit = None
         self.ts_expire = None
         self.user_id = None
+        self.pswd = None
         self.proposal_id = None
         self.ttl = None
         self.focus_offset = []
@@ -95,18 +97,11 @@ class ObsRequest:
                 exp_list + ' ' + str(self.cadence)
         return output
 
-    def build_json_request(self, config, log=None, debug=False):
-        
-        def parse_filter(f):
-            filters = { 'SDSS-g': 'gp', 'SDSS-r': 'rp', 'SDSS-i': 'ip' }
-            if f in filters.keys():
-                return filters[f]
-            else:
-                raise ValueError('Unrecognized filter ('+f+') requested')
-                
+    def build_cadence_request(self, log=None, debug=False):
+                        
         proposal = { 
-                    'proposal_id': config['proposal_id'],
-                    'user_id'    : config['user_id'] 
+                    'proposal_id': self.proposal_id,
+                    'user_id'    : self.user_id, 
                     }
         if debug == True and log != None:
             log.info('Building ODIN observation request')
@@ -140,88 +135,112 @@ class ObsRequest:
         if debug == True and log != None:
             log.info('Constraints dictionary: ' + str( constraints ))
             
-        imager = instrument_overheads.Overhead(self.tel, self.instrument)
-        self.instrument_class = imager.instrument_class
-        if debug == True and log != None:
-            log.info('Instrument overheads ' + imager.summary() )
-            
-        self.get_group_id()   
-        ur = { 'group_id': self.group_id }
+        self.get_group_id()
+        ur = {
+            'group_id': self.group_id, 
+            'type': 'compound_request', 
+            'operator': 'many'
+              }
         reqList = []
         
         self.ts_submit = timezone.now() + timedelta(seconds=(10*60))
         self.ts_expire = self.ts_submit + timedelta(seconds=(self.ttl*24*60*60))
         
-        request_start = self.ts_submit
-        while request_start < self.ts_expire:
-            molecule_list = []
-            
-            for i,exptime in enumerate(self.exposure_times):
-                nexp = self.exposure_counts[i]
-                f = self.filters[i]
-                defocus = self.focus_offset[i]
-            
-                molecule = { 
-                		 # Required fields
-                		 'exposure_time'   : exptime,    
-                		 'exposure_count'  : nexp,	     
-                		 'filter'	   : parse_filter(f),      
-                		 
-                		 'type' 	   : 'EXPOSE',      
-                		 'ag_name'	   : '',	     
-                		 'ag_mode'	   : 'Optional',
-                		 'instrument_name' : imager.instrument,
-                		 'bin_x'	   : 1,
-                		 'bin_y'	   : 1,
-                		 'defocus'	   : defocus      
-                	       }
-                if debug == True and log != None:
-                    log.info(' -> Molecule: ' + str(molecule))
+        ur['cadence'] = { 'start': self.ts_submit.strftime("%Y-%m-%d %H:%M:%S"), 
+                        'end': self.ts_expire.strftime("%Y-%m-%d %H:%M:%S"), 
+                        'period': float(self.cadence), 
+                        'jitter': float(self.jitter) }
+        ur['ipp_value'] = self.priority
+        ur['requests'] = []
         
-                molecule_list.append(molecule)
-                
-            window = float(config['request_window']) * 60.0 * 60.0
-            exposure_group_length = imager.calc_group_length( nexp, exptime )
-            request_end = request_start + \
-                     timedelta( seconds= ( exposure_group_length + window ) )
-
+        molecule_list = self.build_molecule_list(debug=debug,log=log)
+        
+        if len(molecule_list) > 0:
             req = { 'observation_note':'',
                     'observation_type': 'NORMAL', 
                     'target': target , 
-                    'windows': [ { 'start': request_start.strftime("%Y-%m-%d %H:%M:%S"), 
-                                   'end': request_end.strftime("%Y-%m-%d %H:%M:%S") } ],
+                    'windows': [ ],
                     'fail_count': 0,
                     'location': location,
                     'molecules': molecule_list,
                     'type': 'request', 
                     'constraints': constraints
                     }
-            reqList.append(req)
+            
+            ur['requests'].append(req)
             if debug == True and log != None:
                 log.info('Request dictionary: ' + str(req))
-                
-            request_start = request_end + \
-                    timedelta( seconds= ( self.cadence*24.0*60.0*60.0 ) )
-                    
-        ur['requests'] = reqList
-        if len(reqList) == 1:
-            ur['operator'] = 'single'
-        else:
-            ur['operator'] = 'many'
-        ur['type'] = 'compound_request'
-        self.json_request = json.dumps(ur)
+
+            
+            ur = self.get_cadence_requests(ur)
+            if debug == True and log != None:
+                for r in ur['requests']:
+                    log.info('Request windows: '+repr(r['windows']))
         if debug == True and log != None:
-            log.info(' -> Completed build of observation request')
-    
-    def submit_request(self, config, log=None, debug=False):
+            log.info(' -> Completed build of observation request ' + self.group_id)
+            
+        return ur
         
-        params = {'username': config['user_id'] ,
-                  'password': config['odin_access'], 
-                  'proposal': config['proposal_id'], 
-                  'request_data' : self.json_request}
+    def build_molecule_list(self,debug=False,log=None):
+        def parse_filter(f):
+            filters = { 'SDSS-g': 'gp', 'SDSS-r': 'rp', 'SDSS-i': 'ip' }
+            if f in filters.keys():
+                return filters[f]
+            else:
+                raise ValueError('Unrecognized filter ('+f+') requested')
+        
+        overheads = instrument_overheads.Overhead(self.tel, self.instrument)
         if debug == True and log != None:
-            log.info( 'Observation request parameters for submission: ' + \
-                                    str(params) )
+            log.info('Instrument overheads ' + overheads.summary() )        
+        
+        molecule_list = []
+        
+        for i,exptime in enumerate(self.exposure_times):
+            nexp = self.exposure_counts[i]
+            f = self.filters[i]
+            defocus = self.focus_offset[i]
+        
+            molecule = { 
+            		 # Required fields
+            		 'exposure_time'   : exptime,    
+            		 'exposure_count'  : nexp,	     
+            		 'filter'	   : parse_filter(f),      
+            		 
+            		 'type' 	   : 'EXPOSE',      
+            		 'ag_name'	   : '',	     
+            		 'ag_mode'	   : 'Optional',
+            		 'instrument_name' : self.instrument_class,
+            		 'bin_x'	   : 1,
+            		 'bin_y'	   : 1,
+            		 'defocus'	   : defocus      
+            	       }
+            if debug == True and log != None:
+                log.info(' -> Molecule: ' + str(molecule))
+    
+            molecule_list.append(molecule)
+                
+        return molecule_list  
+                
+    def get_cadence_requests(self,ur,log=None):
+        
+        end_point = "/observe/service/request/get_cadence_requests"
+        jur = self.talk_to_lco(ur,end_point)
+        try:
+            ur = json.loads(jur)
+        except ValueError:
+            if log != None:
+                log.info('ERROR understanding returned cadence sequence, output is: ')
+                log.info(repr(jur))
+        
+        if log != None:
+            if 'error_type' in ur.keys():
+                log.info('ERROR building observation request: '+ur['error_msg'])
+            else:
+                log.info('Received observable cadence sequence from LCO API')
+            
+        return ur
+    
+    def submit_request(self, ur, config, log=None):
         
         if str(config['simulate']).lower() == 'true':
             self.submit_status = 'SIM_add_OK'
@@ -232,20 +251,40 @@ class ObsRequest:
                 log.info(' -> IN SIMULATION MODE: ' + self.submit_status)
             
         else:
-            url_request = urllib.urlencode(params)
-            headers = {'Content-type': 'application/x-www-form-urlencoded'}
-            
-            secure_connect = httplib.HTTPSConnection("lco.global") 
-            secure_connect.request("POST", "/observe/service/request/submit", 
-                                               url_request, headers)
-            submit_string = secure_connect.getresponse().read()	
-            
-            self.parse_submit_response( config, submit_string, log=log, debug=debug )
-            secure_connect.close()
+            end_point = '/observe/service/request/submit'
+            response = self.talk_to_lco(ur,end_point)
+            self.parse_submit_response( config, response, log=log )
+
         if log != None:
             log.info(' -> Completed obs submission')
         
         return self.submit_status
+    
+    def talk_to_lco(self,ur,end_point):
+        """Method to communicate with various APIs of the LCO network. 
+        ur should be a user request while end_point is the URL string which 
+        should be concatenated to the observe portal path to complete the URL.  
+        Accepted end_points are:
+            "/observe/service/request/submit"  
+            "/observe/service/request/get_cadence_requests"
+        """
+        
+        jur = json.dumps(ur)
+        
+        params = {'username': self.user_id ,
+                  'password': self.pswd, 
+                  'proposal': self.proposal_id, 
+                  'request_data' : jur}
+        urlrequest = urllib.urlencode(params)
+        headers = {'Content-type': 'application/x-www-form-urlencoded'}
+        
+        secure_connect = httplib.HTTPSConnection("lco.global") 
+        secure_connect.request("POST", end_point, urlrequest, headers) 
+        submit_response = secure_connect.getresponse().read()
+        secure_connect.close()
+        
+        return submit_response
+
         
     def parse_submit_response( self, config, submit_string, log=None, debug=False ):
         
