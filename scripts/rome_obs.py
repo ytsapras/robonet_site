@@ -18,7 +18,8 @@ def build_rome_obs(script_config,log=None):
     field_ids = rome_fields.keys()
     field_ids.sort()
     if log != None:
-        log.info('Building observation requests for '+len(field_ids)+' fields:')
+        log.info('Building observation requests for '+\
+                            str(len(field_ids))+' fields:')
         log.info(' '.join(field_ids))
     obs_sequence = rome_obs_sequence()
     rome_obs = []

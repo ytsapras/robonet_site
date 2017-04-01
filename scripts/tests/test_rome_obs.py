@@ -24,13 +24,9 @@ import rome_obs
 
 def test_get_rome_fields():
     rome_fields = rome_obs.get_rome_fields()
-    print rome_fields.keys()
-    assert len(rome_fields) == 2
+    assert len(rome_fields) == 20
 
 def test_get_rome_obs():
     script_config = {'user_id': 'rstreet@lco.global', 'proposal_id': 'KEY2017AB-004'}
-    rome = rome_obs.build_rome_obs(script_config,log=None)
-    print rome.keys()
-    for obs in rome:
-        print obs.name
-    assert rome < -1
+    rome_field_obs = rome_obs.build_rome_obs(script_config,log=None)
+    assert len(rome_field_obs) == 60

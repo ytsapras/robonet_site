@@ -5,7 +5,8 @@ Created on Fri Mar 17 15:56:00 2017
 @author: rstreet
 """
 from sys import argv, exit
-from os import path
+from sys import path as systempath
+from os import path, getcwd
 import config_parser
 import rome_obs
 import rea_obs
@@ -15,6 +16,7 @@ import log_utilities
 from exceptions import IOError
 from observation_classes import get_request_desc
 import validation
+import socket
 
 def obs_control():
     """Observation Control Software for the LCO Network
@@ -41,9 +43,12 @@ def obs_control():
         obs_requests = rome_obs.build_rome_obs(script_config,log=log)
     else:
         obs_requests = rea_obs.build_rea_obs(script_config,log=log)
+    print obs_requests
     
     obs_requests = rm_duplicate_obs(obs_requests,active_obs,log=log)
-
+    print obs_requests
+    exit()
+    
     submit_status = submit_obs_requests(script_config,obs_requests,log=log)
     
     lock_state = log_utilities.lock( script_config, 'unlock', log )
@@ -67,7 +72,12 @@ def parse_args(script_config):
 def read_config():
     """Function to read the XML configuration file for Obs_Control"""
     
-    config_file_path = '/var/www/robonetsite/configs/obscontrol_config.xml'
+    host_name = socket.gethostname()
+    if 'Rachel' in host_name:
+        cwd = getcwd()
+        config_file_path = path.join(cwd, '../configs/obscontrol_config.xml')
+    else:
+        config_file_path = '/var/www/robonetsite/configs/obscontrol_config.xml'
     if path.isfile(config_file_path) == False:
         raise IOError('Cannot find configuration file, looking for:'+config_file_path)
     script_config = config_parser.read_config(config_file_path)
