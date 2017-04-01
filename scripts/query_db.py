@@ -24,48 +24,48 @@ def get_active_obs(log=None):
     """Function to extract a list of the currently-active observations 
     requests from the database"""
     
+    now = timezone.now()
     qs = ObsRequest.objects.filter(
-                    time_expire__gt = datetime.utcnow() 
-                    ).filter(
-                    timestamp__lte = datetime.utcnow()
-                    ).filter(
+                    time_expire__gt = now,
+                    timestamp__lte = now,
                     request_status='AC'
                     )
     
     if log != None:
         log.info('\n')
         log.info('Queried DB for list of active observations:')
-        for q in qs:
-            log.info(' '.join([q.grp_id, q.field.name,\
-                        get_request_desc(q.request_type), \
-                        'submitted=',q.timestamp.strftime('%Y-%m-%dT%H:%M:%S'), \
-                        'expires=',q.time_expire.strftime('%Y-%m-%dT%H:%M:%S'),\
-                        'status=',q.request_status]))
-        if len(qs) == 0:
+        if qs.count() == 0:
             log.info('DB returned no currently-active observation requests')
+        else:
+            for q in qs:
+                log.info(' '.join([q.grp_id, q.field.name,\
+                            get_request_desc(q.request_type), \
+                            'submitted=',q.timestamp.strftime('%Y-%m-%dT%H:%M:%S'), \
+                            'expires=',q.time_expire.strftime('%Y-%m-%dT%H:%M:%S'),\
+                            'status=',q.request_status]))
+        log.info('\n')
+
+    return qs
+
+def get_rea_targets(log=None):
+    """Function to query the DB for a list of targets recommended for 
+    observation under the REA strategy."""
+    
+    qs = Tap.objects.filter(omega__gte=6.0).order_by('timestamp').reverse()
+    print qs
+    for q in qs:
+        print q.event.ev_ra, q.tsamp,q.priority
+    
+    if log != None:
+        log.info('\n')
+        log.info('Queried DB for list of current REA targets:')
+        for q in qs:
+            log.info(' '.join([q.event.field.name,\
+                        'priority=',q.priority, \
+                        't_sample=',str(q.tsamp)]))
         log.info('\n')
                         
     return qs
-
-#def get_rea_targets(log=None):
-#    """Function to query the DB for a list of targets recommended for 
-#    observation under the REA strategy."""
-#    
-#    qs = Tap.objects.filter(omega__gte=6.0).order_by('timestamp').reverse()
-#    print qs
-#    for q in qs:
-#        print q.event.ev_ra, q.tsamp,q.priority
-#    
-#    if log != None:
-#        log.info('\n')
-#        log.info('Queried DB for list of current REA targets:')
-#        for q in qs:
-#            log.info(' '.join([q.event.field.name,\
-#                        'priority=',q.priority, \
-#                        't_sample=',str(q.tsamp)]))
-#        log.info('\n')
-#                        
-#    return qs
 
 def get_last_single_model(event,modeler=None,log=None):
     """Function to return the last model submitted to the DB by the 

@@ -7,7 +7,12 @@ Created on Sat Apr  1 13:57:18 2017
 
 from os import getcwd, path, remove, environ
 from sys import path as systempath
-cwd = getcwd()
+import socket
+host_name = socket.gethostname()
+if 'einstein' in host_name:
+   cwd = '/var/www/robonetsite/scripts/tests'
+else:
+    cwd = getcwd()
 systempath.append(path.join(cwd,'..'))
 from local_conf import get_conf
 robonet_site = get_conf('robonet_site')
@@ -25,7 +30,7 @@ import query_db
 
 def list_active_obs():
 
-    print 'Current UTC: ',datetime.now()    , datetime.utcnow(), timezone.now()
+    print 'Current UTC: ',timezone.now()
     
     active_obs = query_db.get_active_obs()
 
