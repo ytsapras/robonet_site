@@ -6,6 +6,9 @@ host_name = socket.gethostname()
 if 'cursa' in host_name:
    sys.path.append("/home/Tux/ytsapras/robonet_site/")
    site_url = 'http://127.0.0.1:8000/'
+elif 'Rachel' in host_name:
+   sys.path.append("/Users/rstreet/software/robonet_site/")
+   site_url = 'http://127.0.0.1:8000/'
 elif 'einstein' in host_name:
    sys.path.append("/var/www/robonetsite/")
    site_url = 'http://romerea.lco.global/'

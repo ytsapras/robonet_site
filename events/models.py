@@ -638,7 +638,8 @@ class ObsRequest(models.Model):
    )
    status_choice = (
    ('AC', 'ACTIVE'),
-   ('EX', 'EXPIRED')
+   ('EX', 'EXPIRED'),
+   ('CN', 'CANCELLED')
    )
    timestamp = models.DateTimeField('request submit date', blank=True)
    # observe on 0.4m telescopes?
