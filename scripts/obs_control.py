@@ -45,11 +45,8 @@ def obs_control():
         obs_requests = rome_obs.build_rome_obs(script_config,log=log)
     else:
         obs_requests = rea_obs.build_rea_obs(script_config,log=log)
-    print obs_requests
     
     obs_requests = rm_duplicate_obs(obs_requests,active_obs,log=log)
-    print obs_requests
-    exit()
     
     submit_status = submit_obs_requests(script_config,obs_requests,log=log)
     
