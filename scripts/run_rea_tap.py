@@ -154,6 +154,10 @@ def assign_tap_priorities(logger):
                     err_omega=err_omega, peak_omega=omega_peak,
                     visibility=full_visibility, cost1m=cost1m)
 
+            #expire events
+            if t_current > te_pspl+t0_pspl:
+                Event.objects.filter(event_id=sorted_list[idx]['event_id']).update(status="EX")
+
     #lock_state = log_utilities.lock(script_config, 'unlock', log)
     #log_utilities.end_day_log(log)
 
@@ -209,7 +213,8 @@ def run_tap_prioritization(logger):
                 Event.objects.filter(event_id=sorted_list[idx]['event_id']).update(status="MO")
                 Tap.objects.filter(event_id=sorted_list[idx]['event_id']).values().update(priority='L')
                 trun = trun + tsys
-
+        
+            
 
 if __name__ == '__main__':
    #DIRECTORY TO BE OBTAINED FROM XML...
