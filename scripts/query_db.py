@@ -26,10 +26,10 @@ def get_active_obs(log=None):
         
     qs = ObsRequest.objects.filter(
                     time_expire__gt = datetime.utcnow() 
-                    ).exclude(
+                    ).filter(
                     timestamp__lte = datetime.utcnow()
                     )
-    
+                    
     if log != None:
         log.info('\n')
         log.info('Queried DB for list of active observations:')
