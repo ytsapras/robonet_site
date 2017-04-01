@@ -158,8 +158,6 @@ def assign_tap_priorities(logger):
             if t_current > te_pspl+t0_pspl:
                 Event.objects.filter(event_id=sorted_list[idx]['event_id']).update(status="EX")
 
-    #lock_state = log_utilities.lock(script_config, 'unlock', log)
-    #log_utilities.end_day_log(log)
 
 def run_tap_prioritization(logger):
 
@@ -192,8 +190,8 @@ def run_tap_prioritization(logger):
     # FIRST RESET ALL MONITORING EVENTS TO ACTIVE
     Event.objects.filter(status='MO').update(status="AC")
     # RESET ANOMALIES (PERMITS RE-CHECK)
-    logger.info('revert anomalies to active - no anomaly trigger active!')
-    Event.objects.filter(status='AN').update(status="AC")
+    #logger.info('revert anomalies to active - no anomaly trigger active!')
+    #Event.objects.filter(status='AN').update(status="AC")
     
     toverhead = 60.
     trun = 0.
@@ -217,7 +215,7 @@ def run_tap_prioritization(logger):
             
 
 if __name__ == '__main__':
-   #DIRECTORY TO BE OBTAINED FROM XML...
+    #DIRECTORY TO BE OBTAINED FROM XML...
     logs_directory='.'
     script_config = {'log_directory':logs_directory, 
                      'log_root_name':'robotap_rea','lock_file':'robotap.lock'}
