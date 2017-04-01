@@ -17,9 +17,12 @@ def build_rome_obs(script_config,log=None):
     rome_fields = get_rome_fields()
     field_ids = rome_fields.keys()
     field_ids.sort()
+    if log != None:
+        log.info('Building observation requests for '+len(field_ids)+' fields:')
+        log.info(' '.join(field_ids))
     obs_sequence = rome_obs_sequence()
     rome_obs = []
-        
+    
     for s in range(0,len(obs_sequence['sites']),1):
         if log != None:
                 log.info('Building observation requests for site ' + \
@@ -85,4 +88,3 @@ def rome_obs_sequence():
                     'TTL_days': 7.0,
                     }
     return obs_sequence
-    
