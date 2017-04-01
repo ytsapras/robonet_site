@@ -67,8 +67,7 @@ def parse_args(script_config):
 def read_config():
     """Function to read the XML configuration file for Obs_Control"""
     
-    config_file_path = path.join(path.expanduser('~'),
-                                 '.robonet_site', 'obscontrol_config.xml')
+    config_file_path = '/var/www/robonetsite/configs/obscontrol_config.xml'
     if path.isfile(config_file_path) == False:
         raise IOError('Cannot find configuration file, looking for:'+config_file_path)
     script_config = config_parser.read_config(config_file_path)
