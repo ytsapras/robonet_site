@@ -61,7 +61,7 @@ def build_rome_obs(script_config,log=None):
 def get_rome_fields(testing=False):
     """Function to define the fields to be observed with the ROME strategy"""
     
-    if testing == False:
+    if testing == True:
         rome_fields=field_dict
     else:
         rome_fields={'ROME-FIELD-01':[ 267.835895375 , -30.0608178195 , '17:51:20.6149','-30:03:38.9442' ]}
