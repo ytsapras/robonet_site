@@ -25,8 +25,15 @@ import rome_obs
 def test_get_rome_fields():
     rome_fields = rome_obs.get_rome_fields()
     assert len(rome_fields) == 20
-
+    f = 'ROME-FIELD-02'
+    rome_fields = rome_obs.get_rome_fields(selected_field=f)
+    assert len(rome_fields) == 1
+    assert rome_fields.keys()[0] == f
+    
 def test_get_rome_obs():
-    script_config = {'user_id': 'rstreet@lco.global', 'proposal_id': 'KEY2017AB-004'}
+    script_config = {'user_id': 'tester@lco.global', 
+                     'proposal_id': 'TEST',
+                     'lco_access': 'XXX',
+                     'selected_field': None}
     rome_field_obs = rome_obs.build_rome_obs(script_config,log=None)
     assert len(rome_field_obs) == 60

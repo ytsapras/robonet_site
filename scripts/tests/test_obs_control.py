@@ -52,7 +52,7 @@ def test_obs_submission():
                 'proposal_id': 'test_proposal', \
                 'user_id': 'tester@lco.global', \
                 'request_window': 24.0, \
-                'odin_access': 'XXXX', \
+                'lco_access': 'XXXX', \
                 'simulate': True
             }
 
@@ -73,8 +73,11 @@ def test_obs_submission():
     robs.exposure_times = [ 300.0, 300.0, 300.0 ]
     robs.exposure_counts = [1, 1, 1]
     robs.cadence = 24.0
+    robs.jitter = 1.0
     robs.priority = 1.0
-    robs.user_id = 'rstreet@lco.global'
+    robs.user_id = 'tester@lco.global'
+    robs.proposal_id = 'KEY2017-foo'
+    robs.pswd = 'XXXX'
     robs.ttl = 24.0
     robs.focus_offset = [0.0, 0.0, 0.0]
     robs.request_type = 'L'

@@ -94,7 +94,7 @@ class ObsRequest:
         output = str(self.name) + ' ' + str(self.ra) + ' ' + str(self.dec) + \
                 ' ' + str(self.site) + ' ' + str(self.observatory) + ' ' + \
                 ' ' + str(self.instrument) + ' ' + f_list + ' ' + \
-                exp_list + ' ' + str(self.cadence)
+                exp_list + ' ' + str(self.cadence) + ' ' + self.group_id
         return output
 
     def build_cadence_request(self, log=None, debug=False):

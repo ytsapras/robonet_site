@@ -25,7 +25,7 @@ def obs_control():
     ROME and REA microlensing observing programs.
     """
 
-    version = 'obs_control_0.92'    
+    version = 'obs_control_0.93'    
     
     script_config = read_config()
     script_config = parse_args(script_config)
@@ -56,16 +56,19 @@ def obs_control():
 def parse_args(script_config):
     """Function to check for commandline arguments to Obs_Control.
     Default [no arguments] will revert to REA strategy.
-    Alternatively specify -rome to trigger the ROME observation strategy
+    1st argument= -rome will trigger the ROME observation strategy
+    
     """
     
+    script_config['selected_field'] = None
+    script_config['MODE'] = 'REA'
     if len(argv) > 1:
-        if argv[1] == '-rome':
+        if '-rome' in argv:
             script_config['MODE'] = 'ROME'
-        else:
-            script_config['MODE'] = 'REA'
-    else:
-        script_config['MODE'] = 'REA'
+        for a in argv:
+            if '-field=' in a:
+                script_config['selected_field'] = a.split('=')[-1]
+    
     return script_config
     
 def read_config():
@@ -98,37 +101,44 @@ def rm_duplicate_obs(obs_request_list, active_obs,log=None,debug=False):
         if debug==True: 
             print obs.name, obs.filters, obs.request_type
         if len(active_obs) > 0:
+            matching_request = False
             for active_req in active_obs:
                 if debug==True: 
                     print active_req.field.name, active_req.which_filter,\
-                        active_req.request_type
+                        active_req.request_type, active_req.site
                 if active_req.field.name == obs.name and \
                     active_req.which_filter in obs.filters and \
-                        active_req.request_type == obs.request_type:
+                    active_req.request_type == obs.request_type and \
+                    active_req.site == obs.site:
+                    matching_request = True
+                    
                     if log != None:
                         log.info(obs.group_id + ': Found existing active ' + \
                                 get_request_desc(active_req.request_type) + \
                                 ' observation for ' + active_req.field.name + \
                                 ' with filter ' + active_req.which_filter + \
+                                ' at site ' + active_req.site + \
                                 ', not submitting duplicate')
-                    
-                else:
-                    if log != None:
-                        log.info(obs.group_id + ': No existing active ' + \
-                            get_request_desc(obs.request_type) + ' request for ' + obs.name + \
-                            ' with filter in ' + ' '.join(obs.filters) + \
-                            '; observation will be queued')
-                    obs_requests_final.append(obs)
-                    
+            if matching_request == False:
+                obs_requests_final.append(obs)
+                if log != None:
+                    log.info(obs.group_id + ': No existing active ' + \
+                        get_request_desc(obs.request_type) + ' request for ' + obs.name + \
+                        ' with filter in ' + ' '.join(obs.filters) + ' at site ' + obs.site + \
+                        '; observation will be queued')
         else:
             if log != None:
                 log.info(obs.group_id + ': No existing active ' + \
                     get_request_desc(obs.request_type) + ' request for ' + obs.name + \
-                    ' with filter in ' + ' '.join(obs.filters) + \
+                    ' with filter in ' + ' '.join(obs.filters) + ' at site ' + obs.site + \
                     '; observation will be queued')
             obs_requests_final.append(obs)
 
     if log != None:
+        log.info('Finalized list of '+str(len(obs_requests_final))+\
+                    ' observation requests to be submitted:')
+        for obs in obs_requests_final:
+            log.info(obs.summary())
         log.info('\n')
         
     return obs_requests_final
@@ -153,32 +163,33 @@ def submit_obs_requests(script_config,obs_requests,log=None):
             log.info('    => Status: ' + repr(obs.submit_status) + \
                                 ': ' + repr(obs.submit_response))
         obsrecord.write( obs.obs_record( script_config ) )
-
-        for i in range(0,len(obs.exposure_times),1):
-            params = {'field_name':obs.name, 't_sample': (obs.cadence*60.0), \
-                    'exptime':int(obs.exposure_times[i]), \
-                    'timestamp': obs.ts_submit, 'time_expire': obs.ts_expire, \
-                    'pfrm_on': obs.pfrm,'onem_on': obs.onem, 'twom_on': obs.twom, \
-                    'request_type': obs.request_type, 'which_filter':obs.filters[i],\
-                    'which_inst':obs.instrument, 'grp_id':obs.group_id, \
-                    'track_id':obs.track_id, 'req_id':obs.req_id, \
-                    'n_exp':obs.exposure_counts[i]}
-            
-            (status, msg) = validation.check_obs_request(params)
-            if log != None: 
-                log.info('    => Validation result: ' + repr(status) + ' ' + msg)
-            
-            status = update_db_2.add_request(obs.name, (obs.cadence*60.0), \
-                int(obs.exposure_times[i]), timestamp=obs.ts_submit, \
-                time_expire=obs.ts_expire, \
-                pfrm_on=obs.pfrm, onem_on=obs.onem, twom_on=obs.twom, \
-                request_type=obs.request_type, \
-                which_filter=obs.filters[i],which_inst=obs.instrument, \
-                grp_id=obs.group_id, track_id=obs.track_id, req_id=obs.req_id,\
-                n_exp=obs.exposure_counts[i])
+        
+        if str(script_config['simulate']).lower() == 'false':
+            for i in range(0,len(obs.exposure_times),1):
+                params = {'field_name':obs.name, 't_sample': (obs.cadence*60.0), \
+                        'exptime':int(obs.exposure_times[i]), \
+                        'timestamp': obs.ts_submit, 'time_expire': obs.ts_expire, \
+                        'pfrm_on': obs.pfrm,'onem_on': obs.onem, 'twom_on': obs.twom, \
+                        'request_type': obs.request_type, 'which_filter':obs.filters[i],\
+                        'which_inst':obs.instrument, 'grp_id':obs.group_id, \
+                        'track_id':obs.track_id, 'req_id':obs.req_id, \
+                        'n_exp':obs.exposure_counts[i]}
                 
-            if log != None: 
-                log.info('    => Updated DB with status ' + repr(status))
+                (status, msg) = validation.check_obs_request(params)
+                if log != None: 
+                    log.info('    => Validation result: ' + repr(status) + ' ' + msg)
+                
+                status = update_db_2.add_request(obs.name, (obs.cadence*60.0), \
+                    int(obs.exposure_times[i]), timestamp=obs.ts_submit, \
+                    time_expire=obs.ts_expire, \
+                    pfrm_on=obs.pfrm, onem_on=obs.onem, twom_on=obs.twom, \
+                    request_type=obs.request_type, \
+                    which_filter=obs.filters[i],which_inst=obs.instrument, \
+                    grp_id=obs.group_id, track_id=obs.track_id, req_id=obs.req_id,\
+                    n_exp=obs.exposure_counts[i])
+                    
+                if log != None: 
+                    log.info('    => Updated DB with status ' + repr(status))
     obsrecord.close()
 
     if log != None: 
