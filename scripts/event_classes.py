@@ -105,6 +105,31 @@ class Lens():
             params[ key ] = getattr( self, key )
         return params
 
+class TapEvent():
+    """Class describing the attributes of an event selected for REA 
+    observations by TAP"""
+    
+    def __init__(self):
+        self.event_id = None
+        self.names = None
+        self.field = None
+        self.ev_ra = None
+        self.ev_dec = None
+        self.tap_status = None
+        self.priority = None
+        self.tsamp = None
+        self.texp = None
+        self.nexp = None
+        self.telclass = None
+        self.omega = None
+        self.passband = None
+        self.ipp = None
+    
+    def summary(self):
+        return self.names + ' ' + str(self.event_id) + ' ' + self.field.name + ' ' +\
+            str(self.priority) + ' ' + str(self.tsamp) + ' ' + str(self.texp) + ' ' +\
+            str(self.nexp) + ' ' + str(self.ipp)
+            
 class K2C9Event():
     """Class describing the parameters to be output for a microlensing event 
     within the K2/Campaign 9 field

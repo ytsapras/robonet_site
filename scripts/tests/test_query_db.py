@@ -22,23 +22,21 @@ from datetime import datetime, timedelta
 setup()
 from events.models import Event, SingleModel
 import query_db
-
+import utilities
 
 def test_get_active_obs():
     
     qs = query_db.get_active_obs()
     
-    assert len(qs) > 0
+    assert qs.count() > 0
     if len(qs) > 0:
         assert hasattr(qs[0],'field') and hasattr(qs[0],'request_type')
 
-#def test_get_rea_targets():
-#    
-#    qs = query_db.get_rea_targets()
-#    
-#    assert len(qs) > 0
-#    if len(qs) > 0:
-#        assert hasattr(qs[0],'field') and hasattr(qs[0],'request_type')
+def test_get_tap_list():
+    
+    qs = query_db.get_tap_list()
+    
+    assert qs.count() > 0
     
 def test_get_event():
     
@@ -46,7 +44,14 @@ def test_get_event():
     e = known_events[0]
     event = query_db.get_event(e.pk)
     assert hasattr(event,'ev_ra') and hasattr(event,'ev_dec')
+
+def test_get_event_names():
     
+    event_id = 460
+    qs = query_db.get_event_names(event_id)
+    assert qs.count() >= 1
+    
+
 def test_get_last_single_model():
     
     known_events = Event.objects.all()

@@ -18,7 +18,9 @@ from datetime import datetime, timedelta
 setup()
 
 from events.models import ObsRequest, Tap, Event, SingleModel
+from events.models import EventName
 from observation_classes import get_request_desc
+from event_classes import TapEvent
 
 def get_active_obs(log=None):
     """Function to extract a list of the currently-active observations 
@@ -67,6 +69,49 @@ def get_rea_targets(log=None):
                         
     return qs
 
+def get_tap_list(log=None):
+    """Function to query the DB and return the list of targets recommended 
+    for REA-mode observations by TAP, and the details of those 
+    observations"""
+    
+    tap_list = []
+    qs = Event.objects.filter(status='MO')
+    for q in qs:
+        names = get_event_names(q.pk)
+        name = ''
+        for n in names:
+            if len(name) == 0:
+                name += n.name
+            else:  
+                name += '/' + n.name
+        target = TapEvent()
+        target.event_id = q.pk
+        target.names = name
+        target.field = q.field
+        target.ev_ra = q.ev_ra
+        target.ev_dec = q.ev_dec
+        target.tap_status = q.status
+        
+        tap_entry = Tap.objects.filter(event=q.pk)[0]
+        target.priority = tap_entry.priority
+        target.tsamp = tap_entry.tsamp
+        target.texp = tap_entry.texp
+        target.nexp = tap_entry.nexp
+        target.telclass = tap_entry.telclass
+        target.omega = tap_entry.omega
+        target.passband = tap_entry.passband
+        target.ipp = tap_entry.ipp
+        tap_list.append(target)
+        
+    if log != None:
+        log.info('\n')
+        log.info('Queried DB for list of current TAP list:')
+        for target in tap_list:
+            log.info(target.summary())
+        log.info('\n')
+                        
+    return tap_list
+
 def get_last_single_model(event,modeler=None,log=None):
     """Function to return the last model submitted to the DB by the 
     modeler given
@@ -111,5 +156,12 @@ def get_event(event_pk):
     qs = Event.objects.get(pk=event_pk)
     return qs
 
+def get_event_names(event_id):
+    """Function to extract the names of a target, given its position
+    on sky, with RA and Dec in decimal degrees"""
+    
+    qs = EventName.objects.filter(event_id=event_id)
+    return qs
+    
 if __name__ == '__main__':
     get_rea_targets()

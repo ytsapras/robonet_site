@@ -16,7 +16,7 @@ class Command(BaseCommand):
     help = ''
     
     def _fetch_active_obs(self):
-        qs = query_db.get_active_obs()
+        qs = query_db.get_rea_targets()
         for q in qs:
             print ' '.join([q.grp_id, q.field.name,\
                         'submitted=',q.timestamp.strftime('%Y-%m-%dT%H:%M:%S'), \
