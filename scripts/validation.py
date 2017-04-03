@@ -80,10 +80,10 @@ def check_obs_request(params):
         return status, msgmsg
     if debug == True: print 'Verified filter with status ',status
     
-    inst_list = ['fl16', 'fl15', 'fl12']
+    inst_list = ['fl16', 'fl15', 'fl12', 'fl03', 'fl14', 'fl11' ]
     if params['which_inst'] not in inst_list:
         status = False
-        msg = 'Request which_filter must be one of ' + ' '.join(inst_list)
+        msg = 'Request which_inst must be one of ' + ' '.join(inst_list)
         return status, msg
     if debug == True: print 'Verified camera with status ',status
   
