@@ -75,7 +75,7 @@ def read_config():
     """Function to read the XML configuration file for Obs_Control"""
     
     host_name = socket.gethostname()
-    if 'Rachel' in host_name:
+    if 'rachel' in host_name:
         cwd = getcwd()
         config_file_path = path.join(cwd, '../configs/obscontrol_config.xml')
     else:

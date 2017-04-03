@@ -18,7 +18,6 @@ else:
 
 from django.conf import settings
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'robonet_site.settings')
-print os.environ, sys.path
 project_dir = settings.BASE_DIR
 def get_conf(request):
    paths = {'artemis':os.path.join(project_dir,"artemis/ARTEMiS/"),
