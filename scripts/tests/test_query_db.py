@@ -28,7 +28,7 @@ def test_get_active_obs():
     
     qs = query_db.get_active_obs()
     
-    assert qs.count() > 0
+    assert qs.count > 0
     if len(qs) > 0:
         assert hasattr(qs[0],'field') and hasattr(qs[0],'request_type')
 
@@ -36,7 +36,7 @@ def test_get_tap_list():
     
     qs = query_db.get_tap_list()
     
-    assert qs.count() > 0
+    assert qs.count > 0
     
 def test_get_event():
     
@@ -49,7 +49,7 @@ def test_get_event_names():
     
     event_id = 460
     qs = query_db.get_event_names(event_id)
-    assert qs.count() >= 1
+    assert qs.count >= 1
     
 
 def test_get_last_single_model():

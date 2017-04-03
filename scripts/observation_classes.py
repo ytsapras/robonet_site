@@ -6,6 +6,7 @@ Created on Fri Mar 17 18:07:21 2017
 """
 from os import environ, path
 from sys import path as systempath
+from sys import exit
 from local_conf import get_conf
 robonet_site = get_conf('robonet_site')
 systempath.append(robonet_site)
@@ -114,8 +115,12 @@ class ObsRequest:
                     }
         if debug == True and log != None:
             log.info('Location dictionary: ' + str( location ))
-            
-        (ra_deg, dec_deg) = utilities.sex2decdeg(self.ra, self.dec)
+        
+        if type(self.ra) == type(1.0):
+            ra_deg = self.ra
+            dec_deg = self.dec
+        else:
+            (ra_deg, dec_deg) = utilities.sex2decdeg(self.ra, self.dec)
         target =   {
                     'name'		    : str(self.name),
                     'ra'		          : ra_deg,
@@ -145,7 +150,10 @@ class ObsRequest:
         
         self.ts_submit = timezone.now() + timedelta(seconds=(10*60))
         self.ts_expire = self.ts_submit + timedelta(seconds=(self.ttl*24*60*60))
-        
+        if debug == True and log != None:
+            log.info('Observations start datetime: '+self.ts_submit.strftime("%Y-%m-%d %H:%M:%S"))
+            log.info('Observations stop datetime: '+self.ts_expire.strftime("%Y-%m-%d %H:%M:%S"))
+            
         ur['cadence'] = { 'start': self.ts_submit.strftime("%Y-%m-%d %H:%M:%S"), 
                         'end': self.ts_expire.strftime("%Y-%m-%d %H:%M:%S"), 
                         'period': float(self.cadence), 
@@ -171,11 +179,19 @@ class ObsRequest:
             if debug == True and log != None:
                 log.info('Request dictionary: ' + str(req))
 
+            ur = self.get_cadence_requests(ur,log=log)
             
-            ur = self.get_cadence_requests(ur)
             if debug == True and log != None:
                 for r in ur['requests']:
-                    log.info('Request windows: '+repr(r['windows']))
+                    if len(r['windows']) == 0:
+                        log.info('WARNING: scheduler returned no observing windows for this target')
+                        self.submit_status = 'No_obs_submitted'
+                        self.submit_response = 'No_obs_submitted'
+                        self.req_id = '9999999999'
+                        self.track_id = '99999999999'
+                    else:
+                        log.info('Request windows: '+repr(r['windows']))
+                
         if debug == True and log != None:
             log.info(' -> Completed build of observation request ' + self.group_id)
             
@@ -225,9 +241,14 @@ class ObsRequest:
         
         end_point = "/observe/service/request/get_cadence_requests"
         jur = self.talk_to_lco(ur,end_point)
+        
         try:
             ur = json.loads(jur)
         except ValueError:
+            if log != None:
+                log.info('ERROR understanding returned cadence sequence, output is: ')
+                log.info(repr(jur))
+        except TypeError:
             if log != None:
                 log.info('ERROR understanding returned cadence sequence, output is: ')
                 log.info(repr(jur))
@@ -242,14 +263,21 @@ class ObsRequest:
     
     def submit_request(self, ur, config, log=None):
         
-        if str(config['simulate']).lower() == 'true':
+        if self.submit_status == 'No_obs_submitted':
+            self.submit_response = 'No_obs_submitted'
+            self.req_id = '9999999999'
+            self.track_id = '99999999999'
+            if log != None:
+                log.info('WARNING: ' + self.submit_status)
+                
+        elif str(config['simulate']).lower() == 'true':
             self.submit_status = 'SIM_add_OK'
             self.submit_response = 'Simulated'
             self.req_id = '9999999999'
             self.track_id = '99999999999'
             if log != None:
                 log.info(' -> IN SIMULATION MODE: ' + self.submit_status)
-            
+        
         else:
             end_point = '/observe/service/request/submit'
             response = self.talk_to_lco(ur,end_point)
@@ -275,6 +303,7 @@ class ObsRequest:
                   'password': self.pswd, 
                   'proposal': self.proposal_id, 
                   'request_data' : jur}
+        
         urlrequest = urllib.urlencode(params)
         headers = {'Content-type': 'application/x-www-form-urlencoded'}
         
@@ -376,6 +405,8 @@ def get_request_desc(request_type):
         request_desc = 'rea-hi'
     elif request_type == 'M':
         request_desc = 'rea-lo'
+    elif request_type == 'N':
+        request_desc = 'rea'
     else:
         request_desc = 'unknown'
         raise ValueError('Unknown observation request type, ' + request_type)

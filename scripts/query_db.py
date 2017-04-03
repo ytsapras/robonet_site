@@ -94,13 +94,13 @@ def get_tap_list(log=None):
         
         tap_entry = Tap.objects.filter(event=q.pk)[0]
         target.priority = tap_entry.priority
-        target.tsamp = tap_entry.tsamp
-        target.texp = tap_entry.texp
-        target.nexp = tap_entry.nexp
-        target.telclass = tap_entry.telclass
+        target.tsamp = float(tap_entry.tsamp)
+        target.texp = float(tap_entry.texp)
+        target.nexp = int(tap_entry.nexp)
+        target.telclass = tap_entry.telclass+'0'
         target.omega = tap_entry.omega
         target.passband = tap_entry.passband
-        target.ipp = tap_entry.ipp
+        target.ipp = float(tap_entry.ipp)
         tap_list.append(target)
         
     if log != None:
@@ -111,6 +111,10 @@ def get_tap_list(log=None):
         log.info('\n')
                         
     return tap_list
+
+def target_field(ev_ra,ev_dec):
+    """Function to identify the field a given target lies in"""
+    
 
 def get_last_single_model(event,modeler=None,log=None):
     """Function to return the last model submitted to the DB by the 

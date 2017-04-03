@@ -105,32 +105,30 @@ def rm_duplicate_obs(obs_request_list, active_obs,log=None,debug=False):
             for active_req in active_obs:
                 if debug==True: 
                     print active_req.field.name, active_req.which_filter,\
-                        active_req.request_type, active_req.site
+                        active_req.request_type
                 if active_req.field.name == obs.name and \
                     active_req.which_filter in obs.filters and \
-                    active_req.request_type == obs.request_type and \
-                    active_req.site == obs.site:
+                    active_req.request_type == obs.request_type:
                     matching_request = True
                     
                     if log != None:
                         log.info(obs.group_id + ': Found existing active ' + \
                                 get_request_desc(active_req.request_type) + \
                                 ' observation for ' + active_req.field.name + \
-                                ' with filter ' + active_req.which_filter + \
-                                ' at site ' + active_req.site + \
+                                ' with filter ' + active_req.which_filter + 
                                 ', not submitting duplicate')
             if matching_request == False:
                 obs_requests_final.append(obs)
                 if log != None:
                     log.info(obs.group_id + ': No existing active ' + \
                         get_request_desc(obs.request_type) + ' request for ' + obs.name + \
-                        ' with filter in ' + ' '.join(obs.filters) + ' at site ' + obs.site + \
+                        ' with filter in ' + ' '.join(obs.filters) +  \
                         '; observation will be queued')
         else:
             if log != None:
                 log.info(obs.group_id + ': No existing active ' + \
                     get_request_desc(obs.request_type) + ' request for ' + obs.name + \
-                    ' with filter in ' + ' '.join(obs.filters) + ' at site ' + obs.site + \
+                    ' with filter in ' + ' '.join(obs.filters) + \
                     '; observation will be queued')
             obs_requests_final.append(obs)
 
