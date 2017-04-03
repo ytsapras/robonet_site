@@ -46,7 +46,8 @@ def build_rea_obs(script_config,log=None):
             obs.proposal_id = script_config['proposal_id']
             obs.pswd = script_config['lco_access']
             obs.focus_offset = obs_sequence['defocus']
-            obs.request_type = str(target.priority)
+            #obs.request_type = str(target.priority)
+            obs.request_type = 'M'
             obs.req_origin = 'obscontrol'
             obs.get_group_id()
             

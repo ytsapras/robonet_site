@@ -6,7 +6,7 @@ host_name = socket.gethostname()
 if 'cursa' in host_name:
    sys.path.append("/home/Tux/ytsapras/robonet_site/")
    site_url = 'http://127.0.0.1:8000/'
-elif 'Rachel' in host_name:
+elif 'rachel' in host_name:
    sys.path.append("/Users/rstreet/software/robonet_site/")
    site_url = 'http://127.0.0.1:8000/'
 elif 'einstein' in host_name:
@@ -18,6 +18,7 @@ else:
 
 from django.conf import settings
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'robonet_site.settings')
+print os.environ, sys.path
 project_dir = settings.BASE_DIR
 def get_conf(request):
    paths = {'artemis':os.path.join(project_dir,"artemis/ARTEMiS/"),
