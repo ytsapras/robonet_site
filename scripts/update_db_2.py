@@ -676,7 +676,7 @@ def add_reduction(event_name, lc_file, timestamp, ref_image, target_found=False,
 ################################################################################################################
 def add_request(field_name, t_sample, exptime, timestamp=timezone.now(),
                 time_expire=timezone.now()+timedelta(hours=24), pfrm_on = False,
-                onem_on=False, twom_on=False, request_type='L', which_filter='',
+                onem_on=False, twom_on=False, request_type='L', which_site='', which_filter='',
 		which_inst='', grp_id='', track_id='', req_id='', n_exp=1, request_status = 'AC'):
    """
    Add observing request to the database.
@@ -706,6 +706,8 @@ def add_request(field_name, t_sample, exptime, timestamp=timezone.now(),
                     'A':'REA High - 20 min cadence',
 		    'M':'REA Low - 60 min cadence', 
 		    'L':'ROME Standard - every 7 hours'
+   which_site -- Site identifier string.
+                   (string, optional, default='')
    which_filter -- Filter identifier string. 
                    (string, optional, default='')
    which_inst -- Instrument identifier string. 
@@ -727,7 +729,8 @@ def add_request(field_name, t_sample, exptime, timestamp=timezone.now(),
          add_new = ObsRequest(field=field_object, t_sample=t_sample, exptime=exptime, 
                                timestamp=timestamp, time_expire=time_expire,
                                pfrm_on= pfrm_on, onem_on=onem_on, twom_on=twom_on, 
-		               request_type=request_type, which_filter=which_filter,
+		               request_type=request_type, which_site=which_site, 
+			       which_filter=which_filter,
 			       which_inst=which_inst, grp_id=grp_id, track_id=track_id,
 			       req_id=req_id, n_exp=n_exp, request_status=request_status)
          add_new.save()
