@@ -615,6 +615,8 @@ class ObsRequest(models.Model):
                     'A':'REA High - 20 min cadence',
 		    'M':'REA Low - 60 min cadence', 
 		    'L':'ROME Standard - every 7 hours'
+   which_site -- Site identifier string.
+                   (string, optional, default='')
    which_filter -- Filter identifier string. 
                    (string, optional, default='')
    which_inst -- Instrument identifier string. 
@@ -655,6 +657,8 @@ class ObsRequest(models.Model):
    exptime = models.IntegerField()
    # ToO flag
    request_type = models.CharField(max_length=40, choices=possible_types, default='L')
+   # Which site to use?
+   which_site = models.CharField(max_length=10, default='', blank=True)
    # Which filter to use?
    which_filter = models.CharField(max_length=20, default='', blank=True)
    # Which instrument to use?

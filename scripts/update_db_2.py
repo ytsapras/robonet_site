@@ -676,7 +676,7 @@ def add_reduction(event_name, lc_file, timestamp, ref_image, target_found=False,
 ################################################################################################################
 def add_request(field_name, t_sample, exptime, timestamp=timezone.now(),
                 time_expire=timezone.now()+timedelta(hours=24), pfrm_on = False,
-                onem_on=False, twom_on=False, request_type='L', which_filter='',
+                onem_on=False, twom_on=False, request_type='L', which_site='', which_filter='',
 		which_inst='', grp_id='', track_id='', req_id='', n_exp=1, request_status = 'AC'):
    """
    Add observing request to the database.
@@ -706,6 +706,8 @@ def add_request(field_name, t_sample, exptime, timestamp=timezone.now(),
                     'A':'REA High - 20 min cadence',
 		    'M':'REA Low - 60 min cadence', 
 		    'L':'ROME Standard - every 7 hours'
+   which_site -- Site identifier string.
+                   (string, optional, default='')
    which_filter -- Filter identifier string. 
                    (string, optional, default='')
    which_inst -- Instrument identifier string. 
@@ -727,7 +729,8 @@ def add_request(field_name, t_sample, exptime, timestamp=timezone.now(),
          add_new = ObsRequest(field=field_object, t_sample=t_sample, exptime=exptime, 
                                timestamp=timestamp, time_expire=time_expire,
                                pfrm_on= pfrm_on, onem_on=onem_on, twom_on=twom_on, 
-		               request_type=request_type, which_filter=which_filter,
+		               request_type=request_type, which_site=which_site, 
+			       which_filter=which_filter,
 			       which_inst=which_inst, grp_id=grp_id, track_id=track_id,
 			       req_id=req_id, n_exp=n_exp, request_status=request_status)
          add_new.save()
@@ -1003,19 +1006,19 @@ def run_test2():
    #Populate User database
    from django.contrib.auth.models import User
    my_users = {
-               'rstreet':['romerea01', 'Rachel', 'Street', 'rstreet@lco.global', True, True],
-               'ebachelet':['romerea01', 'Etienne', 'Bachelet', 'etibachelet@gmail.com', True, True],
-               'mhundetmark':['romerea01', 'Markus', 'Hundertmark', 'markus.hundertmark@uni-heidelberg.de', True, True],
-               'dbramich':['romerea01', 'Dan', 'Bramich', 'dan.bramich@hotmail.co.uk', False, False],
-               'mdominik':['romerea01', 'Martin', 'Dominik', 'md35@st-andrews.ac.uk', False, False],
-               'khorne':['romerea01', 'Keith', 'Horne', 'kdh1@st-andrews.ac.uk', False, False],
-               'jwambsganss':['romerea01', 'Joachim', 'Wambsganss', 'jkw@ari.uni-heidelberg.de', False, False],
-               'vbozza':['romerea01', 'Valerio', 'Bozza', 'valboz@sa.infn.it', False, False],
-               'acassan':['romerea01', 'Arnaud', 'Cassan', 'cassan@iap.fr', False, False],
-               'smao':['romerea01', 'Shude', 'Mao', 'shude.mao@gmail.com', False, False],
-               'asaha':['romerea01', 'Abhijit', 'Saha', 'saha@noao.edu', False, False],
-               'zweichen':['romerea01', 'Zang', 'Weichen', '3130102785@zju.edu.cn', False, False],
-               'twang':['romerea01', 'Tianshu', 'Wang', 'wts15@mails.tsinghua.edu.cn', False, False]
+               'rstreet':[xxx, 'Rachel', 'Street', 'rstreet@lco.global', True, True],
+               'ebachelet':[xxx, 'Etienne', 'Bachelet', 'etibachelet@gmail.com', True, True],
+               'mhundetmark':[xxx, 'Markus', 'Hundertmark', 'markus.hundertmark@uni-heidelberg.de', True, True],
+               'dbramich':[xxx, 'Dan', 'Bramich', 'dan.bramich@hotmail.co.uk', False, False],
+               'mdominik':[xxx, 'Martin', 'Dominik', 'md35@st-andrews.ac.uk', False, False],
+               'khorne':[xxx, 'Keith', 'Horne', 'kdh1@st-andrews.ac.uk', False, False],
+               'jwambsganss':[xxx, 'Joachim', 'Wambsganss', 'jkw@ari.uni-heidelberg.de', False, False],
+               'vbozza':[xxx, 'Valerio', 'Bozza', 'valboz@sa.infn.it', False, False],
+               'acassan':[xxx, 'Arnaud', 'Cassan', 'cassan@iap.fr', False, False],
+               'smao':[xxx, 'Shude', 'Mao', 'shude.mao@gmail.com', False, False],
+               'asaha':[xxx, 'Abhijit', 'Saha', 'saha@noao.edu', False, False],
+               'zweichen':[xxx, 'Zang', 'Weichen', '3130102785@zju.edu.cn', False, False],
+               'twang':[xxx, 'Tianshu', 'Wang', 'wts15@mails.tsinghua.edu.cn', False, False]
               }
    for i in my_users.keys():
       user = User.objects.create_user(i, password = my_users[i][0], first_name = my_users[i][1], 
