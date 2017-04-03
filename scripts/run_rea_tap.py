@@ -156,7 +156,7 @@ def assign_tap_priorities(logger):
 
             #expire events
             if t_current > te_pspl+t0_pspl:
-                Event.objects.filter(event_id=sorted_list[idx]['event_id']).update(status="EX")
+                Event.objects.filter(event_id=event_id).update(status="EX")
 
 
 def run_tap_prioritization(logger):
