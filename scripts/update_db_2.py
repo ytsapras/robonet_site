@@ -1006,19 +1006,19 @@ def run_test2():
    #Populate User database
    from django.contrib.auth.models import User
    my_users = {
-               'rstreet':['romerea01', 'Rachel', 'Street', 'rstreet@lco.global', True, True],
-               'ebachelet':['romerea01', 'Etienne', 'Bachelet', 'etibachelet@gmail.com', True, True],
-               'mhundetmark':['romerea01', 'Markus', 'Hundertmark', 'markus.hundertmark@uni-heidelberg.de', True, True],
-               'dbramich':['romerea01', 'Dan', 'Bramich', 'dan.bramich@hotmail.co.uk', False, False],
-               'mdominik':['romerea01', 'Martin', 'Dominik', 'md35@st-andrews.ac.uk', False, False],
-               'khorne':['romerea01', 'Keith', 'Horne', 'kdh1@st-andrews.ac.uk', False, False],
-               'jwambsganss':['romerea01', 'Joachim', 'Wambsganss', 'jkw@ari.uni-heidelberg.de', False, False],
-               'vbozza':['romerea01', 'Valerio', 'Bozza', 'valboz@sa.infn.it', False, False],
-               'acassan':['romerea01', 'Arnaud', 'Cassan', 'cassan@iap.fr', False, False],
-               'smao':['romerea01', 'Shude', 'Mao', 'shude.mao@gmail.com', False, False],
-               'asaha':['romerea01', 'Abhijit', 'Saha', 'saha@noao.edu', False, False],
-               'zweichen':['romerea01', 'Zang', 'Weichen', '3130102785@zju.edu.cn', False, False],
-               'twang':['romerea01', 'Tianshu', 'Wang', 'wts15@mails.tsinghua.edu.cn', False, False]
+               'rstreet':[xxx, 'Rachel', 'Street', 'rstreet@lco.global', True, True],
+               'ebachelet':[xxx, 'Etienne', 'Bachelet', 'etibachelet@gmail.com', True, True],
+               'mhundetmark':[xxx, 'Markus', 'Hundertmark', 'markus.hundertmark@uni-heidelberg.de', True, True],
+               'dbramich':[xxx, 'Dan', 'Bramich', 'dan.bramich@hotmail.co.uk', False, False],
+               'mdominik':[xxx, 'Martin', 'Dominik', 'md35@st-andrews.ac.uk', False, False],
+               'khorne':[xxx, 'Keith', 'Horne', 'kdh1@st-andrews.ac.uk', False, False],
+               'jwambsganss':[xxx, 'Joachim', 'Wambsganss', 'jkw@ari.uni-heidelberg.de', False, False],
+               'vbozza':[xxx, 'Valerio', 'Bozza', 'valboz@sa.infn.it', False, False],
+               'acassan':[xxx, 'Arnaud', 'Cassan', 'cassan@iap.fr', False, False],
+               'smao':[xxx, 'Shude', 'Mao', 'shude.mao@gmail.com', False, False],
+               'asaha':[xxx, 'Abhijit', 'Saha', 'saha@noao.edu', False, False],
+               'zweichen':[xxx, 'Zang', 'Weichen', '3130102785@zju.edu.cn', False, False],
+               'twang':[xxx, 'Tianshu', 'Wang', 'wts15@mails.tsinghua.edu.cn', False, False]
               }
    for i in my_users.keys():
       user = User.objects.create_user(i, password = my_users[i][0], first_name = my_users[i][1], 
