@@ -20,7 +20,31 @@ setup()
 from events.models import ObsRequest, Tap, Event, SingleModel
 from events.models import EventName
 from observation_classes import get_request_desc
-from event_classes import TapEvent
+
+class TapEvent():
+    """Class describing the attributes of an event selected for REA 
+    observations by TAP"""
+    
+    def __init__(self):
+        self.event_id = None
+        self.names = None
+        self.field = None
+        self.ev_ra = None
+        self.ev_dec = None
+        self.tap_status = None
+        self.priority = None
+        self.tsamp = None
+        self.texp = None
+        self.nexp = None
+        self.telclass = None
+        self.omega = None
+        self.passband = None
+        self.ipp = None
+    
+    def summary(self):
+        return self.names + ' ' + str(self.event_id) + ' ' + self.field.name + ' ' +\
+            str(self.priority) + ' ' + str(self.tsamp) + ' ' + str(self.texp) + ' ' +\
+            str(self.nexp) + ' ' + str(self.ipp)
 
 def get_active_obs(log=None):
     """Function to extract a list of the currently-active observations 

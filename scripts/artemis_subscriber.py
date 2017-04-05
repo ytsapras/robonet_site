@@ -46,23 +46,24 @@ def sync_artemis():
     '''
     
     # Read configuration:
-    config_file_path = '/home/robouser/.robonet_site/artemis_sync.xml'
+    #config_file_path = '/home/robouser/.robonet_site/artemis_sync.xml'
+    config_file_path = '/home/Tux/ytsapras/robonet_site/configs/artemis_sync.xml'
     config = config_parser.read_config(config_file_path)
     log = log_utilities.start_day_log( config, __name__ )
     log.info('Started sync with ARTEMiS server')
     
     # Sync the results of ARTEMiS' own model fits for all events:
     sync_artemis_data_db(config,'model',log)
-
+    
     # Sync the event parameters published by the surveys from the ARTEMiS server:
     sync_artemis_data_db(config,'pubpars',log)
-
+    
     # Sync the event photometry data from the ARTEMiS server:
     sync_artemis_data_db(config,'data',log)
-
+    
     # Sync ARTEMiS' internal fileset, to gain access to the anomaly indicators:
     rsync_internal_data(config)
-
+    
     # Tidy up and finish:
     log_utilities.end_day_log( log )
     
@@ -80,11 +81,11 @@ def sync_artemis_data_db(config,data_type,log):
     # updated.
     rsync_log_path = rsync_data_log(config,data_type)
     log.info('-> downloaded datalog')
-
+    
     # Read the list of updated models:
     event_files = read_rsync_log(config,rsync_log_path,data_type)
     log.info('-> '+str(len(event_files))+' entries have been updated')
-
+    
     
     # Loop over all updated models and update the database:
     for f in event_files:
@@ -106,12 +107,12 @@ def rsync_data_log(config,data_type):
     """Function to rsync data using authentication from file and log the 
     output to a text file.
     """
-
+    
     # Construct config parameter keys to extract data locations and appropriate log file name:
     remote_location = config_pars[data_type]['remote_location']
     local_location = config_pars[data_type]['local_location']
     log_root_name = config_pars[data_type]['log_root_name']
-
+    
     # Contruct and execute rsync commandline:
     ts = Time.now()          # Defaults to UTC
     ts = ts.now().iso.split('.')[0].replace(' ','T').replace(':','').replace('-','')
@@ -121,11 +122,11 @@ def rsync_data_log(config,data_type):
                config[local_location] + ' ' + \
                '--password-file=' + config['auth'] + ' ' + \
                 '--log-file=' + log_path
-
+    
     args = command.split()
     p = subprocess.Popen(args)
     p.wait()
-
+    
     return log_path
 
 def rsync_internal_data(config):
@@ -140,12 +141,12 @@ def rsync_internal_data(config):
     ts = Time.now()          # Defaults to UTC
     ts = ts.now().iso.split('.')[0].replace(' ','T').replace(':','').replace('-','')
     log_path = path.join( config['rsync_log_directory'], config['log_root_name'] + '_' + ts + '.log' )
-
+    
     # Contruct and execute rsync commandline:
     command = 'rsync -avzu --delete SignalmenLink@mlrsync-stand.net::Signalmen ' + \
                local_location + ' --password-file=' + config['auth_internal'] + ' ' + \
                 '--log-file=' + log_path
-               
+          
     args = command.split()
     p = subprocess.Popen(args)
     p.wait()
@@ -156,13 +157,13 @@ def rsync_internal_data(config):
 def read_rsync_log(config,log_path,data_type):
     '''Function to parse the rsync -azu log output and return a list of event model file paths with updated parameters.
     '''
-
+    
     # Initialize, returning an empty list if no log file is found:
     event_model_files = []
     local_location = config_pars[data_type]['local_location']
     search_key = config_pars[data_type]['search_key']
     if path.isfile(log_path) == False: return event_model_files
-
+    
     # Read the log file, parsing the contents into a list of model files to be updated.
     file = open(log_path,'r')
     file_lines = file.readlines()
@@ -173,14 +174,14 @@ def read_rsync_log(config,log_path,data_type):
             file_name = line.split(' ')[-1].replace('\n','')
             if file_name[0:1] != '.' and len(file_name.split('.')) == 2:
                 event_model_files.append( path.join( config[local_location], file_name ) )
-
+    
     return event_model_files
 
 ###########################
 # READ ARTEMIS MODEL FILE
 def read_artemis_model_file(model_file_path):
     '''Function to read an ARTEMiS model file and parse the contents'''
-
+    
     event = event_classes.Lens()
     
     if path.isfile(model_file_path) == True:
@@ -199,18 +200,18 @@ def read_artemis_model_file(model_file_path):
                 event.set_par('ra',ra_deg)
                 event.set_par('dec',dec_deg)
                 short_name = entries[2]
-                event.set_par('name',utilities.short_to_long_name(short_name)
+                event.set_par('name',utilities.short_to_long_name(short_name))
                 event.set_par('t0',float(entries[3]) + 2450000.0)
                 event.set_par('e_t0',float(entries[4]))
                 event.set_par('te',float(entries[5]))
                 event.set_par('e_te',float(entries[6]))
                 event.set_par('umin',float(entries[7]))
                 event.set_par('e_umin',float(entries[8]))
-        
+                
                 ts = path.getmtime(model_file_path)
                 ts = datetime.fromtimestamp(ts)
                 last_modified = ts
-            
+                
             # In case of a file with zero content
             except IndexError: 
                 pass
@@ -218,7 +219,7 @@ def read_artemis_model_file(model_file_path):
             # In case of mal-formed file content:
             except ValueError:
                 pass
-                
+            
     return event, last_modified
 
 ###############################
@@ -253,12 +254,12 @@ def read_artemis_data_file(data_file_path):
 def get_artemis_data_params(data_file_path):
     '''Function to obtain information about the ARTEMiS-format photometry data file,
     without reading the whole file.'''
-
+    
     params = {}
     if path.isfile(data_file_path) == True:
         params['short_name'] = path.basename(data_file_path).split('.')[0]
         params['long_name'] = utilities.short_to_long_name( params['short_name'] )
-    
+        
         # Find and read the last entry in the file, without reading the whole file
         st_results = stat(data_file_path)
         st_size = max(0,(st_results[6] - 200))
@@ -267,7 +268,7 @@ def get_artemis_data_params(data_file_path):
         last_lines = data_file.readlines()
         params['last_JD'] = float(last_lines[-1].split()[2])
         params['last_mag'] = float(last_lines[-1].split()[0])
-    
+        
         # Ask the OS how many datapoints are in the file.
         # Turns out there isn't an easy Python way to do this without
         # reading the whole file, so ask the OS.  Then decrement the number
@@ -304,7 +305,7 @@ def check_anomaly_status(internal_data_path, params, log=None, debug=False):
 # VERBOSE OUTPUT FORMATTING
 def verbose(config,record):
     '''Function to output logging information if the verbose config flag is set'''
-
+    
     if bool(config['verbose']) == True:
         ts = Time.now()          # Defaults to UTC
         ts = ts.now().iso.split('.')[0].replace(' ','T')

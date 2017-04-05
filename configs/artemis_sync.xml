@@ -31,45 +31,51 @@
     </parameter>
     
     <parameter name='data_remote_location'>
-        <value>::Data2016</value>
+        <value>::Data2017</value>
     </parameter>
 
     <parameter name='models_local_location'>
         <value>/science/robonet/rob/Operations/Signalmen_output/model</value>
         <!--<value>/Users/rstreet/RoboNet/Sandbox/models</value>-->
+        <!-- <value>/home/Tux/ytsapras/Data/RoboNet/ARTEMiS/model</value> -->
     </parameter>
     
     <parameter name='pubpars_local_location'>
         <value>/science/robonet/rob/Operations/Signalmen_output/PublishedParameters</value>
         <!-- <value>/Users/rstreet/RoboNet/Sandbox/PublishedParameters</value> -->
+        <!-- <value>/home/Tux/ytsapras/Data/RoboNet/ARTEMiS/PublishedParameters</value> -->
     </parameter>
     
     <parameter name='data_local_location'>
-        <value>/science/robonet/rob/Operations/Signalmen_output/data</value>
+        <value>/science/robonet/rob/Operations/Signalmen_output/data</value> -->
         <!-- <value>/Users/rstreet/RoboNet/Sandbox/data</value> -->
+        <!-- <value>/home/Tux/ytsapras/Data/RoboNet/ARTEMiS/data</value> -->
     </parameter>
     
     <parameter name='internal_data_local_location'>
         <value>/science/robonet/rob/Operations/Signalmen_output/signalmen_internal</value>
         <!-- <value>/Users/rstreet/RoboNet/Sandbox/data</value> -->
+        <!-- <value>/home/Tux/ytsapras/Data/RoboNet/ARTEMiS/signalmen_internal</value>  -->
     </parameter>
     
     <parameter name='auth'>
-        <value>XXX</value>
+        <value>xxx</value>
     </parameter>
     
     <parameter name='auth_internal'>
-        <value>XXX</value>
+        <value>xxx</value>
     </parameter>
     
     <parameter name='rsync_log_directory'>
-        <value>/science/robonet/rob/Operations/Signalmen_output/Rsynclog</value>
+        <value>/science/robonet/rob/Operations/Signalmen_output/Rsynclog</value> -->
         <!-- <value>/Users/rstreet/RoboNet/Sandbox/</value> -->
+        <!-- <value>/home/Tux/ytsapras/Data/RoboNet/ARTEMiS/Rsynclog</value> -->
     </parameter>
     
     <parameter name='log_directory'>
-        <value>/science/robonet/rob/Operations/Logs/2016/</value>
+        <value>/science/robonet/rob/Operations/Logs/2017/</value>
         <!-- <value>/Users/rstreet/RoboNet/Sandbox/</value> -->
+        <!--  <value>/home/Tux/ytsapras/Data/RoboNet/ARTEMiS/Logs/2017</value> -->
     </parameter>
     
     <parameter name='models_log_root_name'>
