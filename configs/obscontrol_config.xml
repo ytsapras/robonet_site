@@ -3,7 +3,8 @@
 <obscontrolconfig>
     <parameter name='log_directory'>
       	<!-- <value>/data/robouser/Logs/2017</value> -->
-	<value>/home/Tux/ytsapras/Data/RoboNet/ARTEMiS/Logs/2017</value>
+	<!-- <value>/home/Tux/ytsapras/Data/RoboNet/ARTEMiS/Logs/2017</value> -->
+	<value>/var/www/robonetsite/data/logs/2017</value>
     </parameter>
     <parameter name='log_root_name'>
       	<value>obscontrol</value>

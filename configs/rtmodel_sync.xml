@@ -8,12 +8,14 @@
 
     <parameter name='models_local_location'>
         <!--<value>/science/robonet/rob/Operations/Signalmen_output/model</value>-->
-        <value>/Users/rstreet/RoboNet/Sandbox/models</value>
+        <!-- <value>/Users/rstreet/RoboNet/Sandbox/models</value> -->
+        <value>/var/www/robonetsite/data/artemis/model</value>
     </parameter>
     
     <parameter name='log_directory'>
         <!-- <value>/science/robonet/rob/Operations/Logs/2016/</value>-->
-        <value>/Users/rstreet/RoboNet/Sandbox/</value>
+        <!-- <value>/Users/rstreet/RoboNet/Sandbox/</value> -->
+	<value>/var/www/robonetsite/data/logs/2017</value>
     </parameter>
     
     <parameter name='log_root_name'>

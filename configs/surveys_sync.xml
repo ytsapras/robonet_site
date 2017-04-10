@@ -48,7 +48,8 @@
     </parameter>
     
     <parameter name='log_directory'>
-        <value>/science/robonet/rob/Operations/Logs/2016/</value>
+        <!-- <value>/science/robonet/rob/Operations/Logs/2016/</value> -->
+	<value>/var/www/robonetsite/data/logs/2017</value>
     </parameter>
     
     <parameter name='log_root_name'>
