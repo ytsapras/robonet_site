@@ -18,6 +18,7 @@ from datetime import datetime
 import log_utilities
 from numpy import array
 import event_classes
+import socket
 
 ##############################
 # CONFIG INTERPRETATION
@@ -44,10 +45,15 @@ def sync_artemis():
     '''Driver function to maintain an up to date copy of the data on all microlensing events from 
         the ARTEMiS server at Univ. of St. Andrews.
     '''
-    
+    host_machine = socket.gethostname()
     # Read configuration:
+    if 'cursa' in host_machine:
+        config_file_path = '/home/Tux/ytsapras/robonet_site/configs/artemis_sync.xml'
+    elif 'rachel' in host_machine:
+        config_file_path = '/Users/rstreet/software/robonet_site/configs/artemis_sync.xml'
+    else:
+        config_file_path = '/var/www/robonetsite/data/configs/artemis_sync.xml'
     #config_file_path = '/home/robouser/.robonet_site/artemis_sync.xml'
-    config_file_path = '/home/Tux/ytsapras/robonet_site/configs/artemis_sync.xml'
     config = config_parser.read_config(config_file_path)
     log = log_utilities.start_day_log( config, __name__ )
     log.info('Started sync with ARTEMiS server')
@@ -68,7 +74,7 @@ def sync_artemis():
     log_utilities.end_day_log( log )
     
 ###############################################
-# FUNCTION TO SYNC & PROCESS ARTEMiS DATA
+# FUNCTION TO SYNC & PROCESS ARTEMiS DATA
 def sync_artemis_data_db(config,data_type,log):
     '''Function to sync a local copy of the ARTEMiS model fit files for all events from the
        server at the Univ. of St. Andrews.
