@@ -16,6 +16,7 @@ from update_db_2 import *
 import numpy as np
 from jdcal import gcal2jd
 from django.db.models import Max
+import config_parser
 import log_utilities
 
 warnings.filterwarnings('ignore', module='astropy.coordinates')
@@ -216,10 +217,10 @@ def run_tap_prioritization(logger):
 
 if __name__ == '__main__':
     #DIRECTORY TO BE OBTAINED FROM XML...
-    logs_directory='.'
-    script_config = {'log_directory':logs_directory, 
-                     'log_root_name':'robotap_rea','lock_file':'robotap.lock'}
+    script_config = config_parser.read_config(config_file_path)
+
     logger = log_utilities.start_day_log( script_config, 'robotap', console=False )
+    #checking for a lock file (irrelevant for TAP???)
     lock_status = log_utilities.lock(script_config, 'check', logger)
     if lock_status == 'clashing_lock':
         log_utilities.end_day_log(logger)

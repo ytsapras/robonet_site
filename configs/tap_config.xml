@@ -5,9 +5,9 @@
       	<value>/var/www/robonetsite/data/logs/2017</value>
     </parameter>
     <parameter name='log_root_name'>
-      	<value>tap</value>
+      	<value>robotap_rea</value>
     </parameter>
     <parameter name='lock_file'>
-	<value>tap.lock</value>
+	<value>robotap.lock</value>
     </parameter>
 </tap_config>
