@@ -3,7 +3,7 @@
 <artemis_sync_config>
     
     <parameter name='year'>
-        <value>2016</value>
+        <value>2017</value>
     </parameter>
 
     <parameter name='models_local_location'>
