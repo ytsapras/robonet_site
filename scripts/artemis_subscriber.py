@@ -21,14 +21,16 @@ from numpy import array
 import event_classes
 import socket
 
+version = 0.9
+
 def sync_artemis():
     """Driver function to maintain an up to date copy of the data on all microlensing events from 
         the ARTEMiS server at Univ. of St. Andrews."""
 
     config = read_config()
 
-    log = log_utilities.start_day_log( config, __name__ )
-    log.info('Started sync with ARTEMiS server')
+    log = log_utilities.start_day_log(config, __name__)
+    init_log(config, log)
     
     # Sync the results of ARTEMiS' own model fits for all events:
     sync_artemis_data_db(config,'model',log)
@@ -73,10 +75,23 @@ def read_config():
                           'log_root_name': 'data_log_root_name',
                                  'search_key': '.dat' }
                 }
-    
+    config['version'] = 'artemis_subscriber_'+str(version)
+    config['update_db'] = bool(config['update_db'])
+    config['verbose'] = bool(config['verbose'])
     
     return config
+
+def init_log(config,log):
+    """Function to initialize the artemis subscriber log with relevant 
+    script configguration info"""
     
+    log.info('Started sync with ARTEMiS server\n')
+    log.info('Script version: '+config['version'])
+    if config['update_db'] == 0:
+        log.info('\nWARNING: Database update switched OFF in configuration!\n')
+    else:
+        log.info('Database update switched ON, normal operation')
+        
 def sync_artemis_data_db(config,data_type,log):
     '''Function to sync a local copy of the ARTEMiS model fit files for all events from the
        server at the Univ. of St. Andrews.
@@ -97,10 +112,12 @@ def sync_artemis_data_db(config,data_type,log):
     
     # Loop over all updated models and update the database:
     if data_type == 'model' and int(config['update_db']) == 1:
+        if config['verbose'] == True:
+            log.info('Syncing contents of ARTEMiS model files with DB:')
         for f in event_files:
             sync_model_file_with_db(config,f,log)
 
-def sync_model_file_with_db(config,model_file,log,debug=False):
+def sync_model_file_with_db(config,model_file,log):
     """Function to read an ARTEMiS-format .model file and sync its contents
     with the database"""
     
@@ -108,8 +125,9 @@ def sync_model_file_with_db(config,model_file,log,debug=False):
     log.info('Read details of event '+str(event.name)+' from file '+model_file)
     
     if int(config['update_db']) == 1:
-        log.info('-> Updating database')
-        event.sync_event_with_DB(last_modified,debug=debug)
+        if config['verbose'] == True:
+            log.info('-> Updating '+path.basename(model_file))
+        event.sync_event_with_DB(last_modified,log=log,debug=config['verbose'])
     else:
         log.info('-> Warning: Database update switched off in configuration')
 
@@ -174,7 +192,8 @@ def read_rsync_log(config,log_path,data_type):
     event_model_files = []
     local_location = config['data_locations'][data_type]['local_location']
     search_key = config['data_locations'][data_type]['search_key']
-    if path.isfile(log_path) == False: return event_model_files
+    if path.isfile(log_path) == False: 
+        return event_model_files
     
     # Read the log file, parsing the contents into a list of model files to be updated.
     file = open(log_path,'r')

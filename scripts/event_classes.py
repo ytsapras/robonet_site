@@ -27,7 +27,7 @@ from django.utils import timezone
 from django import setup
 from datetime import datetime, timedelta
 setup()
-from events.models import Event
+from events.models import Event, EventName, Operator
 
 ##################################################
 # LENS CLASS DESCRIPTION
@@ -47,11 +47,13 @@ class Lens():
         self.a0 = None
         self.i0 = None
         self.origin = None
+        self.modeler = None
         self.classification = 'microlensing'
+        self.last_updated = None
         
     def set_par(self,par,par_value):
 
-        if par in [ 'name', 'survey_id', 'classification' ]: 
+        if par in [ 'name', 'survey_id', 'classification', 'last_updated' ]: 
             setattr(self,par,par_value)
         else: 
             if par_value == None or str(par_value).lower() == 'none':
@@ -63,37 +65,82 @@ class Lens():
                     setattr(self,par,par_value)
 
     def summary(self):
-        return self.name + ' ' + str(self.survey_id) + ' ' + \
+        return str(self.name) + ' ' + str(self.survey_id) + ' ' + \
                 str(self.ra) + '  ' + str(self.dec) + '  ' + \
                 str(self.t0) + ' ' + str(self.te) + ' ' + str(self.u0) + '  ' +\
-                str(self.a0) + ' ' + str(self.i0) + ' ' + self.classification
+                str(self.a0) + ' ' + str(self.i0) + ' ' + str(self.classification)
 
     def get_event_field_id(self):
         """Method to identify which ROMEREA field the event lies in"""
-        ev_ra_deg, ev_dec_deg = sex2decdeg(self.ra, self.dec)
+        (ev_ra_deg, ev_dec_deg) = self.get_coords_in_degrees()
         (id_field, rate) = romecheck(ev_ra_deg, ev_dec_deg)
         if id_field == -1:
             id_field = 'Outside ROMEREA footprint'
         else:
             id_field = sorted(field_dict.keys())[id_field]
         return id_field, rate
+    
+    def get_coords_in_degrees(self):
         
-    def sync_event_with_DB(self,last_updated):
+        if type(self.ra) == type('string'):
+            ev_ra_deg, ev_dec_deg = sex2decdeg(self.ra, self.dec)
+        else:
+            ev_ra_deg = self.ra
+            ev_dec_deg = self.dec
+
+        return ev_ra_deg, ev_dec_deg
+        
+    def sync_event_with_DB(self,last_updated,log=None,debug=False):
         '''Method to sync the latest survey parameters with the database.'''
         
         (id_field,rate) = self.get_event_field_id()
+        if debug==True and log!=None:
+            log.info(' -> Identified field: '+str(id_field)+' '+\
+                            str(self.ra)+' '+str(self.dec))
+            
         (event_status, ev_ra, ev_dec,response) = update_db_2.add_event(id_field, \
                                                     self.origin, \
-                                                    self.ra, self.dec)
+                                                    self.ra,self.dec)
+        if debug==True and log!=None:
+            log.info(' -> Tried to add_event with output:')
+            log.info(' -> '+str(event_status)+' '+str(ev_ra)+' '+str(ev_dec)+\
+                        ' '+str(response))
+                                                    
+        if event_status == True and response == 'OK':
+            event = Event.objects.filter(ev_ra=ev_ra).filter(ev_dec=ev_dec)[0]
+            operator = Operator.objects.filter(name=self.origin)[0]
+            (status, response) = update_db_2.add_event_name(event=event,\
+                                                            operator=operator,\
+                                                            name=self.name)
+            if debug==True and log!=None:
+                log.info(' -> Updated eventname with output '+str(status)+' '+str(response))
+            
         event = Event.objects.filter(ev_ra=ev_ra).filter(ev_dec=ev_dec)[0]
+        eventname = EventName.objects.get(event=event.id)
+        if debug==True and log!=None:
+            log.info(' -> Searched for event, found: '+str(event))
+            log.info(' -> Searched for event name, found: '+str(eventname))
+            
+        last_model = query_db.get_last_single_model(event,modeler=self.modeler)
+        if debug==True and log!=None:
+            log.info(' -> Last model for event '+str(self.name)+': '+str(last_model))
         
-        last_model = query_db.get_last_single_model(event,modeler=self.origin)
-        
-        if last_model == None or self.last_updated > last_model.last_updated:
-            model_status = update_db_2.add_single_lens(self.name, \
+        if last_model == None or self.last_updated == None or \
+                self.last_updated > last_model.last_updated:
+                    
+            if debug==True and log!=None:
+                log.info(' -> Attempting to add a single lens model with parameters:')
+                log.info(str(self.name)+' '+str(self.t0)+' '+str(self.te)+\
+                        str(self.u0)+' '+str(last_updated)+' '+str(self.modeler))
+                        
+            (model_status,response) = update_db_2.add_single_lens(self.name, \
                             self.t0, self.te, self.u0, last_updated, 
-                            modeler=self.origin)
-
+                            modeler=self.modeler)
+                            
+            if debug==True and log!=None:
+                log.info(' -> Outcome of adding the single lens model:')
+                log.info(str(model_status)+' '+str(response))
+            
     def get_params(self):
         """Method to return the parameters of the current event in a 
         dictionary format

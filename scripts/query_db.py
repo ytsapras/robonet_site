@@ -156,8 +156,6 @@ def get_last_single_model(event,modeler=None,log=None):
                                         ).filter(
                                         modeler=modeler
                                         ).order_by('last_updated')
-    for q in qs:
-        print q.modeler, q.last_updated
     
     try:    
         model = qs[0]
