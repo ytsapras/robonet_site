@@ -912,7 +912,11 @@ class Image(models.Model):
    nstars -- Number of stars detected.
              (integer, optional, default=None)	     
    ztemp -- ztemp parameter.
-                 (float, optional, default=None)   
+                 (float, optional, default=None)
+   shiftx -- x-axis WCS shift from template image in pixels
+             (integer, optional, default=None)	     
+   shifty -- y-axis WCS shift from template image in pixels
+             (integer, optional, default=None)	     
    quality -- Image quality description.
                  (string, optional, default='')
    """
@@ -948,4 +952,6 @@ class Image(models.Model):
    elongation = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
    nstars = models.IntegerField(blank=True, null=True)
    ztemp = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+   shiftx = models.IntegerField(blank=True, null=True)
+   shifty = models.IntegerField(blank=True, null=True)
    quality = models.CharField(max_length=400, blank=True, default='')
