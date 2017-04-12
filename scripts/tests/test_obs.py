@@ -28,7 +28,7 @@ def test_obs_build():
 def get_test_config():
     
     host_name = socket.gethostname()
-    if 'Rachel' in host_name:
+    if 'rachel' in host_name:
         logdir = '/Users/rstreet/ROMEREA/Logs/2017'
     else:
         logdir = '/var/www/robonetsite/logs/2017'

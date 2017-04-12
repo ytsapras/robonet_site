@@ -227,32 +227,32 @@ def add_event(field_name, operator_name, ev_ra, ev_dec, status = 'NF',
 
 ##################################################################################
 def add_event_name(event, operator, name):
-   """
-   Add a new event name to the database. Multiple event names can refer to a
-   single event at specific coordinates.
-   
-   Keyword arguments:
-   event -- Event object 
-           (object, required) -- ForeignKey object
-   operator -- Operator object
-           (object, required) -- ForeignKey object
-   name -- Event name as given by Operator
-           (string, required)						     
-   """
-   # Check whether an event with that name already exists
-   if (check_exists(name)==False):
-      try:
-         add_new = EventName(event=event, operator=operator, name=name)
-         add_new.save()
-         successful = True
-	 response = 'OK'
-      except:
-         successful = False
-	 response = 'Failed to add a new event name.'
-   else:
-      successful = False
-      response = 'This name is already associated with an event.'
-   return successful, response
+    """
+    Add a new event name to the database. Multiple event names can refer to a
+    single event at specific coordinates.
+       
+    Keyword arguments:
+    event -- Event object 
+        (object, required) -- ForeignKey object
+    operator -- Operator object
+        (object, required) -- ForeignKey object
+    name -- Event name as given by Operator
+        (string, required)						     
+    """
+    # Check whether an event with that name already exists
+    if (check_exists(name)==False):
+        try:
+            add_new = EventName(event=event, operator=operator, name=name)
+            add_new.save()
+            successful = True
+            response = 'OK'
+        except:
+            successful = False
+            response = 'Failed to add a new event name.'
+        else:
+            successful = False
+            response = 'This name is already associated with an event.'
+    return successful, response
 
 ###################################################################################
 def check_exists(event_name):
@@ -322,73 +322,78 @@ def coords_exist(check_ra, check_dec):
    return successful, ra, dec
 
 ###################################################################################
-def add_single_lens(event_name, Tmax, tau, umin, last_updated, 
-                    e_Tmax=None, e_tau=None, e_umin=None, 
-                    modeler='', rho=None, e_rho=None, pi_e_n=None, e_pi_e_n=None, 
-		    pi_e_e=None, e_pi_e_e=None, tap_omega=None, chi_sq=None):
-   """
-   Add Single Lens model parameters
-   to the database.
-   
-   Keyword arguments:
-   event_name  -- The event name. 
-                 (string, required)
-        	 e.g. "OGLE-2016-BLG-1234"
-   Tmax -- Time of maximum magnification.
-           (float, required)
-            e.g. 2457135.422
-   e_Tmax -- Error in Tmax 
-            (float, optional, default=None)
-   tau -- Event timescale (in days). 
-          (float, required)
-   e_tau -- error in tau. 
-            (float, optional, default=None)
-   umin -- Minimum impact parameter (in units of R_E). 
-          (float, required)
-   e_umin -- Error in umin. 
-            (float, optional, default=None)
-   rho -- Finite source size (in units of R_E).
-          (float, optional, default=None)
-   e_rho -- Error in rho.
-            (float, optional, default=None)
-   pi_e_n -- E,N component of the parallax vector.
-             (float, optional, default=None)
-   e_pi_e_n -- Error in pi_e_n.
-              (float, optional, default=None)      
-   pi_e_e -- E,E component of the parallax vector.
-             (float, optional, default=None)
-   e_pi_e_e -- Error in pi_e_e.
-              (float, optional, default=None) 
-   modeler -- Name of the modeler.
-              (string, optional, default='')
-   last_updated -- datetime of last update. (datetime, required)
-        	 e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
-   tap_omega -- Omega value to be updated by TAP. 
-              (float, optional, default=None)
-   chi_sq -- Chi square of the fit
-              (float, optional, default=None)
-   """
-   if check_exists(event_name)==True:
-      # Get event identifier
-      event_id = EventName.objects.get(name=event_name).event_id
-      event = Event.objects.get(id=event_id)
-      # Try adding single lens parameters in the database.
-      try:
-         add_new = SingleModel(event=event, Tmax=Tmax, e_Tmax=e_Tmax, tau=tau, 
-        		       e_tau=e_tau, umin=umin, e_umin=e_umin, rho=rho,
-        		       e_rho=e_rho, pi_e_n=pi_e_n, e_pi_e_n=e_pi_e_n, 
-        		       pi_e_e=pi_e_e, e_pi_e_e=e_pi_e_e, modeler=modeler,
-        		       last_updated=last_updated, tap_omega=tap_omega, chi_sq=chi_sq)
-         add_new.save()
-         successful = True
-	 response = 'OK'
-      except:
-         successful = False
-	 response = 'Failed to add new model.'
-   else:
-      successful = False
-      response = 'Event does not exist.'
-   return successful, response
+def add_single_lens(event_name, Tmax, tau, umin, last_updated,
+            e_Tmax=None, e_tau=None, e_umin=None,
+            modeler='', rho=None, e_rho=None, pi_e_n=None, e_pi_e_n=None,
+            pi_e_e=None, e_pi_e_e=None, tap_omega=None, chi_sq=None):
+    """
+    Add Single Lens model parameters to the database.
+    
+    Keyword arguments:
+    event_name  -- The event name. 
+                (string, required)
+                e.g. "OGLE-2016-BLG-1234"
+    Tmax -- Time of maximum magnification.
+                (float, required)
+                e.g. 2457135.422
+    e_Tmax -- Error in Tmax
+                (float, optional, default=None)
+    tau -- Event timescale (in days). 
+                (float, required)
+    e_tau -- error in tau.
+                (float, optional, default=None)
+    umin -- Minimum impact parameter (in units of R_E).
+                (float, required)
+    e_umin -- Error in umin.
+                (float, optional, default=None)
+    rho -- Finite source size (in units of R_E).
+                (float, optional, default=None)
+    e_rho -- Error in rho.
+                (float, optional, default=None)
+    pi_e_n -- E,N component of the parallax vector.
+                (float, optional, default=None)
+    e_pi_e_n -- Error in pi_e_n.
+                (float, optional, default=None)
+    pi_e_e -- E,E component of the parallax vector.
+                (float, optional, default=None)
+    e_pi_e_e -- Error in pi_e_e.
+                (float, optional, default=None)
+    modeler -- Name of the modeler.
+                (string, optional, default='')
+    last_updated -- datetime of last update. (datetime, required)
+                e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
+    tap_omega -- Omega value to be updated by TAP.
+                (float, optional, default=None)
+    chi_sq -- Chi square of the fit
+                (float, optional, default=None)
+    """
+    if check_exists(event_name)==True:
+        # Get event identifier
+        event_id = EventName.objects.get(name=event_name).event_id
+        event = Event.objects.get(id=event_id)
+        # Try adding single lens parameters in the database.
+        add_new = SingleModel(event=event, Tmax=Tmax, e_Tmax=e_Tmax, tau=tau,
+                                  e_tau=e_tau, umin=umin, e_umin=e_umin, rho=rho,
+                                  e_rho=e_rho, pi_e_n=pi_e_n, e_pi_e_n=e_pi_e_n,
+                                  pi_e_e=pi_e_e, e_pi_e_e=e_pi_e_e, modeler=modeler,
+                                  last_updated=last_updated, tap_omega=tap_omega, chi_sq=chi_sq)
+        try:
+            add_new = SingleModel(event=event, Tmax=Tmax, e_Tmax=e_Tmax, tau=tau,
+                                  e_tau=e_tau, umin=umin, e_umin=e_umin, rho=rho,
+                                  e_rho=e_rho, pi_e_n=pi_e_n, e_pi_e_n=e_pi_e_n,
+                                  pi_e_e=pi_e_e, e_pi_e_e=e_pi_e_e, modeler=modeler,
+                                  last_updated=last_updated, tap_omega=tap_omega, chi_sq=chi_sq)
+            add_new.save()
+            successful = True
+            response = 'OK'
+        except:
+            successful = False
+            response = 'Failed to add new model.'
+    else:
+        successful = False
+        response = 'Event does not exist.'
+    
+    return successful, response
 
 ###################################################################################
 def add_binary_lens(event_name, Tmax, tau, umin, last_updated, mass_ratio, separation, angle_a,                     

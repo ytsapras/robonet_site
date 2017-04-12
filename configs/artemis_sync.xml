@@ -35,30 +35,22 @@
     </parameter>
 
     <parameter name='models_local_location'>
-        <!-- <value>/science/robonet/rob/Operations/Signalmen_output/model</value> -->
         <value>/var/www/robonetsite/data/artemis/model</value>
-        <!-- <value>/Users/rstreet/RoboNet/Sandbox/models</value> -->
         <!-- <value>/home/Tux/ytsapras/Data/RoboNet/ARTEMiS/model</value> -->
     </parameter>
     
     <parameter name='pubpars_local_location'>
-        <!-- <value>/science/robonet/rob/Operations/Signalmen_output/PublishedParameters</value> -->
         <value>/var/www/robonetsite/data/artemis/PublishedParameters</value>
-        <!-- <value>/Users/rstreet/RoboNet/Sandbox/PublishedParameters</value> -->
         <!-- <value>/home/Tux/ytsapras/Data/RoboNet/ARTEMiS/PublishedParameters</value> -->
     </parameter>
     
     <parameter name='data_local_location'>
-        <!-- <value>/science/robonet/rob/Operations/Signalmen_output/data</value> -->
         <value>/var/www/robonetsite/data/artemis/data</value>
-        <!-- <value>/Users/rstreet/RoboNet/Sandbox/data</value> -->
         <!-- <value>/home/Tux/ytsapras/Data/RoboNet/ARTEMiS/data</value> -->
     </parameter>
     
     <parameter name='internal_data_local_location'>
-        <!-- <value>/science/robonet/rob/Operations/Signalmen_output/signalmen_internal</value> -->
         <value>/var/www/robonetsite/data/artemis/signalmen_internal</value>
-        <!-- <value>/Users/rstreet/RoboNet/Sandbox/data</value> -->
         <!-- <value>/home/Tux/ytsapras/Data/RoboNet/ARTEMiS/signalmen_internal</value> -->
     </parameter>
     
@@ -73,16 +65,12 @@
     </parameter>
     
     <parameter name='rsync_log_directory'>
-        <!-- <value>/science/robonet/rob/Operations/Signalmen_output/Rsynclog</value> -->
         <value>/var/www/robonetsite/data/artemis</value>
-        <!-- <value>/Users/rstreet/RoboNet/Sandbox/</value> -->
         <!-- <value>/home/Tux/ytsapras/Data/RoboNet/ARTEMiS/Rsynclog</value> -->
     </parameter>
     
     <parameter name='log_directory'>
-        <!-- <value>/science/robonet/rob/Operations/Logs/2017/</value> -->
         <value>/var/www/robonetsite/data/logs/2017</value>
-        <!-- <value>/Users/rstreet/RoboNet/Sandbox/</value> -->
         <!-- <value>/home/Tux/ytsapras/Data/RoboNet/ARTEMiS/Logs/2017</value> -->
     </parameter>
     

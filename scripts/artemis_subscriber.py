@@ -15,46 +15,18 @@ from os import path, stat
 #import update_db
 import utilities
 from datetime import datetime
+import pytz
 import log_utilities
 from numpy import array
 import event_classes
 import socket
 
-##############################
-# CONFIG INTERPRETATION
-
-# Data_type -> config parameter keys, file name search key
-config_pars = { 'model': { 'remote_location': 'models_remote_location',
-                           'local_location': 'models_local_location',
-                           'log_root_name': 'models_log_root_name',
-                               'search_key': '.model' },
-                'pubpars': { 'remote_location': 'pubpars_remote_location',
-                             'local_location': 'pubpars_local_location',
-                             'log_root_name': 'pubpars_log_root_name',
-                                 'search_key': '.model' },
-                'data': { 'remote_location': 'data_remote_location',
-                          'local_location': 'data_local_location',
-                          'log_root_name': 'data_log_root_name',
-                                 'search_key': '.dat' }
-                }
-
-
-###############################################
-# MAIN DRIVER FUNCTION
 def sync_artemis():
-    '''Driver function to maintain an up to date copy of the data on all microlensing events from 
-        the ARTEMiS server at Univ. of St. Andrews.
-    '''
-    host_machine = socket.gethostname()
-    # Read configuration:
-    if 'cursa' in host_machine:
-        config_file_path = '/home/Tux/ytsapras/robonet_site/configs/artemis_sync.xml'
-    elif 'rachel' in host_machine:
-        config_file_path = '/Users/rstreet/software/robonet_site/configs/artemis_sync.xml'
-    else:
-        config_file_path = '/var/www/robonetsite/data/configs/artemis_sync.xml'
-    #config_file_path = '/home/robouser/.robonet_site/artemis_sync.xml'
-    config = config_parser.read_config(config_file_path)
+    """Driver function to maintain an up to date copy of the data on all microlensing events from 
+        the ARTEMiS server at Univ. of St. Andrews."""
+
+    config = read_config()
+
     log = log_utilities.start_day_log( config, __name__ )
     log.info('Started sync with ARTEMiS server')
     
@@ -72,9 +44,39 @@ def sync_artemis():
     
     # Tidy up and finish:
     log_utilities.end_day_log( log )
+
+def read_config():
+    """Function to establish the configuration of this script from the users
+    local XML file"""
     
-###############################################
-# FUNCTION TO SYNC & PROCESS ARTEMiS DATA
+    host_machine = socket.gethostname()
+    if 'cursa' in host_machine:
+        config_file_path = '/home/Tux/ytsapras/robonet_site/configs/artemis_sync.xml'
+    elif 'rachel' in host_machine:
+        config_file_path = '/Users/rstreet/.robonet_site/artemis_sync.xml'
+    else:
+        config_file_path = '/var/www/robonetsite/configs/artemis_sync.xml'
+    
+    config = config_parser.read_config(config_file_path)
+    
+    config['data_locations'] = {
+                 'model': { 'remote_location': 'models_remote_location',
+                           'local_location': 'models_local_location',
+                           'log_root_name': 'models_log_root_name',
+                               'search_key': '.model' },
+                'pubpars': { 'remote_location': 'pubpars_remote_location',
+                             'local_location': 'pubpars_local_location',
+                             'log_root_name': 'pubpars_log_root_name',
+                                 'search_key': '.model' },
+                'data': { 'remote_location': 'data_remote_location',
+                          'local_location': 'data_local_location',
+                          'log_root_name': 'data_log_root_name',
+                                 'search_key': '.dat' }
+                }
+    
+    
+    return config
+    
 def sync_artemis_data_db(config,data_type,log):
     '''Function to sync a local copy of the ARTEMiS model fit files for all events from the
        server at the Univ. of St. Andrews.
@@ -94,18 +96,22 @@ def sync_artemis_data_db(config,data_type,log):
     
     
     # Loop over all updated models and update the database:
-    for f in event_files:
-        
-        # Read the fitting model parameters from the model file:
-        if data_type in ['model', 'pubpars']: 
-            (event, last_modified) = read_artemis_model_file(f)
-        else: 
-            event_params = get_artemis_data_params(f)
-        
-        if data_type == 'model' and int(config['update_db']) == 1:
-            log.info('-> Updating database')
-            event.sync_event_with_DB(last_modified)
+    if data_type == 'model' and int(config['update_db']) == 1:
+        for f in event_files:
+            sync_model_file_with_db(config,f,log)
 
+def sync_model_file_with_db(config,model_file,log,debug=False):
+    """Function to read an ARTEMiS-format .model file and sync its contents
+    with the database"""
+    
+    (event, last_modified) = read_artemis_model_file(model_file)
+    log.info('Read details of event '+str(event.name)+' from file '+model_file)
+    
+    if int(config['update_db']) == 1:
+        log.info('-> Updating database')
+        event.sync_event_with_DB(last_modified,debug=debug)
+    else:
+        log.info('-> Warning: Database update switched off in configuration')
 
 ###########################
 # RSYNC FUNCTION
@@ -115,9 +121,9 @@ def rsync_data_log(config,data_type):
     """
     
     # Construct config parameter keys to extract data locations and appropriate log file name:
-    remote_location = config_pars[data_type]['remote_location']
-    local_location = config_pars[data_type]['local_location']
-    log_root_name = config_pars[data_type]['log_root_name']
+    remote_location = config['data_locations'][data_type]['remote_location']
+    local_location = config['data_locations'][data_type]['local_location']
+    log_root_name = config['data_locations'][data_type]['log_root_name']
     
     # Contruct and execute rsync commandline:
     ts = Time.now()          # Defaults to UTC
@@ -128,7 +134,7 @@ def rsync_data_log(config,data_type):
                config[local_location] + ' ' + \
                '--password-file=' + config['auth'] + ' ' + \
                 '--log-file=' + log_path
-    
+
     args = command.split()
     p = subprocess.Popen(args)
     p.wait()
@@ -149,7 +155,7 @@ def rsync_internal_data(config):
     log_path = path.join( config['rsync_log_directory'], config['log_root_name'] + '_' + ts + '.log' )
     
     # Contruct and execute rsync commandline:
-    command = 'rsync -avzu --delete SignalmenLink@mlrsync-stand.net::Signalmen ' + \
+    command = 'rsync -azu --delete SignalmenLink@mlrsync-stand.net::Signalmen ' + \
                local_location + ' --password-file=' + config['auth_internal'] + ' ' + \
                 '--log-file=' + log_path
           
@@ -166,8 +172,8 @@ def read_rsync_log(config,log_path,data_type):
     
     # Initialize, returning an empty list if no log file is found:
     event_model_files = []
-    local_location = config_pars[data_type]['local_location']
-    search_key = config_pars[data_type]['search_key']
+    local_location = config['data_locations'][data_type]['local_location']
+    search_key = config['data_locations'][data_type]['search_key']
     if path.isfile(log_path) == False: return event_model_files
     
     # Read the log file, parsing the contents into a list of model files to be updated.
@@ -189,6 +195,7 @@ def read_artemis_model_file(model_file_path):
     '''Function to read an ARTEMiS model file and parse the contents'''
     
     event = event_classes.Lens()
+    last_modified = None
     
     if path.isfile(model_file_path) == True:
         file = open(model_file_path, 'r')
@@ -202,21 +209,29 @@ def read_artemis_model_file(model_file_path):
                 entries = lines[0].split()
                 ra = entries[0]
                 dec = entries[1]
-                (ra_deg, dec_deg) = utilities.sex2decdeg(ra,dec)
-                event.set_par('ra',ra_deg)
-                event.set_par('dec',dec_deg)
+                event.set_par('ra',ra)
+                event.set_par('dec',dec)
                 short_name = entries[2]
                 event.set_par('name',utilities.short_to_long_name(short_name))
                 event.set_par('t0',float(entries[3]) + 2450000.0)
                 event.set_par('e_t0',float(entries[4]))
                 event.set_par('te',float(entries[5]))
                 event.set_par('e_te',float(entries[6]))
-                event.set_par('umin',float(entries[7]))
-                event.set_par('e_umin',float(entries[8]))
+                event.set_par('u0',float(entries[7]))
+                event.set_par('e_u0',float(entries[8]))
+
+                survey_code = path.basename(model_file_path)[0:2]
+                if survey_code == 'OB':
+                    event.set_par('origin','OGLE')
+                elif survey_code == 'KB':
+                    event.set_par('origin','MOA')
+                event.modeler = 'ARTEMiS'
                 
                 ts = path.getmtime(model_file_path)
                 ts = datetime.fromtimestamp(ts)
+                ts = ts.replace(tzinfo=pytz.UTC)
                 last_modified = ts
+                event.set_par('last_updated',ts)
                 
             # In case of a file with zero content
             except IndexError: 

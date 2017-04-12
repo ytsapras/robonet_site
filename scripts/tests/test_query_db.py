@@ -20,7 +20,7 @@ from django.utils import timezone
 from django import setup
 from datetime import datetime, timedelta
 setup()
-from events.models import Event, SingleModel
+from events.models import Event, EventName, SingleModel
 import query_db
 import utilities
 
@@ -54,13 +54,13 @@ def test_get_event_names():
 
 def test_get_last_single_model():
     
-    known_events = Event.objects.all()
-    e = known_events[5]
-    event = query_db.get_event(e.pk)
+    event_name = 'OGLE-2012-BLG-0970'
+    event_id = EventName.objects.get(name=event_name).event_id
+    event = Event.objects.get(id=event_id)
     
     model = query_db.get_last_single_model(event=event)
     assert hasattr(model,'Tmax') and hasattr(model,'umin')
     
-    model = query_db.get_last_single_model(event=event, modeler='pyLIMA')
+    model = query_db.get_last_single_model(event=event, modeler='ARTEMiS')
     assert hasattr(model,'Tmax') and hasattr(model,'umin')
     
