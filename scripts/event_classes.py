@@ -116,10 +116,13 @@ class Lens():
                 log.info(' -> Updated eventname with output '+str(status)+' '+str(response))
             
         event = Event.objects.filter(ev_ra=ev_ra).filter(ev_dec=ev_dec)[0]
-        eventname = EventName.objects.get(event=event.id)
+        eventnames = EventName.objects.filter(event=event.id)
         if debug==True and log!=None:
             log.info(' -> Searched for event, found: '+str(event))
-            log.info(' -> Searched for event name, found: '+str(eventname))
+            eventname = ''
+            for n in eventnames:
+                eventname+=str(n)
+            log.info(' -> Searched for event name, found: '+eventname)
             
         last_model = query_db.get_last_single_model(event,modeler=self.modeler)
         if debug==True and log!=None:

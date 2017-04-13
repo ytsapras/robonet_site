@@ -54,7 +54,7 @@ def read_config():
     host_machine = socket.gethostname()
     if 'cursa' in host_machine:
         config_file_path = '/home/Tux/ytsapras/robonet_site/configs/artemis_sync.xml'
-    elif 'rachel' in host_machine:
+    elif 'rachel' in host_machine or 'Rachel' in host_machine:
         config_file_path = '/Users/rstreet/.robonet_site/artemis_sync.xml'
     else:
         config_file_path = '/var/www/robonetsite/configs/artemis_sync.xml'
