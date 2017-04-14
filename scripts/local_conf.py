@@ -9,6 +9,9 @@ if 'cursa' in host_name:
 elif 'rachel' in host_name:
    sys.path.append("/Users/rstreet/software/robonet_site/")
    site_url = 'http://127.0.0.1:8000/'
+elif 'ebachelet' in host_name:
+   sys.path.append("/home/ebachelet/ROMEREA/db/robonet_site")
+   site_url = 'http://127.0.0.1:8000/'
 elif 'einstein' in host_name:
    sys.path.append("/var/www/robonetsite/")
    site_url = 'http://romerea.lco.global/'

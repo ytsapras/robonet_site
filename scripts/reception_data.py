@@ -11,6 +11,9 @@ import numpy as np
 import os
 import time 
 import log_utilities
+import datetime
+import rome_telescopes_dict
+import rome_filters_dict
 
 import update_db_2 as update_db
 from django.utils import timezone
@@ -33,22 +36,47 @@ class QuantityLimits(object):
 class Image(object):
 
 	def __init__(self, image_directory,image_output_origin_directory, image_name, logger ):
-
+		
 		self.image_directory = image_directory
 		self.image_name = image_name
 		self.origin_directory = image_output_origin_directory
 		self.logger = logger
-		
+		self.banzai_bpm = None
+		self.banzai_catalog = None
+
 		try:
-			image = fits.open(self.image_directory+self.image_name)
-			image = image[0]
+
+			images = fits.open(self.image_directory+self.image_name)
+			
+			for image in images:
+
+				try :	
+				
+					if image.header['EXTNAME'] == 'BPM':
+				
+						self.banzai_bpm = image
+
+					if image.header['EXTNAME'] == 'SCI':
+
+						science_image = image
+
+					if image.header['EXTNAME'] == 'CAT':
+
+						self.banzai_catalog = image
+
+				except :
+				
+					pass
+
 			logger.info('Image successfully loaded')
 		except:
 			logger.error('I can not load the image!')
 			
-		self.data = image.data
-		self.header = image.header
-                self.oldheader = image.header.copy()
+		
+
+		self.data = science_image.data
+		self.header = science_image.header
+                self.oldheader = science_image.header.copy()
 		self.camera = None
 		self.sky_level = None
 		self.sky_level_std = None
@@ -63,6 +91,7 @@ class Image(object):
 
 		self.header_date_obs = None
 		self.header_telescope_site = None
+		self.header_dome_id = None
 		self.header_group_id = None
 		self.header_track_id = None
 		self.header_request_id = None
@@ -135,12 +164,12 @@ class Image(object):
 	def find_wcs_template(self):
 
 
-		field_name = self.field_name
+		field_name = self.field_name.replace('ROME-','')	
 		template_name = 'WCS_template_' + field_name + '.fits'
                 thumbnail_name = 'WCS_template_' + field_name + '.thumbnail'
                 
 		origin_directory = self.origin_directory
-		template_directory = origin_directory + 'WCStemplates/'
+		template_directory = origin_directory + 'wcs_templates/'
 
 		self.template_name = template_name		
 		self.template_directory = template_directory
@@ -170,7 +199,7 @@ class Image(object):
 		try:
 
 			self.object_name = self.header[self.camera.header_dictionnary['object']]
-			self.field_name = self.object_name.replace('ROME-','')	
+			self.field_name = self.object_name
 			self.logger.info('Object name is :'+self.object_name)
 			self.logger.info('And so the assiocated field :'+self.field_name)
 		except:
@@ -214,7 +243,7 @@ class Image(object):
 		
 
 			self.output_directory = output_directory
-		        self.catalog_directory = output_directory.replace('images','catalog0')
+		        self.catalog_directory = origin_directory.replace('images','catalog0')
 			self.logger.info('Successfully find the output directory :'+self.output_directory)
 			self.logger.info('Successfully find the catalog directory :'+self.catalog_directory)
 	
@@ -241,6 +270,7 @@ class Image(object):
            calling it through logging to obtain an astropy
            compliant output with logging...
            '''
+	   
 	   try:
 
 		   extractor_parameters=['X_IMAGE','Y_IMAGE','BACKGROUND',
@@ -260,7 +290,7 @@ class Image(object):
 		                  'GAIN':self.camera.gain,
 		                  'SEEING_FWHM':self.header_seeing,
 		                  'BACK_FILTERSIZE':3}
-		   sew = sewpy.SEW(params=extractor_parameters,config=extractor_config,sexpath='/usr/bin/sex')
+		   sew = sewpy.SEW(params=extractor_parameters,config=extractor_config,sexpath='/usr/bin/sextractor')
 		   sewoutput = sew(os.path.join(self.image_directory,self.image_name))
 		   #APPEND JD, ATTEMPTING TO CALIBRATE MAGNITUDES..
 		   catalog=sewoutput['table']     
@@ -277,12 +307,12 @@ class Image(object):
 		   #gmag=instmag*1.0281267+29.315002
 		   #imag=instmag*1.0198562+28.13711
 		   #rmag=instmag*1.020762+28.854443
-
+	
 		   self.compute_stats_from_catalog(catalog)
-		   catname=self.image_name.replace('.fits','.cat')
+		   self.catalog = catalog
 
-		   #ascii.write(catalog,os.path.join(self.catalog_directory,catname))
-		   ascii.write(catalog,os.path.join('./',catname))
+		   #ascii.write(catalog,os.path.join('./',catname))
+		   
 		   self.logger.info('Sextractor catalog successfully produce')
 		
 	   except:
@@ -309,11 +339,11 @@ class Image(object):
 
 		    self.sky_level=np.median(catalog['BACKGROUND'])
 		    self.sky_level_std=np.std(catalog['BACKGROUND'])
-		    self.sky_minimum_level=np.min(catalog['BACKGROUND'])
+		    self.sky_minimum_level=np.percentile(catalog['BACKGROUND'],1)
 		    self.sky_maximum_level=np.max(catalog['BACKGROUND'])
 		    self.number_of_stars=len(catalog)
 		    self.ellipticity=np.median(catalog['ELLIPTICITY'])
-		    self.seeing=np.median(catalog['FWHM_WORLD'])
+		    self.seeing=np.median(catalog['FWHM_WORLD']*3600)
 		    self.logger.info('Image quality statistics well updated')
 
 	    except:
@@ -404,16 +434,34 @@ class Image(object):
                 return None
 
 	def ingest_the_image_in_the_database(self):
-	
+
 		quality_flag = ' ; '.join(self.quality_flags)
 
-		ingest_succes = update_db.add_image(self.field_name, self.image_name, self.header_date_obs, timezone.now(), self.header_telescope_site,
-			      self.camera.name, self.header_group_id, self.header_track_id, self.header_request_id, self.header_airmass,
-			      self.seeing, self.sky_level, self.sky_level_std, self.header_moon_distance, self.header_moon_fraction,
-			      self.header_moon_status, self.ellipticity, self.number_of_stars, self.header_ccd_temp, quality_flag)  	
+		observing_date  = datetime.datetime.strptime(self.header_date_obs,'%Y-%m-%dT%H:%M:%S.%f')
+		observing_date.replace(tzinfo=timezone.utc)
+
+
+		telescope = self.header_telescope_site + self.header_dome_id
+		telescope_name = rome_telescopes_dict.telescope_dict[telescope]
+
+		camera_filter = rome_filters_dict.filter_dict[self.filter]
 		
 
-		if ingest_succes == True:
+		moon_status_dictionnary = {'UP':True,'DOWN':False}
+
+		moon_status = moon_status_dictionnary[self.header_moon_status]
+
+		ingest_success = update_db.add_image(self.field_name, self.image_name, observing_date, 
+						     timezone.now(), telescope_name, self.camera.name, 
+						     camera_filter, self.header_group_id, self.header_track_id, 
+						     self.header_request_id, self.header_airmass, self.seeing, 
+						     self.sky_level, self.sky_level_std, self.header_moon_distance, 
+                                                     self.header_moon_fraction, moon_status, 
+                                                     self.ellipticity, self.number_of_stars, self.header_ccd_temp, 
+			      			     self.x_shift, self.y_shift, quality_flag)  	
+		
+
+		if ingest_success == True:
 
 			self.logger.info('Image successfully ingest in the DB')
 
@@ -425,34 +473,55 @@ class Image(object):
 
 
 	def class_the_image_in_the_directory(self):
-		
-		new_hdul = fits.HDUList()
-		
-		calibrated_image = fits.ImageHDU(self.data, header=self.header, name='calibrated')
-
-		thumbnail_image = fits.ImageHDU(self.thumbnail, header=self.header, name='thumbnail')
-
-		original_header = fits.PrimaryHDU(header=self.oldheader)
 
 
-		new_hdul.append(calibrated_image)
-		new_hdul.append(thumbnail_image)
-		new_hdul.append(original_header)
-
-
-	
+		#import pdb; pdb.set_trace()
 		try :
+			new_hdul = fits.HDUList()
+		
+			calibrated_image = fits.ImageHDU(self.data, header=self.header, name='calibrated')
+
+			thumbnail_image = fits.ImageHDU(self.thumbnail, header=self.header, name='thumbnail')
+
+			original_header = fits.PrimaryHDU(header=self.oldheader)
+
+			
+		
+			new_hdul.append(calibrated_image)
+
+			new_hdul.append(thumbnail_image)
+			new_hdul.append(original_header)
+
+			if self.banzai_catalog:
+
+				new_hdul.append(self.banzai_catalog)
+			
+			if self.banzai_bpm:			
+
+				new_hdul.append(self.banzai_bpm)
+
 			new_hdul.writeto(self.output_directory+self.image_name, clobber=True)
 			self.logger.info('Image '+self.image_name+' successfully place in the directory '+self.output_directory)
-		
-		except RaiseError :
+			sorting_success = True
+
+		except  :
 
 			self.logger.error('Something goes wrong when move the image to the directory!')
+			sorting_success = False
+
+		return sorting_success
+
+
+	def class_the_catalog_in_the_directory(self):
+
+		   catname=self.image_name.replace('.fits','.cat')
+
+		   ascii.write(self.catalog,os.path.join(self.catalog_directory,catname))
 
 
 def find_frames_to_process(new_frames_directory, logger):
 
-	IncomingList = glob.glob(new_frames_directory+'*.fits') 
+	IncomingList = [i for i in os.listdir(new_frames_directory) if '.fits' in i]
 	
 	if len(IncomingList) == 0 :
 
@@ -484,16 +553,21 @@ def process_new_images(new_frames_directory, image_output_origin_directory, logs
 			logger.info('Start to work on frame: '+newframe)
 			image = Image(new_frames_directory, image_output_origin_directory, newframe, logger)
 			image.extract_header_statistics()
-			image.determine_the_output_directory()
 			image.find_wcs_template()
 			image.create_image_control_region()
 			image.find_WCS_offset()
 			image.generate_sextractor_catalog()
-			success = ingest_the_image_in_the_database()
+			image.assess_image_quality()
+			image.determine_the_output_directory()
+			success = image.ingest_the_image_in_the_database()
 			
 			if success == True:
 
-				image.class_the_image_in_the_directory()
+				image.class_the_catalog_in_the_directory()
+				sorting_success = image.class_the_image_in_the_directory()
+				
+			is sorting_success == True:
+
 				os.remove(new_frames_directory+newframe)
 
 			else:
@@ -653,4 +727,11 @@ def xycorr(pathref, image, edgefraction):
     xc, yc = correl_shift(reduce_template, reduce_image)
     hduref.close()
     return -xc + xcen , -yc + ycen, xc, yc
+
+
+
+
+
+
+
 
