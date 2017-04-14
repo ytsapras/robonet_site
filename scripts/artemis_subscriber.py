@@ -54,7 +54,7 @@ def read_config():
     host_machine = socket.gethostname()
     if 'cursa' in host_machine:
         config_file_path = '/home/Tux/ytsapras/robonet_site/configs/artemis_sync.xml'
-    elif 'rachel' in host_machine:
+    elif 'rachel' in host_machine or 'Rachel' in host_machine:
         config_file_path = '/Users/rstreet/.robonet_site/artemis_sync.xml'
     else:
         config_file_path = '/var/www/robonetsite/configs/artemis_sync.xml'
@@ -106,7 +106,7 @@ def sync_artemis_data_db(config,data_type,log):
     log.info('-> downloaded datalog')
     
     # Read the list of updated models:
-    event_files = read_rsync_log(config,rsync_log_path,data_type)
+    event_files = read_rsync_log(config,rsync_log_path,data_type,log=log)
     log.info('-> '+str(len(event_files))+' entries have been updated')
     
     
@@ -124,12 +124,15 @@ def sync_model_file_with_db(config,model_file,log):
     (event, last_modified) = read_artemis_model_file(model_file)
     log.info('Read details of event '+str(event.name)+' from file '+model_file)
     
-    if int(config['update_db']) == 1:
-        if config['verbose'] == True:
-            log.info('-> Updating '+path.basename(model_file))
-        event.sync_event_with_DB(last_modified,log=log,debug=config['verbose'])
+    if event.ra != None and event.dec != None:
+        if int(config['update_db']) == 1:
+            if config['verbose'] == True:
+                log.info('-> Updating '+path.basename(model_file))
+            event.sync_event_with_DB(last_modified,log=log,debug=config['verbose'])
+        else:
+            log.info('-> Warning: Database update switched off in configuration')
     else:
-        log.info('-> Warning: Database update switched off in configuration')
+        log.info('-> ERROR: could not parse model file.  Old format?')
 
 ###########################
 # RSYNC FUNCTION
@@ -184,7 +187,7 @@ def rsync_internal_data(config):
     
 ###########################
 # READ RSYNC LOG
-def read_rsync_log(config,log_path,data_type):
+def read_rsync_log(config,log_path,data_type,log=None):
     '''Function to parse the rsync -azu log output and return a list of event model file paths with updated parameters.
     '''
     
@@ -193,18 +196,24 @@ def read_rsync_log(config,log_path,data_type):
     local_location = config['data_locations'][data_type]['local_location']
     search_key = config['data_locations'][data_type]['search_key']
     if path.isfile(log_path) == False: 
+        if log!=None:
+            log.info('ERROR: cannot find log path: '+log_path)
         return event_model_files
     
     # Read the log file, parsing the contents into a list of model files to be updated.
     file = open(log_path,'r')
     file_lines = file.readlines()
     file.close()
-    
+    if log!=None:
+        log.info('Read list of '+str(len(file_lines))+' model files')
+        
     for line in file_lines:
         if search_key in line:
             file_name = line.split(' ')[-1].replace('\n','')
             if file_name[0:1] != '.' and len(file_name.split('.')) == 2:
                 event_model_files.append( path.join( config[local_location], file_name ) )
+    if log!=None:
+        log.info('Extracted list of '+str(len(event_model_files))+' model files to be processed')
     
     return event_model_files
 
@@ -226,31 +235,34 @@ def read_artemis_model_file(model_file_path):
             
             try: 
                 entries = lines[0].split()
-                ra = entries[0]
-                dec = entries[1]
-                event.set_par('ra',ra)
-                event.set_par('dec',dec)
-                short_name = entries[2]
-                event.set_par('name',utilities.short_to_long_name(short_name))
-                event.set_par('t0',float(entries[3]) + 2450000.0)
-                event.set_par('e_t0',float(entries[4]))
-                event.set_par('te',float(entries[5]))
-                event.set_par('e_te',float(entries[6]))
-                event.set_par('u0',float(entries[7]))
-                event.set_par('e_u0',float(entries[8]))
-
-                survey_code = path.basename(model_file_path)[0:2]
-                if survey_code == 'OB':
-                    event.set_par('origin','OGLE')
-                elif survey_code == 'KB':
-                    event.set_par('origin','MOA')
-                event.modeler = 'ARTEMiS'
-                
-                ts = path.getmtime(model_file_path)
-                ts = datetime.fromtimestamp(ts)
-                ts = ts.replace(tzinfo=pytz.UTC)
-                last_modified = ts
-                event.set_par('last_updated',ts)
+                # Catch to avoid ingesting old-format ARTEMiS model files which
+                # do not contain the RA, Dec info
+                if ':' in entries[0] and ':' in entries[1]:
+                    ra = entries[0]
+                    dec = entries[1]
+                    event.set_par('ra',ra)
+                    event.set_par('dec',dec)
+                    short_name = entries[2]
+                    event.set_par('name',utilities.short_to_long_name(short_name))
+                    event.set_par('t0',float(entries[3]) + 2450000.0)
+                    event.set_par('e_t0',float(entries[4]))
+                    event.set_par('te',float(entries[5]))
+                    event.set_par('e_te',float(entries[6]))
+                    event.set_par('u0',float(entries[7]))
+                    event.set_par('e_u0',float(entries[8]))
+    
+                    survey_code = path.basename(model_file_path)[0:2]
+                    if survey_code == 'OB':
+                        event.set_par('origin','OGLE')
+                    elif survey_code == 'KB':
+                        event.set_par('origin','MOA')
+                    event.modeler = 'ARTEMiS'
+                    
+                    ts = path.getmtime(model_file_path)
+                    ts = datetime.fromtimestamp(ts)
+                    ts = ts.replace(tzinfo=pytz.UTC)
+                    last_modified = ts
+                    event.set_par('last_updated',ts)
                 
             # In case of a file with zero content
             except IndexError: 
