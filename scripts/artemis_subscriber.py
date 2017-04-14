@@ -106,7 +106,7 @@ def sync_artemis_data_db(config,data_type,log):
     log.info('-> downloaded datalog')
     
     # Read the list of updated models:
-    event_files = read_rsync_log(config,rsync_log_path,data_type)
+    event_files = read_rsync_log(config,rsync_log_path,data_type,log=log)
     log.info('-> '+str(len(event_files))+' entries have been updated')
     
     
@@ -187,7 +187,7 @@ def rsync_internal_data(config):
     
 ###########################
 # READ RSYNC LOG
-def read_rsync_log(config,log_path,data_type):
+def read_rsync_log(config,log_path,data_type,log=None):
     '''Function to parse the rsync -azu log output and return a list of event model file paths with updated parameters.
     '''
     
@@ -196,18 +196,24 @@ def read_rsync_log(config,log_path,data_type):
     local_location = config['data_locations'][data_type]['local_location']
     search_key = config['data_locations'][data_type]['search_key']
     if path.isfile(log_path) == False: 
+        if log!=None:
+            log.info('ERROR: cannot find log path: '+log_path)
         return event_model_files
     
     # Read the log file, parsing the contents into a list of model files to be updated.
     file = open(log_path,'r')
     file_lines = file.readlines()
     file.close()
-    
+    if log!=None:
+        log.info('Read list of '+str(len(file_lines))+' model files')
+        
     for line in file_lines:
         if search_key in line:
             file_name = line.split(' ')[-1].replace('\n','')
             if file_name[0:1] != '.' and len(file_name.split('.')) == 2:
                 event_model_files.append( path.join( config[local_location], file_name ) )
+    if log!=None:
+        log.info('Extracted list of '+str(len(event_model_files))+' model files to be processed')
     
     return event_model_files
 
