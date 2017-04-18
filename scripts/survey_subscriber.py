@@ -22,6 +22,8 @@ import survey_data_utilities
 import event_classes
 import survey_classes
 
+version = 0.9
+
 #################################################
 # MAIN DRIVER FUNCTION
 def sync_surveys():
@@ -49,6 +51,27 @@ def sync_surveys():
     #get_kmtnet_parameters(config)
     
     log_utilities.end_day_log( log )
+
+def read_config():
+    """Function to establish the configuration of this script from the users
+    local XML file"""
+    
+    host_machine = socket.gethostname()
+    if 'cursa' in host_machine:
+        config_file_path = '/home/Tux/ytsapras/robonet_site/configs/surveys_sync.xml'
+    elif 'rachel' in host_machine or 'Rachel' in host_machine:
+        config_file_path = '/Users/rstreet/.robonet_site/surveys_sync.xml'
+    else:
+        config_file_path = '/var/www/robonetsite/configs/surveys_sync.xml'
+    
+    config = config_parser.read_config(config_file_path)
+    
+    config['version'] = 'survey_subscriber_'+str(version)
+    config['update_db'] = bool(config['update_db'])
+    config['verbose'] = bool(config['verbose'])
+    
+    return config
+
 
 ##################################################
 # FUNCTION GET OGLE PARAMETERS

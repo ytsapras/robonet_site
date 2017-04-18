@@ -21,31 +21,33 @@ from numpy import array
 import event_classes
 import socket
 
-version = 0.9
+version = 1.0
 
 def sync_artemis():
     """Driver function to maintain an up to date copy of the data on all microlensing events from 
-        the ARTEMiS server at Univ. of St. Andrews."""
+    the ARTEMiS server at Univ. of St. Andrews.
+    
+    This function downloads all the various data products from ARTEMiS:
+    - the results of ARTEMiS' own model fits for all events ('model'),
+    - the event parameters published by the surveys ('pubpars'),
+    - the event photometry data from the ARTEMiS server ('data'),
+    - ARTEMiS' internal fileset, to gain access to the anomaly indicators
+    """
 
     config = read_config()
 
-    log = log_utilities.start_day_log(config, __name__)
-    init_log(config, log)
+    log = init_log(config)
     
-    # Sync the results of ARTEMiS' own model fits for all events:
     sync_artemis_data_db(config,'model',log)
     
-    # Sync the event parameters published by the surveys from the ARTEMiS server:
     sync_artemis_data_db(config,'pubpars',log)
     
-    # Sync the event photometry data from the ARTEMiS server:
     sync_artemis_data_db(config,'data',log)
     
-    # Sync ARTEMiS' internal fileset, to gain access to the anomaly indicators:
     rsync_internal_data(config)
     
-    # Tidy up and finish:
     log_utilities.end_day_log( log )
+
 
 def read_config():
     """Function to establish the configuration of this script from the users
@@ -81,17 +83,20 @@ def read_config():
     
     return config
 
-def init_log(config,log):
+def init_log(config):
     """Function to initialize the artemis subscriber log with relevant 
     script configguration info"""
     
+    log = log_utilities.start_day_log(config, __name__)
+
     log.info('Started sync with ARTEMiS server\n')
     log.info('Script version: '+config['version'])
     if config['update_db'] == 0:
         log.info('\nWARNING: Database update switched OFF in configuration!\n')
     else:
         log.info('Database update switched ON, normal operation')
-        
+    return log
+    
 def sync_artemis_data_db(config,data_type,log):
     '''Function to sync a local copy of the ARTEMiS model fit files for all events from the
        server at the Univ. of St. Andrews.
