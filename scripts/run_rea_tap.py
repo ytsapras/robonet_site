@@ -4,8 +4,7 @@
  Collection of routines to update the RoboNet database tables
  Keywords match the class model fields in ../robonet_site/events/models.py
 
- Written by Yiannis Tsapras Oct 2016
- Last update: TAP functions for REA by Markus Hundertmark March 2017
+ Last update: Correct Docker paths - Markus Hundertmark Apr 18
 """
 
 # Import dependencies
@@ -19,7 +18,6 @@ from django.db.models import Max
 import log_utilities
 
 warnings.filterwarnings('ignore', module='astropy.coordinates')
-
 
 def romerea_visibility_3sites_40deg(julian_date):
     """
@@ -114,7 +112,7 @@ def assign_tap_priorities(logger):
     active_events_list = Event.objects.select_related().filter(status__in=['AC','MO'])
     logger.info('RoboTAP: Processing ' +
                 str(len(active_events_list)) + ' active events.')
-
+    
     for event in active_events_list:
         event_id = event.pk
         event_name = EventName.objects.select_related().filter(event=event)[
@@ -216,7 +214,7 @@ def run_tap_prioritization(logger):
 
 if __name__ == '__main__':
     #DIRECTORY TO BE OBTAINED FROM XML...
-    logs_directory='.'
+    logs_directory='/var/www/robonetsite/data/logs/2017/'
     script_config = {'log_directory':logs_directory, 
                      'log_root_name':'robotap_rea','lock_file':'robotap.lock'}
     logger = log_utilities.start_day_log( script_config, 'robotap', console=False )
