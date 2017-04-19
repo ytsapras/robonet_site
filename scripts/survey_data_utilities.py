@@ -37,12 +37,11 @@ def read_ogle_param_files( config ):
             (event_id, field, star, ra, dec, t0_hjd, t0_utc, tE, u0, A0, \
             dmag, fbl, I_bl, I0) = line.split()
             if 'OGLE' not in event_id: event_id = 'OGLE-'+event_id
-            (ra_deg, dec_deg) = utilities.sex2decdeg(ra,dec)
             event = event_classes.Lens()
             event.set_par('name',event_id)
             event.set_par('survey_id',field)
-            event.set_par('ra',ra_deg)
-            event.set_par('dec',dec_deg)
+            event.set_par('ra',ra)
+            event.set_par('dec',dec)
             event.set_par('t0',t0_hjd)
             event.set_par('te',tE)
             event.set_par('u0',u0)
@@ -75,16 +74,16 @@ def read_moa_param_files( config ):
     for line in file_lines:
         if line.lstrip()[0:1] != '#': 
             (event_id, field, ra, dec, t0_hjd, tE, u0, A0, I0, c) = line.split()
-            if ':' in ra or ':' in dec:            
-                (ra_deg, dec_deg) = utilities.sex2decdeg(ra,dec)
+            if type(ra) == type(1.0):
+                (ra_str, dec_str) = utilities.decdeg2sex(ra,dec)
             else:
-                ra_deg = float(ra)
-                dec_deg = float(dec)
+                ra_str = ra
+                dec_str = dec
             event = event_classes.Lens()
             event.set_par('name',event_id)
             event.set_par('survey_id',field)
-            event.set_par('ra',ra_deg)
-            event.set_par('dec',dec_deg)
+            event.set_par('ra',ra_str)
+            event.set_par('dec',dec_str)
             event.set_par('t0',t0_hjd)
             event.set_par('te',tE)
             event.set_par('u0',u0)

@@ -16,7 +16,7 @@ class SurveyData:
         self.last_updated = None
         self.lenses = {}
     
-    def update_lenses_db(self):
-        for lens in self.lenses():
-            lens.sync_event_with_DB(self.last_changed)
+    def update_lenses_db(self,log=None):
+        for lname,lens in self.lenses.items():
+            lens.sync_event_with_DB(self.last_changed,log=log)
             

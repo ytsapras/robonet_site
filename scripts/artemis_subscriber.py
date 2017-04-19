@@ -61,6 +61,10 @@ def read_config():
     else:
         config_file_path = '/var/www/robonetsite/configs/artemis_sync.xml'
     
+    if path.isfile(config_file_path) == False:
+        print 'ERROR: Cannot find configuration file, looked for '+config_file_path
+        exit()
+
     config = config_parser.read_config(config_file_path)
     
     config['data_locations'] = {

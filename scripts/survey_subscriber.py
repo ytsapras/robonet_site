@@ -21,11 +21,10 @@ import ftplib
 import survey_data_utilities
 import event_classes
 import survey_classes
+import socket
 
 version = 0.9
 
-#################################################
-# MAIN DRIVER FUNCTION
 def sync_surveys():
     """Driver function to subscribe to the alerts of microlensing events 
     produced by surveys OGLE, MOA.  Note that the KMTNet survey currently
@@ -49,11 +48,12 @@ def sync_surveys():
     if int(config['subscribe_moa']) == 1:
         (events_index_data, alerts_page_data) = get_moa_parameters(config, log)
         moa_data = parse_moa_data(config,log,events_index_data, alerts_page_data)
-        moa_data.update_lenses_db()
+        moa_data.update_lenses_db(log=log)
     else:
         log.info('\nWARNING: Data sync from MOA is switched OFF in the config\n')
     
     log_utilities.end_day_log( log )
+
 
 def read_config():
     """Function to establish the configuration of this script from the users
@@ -67,6 +67,10 @@ def read_config():
     else:
         config_file_path = '/var/www/robonetsite/configs/surveys_sync.xml'
     
+    if path.isfile(config_file_path) == False:
+        print 'ERROR: Cannot find configuration file, looked for '+config_file_path
+        exit()
+        
     config = config_parser.read_config(config_file_path)
     
     config['version'] = 'survey_subscriber_'+str(version)
@@ -89,7 +93,19 @@ def init_log(config):
         log.info('Database update switched ON, normal operation')
     return log
 
-
+def get_years(config):
+    """Function to parse the entry in the configuration for the list of years
+    of data to download from the surveys"""
+    
+    if 'years' in config.keys():
+        if ',' in config['years']:
+            years = str(config['years']).split(',')
+        else:
+            years = str(config['years']).split(' ')
+    else:
+        years = [ datatime.utcnow().year ]
+    return years
+    
 def get_ogle_parameters(config, log):
     """Function to download the parameters of lensing events from the OGLE survey. 
     OGLE make these available via anonymous FTP from ftp.astrouw.edu.pl in the form of two files.
@@ -100,10 +116,7 @@ def get_ogle_parameters(config, log):
     log.info('Syncing data from OGLE')
     ogle_data = survey_classes.SurveyData()
     
-    if ',' in config['years']:
-        years = str(config['years']).split(',')
-    else:
-        years = str(config['years']).split(' ')
+    years = get_years(config)
     
     # Fetch the parameter files from OGLE via anonymous FTP
     ftp = ftplib.FTP( config['ogle_ftp_server'] )
@@ -166,13 +179,9 @@ def get_moa_parameters(config,log):
     """
         
     log.info('Harvesting data from MOA')
-    moa_data = survey_classes.SurveyData()
     
-    if ',' in config['years']:
-        years = str(config['years']).split(',')
-    else:
-        years = str(config['years']).split(' ')
-    
+    years = get_years(config)
+        
     ts = Time.now()
     for year in years: 
         url = config['moa_server_root_url'] + year + '/index.dat'
@@ -185,8 +194,6 @@ def get_moa_parameters(config,log):
         (alerts_page_data,msg) = utilities.get_http_page(url)
         alerts_page_data = alerts_page_data.split('\n')
     
-    print events_index_data
-    print alerts_page_data
     return events_index_data, alerts_page_data
 
 def parse_moa_data(config,log,events_index_data, alerts_page_data):
@@ -211,7 +218,24 @@ def parse_moa_data(config,log,events_index_data, alerts_page_data):
         else:
             classification = 'microlensing'
         return classification
+    
+    def get_event_full_name(event_id):
+        """Function to build the long-format name, e.g. 
+            MOA-yyyy-BLG-nnnn
+        from the short-hand format MOA typically use in their data table:
+            2017-BLG-nnn
+        """
         
+        event_num = event_id.split('-')[0]
+        event_num = event_id.split('-')[-1]
+        while len(event_num) < 4:
+            event_num = '0' + event_num
+        
+        return 'MOA-'+event_year+'-BLG-'+event_num
+        
+    moa_data = survey_classes.SurveyData()
+    years = get_years(config)
+    
     ts = Time.now()
     for year in years: 
         
@@ -223,7 +247,7 @@ def parse_moa_data(config,log,events_index_data, alerts_page_data):
                 if ':' in ra_deg or ':' in dec_deg: 
                     (ra_deg, dec_deg) = utilities.sex2decdeg(ra_deg,dec_deg)
                 event = event_classes.Lens()
-                event_name = 'MOA-' + event_id
+                event_name = get_event_full_name(event_id)
                 event.set_par('name',event_name)
                 event.set_par('survey_id',field)
                 event.set_par('ra',ra_deg)
@@ -233,6 +257,7 @@ def parse_moa_data(config,log,events_index_data, alerts_page_data):
                 event.set_par('i0',I0)
                 event.set_par('u0',u0)
                 event.origin = 'MOA'
+                event.modeler = 'MOA'
                 moa_data.lenses[event_name] = event
     
         for entry in alerts_page_data:
@@ -292,11 +317,12 @@ def parse_moa_data(config,log,events_index_data, alerts_page_data):
     
     return moa_data
 
-####################################################
-# FUNCTION GET KMTNET PARAMETERS
 def get_kmtnet_parameters(config):
-    '''Function to retrieve all available information on KMTNet-detected events from the HTML table at:
-    http://astroph.chungbuk.ac.kr/~kmtnet/<year>.html'''
+    """Function to retrieve all available information on KMTNet-detected events from the HTML table at:
+    http://astroph.chungbuk.ac.kr/~kmtnet/<year>.html
+    
+    Not currently in use as KMTNet are not issuing alerts
+    """
 
     verbose(config,'Syncing data from KMTNet')
 
@@ -337,8 +363,6 @@ def get_kmtnet_parameters(config):
 
     return last_update, lens_params
 
-################################
-# VERBOSE OUTPUT FORMATTING
 def verbose(config,record):
     '''Function to output logging information if the verbose config flag is set'''
     
@@ -347,8 +371,7 @@ def verbose(config,record):
         ts = ts.now().iso.split('.')[0].replace(' ','T')
         print ts+': '+record
 
-###########################
-# COMMANDLINE RUN SECTION:
+
 if __name__ == '__main__':
     
     sync_surveys()
