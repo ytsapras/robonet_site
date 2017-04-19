@@ -18,5 +18,5 @@ class SurveyData:
     
     def update_lenses_db(self,log=None):
         for lname,lens in self.lenses.items():
-            lens.sync_event_with_DB(self.last_changed,log=log)
+            lens.sync_event_with_DB(self.last_changed,log=log,debug=True)
             

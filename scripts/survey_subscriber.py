@@ -17,6 +17,7 @@ from os import path, stat
 import utilities
 import log_utilities
 from datetime import datetime, timedelta
+import pytz
 import ftplib
 import survey_data_utilities
 import event_classes
@@ -41,7 +42,7 @@ def sync_surveys():
     if int(config['subscribe_ogle']) == 1:
         get_ogle_parameters(config, log)
         ogle_data = parse_ogle_data(config, log)
-        ogle_data.update_lenses_db()
+        ogle_data.update_lenses_db(log=log)
     else:
         log.info('\nWARNING: Data sync from OGLE is switched OFF in the config\n')
     
@@ -87,7 +88,7 @@ def init_log(config):
     
     log.info('Started sync of survey data\n')
     log.info('Script version: '+config['version'])
-    if config['update_db'] == 0:
+    if config['update_db'] == False:
         log.info('\nWARNING: Database update switched OFF in configuration!\n')
     else:
         log.info('Database update switched ON, normal operation')
@@ -226,7 +227,7 @@ def parse_moa_data(config,log,events_index_data, alerts_page_data):
             2017-BLG-nnn
         """
         
-        event_num = event_id.split('-')[0]
+        event_year = event_id.split('-')[0]
         event_num = event_id.split('-')[-1]
         while len(event_num) < 4:
             event_num = '0' + event_num
@@ -244,14 +245,20 @@ def parse_moa_data(config,log,events_index_data, alerts_page_data):
             if len(entry.replace('\n','').replace(' ','')) > 0:
                 (event_id, field, ra_deg, dec_deg, t0_hjd, tE, u0, \
                         I0, tmp1, tmp2) = entry.split()
-                if ':' in ra_deg or ':' in dec_deg: 
-                    (ra_deg, dec_deg) = utilities.sex2decdeg(ra_deg,dec_deg)
+                try:
+                    ra_deg = float(ra_deg)
+                    dec_deg = float(dec_deg)
+                    (ra_str, dec_str) = utilities.decdeg2sex(ra_deg,dec_deg)
+                except ValueError:
+                    ra_str = ra_deg
+                    dec_str = dec_deg
+            
                 event = event_classes.Lens()
                 event_name = get_event_full_name(event_id)
                 event.set_par('name',event_name)
                 event.set_par('survey_id',field)
-                event.set_par('ra',ra_deg)
-                event.set_par('dec',dec_deg)
+                event.set_par('ra',ra_str)
+                event.set_par('dec',dec_str)
                 event.set_par('t0',t0_hjd)
                 event.set_par('te',tE)
                 event.set_par('i0',I0)
@@ -268,13 +275,8 @@ def parse_moa_data(config,log,events_index_data, alerts_page_data):
                 dec = line[23:35]
                 classification = get_event_class(line)
 
-                if ':' in ra or ':' in dec: 
-                    (ra_deg, dec_deg) = utilities.sex2decdeg(ra,dec)
-                    
                 if name in moa_data.lenses.keys():
                     lens = moa_data.lenses[name]
-                    lens.ra = ra_deg
-                    lens.dec = dec_deg
                     lens.classification = classification
                     moa_data.lenses[name] = lens
                     
@@ -284,6 +286,7 @@ def parse_moa_data(config,log,events_index_data, alerts_page_data):
                 if 'last updated' in line:
                     t = line.split(' ')[-2]
                     last_changed = datetime.strptime(t.split('.')[0],'%Y-%m-%dT%H:%M:%S')
+                    last_changed = last_changed.replace(tzinfo=pytz.UTC)
                     ts_file_path = path.join( config['moa_data_local_location'], \
                                 config['moa_time_stamp_file'] )
                     fileobj = open( ts_file_path, 'w' )

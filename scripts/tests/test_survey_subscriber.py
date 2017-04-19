@@ -13,6 +13,7 @@ import artemis_subscriber
 import log_utilities
 import glob
 from datetime import datetime, timedelta
+import pytz
 import survey_subscriber
 import event_classes
 
@@ -43,7 +44,10 @@ def test_ogle_download():
     assert f in file_list
     
     mtime = datetime.fromtimestamp(path.getmtime(f))
-    tlimit = datetime.utcnow() - timedelta(minutes=2.0)
+    mtime = mtime.replace(tzinfo=pytz.UTC)
+    tlimit = datetime.utcnow()
+    tlimit = tlimit.replace(tzinfo=pytz.UTC)
+    tlimit = tlimit - timedelta(minutes=2.0)
     assert mtime > tlimit
     
     year = datetime.utcnow().year
@@ -51,7 +55,10 @@ def test_ogle_download():
     assert f in file_list
     
     mtime = datetime.fromtimestamp(path.getmtime(f))
-    tlimit = datetime.utcnow() - timedelta(minutes=2.0)
+    mtime = mtime.replace(tzinfo=pytz.UTC)
+    tlimit = datetime.utcnow()
+    tlimit = tlimit.replace(tzinfo=pytz.UTC)
+    tlimit = tlimit - timedelta(minutes=2.0)
     assert mtime > tlimit
 
 def test_moa_download():
@@ -124,13 +131,17 @@ def parse_moa_data():
         '2017-BLG-00818:07:33.01-27:36:12.522017-Feb-13.5344.389.7219.54microlensing', 
         'This page last updated: 2017-04-19T16:26:11 UT'
                         ]
-    mtime = datetime(2017, 4, 19, 16, 26, 11)
+    tlimit = datetime.utcnow()
+    tlimit = tlimit.replace(tzinfo=pytz.UTC)
+    tlimit = tlimit - timedelta(minutes=2.0)
     
     if int(config['subscribe_moa']) == 1:
         log = survey_subscriber.init_log(config)
         moa_data = survey_subscriber.parse_moa_data(config,log,events_index_data, alerts_page_data)
-
+        
         assert len(moa_data.lenses) == 8
-        assert 'MOA-2017-BLG-0001' in moa_data.lenses.keys
-        assert moa_data.last_updated == mtime
+        assert 'MOA-2017-BLG-0001' in moa_data.lenses.keys()
+        assert moa_data.last_updated > tlimit
 
+if __name__ == '__main__':
+    parse_moa_data()

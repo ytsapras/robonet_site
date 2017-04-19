@@ -95,7 +95,7 @@ def init_log(config):
 
     log.info('Started sync with ARTEMiS server\n')
     log.info('Script version: '+config['version'])
-    if config['update_db'] == 0:
+    if config['update_db'] == False:
         log.info('\nWARNING: Database update switched OFF in configuration!\n')
     else:
         log.info('Database update switched ON, normal operation')

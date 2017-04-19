@@ -13,6 +13,7 @@ import artemis_subscriber
 import log_utilities
 import glob
 from datetime import datetime
+import pytz
 import survey_data_utilities
 import event_classes
 
@@ -32,9 +33,11 @@ def test_read_ogle_param_files():
     ogle_data = survey_data_utilities.read_ogle_param_files(config)
     
     last_changed = datetime(2016, 11, 2, 1, 4, 39, 360000)
+    last_changed= last_changed.replace(tzinfo=pytz.UTC)
     assert ogle_data.last_changed == last_changed
     
     last_updated = datetime(2017, 1, 23, 22, 30, 16)
+    last_updated= last_updated.replace(tzinfo=pytz.UTC)
     assert ogle_data.last_updated == last_updated
     
     assert len(ogle_data.lenses) == 1927
@@ -55,13 +58,16 @@ def test_read_moa_param_files():
             }
     
     moa_data = survey_data_utilities.read_moa_param_files(config)
-
+    
     last_changed = datetime(2016, 11, 4, 4, 0, 35)
+    last_changed= last_changed.replace(tzinfo=pytz.UTC)
     assert moa_data.last_changed == last_changed
     
     last_updated = datetime(2017, 1, 23, 22, 30, 19)
+    last_updated= last_updated.replace(tzinfo=pytz.UTC)
     assert moa_data.last_updated == last_updated
     
     assert len(moa_data.lenses) == 618
-
+    
     lens = event_classes.Lens()
+    assert type(moa_data.lenses['MOA-2016-BLG-618']) == type(lens)

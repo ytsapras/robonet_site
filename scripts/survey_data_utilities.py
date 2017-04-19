@@ -11,6 +11,7 @@ import utilities
 from datetime import datetime, timedelta
 import event_classes
 import survey_classes
+import pytz
 import glob
 
 def read_ogle_param_files( config ):
@@ -27,6 +28,7 @@ def read_ogle_param_files( config ):
                             
     # Parse the timestamp in the last.changed file. The timestamp is given in yyyymmdd.daydecimal format:
     ogle_data.last_changed = time_stamp_file( ts_file_path, "%Y%m%dTD" )
+    ogle_data.last_changed = ogle_data.last_changed.replace(tzinfo=pytz.UTC)
     
     # Parse the lenses parameter file.
     # First 2 lines are header, so skipped:
@@ -67,6 +69,7 @@ def read_moa_param_files( config ):
  
     # Parse the timestamp in the last.changed file:
     moa_data.last_changed = time_stamp_file( ts_file_path, "%Y-%m-%dT%H:%M:%S" )
+    moa_data.last_changed = moa_data.last_changed.replace(tzinfo=pytz.UTC)
     
     # Parse the moa_lenses parameter file:
     file_lines = open( par_file_path, 'r' ).readlines()
@@ -74,9 +77,11 @@ def read_moa_param_files( config ):
     for line in file_lines:
         if line.lstrip()[0:1] != '#': 
             (event_id, field, ra, dec, t0_hjd, tE, u0, A0, I0, c) = line.split()
-            if type(ra) == type(1.0):
-                (ra_str, dec_str) = utilities.decdeg2sex(ra,dec)
-            else:
+            try:
+                ra_deg = float(ra)
+                dec_deg = float(dec)
+                (ra_str, dec_str) = utilities.decdeg2sex(ra_deg,dec_deg)
+            except ValueError:
                 ra_str = ra
                 dec_str = dec
             event = event_classes.Lens()
@@ -116,11 +121,13 @@ def time_stamp_file( ts_file_path, format_string ):
     
     if time_format == 'D':
         ts = datetime.strptime( t.split('.')[0], date_format )
+        ts = ts.replace(tzinfo=pytz.UTC)
         dt = timedelta(days=float('0.'+t.split('.')[-1]))
         ts = ts + dt
 
     else:
         ts = datetime.strptime( t, format_string )
+        ts = ts.replace(tzinfo=pytz.UTC)
     
     return ts
 
@@ -130,6 +137,7 @@ def write_update_file( file_path ):
     
     fileobj = open( file_path, 'w' )
     ts = datetime.utcnow()
+    ts = ts.replace(tzinfo=pytz.UTC)
     fileobj.write( ts.strftime("%Y-%m-%dT%H:%M:%S") + ' UTC\n' )
     fileobj.close()
     
@@ -144,6 +152,7 @@ def read_update_file( file_path ):
         line = fileobj.readline()
         fileobj.close()
         ts = datetime.strptime( line.split()[0], "%Y-%m-%dT%H:%M:%S" )
+        ts = ts.replace(tzinfo=pytz.UTC)
     else:
         ts = None
         
