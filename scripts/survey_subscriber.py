@@ -175,17 +175,18 @@ def get_moa_parameters(config,log):
     
     ts = Time.now()
     for year in years: 
-        
-        url = 'https://it019909.massey.ac.nz/moa/alert' + year + '/index.dat'
+        url = config['moa_server_root_url'] + year + '/index.dat'
         log.info('Fetching index of events from '+url)
         (events_index_data,msg) = utilities.get_http_page(url)
         events_index_data = events_index_data.split('\n')
         
-        url = 'https://it019909.massey.ac.nz/moa/alert' + year + '/alert.html'
+        url = config['moa_server_root_url'] + year + '/alert.php'
         log.info('Fetching event parameters from '+url)
         (alerts_page_data,msg) = utilities.get_http_page(url)
         alerts_page_data = alerts_page_data.split('\n')
-
+    
+    print events_index_data
+    print alerts_page_data
     return events_index_data, alerts_page_data
 
 def parse_moa_data(config,log,events_index_data, alerts_page_data):

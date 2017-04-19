@@ -65,17 +65,16 @@ def test_moa_download():
               'years': '2017',
               'version': 'test',
               'update_db': 0,
-              'subscribe_moa': 0
+              'subscribe_moa': 1,
+              'moa_server_root_url': 'http://www.massey.ac.nz/~iabond/moa/alert',
              }
     if int(config['subscribe_moa']) == 1:
         log = survey_subscriber.init_log(config)
         (events_index_data, alerts_page_data) = survey_subscriber.get_moa_parameters(config, log)
+        assert len(events_index_data) > 0
+        assert len(alerts_page_data) > 0
     else:
         events_index_data = []
         alerts_page_data = []
-
-    assert len(events_index_data) == 0
-    assert len(alerts_page_data) == 0
-    
-if __name__ == '__main__':
-    test_moa_download()
+        assert len(events_index_data) == 0
+        assert len(alerts_page_data) == 0

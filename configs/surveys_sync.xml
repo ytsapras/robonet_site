@@ -6,10 +6,18 @@
         <value>True</value>
     </parameter>
     
+    <parameter name='year'>
+        <value>2017</value>
+    </parameter>
+    
     <parameter name='update_db'>
         <value>0</value>
     </parameter>
     
+    <parameter name='subscribe_ogle'>
+        <value>1</value>
+    </parameter>
+
     <parameter name='ogle_data_local_location'>
         <value>/science/robonet/rob/Operations/SurveyData/OGLE</value>
         <!--<value>/Users/rstreet/RoboNet/Sandbox/SurveyData/OGLE</value> -->
@@ -26,6 +34,14 @@
 
     <parameter name='ogle_ftp_server'>
         <value>ftp.astrouw.edu.pl</value>
+    </parameter>
+    
+    <parameter name='subscribe_moa'>
+        <value>0</value>
+    </parameter>
+    
+    <parameter name='moa_server_root_url'>
+        <value>http://www.massey.ac.nz/~iabond/moa/alert</value>
     </parameter>
     
     <parameter name='moa_data_local_location'>
