@@ -27,28 +27,31 @@ version = 0.9
 #################################################
 # MAIN DRIVER FUNCTION
 def sync_surveys():
-    '''Driver function to subscribe to the alerts of microlensing events produced by surveys OGLE, MOA
-    and KMTNet.  The function downloads their model parameters and data wherever available. 
-    '''
+    """Driver function to subscribe to the alerts of microlensing events 
+    produced by surveys OGLE, MOA.  Note that the KMTNet survey currently
+    doesn't produce an alert service so no support for this survey has been
+    implemented.  
+    The function downloads their model parameters and data wherever available, 
+    and syncs this information with the database. 
+    """
 
-    # Read script configuration:
-    config_file_path = '/home/robouser/.robonet_site/surveys_sync.xml'
-    config = config_parser.read_config(config_file_path)
+    config = read_config()
     
-    log = log_utilities.start_day_log( config, __name__ )
-    log.info( 'Started sync of survey data')
+    log = init_log(config)
 
-    # Harvest parameters of lenses detected by OGLE
-    ogle_data = get_ogle_parameters(config, log)
-    ogle_data.update_lenses_db()
-
-    # Harvest MOA information
-    moa_data = get_moa_parameters(config, log)
-    moa_data.update_lenses_db()
-
-    # Harvest KMTNet information
-    # KMTNet are not producing alerts yet
-    #get_kmtnet_parameters(config)
+    if int(config['subscribe_ogle']) == 1:
+        get_ogle_parameters(config, log)
+        ogle_data = parse_ogle_data(config, log)
+        ogle_data.update_lenses_db()
+    else:
+        log.info('\nWARNING: Data sync from OGLE is switched OFF in the config\n')
+    
+    if int(config['subscribe_moa']) == 1:
+        (events_index_data, alerts_page_data) = get_moa_parameters(config, log)
+        moa_data = parse_moa_data(config,log,events_index_data, alerts_page_data)
+        moa_data.update_lenses_db()
+    else:
+        log.info('\nWARNING: Data sync from MOA is switched OFF in the config\n')
     
     log_utilities.end_day_log( log )
 
@@ -72,22 +75,35 @@ def read_config():
     
     return config
 
+def init_log(config):
+    """Function to initialize the artemis subscriber log with relevant 
+    script configguration info"""
+    
+    log = log_utilities.start_day_log(config, __name__)
+    
+    log.info('Started sync of survey data\n')
+    log.info('Script version: '+config['version'])
+    if config['update_db'] == 0:
+        log.info('\nWARNING: Database update switched OFF in configuration!\n')
+    else:
+        log.info('Database update switched ON, normal operation')
+    return log
 
-##################################################
-# FUNCTION GET OGLE PARAMETERS
+
 def get_ogle_parameters(config, log):
-    '''Function to download the parameters of lensing events from the OGLE survey. 
+    """Function to download the parameters of lensing events from the OGLE survey. 
     OGLE make these available via anonymous FTP from ftp.astrouw.edu.pl in the form of two files.
     ogle/ogle4/ews/last.changed   contains a yyyymmdd.daydecimal timestamp of the time of last update
-    ogle/ogle4/ews/<year>/lenses.par   contains a list of all known lenses with the following columns:
-        Event     Field   StarNo  RA(J2000)   Dec(J2000)   Tmax(HJD)   Tmax(UT)      tau     umin  Amax  Dmag   fbl  I_bl    I0
+    ogle/ogle4/ews/<year>/lenses.par   contains a list of all known lenses.
+    """
     
-    This function returns the parameters of all the lenses as a dictionary, plus a datetime object of the last changed date.
-    '''
-
     log.info('Syncing data from OGLE')
     ogle_data = survey_classes.SurveyData()
-    years = [ '2017' ]
+    
+    if ',' in config['years']:
+        years = str(config['years']).split(',')
+    else:
+        years = str(config['years']).split(' ')
     
     # Fetch the parameter files from OGLE via anonymous FTP
     ftp = ftplib.FTP( config['ogle_ftp_server'] )
@@ -106,6 +122,16 @@ def get_ogle_parameters(config, log):
         ftp.retrbinary('RETR lenses.par', open( par_file_path, 'w').write )
         ftp.cwd('../')
     ftp.quit()
+
+def parse_ogle_data(config,log):
+    """
+    This function parses the data downloaded from OGLE and returns the 
+    parameters of all the lenses as a dictionary, plus a datetime object of 
+    the last changed date.
+    ogle/ogle4/ews/last.changed   contains a yyyymmdd.daydecimal timestamp of the time of last update
+    ogle/ogle4/ews/<year>/lenses.par   contains a list of all known lenses with the following columns:
+        Event     Field   StarNo  RA(J2000)   Dec(J2000)   Tmax(HJD)   Tmax(UT)      tau     umin  Amax  Dmag   fbl  I_bl    I0
+    """
     
     ogle_data = survey_data_utilities.read_ogle_param_files( config )
     
@@ -123,14 +149,49 @@ def get_ogle_parameters(config, log):
     
     return ogle_data
 
-###################################################
-# FUNCTION GET MOA PARAMETERS
-def get_moa_parameters(config, log):
-    '''Function to download the parameters of lensing events detected by the MOA survey.  
+
+def get_moa_parameters(config,log):
+    """Function to download the parameters of lensing events detected by the MOA survey.  
         MOA make these available via their websites:
         https://it019909.massey.ac.nz/moa/alert<year>/alert.html
         https://it019909.massey.ac.nz/moa/alert<year>/index.dat
-        '''
+        
+        Note that although the URL prefix has to be https, this isn't actually 
+        a secure page, so no login is required.
+        
+        Note that we draw information for each event from BOTH the HTML alerts
+        table AND the machine-readable index.html file.  This is to avoid a bug
+        where MOA produce different target coordinates in each place.  Those in 
+        the HTML alerts table are correct. 
+    """
+        
+    log.info('Harvesting data from MOA')
+    moa_data = survey_classes.SurveyData()
+    
+    if ',' in config['years']:
+        years = str(config['years']).split(',')
+    else:
+        years = str(config['years']).split(' ')
+    
+    ts = Time.now()
+    for year in years: 
+        
+        url = 'https://it019909.massey.ac.nz/moa/alert' + year + '/index.dat'
+        log.info('Fetching index of events from '+url)
+        (events_index_data,msg) = utilities.get_http_page(url)
+        events_index_data = events_index_data.split('\n')
+        
+        url = 'https://it019909.massey.ac.nz/moa/alert' + year + '/alert.html'
+        log.info('Fetching event parameters from '+url)
+        (alerts_page_data,msg) = utilities.get_http_page(url)
+        alerts_page_data = alerts_page_data.split('\n')
+
+    return events_index_data, alerts_page_data
+
+def parse_moa_data(config,log,events_index_data, alerts_page_data):
+    """Function to parse the information on MOA events harvested from the
+    survey website
+    """
     
     def get_event_class(line):
         """Function to extract an event's classification from the HTML
@@ -150,25 +211,9 @@ def get_moa_parameters(config, log):
             classification = 'microlensing'
         return classification
         
-    log.info('Syncing data from MOA')
-    moa_data = survey_classes.SurveyData()
-    years = [ '2014', '2015', '2016' ]
-    
-    # Download the website with MOA alerts, which contains the last updated date.
-    # Note that although the URL prefix has to be https, this isn't actually a secure page
-    # so no login is required.
-    # Note that we draw information for each event from BOTH the HTML alerts
-    # table AND the machine-readable index.html file.  This is to avoid a bug
-    # where MOA produce different target coordinates in each place.  Those in 
-    # the HTML alerts table are correct. 
     ts = Time.now()
     for year in years: 
         
-        # Download the index of events:
-        url = 'https://it019909.massey.ac.nz/moa/alert' + year + '/index.dat'
-        (events_index_data,msg) = utilities.get_http_page(url)
-        events_index_data = events_index_data.split('\n')
-    
         # Parse the index of events
         for entry in events_index_data:
             if len(entry.replace('\n','').replace(' ','')) > 0:
@@ -189,11 +234,6 @@ def get_moa_parameters(config, log):
                 event.origin = 'MOA'
                 moa_data.lenses[event_name] = event
     
-        # For the last year only, fetch the last-updated timestamp:
-        url = 'https://it019909.massey.ac.nz/moa/alert' + year + '/alert.html'
-        (alerts_page_data,msg) = utilities.get_http_page(url)
-        alerts_page_data = alerts_page_data.split('\n')
-        
         for entry in alerts_page_data:
             line = entry.lstrip()
             if line[0:2] == '20':

@@ -5,10 +5,6 @@ Created on Fri Feb 12 19:40:59 2016
 @author: robouser
 """
 
-#############################################################################
-#               SURVEY DATA UTILITIES
-#############################################################################
-
 from os import path
 from sys import argv, exit
 import utilities
@@ -31,7 +27,7 @@ def read_ogle_param_files( config ):
                             
     # Parse the timestamp in the last.changed file. The timestamp is given in yyyymmdd.daydecimal format:
     ogle_data.last_changed = time_stamp_file( ts_file_path, "%Y%m%dTD" )
-
+    
     # Parse the lenses parameter file.
     # First 2 lines are header, so skipped:
     ogle_data.lenses = {}
@@ -66,7 +62,7 @@ def read_moa_param_files( config ):
                             config['moa_time_stamp_file'] )
     par_file_path = path.join( config['moa_data_local_location'], \
                             config['moa_lenses_file'] )
-    updated_file_path = path.join( config['ogle_data_local_location'], \
+    updated_file_path = path.join( config['moa_data_local_location'], \
                             config['moa_updated_file'] )
     moa_data = survey_classes.SurveyData()
  
