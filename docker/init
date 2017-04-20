@@ -12,7 +12,7 @@ python /var/www/robonetsite/manage.py collectstatic --noinput
 # perform database migrations
 python /var/www/robonetsite/manage.py migrate --noinput
 
-chown -R uwsgi:uwsgi /var/www/robonetsite/
+chown -R robouser:domainusers /var/www/robonetsite/
 
 # run under supervisord
 exec /usr/bin/supervisord -n -c /etc/supervisord.conf

@@ -5,6 +5,10 @@ FROM centos:7
 EXPOSE 80
 ENTRYPOINT ["/init"]
 
+# Establish user ID of container while running
+RUN groupadd -g 20000 domainusers \
+    && useradd -u 20007 -g 20000 -c "Microlensing user" -d /home/robouser -s /bin/bash robouser
+
 # install packages
 RUN yum -y install epel-release \ 
         && yum -y install nginx python-pip supervisor python-devel git \
