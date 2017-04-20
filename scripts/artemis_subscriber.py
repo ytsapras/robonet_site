@@ -61,6 +61,10 @@ def read_config():
     else:
         config_file_path = '/var/www/robonetsite/configs/artemis_sync.xml'
     
+    if path.isfile(config_file_path) == False:
+        print 'ERROR: Cannot find configuration file, looked for '+config_file_path
+        exit()
+
     config = config_parser.read_config(config_file_path)
     
     config['data_locations'] = {
@@ -91,7 +95,7 @@ def init_log(config):
 
     log.info('Started sync with ARTEMiS server\n')
     log.info('Script version: '+config['version'])
-    if config['update_db'] == 0:
+    if config['update_db'] == False:
         log.info('\nWARNING: Database update switched OFF in configuration!\n')
     else:
         log.info('Database update switched ON, normal operation')

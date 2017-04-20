@@ -168,8 +168,6 @@ class HTML2Text(HTMLParser):
 ###################################
 # COORDINATE STRING CONVERSION
 
-#####################
-# SEX2DECDEG
 def sex2decdeg(ra_str,dec_str):
     '''Function to convert an RA and Dec in sexigesimal format to decimal degrees'''
     
@@ -179,8 +177,27 @@ def sex2decdeg(ra_str,dec_str):
     
     return (ra_deg, dec_deg)
 
-#####################
-# Function: SEXIG2DEC
+def decdeg2sex(ra_deg,dec_deg):
+    """Function to convert RA and Dec in decimal degrees to sexigesimal format"""
+    
+    ra_str = dec2sexig(ra_deg/15.0)
+    dec_str = dec2sexig(dec_deg)
+    return ra_str, dec_str
+    
+def dec2sexig(coord):
+    """Function to convert a coordinate in decimal format to sexigesimal format.
+    If an RA is given as a float, it is assumed to be in decimal hours."""
+    
+    if coord < 0:
+        sign = '-'
+        coord = coord*-1.0
+    else:
+        sign = ''
+    dd = int(coord)
+    mm = int((coord - float(dd))*60.0)
+    ss = (coord - float(dd) - (float(mm)/60.0))*3600.0
+    return sign+str(dd)+':'+str(mm)+':'+str(ss)
+
 def sexig2dec(CoordStr):
     '''Function to convert a sexigesimal coordinate string into a decimal float, returning a value in
         the same units as the string passed to it.'''
