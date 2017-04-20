@@ -59,5 +59,5 @@ class ImageForm(forms.ModelForm):
 class ObsRequestForm(forms.ModelForm):
     class Meta:
         model = ObsRequest
-        fields = ('field',)
+        fields = ('field','t_sample','exptime','timestamp','time_expire')
         

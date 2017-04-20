@@ -24,6 +24,7 @@ from scripts.plotter import *
 from scripts.local_conf import get_conf
 from scripts.blgvis_ephem import *
 from scripts.utilities import short_to_long_name
+from scripts import update_db_2
 
 # Path to ARTEMiS files
 artemis_col = get_conf('artemis_cols')
@@ -919,5 +920,39 @@ def query_obs_requests(request):
             return render(request, 'events/query_obs_requests.html', \
                                     {'form': form, 'qs': [],
                                     'message': 'OK'})
+    else:
+        return HttpResponseRedirect('login')
+
+
+@login_required(login_url='/db/login/')
+def record_obs_request(request):
+    """Function to allow new (submitted) observation requests to be 
+    recorded in the database"""
+    
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = ObsRequestForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                ts_submit = datetime.strptime(post.time_submit,"Y-%m-%dT%H:%M:%S")
+                ts_expire = datetime.strptime(post.time_expire,"Y-%m-%dT%H:%M:%S")
+                status = update_db_2.add_request(post.field,post.cadence,\
+                            post.exptime, timestamp=post.ts_submit, \
+                            time_expire=ts_expire,n_exp=post.n_exp)
+                
+                return render(request, 'events/record_obs_request.html', \
+                                    {'form': form, 'observations': obs_list,
+                                     'message': status})
+            else:
+                form = ObsRequestForm()
+                # Add form data to output for debugging
+                return render(request, 'events/record_obs_request.html', \
+                                    {'form': form, 'qs': [],\
+                                    'message':'Form entry was invalid.  Please try again.'})
+        else:
+            form = ObsRequestForm()
+            return render(request, 'events/record_obs_request.html', \
+                                    {'form': form, 'qs': [],
+                                    'message': 'none'})
     else:
         return HttpResponseRedirect('login')
