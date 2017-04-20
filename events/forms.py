@@ -41,21 +41,6 @@ class BinaryModelForm(forms.ModelForm):
       model = BinaryModel
       fields = '__all__'
 
-class RobonetReductionForm(forms.ModelForm):
-   class Meta:
-      model = RobonetReduction
-      fields = '__all__'
-
-class RobonetRequestForm(forms.ModelForm):
-   class Meta:
-      model = RobonetRequest
-      fields = '__all__'
-
-class RobonetStatusForm(forms.ModelForm):
-   class Meta:
-      model = RobonetStatus
-      fields = '__all__'
-
 class DataFileForm(forms.ModelForm):
    class Meta:
       model = DataFile
@@ -70,3 +55,9 @@ class ImageForm(forms.ModelForm):
    class Meta:
       model = Image
       fields = '__all__'
+
+class ObsRequestForm(forms.ModelForm):
+    class Meta:
+        model = ObsRequest
+        fields = ('field',)
+        

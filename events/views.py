@@ -7,6 +7,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from django.db.models import Max
 from django.http import HttpResponse, Http404, HttpResponseRedirect
+from .forms import ObsRequestForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from itertools import chain
@@ -883,3 +884,40 @@ def event_obs_details(request, event_name):
    else:
       return HttpResponseRedirect('login')
  
+
+@login_required(login_url='/db/login/')
+def query_obs_requests(request):
+    """Function to provide an endpoint for users to query what observation
+    requests have been made for a specific target"""
+    
+    if request.user.is_authenticated():
+        
+        if request.method == "POST":
+            form = ObsRequestForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                qs = ObsRequest.objects.filter(
+                        field = post.field,
+                        )
+                obs_list = []
+                for q in qs:
+                    obs = { 'id':q.grp_id, 'field': q.field, \
+                            'submit_date':q.timestamp.strftime("%Y-%m-%dT%H:%M:%S"),\
+                            'expire_date':q.time_expire.strftime("%Y-%m-%dT%H:%M:%S")
+                            }
+                    obs_list.append(obs)
+                return render(request, 'events/query_obs_requests.html', \
+                                    {'form': form, 'observations': obs_list,
+                                     'message': 'OK: got query set'})
+            else:
+                form = ObsRequestForm()
+                return render(request, 'events/query_obs_requests.html', \
+                                    {'form': form, 'qs': [],\
+                                    'message':'Form entry was invalid.  Please try again.'})
+        else:
+            form = ObsRequestForm()
+            return render(request, 'events/query_obs_requests.html', \
+                                    {'form': form, 'qs': [],
+                                    'message': 'OK'})
+    else:
+        return HttpResponseRedirect('login')

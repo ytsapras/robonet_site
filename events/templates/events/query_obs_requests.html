@@ -1,0 +1,45 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<h3>Search for observation requests</h3>
+{% if message != 'OK' and message != 'OK: got query set' %}
+    <div>
+        <center><h5>{{ message }}</h5></center>
+    </div>
+{% endif %}
+<div>
+      <form method="POST" class="post-form">{% csrf_token %}
+        <center>
+            <table><tr><td>
+                <div class="fieldWrapper">
+                    {{ form.field.errors }}
+                    <label for="{{ form.field.id_for_label }}">Please enter field ID:</label>
+                    {{ form.field }}
+                </div>
+                <div class="fieldWrapper">
+                    <button type="sumbit" class="save btn btn-default">Submit</button>
+                </div>
+            </td></tr></table>
+        </center>
+    </form>
+</div>  
+
+{% if observations|length > 0 and message == 'OK: got query set' %}
+<div>
+    <center>
+        <table>
+            <tr><th>Request ID</th><th>Field ID</th><th>Submitted</th><th>Expires</th></tr>
+            {% for obs in observations %}
+                <tr><td>{{obs.id}}</td><td>{{obs.field}}</td><td>{{obs.submit_date}}</td><td>{{obs.expire_date}}</td></tr>
+            {% endfor %}
+        </table>
+    </center>
+</div>
+{% elif observations|length == 0 and message == 'OK: got query set' %}
+<div>
+    <center><h5>No observations listed in the database for this field</h5></center>
+</div>
+{% endif %}
+{% endblock %}
