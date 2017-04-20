@@ -6,7 +6,7 @@
         <value>True</value>
     </parameter>
     
-    <parameter name='year'>
+    <parameter name='years'>
         <value>2017</value>
     </parameter>
     
@@ -46,8 +46,8 @@
     
     <parameter name='moa_data_local_location'>
         <value>/science/robonet/rob/Operations/SurveyData/MOA</value>
-        <!-- <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/MOA</value> -->
     </parameter>
+
     <parameter name='moa_time_stamp_file'>
         <value>last.changed</value>
     </parameter>
@@ -60,12 +60,10 @@
     
     <parameter name='kmtnet_data_local_location'>
         <value>/science/robonet/rob/Operations/SurveyData/KMTNet</value>
-        <!-- <value>/Users/rstreet/RoboNet/Sandbox/SurveyData/KMTNet</value> -->
     </parameter>
     
     <parameter name='log_directory'>
-        <!-- <value>/science/robonet/rob/Operations/Logs/2016/</value> -->
-	<value>/var/www/robonetsite/data/logs/2017</value>
+        <value>/science/robonet/rob/Operations/Logs/2016/</value>
     </parameter>
     
     <parameter name='log_root_name'>
