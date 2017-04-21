@@ -371,6 +371,9 @@ def add_single_lens(event_name, Tmax, tau, umin, last_updated,
         # Get event identifier
         event_id = EventName.objects.get(name=event_name).event_id
         event = Event.objects.get(id=event_id)
+	# Ensure that Tmax is given in full, e.g.2457135.422, not 7135.422
+	if Tmax < 2450000.0:
+	    Tmax = Tmax + 2450000.0
         # Try adding single lens parameters in the database.
         add_new = SingleModel(event=event, Tmax=Tmax, e_Tmax=e_Tmax, tau=tau,
                                   e_tau=e_tau, umin=umin, e_umin=e_umin, rho=rho,
@@ -466,6 +469,9 @@ def add_binary_lens(event_name, Tmax, tau, umin, last_updated, mass_ratio, separ
       # Get event identifier
       event_id = EventName.objects.get(name=event_name).event_id
       event = Event.objects.get(id=event_id)
+      # Ensure that Tmax is given in full, e.g.2457135.422, not 7135.422
+      if Tmax < 2450000.0:
+         Tmax = Tmax + 2450000.0
       try:
          add_new = BinaryModel(event=event, Tmax=Tmax, e_Tmax=e_Tmax, tau=tau, 
         		       mass_ratio=mass_ratio, e_mass_ratio=e_mass_ratio, 
