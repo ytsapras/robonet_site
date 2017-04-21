@@ -314,7 +314,7 @@ def tap(request):
    """
    if request.user.is_authenticated():
       try:
-	 list_ev = Event.objects.filter(status__in=['MO']).annotate(latest_tap=Max('tap__timestamp'))
+	 list_ev = Event.objects.select_related().filter(status__in=['MO']).annotate(latest_tap=Max('tap__timestamp'))
 	 latest_ev_tap = Tap.objects.filter(timestamp__in=[e.latest_tap for e in list_ev])
          time_now = datetime.now()
          time_now_jd = Time(time_now).jd
