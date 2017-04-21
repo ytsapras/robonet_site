@@ -125,7 +125,7 @@ def assign_tap_priorities(logger):
                 event=event).values().latest('last_updated')
             u0_pspl = float(single_model_pars['umin'])
             te_pspl = float(single_model_pars['tau'])
-            t0_pspl = float(single_model_pars['Tmax'])
+            t0_pspl = float(single_model_pars['Tmax'])-2450000.
             data_blending_pars = DataFile.objects.select_related().filter(
                 event=event).values().latest('last_upd')
             ibase_pspl = float(data_blending_pars['baseline'])
