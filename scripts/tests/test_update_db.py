@@ -19,7 +19,7 @@ from django.utils import timezone
 from django import setup
 from datetime import datetime, timedelta
 setup()
-import update_db_2
+import update_db_2, query_db
 from events.models import Field
 
 def test_add_request():
@@ -46,4 +46,22 @@ def test_add_request():
                 which_filter=f,which_inst=i, grp_id=group_id, \
                 track_id=track_id, req_id=request_id,n_exp=n_exp)
     assert status == True
+
+def test_coords_exist():
+    """Function to verify that the function coords_exist correctly 
+    finds an object in the DB by its coordinates"""
     
+    name = 'OGLE-2012-BLG-0970'
+    ra = '17:54:51.78'
+    dec = '-28:18:40.10'
+    
+    event = query_db.get_event_by_position(ra,dec)
+    assert event != None
+    
+    coordinates_known = update_db_2.coords_exist(ra, dec)
+    assert coordinates_known[0] == True
+    assert coordinates_known[1] == ra
+    assert coordinates_known[2] == dec
+    
+if __name__ == '__main__':
+    test_coords_exist()

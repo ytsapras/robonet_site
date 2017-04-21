@@ -27,7 +27,10 @@ class Command(BaseCommand):
             for m in models:
                 print m.modeler, m.tau, m.Tmax, m.umin,m.last_updated
         else:
-            print 'Event name not recognized by DB'
+            print 'Event name not recognized by DB, searching at sky location...'
+            
+            (id_field,rate) = self.get_event_field_id()
+            
             
     def handle(self,*args, **options):
         self._fetch_models_for_event(*args,**options)

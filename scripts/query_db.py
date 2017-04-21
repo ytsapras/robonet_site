@@ -17,6 +17,9 @@ from django import setup
 from datetime import datetime, timedelta
 setup()
 
+from rome_fields_dict import field_dict
+from field_check import romecheck
+import utilities
 from events.models import ObsRequest, Tap, Event, SingleModel
 from events.models import EventName
 from observation_classes import get_request_desc
@@ -188,6 +191,45 @@ def get_event_names(event_id):
     
     qs = EventName.objects.filter(event_id=event_id)
     return qs
+
+def get_coords_in_degrees(ra,dec):
+    
+    if type(ra) == type('string'):
+        ra_deg, dec_deg = utilities.sex2decdeg(ra, dec)
+    else:
+        ra_deg = ra
+        dec_deg = dec
+
+    return ra_deg, dec_deg
+
+def get_event_field_id(ra_str,dec_str):
+    """Function to identify which ROMEREA field the event lies in"""
+    
+    (ev_ra_deg, ev_dec_deg) = get_coords_in_degrees(ra_str,dec_str)
+
+    (id_field, rate) = romecheck(ev_ra_deg, ev_dec_deg)
+
+    if id_field == -1:
+        id_field = 'Outside ROMEREA footprint'
+    else:
+        id_field = sorted(field_dict.keys())[id_field]
+    return id_field, rate
+
+def get_event_by_position(ra_str,dec_str):
+    """Function to find an event by its sky coordinates in sexigesimal format.
+    Returns first event from resulting QuerySet.    
+    """
+    
+    try:
+        event = Event.objects.filter(
+                            ev_ra__contains=ra_str, 
+                            ev_dec__contains=dec_str
+                            )[0]
+        
+    except IndexError:
+        event = None
+
+    return event
     
 if __name__ == '__main__':
     get_rea_targets()

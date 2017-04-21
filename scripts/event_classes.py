@@ -69,43 +69,31 @@ class Lens():
                 str(self.ra) + '  ' + str(self.dec) + '  ' + \
                 str(self.t0) + ' ' + str(self.te) + ' ' + str(self.u0) + '  ' +\
                 str(self.a0) + ' ' + str(self.i0) + ' ' + str(self.classification)
-
-    def get_event_field_id(self):
-        """Method to identify which ROMEREA field the event lies in"""
-        (ev_ra_deg, ev_dec_deg) = self.get_coords_in_degrees()
-        (id_field, rate) = romecheck(ev_ra_deg, ev_dec_deg)
-        if id_field == -1:
-            id_field = 'Outside ROMEREA footprint'
-        else:
-            id_field = sorted(field_dict.keys())[id_field]
-        return id_field, rate
-    
-    def get_coords_in_degrees(self):
-        
-        if type(self.ra) == type('string'):
-            ev_ra_deg, ev_dec_deg = sex2decdeg(self.ra, self.dec)
-        else:
-            ev_ra_deg = self.ra
-            ev_dec_deg = self.dec
-
-        return ev_ra_deg, ev_dec_deg
+                
         
     def sync_event_with_DB(self,last_updated,log=None,debug=False):
         '''Method to sync the latest survey parameters with the database.'''
         
-        (id_field,rate) = self.get_event_field_id()
+        # Find out which sky region the target falls into:
+        (id_field,rate) = query_db.get_event_field_id(self.ra,self.dec)
         if debug==True and log!=None:
             log.info(' -> Identified field: '+str(id_field)+' '+\
                             str(self.ra)+' '+str(self.dec))
-            
+        
+        # Add the event to the database - returns False if already present
         (event_status, ev_ra, ev_dec,response) = update_db_2.add_event(id_field, \
                                                     self.origin, \
-                                                    self.ra,self.dec)
+                                                    self.ra,self.dec,\
+                                                    status='AC')
         if debug==True and log!=None:
             log.info(' -> Tried to add_event with output:')
             log.info(' -> '+str(event_status)+' '+str(ev_ra)+' '+str(ev_dec)+\
                         ' '+str(response))
-                                                    
+        
+        # Add_event doesn't ingest the EventName, so ensure that the eventname
+        # is linked to the correct Event sky location:
+        if debug==True and log!=None:
+                log.info(' -> Checking event name in DB:')
         if event_status == True and response == 'OK':
             event = Event.objects.filter(ev_ra=ev_ra).filter(ev_dec=ev_dec)[0]
             operator = Operator.objects.filter(name=self.origin)[0]
@@ -113,8 +101,23 @@ class Lens():
                                                             operator=operator,\
                                                             name=self.name)
             if debug==True and log!=None:
-                log.info(' -> Updated eventname with output '+str(status)+' '+str(response))
-            
+                log.info(' -> New event, added eventname with output '+str(status)+' '+str(response))
+                
+        elif event_status == False and 'event exists' in response:
+            event = Event.objects.filter(ev_ra=ev_ra).filter(ev_dec=ev_dec)[0]
+            eventnames = EventName.objects.filter(
+                                                event=event.id,
+                                                name__contains=self.name
+                                                )
+            if eventnames.count == 0:
+                operator = Operator.objects.filter(name=self.origin)[0]
+                (status, response) = update_db_2.add_event_name(event=event,\
+                                                            operator=operator,\
+                                                            name=self.name)
+                if debug==True and log!=None:
+                    log.info(' -> Added eventname for known event with output '+str(status)+' '+str(response))
+        
+        # Confirm that both Event and EventName are properly registered:
         event = Event.objects.filter(ev_ra=ev_ra).filter(ev_dec=ev_dec)[0]
         eventnames = EventName.objects.filter(event=event.id)
         if debug==True and log!=None:
@@ -123,7 +126,9 @@ class Lens():
             for n in eventnames:
                 eventname+=str(n)
             log.info(' -> Searched for event name, found: '+eventname)
-            
+        
+        # Check that the current model parameters have been ingested and if
+        # not, add them:
         last_model = query_db.get_last_single_model(event,modeler=self.modeler)
         if debug==True and log!=None:
             log.info(' -> Last model for event '+str(self.name)+': '+str(last_model))
