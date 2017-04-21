@@ -194,7 +194,7 @@ def get_event_names(event_id):
 
 def get_coords_in_degrees(ra,dec):
     
-    if type(ra) == type('string'):
+    if ':' in str(ra):
         ra_deg, dec_deg = utilities.sex2decdeg(ra, dec)
     else:
         ra_deg = ra
@@ -206,7 +206,7 @@ def get_event_field_id(ra_str,dec_str):
     """Function to identify which ROMEREA field the event lies in"""
     
     (ev_ra_deg, ev_dec_deg) = get_coords_in_degrees(ra_str,dec_str)
-
+    
     (id_field, rate) = romecheck(ev_ra_deg, ev_dec_deg)
 
     if id_field == -1:

@@ -80,11 +80,16 @@ class Lens():
             log.info(' -> Identified field: '+str(id_field)+' '+\
                             str(self.ra)+' '+str(self.dec))
         
+        # Get the discovery year of the event from the event name to avoid
+        # it being autoset to the current year:
+        year = str(self.name).split('-')[1]
+        
         # Add the event to the database - returns False if already present
         (event_status, ev_ra, ev_dec,response) = update_db_2.add_event(id_field, \
                                                     self.origin, \
                                                     self.ra,self.dec,\
-                                                    status='AC')
+                                                    status='AC',\
+                                                    year=year)
         if debug==True and log!=None:
             log.info(' -> Tried to add_event with output:')
             log.info(' -> '+str(event_status)+' '+str(ev_ra)+' '+str(ev_dec)+\
