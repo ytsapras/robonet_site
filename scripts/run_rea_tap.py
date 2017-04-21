@@ -152,9 +152,9 @@ def assign_tap_priorities(logger):
                     err_omega=err_omega, peak_omega=omega_peak,
                     visibility=full_visibility, cost1m=cost1m)
 
-            #expire events
-            if t_current > te_pspl+t0_pspl:
-                Event.objects.filter(event_id=event_id).update(status="EX")
+            #expire events -> deactivated
+            #if t_current > te_pspl+t0_pspl:
+            #    Event.objects.filter(event_id=event_id).update(status="EX")
 
 
 def run_tap_prioritization(logger):
@@ -215,7 +215,7 @@ def run_tap_prioritization(logger):
 if __name__ == '__main__':
     #DIRECTORY TO BE OBTAINED FROM XML...
     logs_directory='/var/www/robonetsite/data/logs/2017/'
-    logs_directory='/home/Tux/ytsapras/Data/ROMEREA/logs/2017'
+    #logs_directory='/home/Tux/ytsapras/Data/ROMEREA/logs/2017'
     script_config = {'log_directory':logs_directory, 
                      'log_root_name':'robotap_rea','lock_file':'robotap.lock'}
     logger = log_utilities.start_day_log( script_config, 'robotap', console=False )
