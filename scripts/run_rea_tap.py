@@ -206,7 +206,9 @@ def run_tap_prioritization(logger):
             tsys = 24. * (float(sorted_list[idx]['texp']) + toverhead) / 3600.
             if trun + tsys < daily_visibility:
                 logger.info('RoboTAP requests: Amax '+str(round(psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin']),2))+' '+EventName.objects.select_related().filter(event=sorted_list[idx]['event_id'])[0].name)
-                Event.objects.filter(event_id=sorted_list[idx]['event_id']).update(status="MO")
+                #The model requires here to use id
+                Event.objects.filter(id=sorted_list[idx]['event_id']).update(status="MO")
+                #The model requires here to use event_id (consistency?)
                 Tap.objects.filter(event_id=sorted_list[idx]['event_id']).values().update(priority='L')
                 trun = trun + tsys
         
