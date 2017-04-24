@@ -23,7 +23,7 @@ def test_sync_model_file_with_db():
     f = '../../data/OB120970.model'
     log.info('Using test model file: '+f)
     
-    artemis_subscriber.sync_model_file_with_db(config,f,log,debug=True)
+    artemis_subscriber.sync_model_file_with_db(config,f,log)
     
     log_utilities.end_day_log( log )
     

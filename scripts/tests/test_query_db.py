@@ -64,3 +64,32 @@ def test_get_last_single_model():
     model = query_db.get_last_single_model(event=event, modeler='ARTEMiS')
     assert hasattr(model,'Tmax') and hasattr(model,'umin')
     
+def test_get_field_id():
+    
+    event_name = 'MOA-2008-BLG-0006'
+    ra = '17:52:39.22'
+    dec = '-28:54:02.94'
+    in_field = 'ROME-FIELD-03'
+    
+    (id_field,rate) = query_db.get_event_field_id(ra,dec)
+    
+    assert id_field == in_field
+    
+def test_get_coords_in_degs():
+    
+    ra_str = '17:52:39.22'
+    dec_str = '-28:54:02.94'
+    ra_deg = 268.1634166666667
+    dec_deg = -28.900816666666664
+    
+    # Test that sexigesimal coordinates are properly converted:
+    (test_ra_deg, test_dec_deg) = query_db.get_coords_in_degrees(ra_str,dec_str)
+    
+    assert test_ra_deg == ra_deg
+    assert test_dec_deg == dec_deg
+    
+    # Test that coordinates already in degrees are not converted:
+    (test_ra_deg, test_dec_deg) = query_db.get_coords_in_degrees(ra_deg,dec_deg)
+    
+    assert test_ra_deg == ra_deg
+    assert test_dec_deg == dec_deg
