@@ -56,7 +56,12 @@ class ImageForm(forms.ModelForm):
       model = Image
       fields = '__all__'
 
-class ObsRequestForm(forms.ModelForm):
+class QueryObsRequestForm(forms.ModelForm):
+    class Meta:
+        model = ObsRequest
+        fields = ('field',)
+        
+class SubmitObsRequestForm(forms.ModelForm):
     class Meta:
         model = ObsRequest
         fields = ('field','t_sample','exptime','timestamp','time_expire')

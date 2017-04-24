@@ -7,7 +7,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from django.db.models import Max
 from django.http import HttpResponse, Http404, HttpResponseRedirect
-from .forms import ObsRequestForm
+from .forms import QueryObsRequestForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from itertools import chain
@@ -892,14 +892,14 @@ def query_obs_requests(request):
     requests have been made for a specific target"""
     
     if request.user.is_authenticated():
-        
         if request.method == "POST":
-            form = ObsRequestForm(request.POST)
+            form = QueryObsRequestForm(request.POST)
             if form.is_valid():
                 post = form.save(commit=False)
                 qs = ObsRequest.objects.filter(
                         field = post.field,
                         )
+                    
                 obs_list = []
                 for q in qs:
                     obs = { 'id':q.grp_id, 'field': q.field, \
@@ -911,12 +911,12 @@ def query_obs_requests(request):
                                     {'form': form, 'observations': obs_list,
                                      'message': 'OK: got query set'})
             else:
-                form = ObsRequestForm()
+                form = QueryObsRequestForm()
                 return render(request, 'events/query_obs_requests.html', \
                                     {'form': form, 'qs': [],\
                                     'message':'Form entry was invalid.  Please try again.'})
         else:
-            form = ObsRequestForm()
+            form = QueryObsRequestForm()
             return render(request, 'events/query_obs_requests.html', \
                                     {'form': form, 'qs': [],
                                     'message': 'OK'})
