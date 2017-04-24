@@ -7,7 +7,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from django.db.models import Max
 from django.http import HttpResponse, Http404, HttpResponseRedirect
-from .forms import QueryObsRequestForm
+from .forms import QueryObsRequestForm, RecordObsRequestForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from itertools import chain
@@ -929,30 +929,39 @@ def record_obs_request(request):
     """Function to allow new (submitted) observation requests to be 
     recorded in the database"""
     
+    log = open('/Users/rstreet/ROMEREA/sandbox/record_obs_request.log','w')
+    
     if request.user.is_authenticated():
+        log.write('User is logged in\n')
         if request.method == "POST":
-            form = ObsRequestForm(request.POST)
+            form = RecordObsRequestForm(request.POST)
+            log.write(repr(form)+'\n')
+            if form.is_valid() == False:
+                log.write('Form errors: '+repr(form.errors)+'\n')
+            else:
+                log.write('Form validates as True\n')
+            log.flush()
             if form.is_valid():
                 post = form.save(commit=False)
-                ts_submit = datetime.strptime(post.time_submit,"Y-%m-%dT%H:%M:%S")
-                ts_expire = datetime.strptime(post.time_expire,"Y-%m-%dT%H:%M:%S")
-                status = update_db_2.add_request(post.field,post.cadence,\
-                            post.exptime, timestamp=post.ts_submit, \
-                            time_expire=ts_expire,n_exp=post.n_exp)
+                log.write(repr(post.timestamp)+' '+repr(post.time_expire)+'\n')
+                status = update_db_2.add_request(post.field,post.t_sample,\
+                            post.exptime, timestamp=post.timestamp, \
+                            time_expire=post.time_expire,n_exp=post.n_exp)
+                log.close()
                 
                 return render(request, 'events/record_obs_request.html', \
-                                    {'form': form, 'observations': obs_list,
-                                     'message': status})
+                                    {'form': form, 'message': status})
             else:
-                form = ObsRequestForm()
+                form = RecordObsRequestForm()
                 # Add form data to output for debugging
                 return render(request, 'events/record_obs_request.html', \
-                                    {'form': form, 'qs': [],\
-                                    'message':'Form entry was invalid.  Please try again.'})
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
         else:
-            form = ObsRequestForm()
+            form = RecordObsRequestForm()
             return render(request, 'events/record_obs_request.html', \
-                                    {'form': form, 'qs': [],
+                                    {'form': form, 
                                     'message': 'none'})
     else:
         return HttpResponseRedirect('login')

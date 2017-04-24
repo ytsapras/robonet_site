@@ -61,8 +61,10 @@ class QueryObsRequestForm(forms.ModelForm):
         model = ObsRequest
         fields = ('field',)
         
-class SubmitObsRequestForm(forms.ModelForm):
+class RecordObsRequestForm(forms.ModelForm):
     class Meta:
         model = ObsRequest
         fields = ('field','t_sample','exptime','timestamp','time_expire')
-        
+    timestamp = forms.DateField(label='timestamp',input_formats=["%Y-%m-%dT%H:%M:%S"])
+    time_expire = forms.DateField(label='time_expire',input_formats=["%Y-%m-%dT%H:%M:%S"])
+    
