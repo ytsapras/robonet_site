@@ -79,6 +79,20 @@ def omegarea(time_requested, u0_pspl, te_pspl, t0_pspl, fs_pspl, fb_pspl):
     return psip / (calculate_exptime_romerea(mag) + 60.), amp
 
 
+def event_in_season(t0):
+    """
+    Checks if t0 is in the ROME/REA season
+    """
+    if t0>7844.5 and t0<8026.5:
+        return True
+    elif t0>8209.5 and t0<8391.5:
+        return True
+    elif t0>8574.5 and t0<8756.5:
+        return True
+    else:
+        return False
+
+
 def psplrea(u):
     """
     Calculates the magnification for a given source-lens
@@ -201,8 +215,9 @@ def run_tap_prioritization(logger):
         if psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin'])>5000.:
             #Event.objects.filter(event_id=sorted_list[idx]['event_id']).update(status="AN")
             pass
-        
-        elif SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['tau'] < 210.:
+        #Filter events with te>210, t0 in the season and Anow>1.34 (within Einstein radius)
+        #ROME provides baseline data beyond that
+        elif SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['tau'] < 210. and psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin'])>1.34 and event_in_season(float(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['Tmax'])-2450000.):
             tsys = 24. * (float(sorted_list[idx]['texp']) + toverhead) / 3600.
             if trun + tsys < daily_visibility:
                 logger.info('RoboTAP requests: Amax '+str(round(psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin']),2))+' '+EventName.objects.select_related().filter(event=sorted_list[idx]['event_id'])[0].name)
