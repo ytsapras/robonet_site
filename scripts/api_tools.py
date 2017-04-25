@@ -31,30 +31,42 @@ def submit_obs_request_record(config,params):
                             testing=True)
 
 def talk_to_db(data,end_point,user_id,pswd,testing=False):
-        """Method to communicate with various APIs of the ROME/REA database. 
-        Required arguments are:
-            data       dict     parameters of the submission
-            end_point  string   URL suffix of the form to submit to
-            user_id    string   User ID login for database
-            pswd       string   User password login for database
-        
-        E.g. if submitting to URL:
-            http://robonet.lco.global/db/record_obs_request/
-        end_point = 'record_obs_request
-        
-        Optional arguments:
-            testing    boolean            Switch to localhost URL for testing
-                                            Def=False for operations
-        """
+    """Method to communicate with various APIs of the ROME/REA database. 
+    Required arguments are:
+        data       dict     parameters of the submission
+        end_point  string   URL suffix of the form to submit to
+        user_id    string   User ID login for database
+        pswd       string   User password login for database
+    
+    E.g. if submitting to URL:
+        http://robonet.lco.global/db/record_obs_request/
+    end_point = 'record_obs_request
+    
+    Optional arguments:
+        testing    boolean            Switch to localhost URL for testing
+                                        Def=False for operations
+    """
     if testing == True:
         host_url = 'http://127.0.0.1:8000/db'
+        login_url = 'http://127.0.0.1:8000/db/login/'
     else:
         host_url = 'http://robonet.lco.global/db'
+        login_url = 'http://robonet.lco.global/db/login/'
+        
     url = path.join(host_url,end_point)
     if url[-1:] != '/':
         url = url + '/'
     print 'End point URL:',url
     
-    response = requests.post(url, data=data, auth=(user_id,pswd))
+    
+    client = requests.session()
+    response = client.get(login_url)
+    print 'Started session with response: ',response.text
+    
+    auth_details = {'username': user_id, 'password': pswd, 'csrfmiddlewaretoken': client.cookies['csrftoken']}
+    headers = { 'Referer': url, 'X-CSRFToken': client.cookies['csrftoken'],}
+    
+    response = client.post(login_url, headers=headers, data=auth_details)
     print response.text
+    print 'Completed submission'
     
