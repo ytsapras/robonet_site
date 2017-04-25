@@ -30,7 +30,7 @@ def submit_obs_request_record(config,params):
                             config['db_user_id'],config['db_pswd'],
                             testing=True)
 
-def talk_to_db(data,end_point,user_id,pswd,testing=False):
+def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
     """Method to communicate with various APIs of the ROME/REA database. 
     Required arguments are:
         data       dict     parameters of the submission
@@ -45,6 +45,7 @@ def talk_to_db(data,end_point,user_id,pswd,testing=False):
     Optional arguments:
         testing    boolean            Switch to localhost URL for testing
                                         Def=False for operations
+        verbose    boolean            Switch for additional debugging output
     """
     if testing == True:
         host_url = 'http://127.0.0.1:8000/db'
@@ -56,17 +57,28 @@ def talk_to_db(data,end_point,user_id,pswd,testing=False):
     url = path.join(host_url,end_point)
     if url[-1:] != '/':
         url = url + '/'
-    print 'End point URL:',url
+    
+    if verbose==True:
+        print 'End point URL:',url
     
     
     client = requests.session()
     response = client.get(login_url)
-    print 'Started session with response: ',response.text
+    if verbose == True:
+        print 'Started session with response: ',response.text
     
-    auth_details = {'username': user_id, 'password': pswd, 'csrfmiddlewaretoken': client.cookies['csrftoken']}
+    auth_details = {'username': user_id, 'password': pswd}
     headers = { 'Referer': url, 'X-CSRFToken': client.cookies['csrftoken'],}
     
     response = client.post(login_url, headers=headers, data=auth_details)
-    print response.text
-    print 'Completed submission'
+    if verbose==True:
+        print response.text
+        print 'Completed login'
+    
+    response = client.get(url)
+    headers = { 'Referer': url, 'X-CSRFToken': client.cookies['csrftoken'],}
+    response = client.post(url, headers=headers, data=data)
+    if verbose==True:
+        print response.text
+        print 'Completed successfully'
     

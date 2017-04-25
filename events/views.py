@@ -937,13 +937,17 @@ def record_obs_request(request):
             form = RecordObsRequestForm(request.POST)
             log.write(repr(form)+'\n')
             if form.is_valid() == False:
-                log.write('Form errors: '+repr(form.errors)+'\n')
+                log.write('Form errors: \n')
+                for f,e in form.errors.items():
+                    log.write(str(f)+': '+str(e)+'\n')
             else:
                 log.write('Form validates as True\n')
             log.flush()
             if form.is_valid():
                 post = form.save(commit=False)
                 log.write(repr(post.timestamp)+' '+repr(post.time_expire)+'\n')
+                log.write(repr(post.field)+' '+str(type(post.field))+'\n')
+                log.write(repr(post.field.field_ra)+' '+str(type(post.field.field_dec))+'\n')
                 status = update_db_2.add_request(post.field,post.t_sample,\
                             post.exptime, timestamp=post.timestamp, \
                             time_expire=post.time_expire,n_exp=post.n_exp)
