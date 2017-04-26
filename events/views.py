@@ -7,6 +7,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from django.db.models import Max
 from django.http import HttpResponse, Http404, HttpResponseRedirect
+from .forms import QueryObsRequestForm, RecordObsRequestForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from itertools import chain
@@ -23,6 +24,7 @@ from scripts.plotter import *
 from scripts.local_conf import get_conf
 from scripts.blgvis_ephem import *
 from scripts.utilities import short_to_long_name
+from scripts import update_db_2
 
 # Path to ARTEMiS files
 artemis_col = get_conf('artemis_cols')
@@ -883,3 +885,72 @@ def event_obs_details(request, event_name):
    else:
       return HttpResponseRedirect('login')
  
+
+@login_required(login_url='/db/login/')
+def query_obs_requests(request):
+    """Function to provide an endpoint for users to query what observation
+    requests have been made for a specific target"""
+    
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = QueryObsRequestForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                qs = ObsRequest.objects.filter(
+                        field = post.field,
+                        )
+                    
+                obs_list = []
+                for q in qs:
+                    obs = { 'id':q.grp_id, 'field': q.field, \
+                            'submit_date':q.timestamp.strftime("%Y-%m-%dT%H:%M:%S"),\
+                            'expire_date':q.time_expire.strftime("%Y-%m-%dT%H:%M:%S")
+                            }
+                    obs_list.append(obs)
+                return render(request, 'events/query_obs_requests.html', \
+                                    {'form': form, 'observations': obs_list,
+                                     'message': 'OK: got query set'})
+            else:
+                form = QueryObsRequestForm()
+                return render(request, 'events/query_obs_requests.html', \
+                                    {'form': form, 'qs': [],\
+                                    'message':'Form entry was invalid.  Please try again.'})
+        else:
+            form = QueryObsRequestForm()
+            return render(request, 'events/query_obs_requests.html', \
+                                    {'form': form, 'qs': [],
+                                    'message': 'OK'})
+    else:
+        return HttpResponseRedirect('login')
+
+
+@login_required(login_url='/db/login/')
+def record_obs_request(request):
+    """Function to allow new (submitted) observation requests to be 
+    recorded in the database"""
+        
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = RecordObsRequestForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                status = update_db_2.add_request(post.field,post.t_sample,\
+                            post.exptime, timestamp=post.timestamp, \
+                            time_expire=post.time_expire,n_exp=post.n_exp)
+                
+                return render(request, 'events/record_obs_request.html', \
+                                    {'form': form, 'message': status})
+            else:
+                form = RecordObsRequestForm()
+                # Add form data to output for debugging
+                return render(request, 'events/record_obs_request.html', \
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
+        else:
+            form = RecordObsRequestForm()
+            return render(request, 'events/record_obs_request.html', \
+                                    {'form': form, 
+                                    'message': 'none'})
+    else:
+        return HttpResponseRedirect('login')

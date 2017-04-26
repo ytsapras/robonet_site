@@ -83,7 +83,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': '/var/www/robonetsite/db.sqlite3',
-	# FOR LOCAL TESTING ONLY
+        # FOR LOCAL TESTING ONLY:
         #'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }

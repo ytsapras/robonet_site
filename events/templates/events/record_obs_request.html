@@ -1,0 +1,59 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<h3>Record submitted observation request</h3>
+<div>
+      <form method="POST" class="post-form">{% csrf_token %}
+        <center>
+            <table>
+                <tr>
+                    <td><div class="fieldWrapper">
+                        {{ form.field.errors }}
+                        <label for="{{ form.field.id_for_label }}">Field ID:</label>
+                        {{ form.field }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ form.t_sample.errors }}
+                        <label for="{{ form.t_sample.id_for_label }}">Cadence (mins):</label>
+                        {{ form.t_sample }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ form.exptime.errors }}
+                        <label for="{{ form.exptime.id_for_label }}">Exposure time (s):</label>
+                        {{ form.exptime }}
+                    </div></td>
+                </tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                        {{ form.timestamp.errors }}
+                        <label for="{{ form.timestamp.id_for_label }}">Time submitted:</label>
+                        {{ form.timestamp }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ form.time_expire.errors }}
+                        <label for="{{ form.time_expire.id_for_label }}">Time expires:</label>
+                        {{ form.time_expire }}
+                    </div></td><td></td>
+                </tr>
+                <tr>
+                    <td>
+                    <div class="fieldWrapper">
+                    <button type="sumbit" class="save btn btn-default">Submit</button>
+                    </div>
+                    </td><td></td><td></td>
+                </tr>
+            </table>
+        </center>
+    </form>
+</div>  
+
+{% if message != 'none' %}
+<div>
+    <center>
+        <h5>{{ message }}</h5>
+    </center>
+</div>
+{% endif %}
+{% endblock %}
