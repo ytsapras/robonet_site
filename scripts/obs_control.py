@@ -76,8 +76,7 @@ def read_config():
     
     host_name = socket.gethostname()
     if 'rachel' in host_name:
-        cwd = getcwd()
-        config_file_path = path.join(cwd, '../configs/obscontrol_config.xml')
+        config_file_path = path.join('/Users/rstreet/.robonet_site/obscontrol_config.xml')
     else:
         config_file_path = '/var/www/robonetsite/configs/obscontrol_config.xml'
     if path.isfile(config_file_path) == False:

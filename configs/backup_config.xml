@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<backup_config>
+    <parameter name="machine">
+        <value>einstein.science.lco.global</value>
+    </parameter>
+    
+    <parameter name="data_dir">
+        <value>/Users/rstreet/ROMEREA/DB</value>
+    </parameter>
+    
+    <parameter name="backup_dir">
+        <value>/Users/rstreet/ROMEREA/BACKUP</value>
+    </parameter>
+    
+    <parameter name="user_id">
+        <value>rstreet</value>
+    </parameter>
+    
+    <parameter name="db_file">
+        <value>db.sqlite3</value>
+    </parameter>
+    
+    <parameter name="log_directory">
+        <value>/Users/rstreet/ROMEREA/sandbox/logs/2017/</value>
+    </parameter>
+    
+    <parameter name="log_root_name">
+        <value>backup</value>
+    </parameter>
+    
+    <parameter name="alert_mailing_list">
+        <value>rstreet@lco.global</value>
+    </parameter>
+</backup_config>

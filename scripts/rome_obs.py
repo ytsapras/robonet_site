@@ -40,9 +40,9 @@ def build_rome_obs(script_config,log=None):
             obs.instrument = obs_sequence['instruments'][s]
             obs.instrument_class = '1M0-SCICAM-SINISTRO'
             obs.set_aperture_class()
-            obs.filters = obs_sequence['filters']
-            obs.exposure_times = obs_sequence['exp_times']
-            obs.exposure_counts = obs_sequence['exp_counts']
+            obs.filters = obs_sequence['filters'][s]
+            obs.exposure_times = obs_sequence['exp_times'][s]
+            obs.exposure_counts = obs_sequence['exp_counts'][s]
             obs.cadence = obs_sequence['cadence_hrs']
             obs.jitter = obs_sequence['jitter_hrs']
             obs.priority = 1.0
@@ -50,7 +50,7 @@ def build_rome_obs(script_config,log=None):
             obs.user_id = script_config['user_id']
             obs.proposal_id = script_config['proposal_id']
             obs.pswd = script_config['lco_access']
-            obs.focus_offset = obs_sequence['defocus']
+            obs.focus_offset = obs_sequence['defocus'][s]
             obs.request_type = 'L'
             obs.req_origin = 'obscontrol'
             obs.get_group_id()
@@ -80,16 +80,34 @@ def rome_obs_sequence():
     survey pointings"""
     
     obs_sequence = {
-                    'exp_times': [ 300.0, 300.0, 300.0],
-                    'exp_counts': [ 1, 1, 1 ],
-                    'filters':   [ 'SDSS-g', 'SDSS-r', 'SDSS-i'],
-                    'defocus':  [ 0.0, 0.0, 0.0],
+                    'exp_times': [ [300.0],
+                                  [300.0, 300.0, 300.0],
+                                    [300.0, 300.0, 300.0]],
+                    'exp_counts': [ [ 1 ],
+                                    [ 1, 1, 1 ],
+                                    [ 1, 1, 1 ]],
+                    'filters':   [ [ 'SDSS-i'],
+                                  [ 'SDSS-g', 'SDSS-r', 'SDSS-i'],
+                                    [ 'SDSS-g', 'SDSS-r', 'SDSS-i'] ],
+                    'defocus':  [ [ 0.0 ],
+                                 [ 0.0, 0.0, 0.0],
+                                    [ 0.0, 0.0, 0.0]],
                     'sites':        ['lsc', 'cpt', 'coj'],
-                    'domes':        ['doma', 'doma', 'doma'],
+                    'domes':        ['domb', 'doma', 'doma'],
                     'tels':         [ '1m0', '1m0', '1m0' ],
-                    'instruments':  ['fl15', 'fl16', 'fl12'],
+                    'instruments':  ['fl03', 'fl16', 'fl12'],
                     'cadence_hrs': 7.0,
                     'jitter_hrs': 1.0,
                     'TTL_days': 7.0,
                     }
     return obs_sequence
+
+if __name__ == '__main__':
+    script_config = {'user_id': 'tester@lco.global', 
+                     'proposal_id': 'TEST',
+                     'lco_access': 'XXX',
+                     'selected_field': 'ROME-FIELD-01'}
+    rome_field_obs = build_rome_obs(script_config,log=None)
+    for field_seq in rome_field_obs:
+        print field_seq.summary()
+    
