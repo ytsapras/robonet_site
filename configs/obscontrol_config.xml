@@ -2,9 +2,7 @@
 
 <obscontrolconfig>
     <parameter name='log_directory'>
-      	<!-- <value>/data/robouser/Logs/2017</value> -->
-	<!-- <value>/home/Tux/ytsapras/Data/RoboNet/ARTEMiS/Logs/2017</value> -->
-	<value>/var/www/robonetsite/data/logs/2017</value>
+      	<value>/logs/2017</value>
     </parameter>
     <parameter name='log_root_name'>
       	<value>obscontrol</value>
@@ -13,13 +11,13 @@
 	<value>obscontrol.lock</value>
     </parameter>
     <parameter name='proposal_id'>
-      	<value>KEY2017AB-004</value>
+      	<value>EXAMPLE-PRP</value>
     </parameter>
     <parameter name='user_id'>
-      	<value>rstreet@lco.global</value>
+      	<value>tester@lco.global</value>
     </parameter>
-    <parameter name='odin_access'>
-      	<value>XXX</value>
+    <parameter name='lco_access'>
+      	<value>XXXX</value>
     </parameter>
     <parameter name='simulate'>
       	<value>False</value>
@@ -28,6 +26,6 @@
       	<value>24.0</value>
     </parameter>
     <parameter name='token'>
-        <value>94294335fe4d91ef714bd89a051139b22ab15ed8</value>
+        <value>XXXX</value>
     </parameter>
 </obscontrolconfig>
