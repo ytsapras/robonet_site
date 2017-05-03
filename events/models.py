@@ -230,17 +230,17 @@ class SingleModel(models.Model):
    event = models.ForeignKey(Event)
    Tmax = models.DecimalField("Tmax", max_digits=12,decimal_places=4)
    e_Tmax = models.DecimalField("sig(Tmax)", max_digits=12,decimal_places=4,
-                                     null=True, blank=True)
+                                null=True, blank=True)
    tau = models.DecimalField("T_E", max_digits=12,decimal_places=4)
    e_tau = models.DecimalField("sig(T_E)", max_digits=12,decimal_places=4,
-                                     null=True, blank=True)
+                               null=True, blank=True)
    umin = models.DecimalField("u_min", max_digits=12,decimal_places=4)
    e_umin = models.DecimalField("sig(u_min)", max_digits=12,decimal_places=4,
-                                     null=True, blank=True)
+                                null=True, blank=True)
    rho = models.DecimalField("rho", max_digits=12,decimal_places=4,
-                             null=True, blank=True)
+                                null=True, blank=True)
    e_rho = models.DecimalField("sig(rho)", max_digits=12,decimal_places=4,
-                             null=True, blank=True)
+                                null=True, blank=True)
    pi_e_n = models.DecimalField("Parallax EN", max_digits=12,decimal_places=4,
                                 null=True, blank=True)
    e_pi_e_n = models.DecimalField("sig(Parallax EN)", max_digits=12,decimal_places=4,
