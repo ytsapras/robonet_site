@@ -913,9 +913,9 @@ class Image(models.Model):
              (integer, optional, default=None)	     
    ztemp -- ztemp parameter.
                  (float, optional, default=None)
-   shiftx -- x-axis WCS shift from template image in pixels
+   shift_x -- x-axis WCS shift from template image in pixels
              (integer, optional, default=None)	     
-   shifty -- y-axis WCS shift from template image in pixels
+   shift_y -- y-axis WCS shift from template image in pixels
              (integer, optional, default=None)	     
    quality -- Image quality description.
                  (string, optional, default='')
