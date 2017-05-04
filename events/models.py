@@ -952,6 +952,6 @@ class Image(models.Model):
    elongation = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
    nstars = models.IntegerField(blank=True, null=True)
    ztemp = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-   shiftx = models.IntegerField(blank=True, null=True)
-   shifty = models.IntegerField(blank=True, null=True)
+   shift_x = models.IntegerField(blank=True, null=True)
+   shift_y = models.IntegerField(blank=True, null=True)
    quality = models.CharField(max_length=400, blank=True, default='')
