@@ -916,7 +916,7 @@ def add_tap(event_name, timestamp=timezone.now(), priority='N', tsamp=0, texp=0,
 def add_image(field_name, image_name, date_obs, timestamp=timezone.now(), tel='', inst='',
               filt='', grp_id='', track_id='', req_id='', airmass=None, avg_fwhm=None, 
 	      avg_sky=None, avg_sigsky=None, moon_sep=None, moon_phase=None, moon_up=False,
-	      elongation=None, nstars=None, ztemp=None, shiftx=None, shifty=None, quality=''):
+	      elongation=None, nstars=None, ztemp=None, shift_x=None, shift_y=None, quality=''):
    """
    Add or update an image entry to the database. If the image already exists, it only allows 
    the user to set the target_* parameters.
@@ -964,9 +964,9 @@ def add_image(field_name, image_name, date_obs, timestamp=timezone.now(), tel=''
              (integer, optional, default=None)	     
    ztemp -- ztemp parameter.
                  (float, optional, default=None)   
-   shiftx -- x-axis WCS shift from template image in pixels
+   shift_x -- x-axis WCS shift from template image in pixels
              (integer, optional, default=None)	     
-   shifty -- y-axis WCS shift from template image in pixels
+   shift_y -- y-axis WCS shift from template image in pixels
              (integer, optional, default=None)	     
    quality -- Image quality description.
                  (string, optional, default='')
@@ -981,7 +981,7 @@ def add_image(field_name, image_name, date_obs, timestamp=timezone.now(), tel=''
 	 	         tel=tel, inst=inst, filt=filt, grp_id=grp_id, track_id=track_id, req_id=req_id, 
 	 		 airmass=airmass, avg_fwhm=avg_fwhm, avg_sky=avg_sky, avg_sigsky=avg_sigsky, 
          		 moon_sep=moon_sep, moon_phase=moon_phase, moon_up=moon_up, elongation=elongation,
-	 		 nstars=nstars, ztemp=ztemp, shiftx=shiftx, shifty=shifty, quality=quality)
+	 		 nstars=nstars, ztemp=ztemp, shift_x=shift_x, shift_y=shift_y, quality=quality)
 	 add_new.save()
 	 successful = True
       except:

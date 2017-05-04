@@ -200,8 +200,8 @@ class Image(object):
 
 			self.object_name = self.header[self.camera.header_dictionnary['object']]
 			self.field_name = self.object_name
-			self.logger.info('Object name is :'+self.object_name)
-			self.logger.info('And so the assiocated field :'+self.field_name)
+			self.logger.info('Object name is : '+self.object_name)
+			self.logger.info('And so the assiocated field : '+self.field_name)
 		except:
 
 			self.logger.error('I can not recognize the object name or/and field name!')
@@ -244,8 +244,8 @@ class Image(object):
 
 			self.output_directory = output_directory
 		        self.catalog_directory = origin_directory.replace('images','catalog0')
-			self.logger.info('Successfully find the output directory :'+self.output_directory)
-			self.logger.info('Successfully find the catalog directory :'+self.catalog_directory)
+			self.logger.info('Successfully find the output directory : '+self.output_directory)
+			self.logger.info('Successfully find the catalog directory : '+self.catalog_directory)
 	
 		except:
 		
@@ -290,7 +290,7 @@ class Image(object):
 		                  'GAIN':self.camera.gain,
 		                  'SEEING_FWHM':self.header_seeing,
 		                  'BACK_FILTERSIZE':3}
-		   sew = sewpy.SEW(params=extractor_parameters,config=extractor_config,sexpath='/usr/bin/sextractor')
+		   sew = sewpy.SEW(params=extractor_parameters,config=extractor_config)
 		   sewoutput = sew(os.path.join(self.image_directory,self.image_name))
 		   #APPEND JD, ATTEMPTING TO CALIBRATE MAGNITUDES..
 		   catalog=sewoutput['table']     
@@ -560,13 +560,13 @@ def process_new_images(new_frames_directory, image_output_origin_directory, logs
 			image.assess_image_quality()
 			image.determine_the_output_directory()
 			success = image.ingest_the_image_in_the_database()
-			
+
 			if success == True:
 
 				image.class_the_catalog_in_the_directory()
 				sorting_success = image.class_the_image_in_the_directory()
 				
-			is sorting_success == True:
+			if sorting_success == True:
 
 				os.remove(new_frames_directory+newframe)
 
