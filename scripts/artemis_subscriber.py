@@ -20,6 +20,8 @@ import log_utilities
 from numpy import array
 import event_classes
 import socket
+import mmap
+import pytz
 
 version = 1.0
 
@@ -126,6 +128,13 @@ def sync_artemis_data_db(config,data_type,log):
         for f in event_files:
             sync_model_file_with_db(config,f,log)
 
+    # Loop over all updated data files and update the database:
+    if data_type == 'data' and int(config['update_db']) == 1:
+        if config['verbose'] == True:
+            log.info('Syncing contents of ARTEMiS data files with DB:')
+        for f in event_files:
+            sync_data_file_with_db(config,f,log)
+
 def sync_model_file_with_db(config,model_file,log):
     """Function to read an ARTEMiS-format .model file and sync its contents
     with the database"""
@@ -142,6 +151,69 @@ def sync_model_file_with_db(config,model_file,log):
             log.info('-> Warning: Database update switched off in configuration')
     else:
         log.info('-> ERROR: could not parse model file.  Old format?')
+
+def sync_data_file_with_db(config,data_file,log):
+    """Function to ensure the DB record of the latest data is up to date"""
+    
+    short_name = path.basename(data_file).split('.')[0][1:-1]
+    filt = path.basename(data_file).split('.')[0][-1:]
+    origin = path.basename(data_file).split('.')[0][0:1]
+    (first, last) = read_first_and_last(data_file)
+    baseline = float(first.split()[0])
+    last_mag = float(last.split()[0])
+    ndata = mapcount_file_lines(path.basename(data_file).split('.')[0][1:-1])
+    ndata -= 1   # Subtract the length of the file header
+    last_upd = datetime.fromtimestamp(path.getmtime(file_name))
+    last_upd = last_upd.replace(tzinfo=pytz.UTC)
+    fname = path.join(path.dirname(data_file),'../models',short_name+'.align')
+    align_pars = read_artemis_align_params(fname)
+    
+    params = {'name': utilities.short_to_long_name(short_name),\
+              'datafile': '/data/romerea/data/artemis/data/OOB170620I.dat',\
+              'last_mag': last_mag,\
+              'tel': look_up_origin(origin)
+              'filt': filt,
+              'baseline': baseline,
+              'g': align_pars['g'],
+              'ndata': ndata,
+              'last_obs': datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),\
+              'last_upd': last_upd.strftime("%Y-%m-%dT%H:%M:%S")
+            }
+
+def look_up_origin(origin):
+    """Function to return the full telescope ID for common survey names"""
+    
+    tel_codes = { 'O': 'OGLE 1.3m', 
+                 'K': 'MOA 1.8m',
+                 'L': 'Danish LuckyCam 1.54m' }
+    if origin in tel_codes.keys():
+        tel = tel_codes[origin]
+    else:
+        tel = origin
+    return tel
+
+def read_first_and_last(file_path):
+    """Function (thank you Stack Overflow) to read the first and last
+    line of a file"""
+    
+    with open(file_path, "rb") as f:
+        first = f.readline()      
+        f.seek(-2, 2)             # Jump to the second last byte.
+        while f.read(1) != b"\n": # Until EOL is found...
+            f.seek(-2, 1)         # ...jump back the read byte plus one more.
+        last = f.readline()       # Read last line.
+    return first, last
+
+def mapcount_file_lines(file_path):
+    """Function (thank you again Stack Overflow) to count the number of 
+    lines in a file efficiently by using memory mapping"""
+    f = open(file_path, "r+")
+    buf = mmap.mmap(f.fileno(), 0)
+    lines = 0
+    readline = buf.readline
+    while readline():
+        lines += 1
+    return lines
 
 ###########################
 # RSYNC FUNCTION
@@ -311,6 +383,22 @@ def read_artemis_data_file(data_file_path):
     data = array(data)
     
     return ndata, data
+
+def read_artemis_align_params(data_file):
+    """Function to read the parameters from the ARTEMiS' format .align file"""
+    
+    params = {'name_code': None, 
+              'baseline': None,
+              'g': None
+              }
+    if path.isfile(data_file) == True:
+        line = open(data_file,'r').readline()
+        entries = line.split()
+        params['name_code'] = entries[0]
+        params['baseline'] = float(entries[1])
+        params['g'] = float(entries[2])
+    
+    return params
 
 def get_artemis_data_params(data_file_path):
     '''Function to obtain information about the ARTEMiS-format photometry data file,

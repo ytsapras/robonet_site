@@ -21,6 +21,8 @@ from datetime import datetime, timedelta
 setup()
 import update_db_2, query_db
 from events.models import Field
+import api_tools
+import pytz
 
 def test_add_request():
     """Test the submission of new observation requests to the database"""
@@ -62,6 +64,33 @@ def test_coords_exist():
     assert coordinates_known[0] == True
     assert coordinates_known[1] == ra
     assert coordinates_known[2] == dec
+
+def test_add_datafile_via_api():
+    """Function to check that the function to add a data file to the DB
+    correctly parses the parameters given."""
     
+    last_obs = datetime.utcnow()
+    last_obs = last_obs.replace(tzinfo=pytz.UTC)
+    last_obs = last_obs.strftime("%Y-%m-%dT%H:%M:%S")
+    
+    last_upd = datetime.utcnow()
+    last_upd = last_upd.replace(tzinfo=pytz.UTC)
+    last_upd = last_upd.strftime("%Y-%m-%dT%H:%M:%S")
+    
+    params = {'event_name': 'OGLE-2017-BLG-0620',
+              'datafile': '/data/romerea/data/artemis/data/OOB170620I.dat',
+              'last_mag': 17.2,
+              'tel': 'OGLE 1.3m',
+              'filt': 'I',
+              'baseline': 22.5,
+              'g': 18.45,
+              'ndata': 2234,
+              'last_obs': last_obs,
+              'last_upd': last_upd,
+            }
+            
+    (status,message) = update_db_2.add_datafile_via_api(params)
+    print status, message
+
 if __name__ == '__main__':
-    test_coords_exist()
+    test_add_datafile_via_api()

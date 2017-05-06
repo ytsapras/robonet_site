@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Apr 24 14:03:37 2017
+Created on Fri May  5 10:18:16 2017
 
 @author: rstreet
 """
@@ -23,22 +23,27 @@ from events.models import Field
 from datetime import datetime, timedelta
 import api_tools
 
-def test_api_obs_record():
-    """Function to test the recording of a new observation 
-    request (submitted to the LCO network) by submitting it to the ROME/REA
-    database via API. """
+def test_api_data_file():
+    """Function to test the recording of a new data file 
+    via API to the ROME/REA database. """
     
-    params = {'field': '1',\
-              't_sample': 333.3,\
-              'exptime': 999,\
-              'timestamp': datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),\
-              'time_expire': (datetime.utcnow() + timedelta(days=1.0)).strftime("%Y-%m-%dT%H:%M:%S")
+    params = {'name': 'OGLE-2017-BLG-0620',\
+              'datafile': '/data/romerea/data/artemis/data/OOB170620I.dat',\
+              'last_mag': 17.2,\
+              'tel': 'OGLE 1.3m',
+              'filt': 'I',
+              'baseline': 22.5,
+              'g': 18.45,
+              'ndata': 2234,
+              'last_obs': datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),\
+              'last_upd': datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
             }
     config = {}
     config['db_user_id'] = raw_input('Please enter DB user ID: ')
     config['db_pswd'] = raw_input('Please enter DB password: ')
-    
-    response = api_tools.submit_obs_request_record(config,params)
+
+    response = api_tools.submit_data_file_record(config,params,testing=True)
+    print 'Response: ',response
     
 if __name__ == '__main__':
-    test_api_obs_record()
+    test_api_data_file()
