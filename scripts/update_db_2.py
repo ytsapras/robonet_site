@@ -249,9 +249,9 @@ def add_event_name(event, operator, name):
         except:
             successful = False
             response = 'Failed to add a new event name.'
-        else:
-            successful = False
-            response = 'This name is already associated with an event.'
+    else:
+        successful = False
+        response = 'This name is already associated with an event.'
     return successful, response
 
 ###################################################################################
