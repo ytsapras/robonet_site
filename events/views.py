@@ -281,9 +281,9 @@ def obs_log(request, date):
          images = Image.objects.filter(date_obs__range=(date_min, date_max))
          filenames = [k.image_name for k in images]
          times = [k.date_obs for k in images]
-         objects = [EventName.objects.filter(event_id = k.event.pk)[0].name for k in images]
-         ras = [k.event.ev_ra for k in images]
-         decs = [k.event.ev_dec for k in images]
+         fields = [k.field_id for k in images]
+         ras = [k.field.field_ra for k in images]
+         decs = [k.field.field_dec for k in images]
          filts = [k.filt for k in images]
          tels = [k.tel for k in images]
          insts = [k.inst for k in images]
@@ -298,7 +298,7 @@ def obs_log(request, date):
          elongations = [k.elongation for k in images]
          nstars = [k.nstars for k in images]
          qualitys = [k.quality for k in images]
-         rows = zip(filenames, times, objects, ras, decs, filts, tels, insts, grp_ids, track_ids,
+         rows = zip(filenames, times, fields, ras, decs, filts, tels, insts, grp_ids, track_ids,
         	    req_ids, airmasses, avg_fwhms, avg_skys, avg_sigskys, moon_seps, elongations,
         	    nstars, qualitys)
          rows = sorted(rows, key=lambda row: row[1])
