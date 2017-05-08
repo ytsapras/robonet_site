@@ -1210,7 +1210,11 @@ def run_test2():
       #print 'Trying to add event ...'
       t = Time(datetime.now())
       tjd = t.jd - 2450000.0
-      if abs(tjd-float(data[3])) <= 5.0*float(data[5]):
+      if (float(data[3]) <= 2450000.0):
+         tmax = float(data[3])+2450000.0
+      else:
+         tmax = float(data[3])
+      if abs(tjd-tmax) <= 5.0*float(data[5]):
          guess_status = 'AC'
       else:
          guess_status = 'EX'
@@ -1251,7 +1255,11 @@ def run_test2():
       #print 'Trying to add event ...'
       t = Time(datetime.now())
       tjd = t.jd - 2450000.0
-      if abs(tjd-float(data[3])) <= 5.0*float(data[5]):
+      if (float(data[3]) <= 2450000.0):
+         tmax = float(data[3])+2450000.0
+      else:
+         tmax = float(data[3])
+      if abs(tjd-tmax) <= 5.0*float(data[5]):
          guess_status = 'AC'
       else:
          guess_status = 'EX'

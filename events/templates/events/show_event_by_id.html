@@ -1,10 +1,11 @@
 {% extends "base.html" %}
+{% load staticfiles %}
 	{% block head_extras %}
             <meta charset="utf-8" />
 	    <meta http-equiv='content-type' content='text/html; charset=utf-8' />
 	    <title>Microlensing Event</title>
-            <script src="http://cdn.pydata.org/bokeh/release/bokeh-0.12.4.min.js"></script>	
-            <link rel="stylesheet" href="http://cdn.pydata.org/bokeh/release/bokeh-0.12.4.min.css">
+            <script src={% static 'events/bokeh-0.12.4.min.js' %}></script>	
+            <link rel="stylesheet" href={% static 'events/bokeh-0.12.4.min.css' %}>
 	{% endblock %}    
 
 {% block content %}

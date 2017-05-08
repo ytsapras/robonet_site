@@ -617,7 +617,10 @@ def show_event(request, event_name):
          try:
             event = Event.objects.get(id=event_id)
             single_recent = SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')
-            obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
+	    try:
+               obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
+	    except:
+	       raise Http404("DataFile matching query does not exist. There are no data files associated with this event.")
             #status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
             status_recent = Event.objects.get(pk=event_id).status
             last_obs = obs_recent['last_obs']
