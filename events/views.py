@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from django.db.models import Max
+from django.utils import timezone
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from .forms import QueryObsRequestForm, RecordObsRequestForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
@@ -271,7 +272,9 @@ def obs_log(request, date):
    if request.user.is_authenticated():
       try:
          date_min = datetime(int(date[0:4]), int(date[4:6]), int(date[6:8]))
+	 date_min = timezone.make_aware(date_min, timezone.get_current_timezone())
          date_max = date_min + timedelta(hours=24)
+	 date_max = timezone.make_aware(date_max, timezone.get_current_timezone())
       except:
          raise Http404("Encountered an error: Date must be provided in the format: YYYYMMDD")
       try:
