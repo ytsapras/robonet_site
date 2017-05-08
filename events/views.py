@@ -265,6 +265,7 @@ def download_lc(request, event_name):
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def obs_log(request, date):
+   from django.utils import timezone
    """
    Will display the observation log for the given date.
    Date must be provided in the format: YYYYMMDD
@@ -274,7 +275,6 @@ def obs_log(request, date):
          date_min = datetime(int(date[0:4]), int(date[4:6]), int(date[6:8]))
 	 date_min = timezone.make_aware(date_min, timezone.get_current_timezone())
          date_max = date_min + timedelta(hours=24)
-	 date_max = timezone.make_aware(date_max, timezone.get_current_timezone())
       except:
          raise Http404("Encountered an error: Date must be provided in the format: YYYYMMDD")
       try:
