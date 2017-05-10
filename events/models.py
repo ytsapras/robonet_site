@@ -745,6 +745,8 @@ class DataFile(models.Model):
                                          default=timezone.now())
    last_obs -- Datetime of last observation. (datetime, required, 
                                          default=timezone.now())
+   last_hjd -- HJD of last observation. (float, optional,
+                                         default=Null)
    last_mag -- Last recorded magnitude. 
                (float, required)
    tel -- Telescope identifier. 
@@ -768,6 +770,8 @@ class DataFile(models.Model):
    last_upd = models.DateTimeField('date last updated')
    # Date of last observation in file
    last_obs = models.DateTimeField('date of last observation')
+   # HJD of last observation in file
+   last_hjd = models.DecimalField(max_digits=20,decimal_places=8, null=True, blank=True)
    # Last known magnitude
    last_mag = models.DecimalField(max_digits=10,decimal_places=2)
    # Telescope where observations were taken

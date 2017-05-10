@@ -799,7 +799,7 @@ def add_status(event_name, timestamp=timezone.now(), status='NF', comment='',
    return successful
 
 ###################################################################################
-def add_datafile(event_name, datafile, last_upd, last_obs, last_mag, tel, ndata, inst='', 
+def add_datafile(event_name, datafile, last_upd, last_obs, last_hjd, last_mag, tel, ndata, inst='', 
              filt='', baseline=22.0, g=0.0):
    """
    Add a data file to the database.
@@ -814,6 +814,8 @@ def add_datafile(event_name, datafile, last_upd, last_obs, last_mag, tel, ndata,
                                          default=timezone.now())
    last_obs -- Datetime of last observation. (datetime, required, 
                                          default=timezone.now())
+   last_hjd -- HJD of last observation. (float, optional,
+                                         default=Null)
    last_mag -- Last recorded magnitude. 
                (float, required)
    tel -- Telescope identifier. 
@@ -836,7 +838,7 @@ def add_datafile(event_name, datafile, last_upd, last_obs, last_mag, tel, ndata,
       event = Event.objects.get(id=event_id)
       try:
          add_new = DataFile(event=event, datafile=datafile, last_upd=last_upd, 
-	                    last_obs=last_obs, last_mag=last_mag, tel=tel, 
+	                    last_obs=last_obs, last_hjd=last_hjd, last_mag=last_mag, tel=tel, 
 			    inst=inst, filt=filt, baseline=baseline, 
 			    g=g, ndata=ndata)
 	 add_new.save()
@@ -1527,6 +1529,7 @@ def run_test2():
          datafile = i
 	 last_upd = timezone.now()
          last_obs = Time(float('245'+data[-1].split()[2]), format='jd').datetime
+	 last_hjd = float('245'+data[-1].split()[2])
          last_obs = timezone.make_aware(last_obs, timezone.get_current_timezone())
          last_mag = float(data[-1].split()[0])
          ndata = len(data)-1
@@ -1542,7 +1545,7 @@ def run_test2():
 	 inst = ''
 	 filt = ''
 	 add_datafile(event_name=event_name, datafile=datafile, last_upd=last_upd, 
-	              last_obs=last_obs,   last_mag=last_mag, tel=tel, ndata=ndata, 
+	              last_obs=last_obs, last_hjd=last_hjd, last_mag=last_mag, tel=tel, ndata=ndata, 
 		      inst=inst, filt=filt, baseline=baseline, g=g)
          count = count + 1
          print count
