@@ -498,18 +498,8 @@ def show_event_by_id(request, event_id):
          # Get list of all observations and select the one with the most recent time.
          try:
             event = Event.objects.get(id=event_id)
+            status_recent = Event.objects.get(pk=event_id).status	    
             single_recent = SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')
-            obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
-            #status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
-            status_recent = Event.objects.get(pk=event_id).status
-            last_obs = obs_recent['last_obs']
-            last_obs_hjd = Time(last_obs).jd
-            tel_id = obs_recent['datafile'].split('/')[-1].split('_')
-            if len(tel_id) == 2:
-               tel_id = tel_id[0]+'_'
-            else:
-               tel_id = obs_recent['datafile'].split('/')[-1][0]
-            last_obs_tel = site_dict[tel_id][-1]
             Tmax = single_recent['Tmax']
             e_Tmax = single_recent['e_Tmax']
             tau = single_recent['tau']
@@ -523,9 +513,7 @@ def show_event_by_id(request, event_id):
             if "OGLE" in ev_name:
                ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])
          except:
-            last_obs = "N/A"
-            last_obs_hjd = "N/A"
-            Tmax = "N/A"
+	    Tmax = "N/A"
             e_Tmax = "N/A"
             tau = "N/A"
             e_tau = "N/A"
@@ -536,6 +524,20 @@ def show_event_by_id(request, event_id):
             last_obs_tel = "N/A"
             status = 'EX'
             ogle_url = ''
+	 try:
+            obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
+            last_obs = obs_recent['last_obs']
+            last_obs_hjd = Time(last_obs).jd
+            tel_id = obs_recent['datafile'].split('/')[-1].split('_')
+            if len(tel_id) == 2:
+               tel_id = tel_id[0]+'_'
+            else:
+               tel_id = obs_recent['datafile'].split('/')[-1][0]
+            last_obs_tel = site_dict[tel_id][-1]
+         except:
+            last_obs = "N/A"
+            last_obs_hjd = "N/A"
+	    last_obs_tel = "N/A"
          # Convert the name to ARTEMiS format for bokeh plotting
          if 'OGLE' in ev_name:
             artemis_name = 'OB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
@@ -619,21 +621,8 @@ def show_event(request, event_name):
          # Get list of all observations and select the one with the most recent time.
          try:
             event = Event.objects.get(id=event_id)
+            status_recent = Event.objects.get(pk=event_id).status	    
             single_recent = SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')
-	    try:
-               obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
-	    except:
-	       raise Http404("DataFile matching query does not exist. There are no data files associated with this event.")
-            #status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
-            status_recent = Event.objects.get(pk=event_id).status
-            last_obs = obs_recent['last_obs']
-            last_obs_hjd = Time(last_obs).jd
-            tel_id = obs_recent['datafile'].split('/')[-1].split('_')
-            if len(tel_id) == 2:
-               tel_id = tel_id[0]+'_'
-            else:
-               tel_id = obs_recent['datafile'].split('/')[-1][0]
-            last_obs_tel = site_dict[tel_id][-1]
             Tmax = single_recent['Tmax']
             e_Tmax = single_recent['e_Tmax']
             tau = single_recent['tau']
@@ -647,9 +636,7 @@ def show_event(request, event_name):
             if "OGLE" in ev_name:
                ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])
          except:
-            last_obs = "N/A"
-            last_obs_hjd = "N/A"
-            Tmax = "N/A"
+	    Tmax = "N/A"
             e_Tmax = "N/A"
             tau = "N/A"
             e_tau = "N/A"
@@ -660,6 +647,20 @@ def show_event(request, event_name):
             last_obs_tel = "N/A"
             status = 'EX'
             ogle_url = ''
+	 try:
+            obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
+            last_obs = obs_recent['last_obs']
+            last_obs_hjd = Time(last_obs).jd
+            tel_id = obs_recent['datafile'].split('/')[-1].split('_')
+            if len(tel_id) == 2:
+               tel_id = tel_id[0]+'_'
+            else:
+               tel_id = obs_recent['datafile'].split('/')[-1][0]
+            last_obs_tel = site_dict[tel_id][-1]
+         except:
+            last_obs = "N/A"
+            last_obs_hjd = "N/A"
+	    last_obs_tel = "N/A"
          # Convert the name to ARTEMiS format for bokeh plotting
          if 'OGLE' in ev_name:
             artemis_name = 'OB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
