@@ -49,8 +49,8 @@ def add_telescope(operator, telescope_name, aperture=0.0, latitude=0.0,
    Adds a new telescope name in the database.
    
    Keyword arguments:
-   operator -- The operator 
-               (object, required) -- ForeignKey object
+   operator -- The name of the operator 
+               (string, required)
    telescope_name -- The telescope name 
                      (string, required)
    aperture -- The telescope aperture 
@@ -67,13 +67,25 @@ def add_telescope(operator, telescope_name, aperture=0.0, latitude=0.0,
    known_telescope = Telescope.objects.filter(name=telescope_name).exists()
    # If the telescope already exists there's no need to add it
    if known_telescope == True:
+      print 'An entry for this telescope already exists.'
       successful = False
    else:
-      add_new = Telescope(operator=operator, name=telescope_name,
-                          aperture=aperture, latitude=latitude, 
-                          longitude=longitude, altitude=altitude,site=site)
-      add_new.save()
-      successful = True
+      # Check that requested operator name is a known operator
+      unknown_operator = False
+      try:
+    	 operator_id = Operator.objects.get(name=operator).id
+    	 operator_obj = Operator.objects.get(id=operator_id)
+      except:
+    	 print 'Event not added: Unknown Operator: %s' % operator
+    	 unknown_operator = True
+      if unknown_operator==False:
+         add_new = Telescope(operator=operator_obj, name=telescope_name,
+                             aperture=aperture, latitude=latitude,
+                             longitude=longitude, altitude=altitude,site=site)
+         add_new.save()
+         successful = True
+      else:
+         successful = False
    return successful
 
 ##################################################################################
@@ -170,7 +182,7 @@ def add_event(field_name, operator_name, ev_ra, ev_dec, status = 'NF',
    Keyword arguments:
    field_name -- Field name 
            (string, required)
-   operator -- Operator name
+   operator_name -- Operator name
            (string, required)
    ev_ra -- Event RA. (string, required)
         	   e.g. "17:54:33.58"
@@ -799,7 +811,7 @@ def add_status(event_name, timestamp=timezone.now(), status='NF', comment='',
    return successful
 
 ###################################################################################
-def add_datafile(event_name, datafile, last_upd, last_obs, last_hjd, last_mag, tel, ndata, inst='', 
+def add_datafile(event_name, datafile, last_upd, last_hjd, last_mag, tel, ndata, inst='', 
              filt='', baseline=22.0, g=0.0):
    """
    Add a data file to the database.
@@ -812,10 +824,7 @@ def add_datafile(event_name, datafile, last_upd, last_obs, last_hjd, last_mag, t
               (string, required)
    last_upd -- Datetime of last update. (datetime, required, 
                                          default=timezone.now())
-   last_obs -- Datetime of last observation. (datetime, required, 
-                                         default=timezone.now())
-   last_hjd -- HJD of last observation. (float, optional,
-                                         default=Null)
+   last_hjd -- HJD of last observation. (float, required)
    last_mag -- Last recorded magnitude. 
                (float, required)
    tel -- Telescope identifier. 
@@ -838,7 +847,7 @@ def add_datafile(event_name, datafile, last_upd, last_obs, last_hjd, last_mag, t
       event = Event.objects.get(id=event_id)
       try:
          add_new = DataFile(event=event, datafile=datafile, last_upd=last_upd, 
-	                    last_obs=last_obs, last_hjd=last_hjd, last_mag=last_mag, tel=tel, 
+	                    last_hjd=last_hjd, last_mag=last_mag, tel=tel, 
 			    inst=inst, filt=filt, baseline=baseline, 
 			    g=g, ndata=ndata)
 	 add_new.save()
@@ -1055,7 +1064,7 @@ def run_test2():
       print tel_name
       if ('LCOGT' in tel_name) or ('Liverpool' in tel_name) or ('Faulkes' in tel_name):
          # Get the appropriate pk for RoboNet
-         operator = Operator.objects.get(name='ROMEREA')
+         operator = 'ROMEREA'
 	 if ('SSO' in tel_name) or ('Faulkes South' in tel_name):
 	    longitude = -31.27
 	    latitude = 149.07
@@ -1087,26 +1096,26 @@ def run_test2():
 	    altitude = None
 	    site = ''
       elif 'OGLE' in tel_name:
-         operator = Operator.objects.get(name='OGLE')
+         operator = 'OGLE'
 	 longitude = -29.01
 	 latitude = -70.70
 	 altitude = 2275.0
 	 site = 'LCO'
       elif 'MOA' in tel_name:
-         operator = Operator.objects.get(name='MOA')
+         operator = 'MOA'
 	 longitude = -43.99
 	 latitude = 170.47
 	 altitude = 1029.0
 	 site = 'MJUO'
       else:
-         operator = Operator.objects.get(name='OTHER')
+         operator = 'OTHER'
 	 longitude = None
 	 latitude = None
 	 altitude = None
 	 site = ''
       aperture = float(tel_name.split()[-1][:-1])
       #print operator, tel_name, aperture, site
-      add_telescope(operator=operator, telescope_name=tel_name, longitude=longitude, 
+      add_telescope(operator=operator, name=tel_name, longitude=longitude, 
                     latitude=latitude, altitude=altitude, aperture=aperture, site=site)
    
    # Populate Instrument database
@@ -1528,9 +1537,9 @@ def run_test2():
 	    event_name = shorthand_name.replace('KB'+year[2:],'MOA-'+year+'-BLG-')
          datafile = i
 	 last_upd = timezone.now()
-         last_obs = Time(float('245'+data[-1].split()[2]), format='jd').datetime
+         #last_obs = Time(float('245'+data[-1].split()[2]), format='jd').datetime
 	 last_hjd = float('245'+data[-1].split()[2])
-         last_obs = timezone.make_aware(last_obs, timezone.get_current_timezone())
+         #last_obs = timezone.make_aware(last_obs, timezone.get_current_timezone())
          last_mag = float(data[-1].split()[0])
          ndata = len(data)-1
          tel_id = i.split('/')[-1][0:1]
@@ -1545,7 +1554,7 @@ def run_test2():
 	 inst = ''
 	 filt = ''
 	 add_datafile(event_name=event_name, datafile=datafile, last_upd=last_upd, 
-	              last_obs=last_obs, last_hjd=last_hjd, last_mag=last_mag, tel=tel, ndata=ndata, 
+	              last_hjd=last_hjd, last_mag=last_mag, tel=tel, ndata=ndata, 
 		      inst=inst, filt=filt, baseline=baseline, g=g)
          count = count + 1
          print count

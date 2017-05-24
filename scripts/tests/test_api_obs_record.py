@@ -35,7 +35,7 @@ def test_api_obs_record():
               'time_expire': (datetime.utcnow() + timedelta(days=1.0)).strftime("%Y-%m-%dT%H:%M:%S")
             }
     config = {'db_user_id': 'rstreet', \
-                'db_pswd': 'skynet1186'
+                'db_pswd': 'xxxx'
                 }
     response = api_tools.submit_obs_request_record(config,params)
     

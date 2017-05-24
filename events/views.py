@@ -8,7 +8,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.db.models import Max
 from django.utils import timezone
 from django.http import HttpResponse, Http404, HttpResponseRedirect
-from .forms import QueryObsRequestForm, RecordObsRequestForm
+from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, TelescopeForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from itertools import chain
@@ -132,41 +132,66 @@ def simple(request):
    return response
 
 ##############################################################################################################
-#@login_required
-#@require_http_methods(['GET', 'POST'])
-#def add_operator(request):
-#   """
-#   Adds a new operator name in the database.
-#   This can be the survey name or the name of the follow-up group.
-#   
-#   Keyword arguments:
-#   operator_name -- The operator name 
-#                    (string, required)
-#   """
-#   #try:
-#   form = OperatorForm(request.POST or None)
-#   if request.POST and form.is_valid():
-#      opname = Operator.objects.filter(name=request.POST['name'])
-#      if len(opname) == 0:
-#         form.save()
-#	 return HttpResponse("New Operator successfully added.")
-#      else:
-#         return HttpResponse("An Operator with that name already exists.")
-#   
-#   d = {
-#       'form': form,
-#       }
-#   #new_operator = Operator.objects.get_or_create(name=operator)
-#   #new_operator.name = request.POST.get(operator)
-#   #new_operator.save()
-#   #if new_operator[-1] == False:
-#   #   successful = False
-#   #else:
-#   #   successful = True
-#   #except:
-#   #   raise Http404("Encountered a problem while loading. Please contact the site administrator.")
-#   #return HttpResponse("successful")
-#   return render(request, 'add_operator.html', d)
+@login_required(login_url='/db/login/')
+def add_operator(request):
+    """Function to allow new operator to be 
+    recorded in the database"""
+        
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = OperatorForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                status = update_db_2.add_operator(post.name)
+                
+                return render(request, 'events/add_operator.html', \
+                                    {'form': form, 'message': status})
+            else:
+                form = OperatorForm(request.POST)
+                # Add form data to output for debugging
+                return render(request, 'events/add_operator.html', \
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
+        else:
+            form = OperatorForm(request.POST)
+            return render(request, 'events/add_operator.html', \
+                                    {'form': form, 
+                                    'message': 'none'})
+    else:
+        return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def add_telescope(request):
+    """Function to allow new telescope to be 
+    recorded in the database"""
+        
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = TelescopeForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                status = update_db_2.add_telescope(operator=post.operator,telescope_name=post.telescope_name,\
+                            aperture=post.aperture, longitude=post.longitude, latitude=post.latitude,\
+                            altitude=post.altitude, site=post.site)
+                
+                return render(request, 'events/add_telescope.html', \
+                                    {'form': form, 'message': status})
+            else:
+                form = TelescopeForm(request.POST)
+                # Add form data to output for debugging
+                return render(request, 'events/add_telescope.html', \
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
+        else:
+            form = TelescopeForm(request.POST)
+            return render(request, 'events/add_telescope.html', \
+                                    {'form': form, 
+                                    'message': 'none'})
+    else:
+        return HttpResponseRedirect('login')
 
 ##############################################################################################################
 def dashboard(request):
