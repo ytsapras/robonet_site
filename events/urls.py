@@ -6,7 +6,6 @@ from django.contrib.auth import views as auth_views
 from . import views
 
 urlpatterns = [
-    #url(r'^add_operator/$', views.add_operator, name='add_operator'),
     #url(r'^simple.png$', views.simple),
     #url(r'^test/$', views.test, name='test'),
     url(r'^login/$', auth_views.login, {'template_name':'events/registration/login.html'}, name='login'),
@@ -21,6 +20,8 @@ urlpatterns = [
     url(r'^query_obs_requests/$', views.query_obs_requests, name='query_obs_requests'),
     url(r'^record_obs_request/$', views.record_obs_request, name='record_obs_requests'),
     url(r'^record_data_file/$', views.record_data_file, name='record_data_file'),
+    url(r'^add_operator/$', views.add_operator, name='add_operator'),
+    url(r'^add_telescope/$', views.add_telescope, name='add_telescope'),
     url(r'^tap/', views.tap, name='tap'),
     url(r'^list_year/(?P<year>[0-9]+)', views.list_year, name='list_year'),
     url(r'^list_all/', views.list_all, name='list_all'),

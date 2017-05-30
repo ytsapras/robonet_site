@@ -37,7 +37,6 @@ def test_api_obs_record():
     config = {}
     config['db_user_id'] = raw_input('Please enter DB user ID: ')
     config['db_pswd'] = raw_input('Please enter DB password: ')
-    
     response = api_tools.submit_obs_request_record(config,params)
     
 if __name__ == '__main__':

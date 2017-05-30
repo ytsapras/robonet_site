@@ -6,8 +6,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from django.db.models import Max
+from django.utils import timezone
 from django.http import HttpResponse, Http404, HttpResponseRedirect
-from .forms import QueryObsRequestForm, RecordObsRequestForm
+from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, TelescopeForm
 from .forms import RecordDataFileForm, EventNameForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
@@ -132,41 +133,66 @@ def simple(request):
    return response
 
 ##############################################################################################################
-#@login_required
-#@require_http_methods(['GET', 'POST'])
-#def add_operator(request):
-#   """
-#   Adds a new operator name in the database.
-#   This can be the survey name or the name of the follow-up group.
-#   
-#   Keyword arguments:
-#   operator_name -- The operator name 
-#                    (string, required)
-#   """
-#   #try:
-#   form = OperatorForm(request.POST or None)
-#   if request.POST and form.is_valid():
-#      opname = Operator.objects.filter(name=request.POST['name'])
-#      if len(opname) == 0:
-#         form.save()
-#	 return HttpResponse("New Operator successfully added.")
-#      else:
-#         return HttpResponse("An Operator with that name already exists.")
-#   
-#   d = {
-#       'form': form,
-#       }
-#   #new_operator = Operator.objects.get_or_create(name=operator)
-#   #new_operator.name = request.POST.get(operator)
-#   #new_operator.save()
-#   #if new_operator[-1] == False:
-#   #   successful = False
-#   #else:
-#   #   successful = True
-#   #except:
-#   #   raise Http404("Encountered a problem while loading. Please contact the site administrator.")
-#   #return HttpResponse("successful")
-#   return render(request, 'add_operator.html', d)
+@login_required(login_url='/db/login/')
+def add_operator(request):
+    """Function to allow new operator to be 
+    recorded in the database"""
+        
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = OperatorForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                status = update_db_2.add_operator(post.name)
+                
+                return render(request, 'events/add_operator.html', \
+                                    {'form': form, 'message': status})
+            else:
+                form = OperatorForm(request.POST)
+                # Add form data to output for debugging
+                return render(request, 'events/add_operator.html', \
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
+        else:
+            form = OperatorForm(request.POST)
+            return render(request, 'events/add_operator.html', \
+                                    {'form': form, 
+                                    'message': 'none'})
+    else:
+        return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def add_telescope(request):
+    """Function to allow new telescope to be 
+    recorded in the database"""
+        
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = TelescopeForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                status = update_db_2.add_telescope(operator=post.operator,telescope_name=post.telescope_name,\
+                            aperture=post.aperture, longitude=post.longitude, latitude=post.latitude,\
+                            altitude=post.altitude, site=post.site)
+                
+                return render(request, 'events/add_telescope.html', \
+                                    {'form': form, 'message': status})
+            else:
+                form = TelescopeForm(request.POST)
+                # Add form data to output for debugging
+                return render(request, 'events/add_telescope.html', \
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
+        else:
+            form = TelescopeForm(request.POST)
+            return render(request, 'events/add_telescope.html', \
+                                    {'form': form, 
+                                    'message': 'none'})
+    else:
+        return HttpResponseRedirect('login')
 
 ##############################################################################################################
 def dashboard(request):
@@ -265,6 +291,7 @@ def download_lc(request, event_name):
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def obs_log(request, date):
+   from django.utils import timezone
    """
    Will display the observation log for the given date.
    Date must be provided in the format: YYYYMMDD
@@ -272,6 +299,7 @@ def obs_log(request, date):
    if request.user.is_authenticated():
       try:
          date_min = datetime(int(date[0:4]), int(date[4:6]), int(date[6:8]))
+	 date_min = timezone.make_aware(date_min, timezone.get_current_timezone())
          date_max = date_min + timedelta(hours=24)
       except:
          raise Http404("Encountered an error: Date must be provided in the format: YYYYMMDD")
@@ -279,9 +307,9 @@ def obs_log(request, date):
          images = Image.objects.filter(date_obs__range=(date_min, date_max))
          filenames = [k.image_name for k in images]
          times = [k.date_obs for k in images]
-         objects = [EventName.objects.filter(event_id = k.event.pk)[0].name for k in images]
-         ras = [k.event.ev_ra for k in images]
-         decs = [k.event.ev_dec for k in images]
+         fields = [k.field_id for k in images]
+         ras = [k.field.field_ra for k in images]
+         decs = [k.field.field_dec for k in images]
          filts = [k.filt for k in images]
          tels = [k.tel for k in images]
          insts = [k.inst for k in images]
@@ -296,7 +324,7 @@ def obs_log(request, date):
          elongations = [k.elongation for k in images]
          nstars = [k.nstars for k in images]
          qualitys = [k.quality for k in images]
-         rows = zip(filenames, times, objects, ras, decs, filts, tels, insts, grp_ids, track_ids,
+         rows = zip(filenames, times, fields, ras, decs, filts, tels, insts, grp_ids, track_ids,
         	    req_ids, airmasses, avg_fwhms, avg_skys, avg_sigskys, moon_seps, elongations,
         	    nstars, qualitys)
          rows = sorted(rows, key=lambda row: row[1])
@@ -496,18 +524,8 @@ def show_event_by_id(request, event_id):
          # Get list of all observations and select the one with the most recent time.
          try:
             event = Event.objects.get(id=event_id)
+            status_recent = Event.objects.get(pk=event_id).status	    
             single_recent = SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')
-            obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
-            #status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
-            status_recent = Event.objects.get(pk=event_id).status
-            last_obs = obs_recent['last_obs']
-            last_obs_hjd = Time(last_obs).jd
-            tel_id = obs_recent['datafile'].split('/')[-1].split('_')
-            if len(tel_id) == 2:
-               tel_id = tel_id[0]+'_'
-            else:
-               tel_id = obs_recent['datafile'].split('/')[-1][0]
-            last_obs_tel = site_dict[tel_id][-1]
             Tmax = single_recent['Tmax']
             e_Tmax = single_recent['e_Tmax']
             tau = single_recent['tau']
@@ -521,9 +539,7 @@ def show_event_by_id(request, event_id):
             if "OGLE" in ev_name:
                ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])
          except:
-            last_obs = "N/A"
-            last_obs_hjd = "N/A"
-            Tmax = "N/A"
+	    Tmax = "N/A"
             e_Tmax = "N/A"
             tau = "N/A"
             e_tau = "N/A"
@@ -534,6 +550,20 @@ def show_event_by_id(request, event_id):
             last_obs_tel = "N/A"
             status = 'EX'
             ogle_url = ''
+	 try:
+            obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
+            last_obs = obs_recent['last_obs']
+            last_obs_hjd = Time(last_obs).jd
+            tel_id = obs_recent['datafile'].split('/')[-1].split('_')
+            if len(tel_id) == 2:
+               tel_id = tel_id[0]+'_'
+            else:
+               tel_id = obs_recent['datafile'].split('/')[-1][0]
+            last_obs_tel = site_dict[tel_id][-1]
+         except:
+            last_obs = "N/A"
+            last_obs_hjd = "N/A"
+	    last_obs_tel = "N/A"
          # Convert the name to ARTEMiS format for bokeh plotting
          if 'OGLE' in ev_name:
             artemis_name = 'OB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
@@ -617,18 +647,8 @@ def show_event(request, event_name):
          # Get list of all observations and select the one with the most recent time.
          try:
             event = Event.objects.get(id=event_id)
+            status_recent = Event.objects.get(pk=event_id).status	    
             single_recent = SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')
-            obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
-            #status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
-            status_recent = Event.objects.get(pk=event_id).status
-            last_obs = obs_recent['last_obs']
-            last_obs_hjd = Time(last_obs).jd
-            tel_id = obs_recent['datafile'].split('/')[-1].split('_')
-            if len(tel_id) == 2:
-               tel_id = tel_id[0]+'_'
-            else:
-               tel_id = obs_recent['datafile'].split('/')[-1][0]
-            last_obs_tel = site_dict[tel_id][-1]
             Tmax = single_recent['Tmax']
             e_Tmax = single_recent['e_Tmax']
             tau = single_recent['tau']
@@ -642,9 +662,7 @@ def show_event(request, event_name):
             if "OGLE" in ev_name:
                ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])
          except:
-            last_obs = "N/A"
-            last_obs_hjd = "N/A"
-            Tmax = "N/A"
+	    Tmax = "N/A"
             e_Tmax = "N/A"
             tau = "N/A"
             e_tau = "N/A"
@@ -655,6 +673,20 @@ def show_event(request, event_name):
             last_obs_tel = "N/A"
             status = 'EX'
             ogle_url = ''
+	 try:
+            obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
+            last_obs = obs_recent['last_obs']
+            last_obs_hjd = Time(last_obs).jd
+            tel_id = obs_recent['datafile'].split('/')[-1].split('_')
+            if len(tel_id) == 2:
+               tel_id = tel_id[0]+'_'
+            else:
+               tel_id = obs_recent['datafile'].split('/')[-1][0]
+            last_obs_tel = site_dict[tel_id][-1]
+         except:
+            last_obs = "N/A"
+            last_obs_hjd = "N/A"
+	    last_obs_tel = "N/A"
          # Convert the name to ARTEMiS format for bokeh plotting
          if 'OGLE' in ev_name:
             artemis_name = 'OB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]

@@ -75,4 +75,5 @@ class RecordDataFileForm(forms.ModelForm):
                   'baseline','g','ndata','last_obs','last_upd')
     last_obs = forms.DateTimeField(label='last_obs',input_formats=["%Y-%m-%dT%H:%M:%S"])
     last_upd = forms.DateTimeField(label='last_upd',input_formats=["%Y-%m-%dT%H:%M:%S"])
-    
+    timestamp = forms.DateField(label='timestamp',input_formats=["%Y-%m-%dT%H:%M:%S"])
+    time_expire = forms.DateField(label='time_expire',input_formats=["%Y-%m-%dT%H:%M:%S"])

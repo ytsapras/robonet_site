@@ -11,6 +11,7 @@ import json
 import requests
 from os import path
 
+################################################################################
 def submit_obs_request_record(config,params):
     """Function to submit a record of a new observation to the database 
     using the API record_obs_request endpoint
@@ -29,7 +30,7 @@ def submit_obs_request_record(config,params):
     message = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=True)
-                            
+
 def submit_data_file_record(config,params,testing=False):
     """Function to submit a record of a new observation to the database 
     using the API record_obs_request endpoint
@@ -55,6 +56,45 @@ def submit_data_file_record(config,params,testing=False):
                             testing=testing)
     return message
     
+################################################################################
+def submit_operator_record(config,params):
+    """Function to submit a record of a new operator to the database 
+    using the API record_operator endpoint
+    Required parameters:
+        config    dict    script configuration parameters
+        params    dict    operator parameters, including
+                    name       str
+    """
+    
+    end_point = 'add_operator'
+    
+    response = talk_to_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=True)
+
+################################################################################
+def submit_telescope_record(config,params):
+    """Function to submit a record of a new telescope to the database 
+    using the API record_operator endpoint
+    Required parameters:
+        config    dict    script configuration parameters
+        params    dict    telescope parameters, including
+                    operator str
+                    telescope_name str
+                    aperture float
+                    latitude float
+                    longitude float
+                    altitude float
+                    site str
+    """
+    
+    end_point = 'add_telescope'
+    
+    response = talk_to_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=True)
+
+################################################################################
 def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
     """Method to communicate with various APIs of the ROME/REA database. 
     Required arguments are:

@@ -2,31 +2,32 @@
 {% load staticfiles %}
 {% block content %}
 {% if rows %}
+  <script type="text/javascript" src="{% static 'events/sorttable.js' %}"></script>
   <h2>Observation Log: {{ date }}</h2>
   <table class="sortable" border="0">
   <tr>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">Image:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">Time:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">Object:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">Obj RA:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">Obj Dec:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">Filter:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">Telescope:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">Instrument:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">GroupID:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">TrackID:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">ReqID:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">Airmass:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">Avg FWHM:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">Sky BG:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">SD BG:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">Moon Separ:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">Elongation:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">NumStars:</b></td>
-     <td bgcolor="#990000"><b style="color: #FFFFCC ">Quality:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Image:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Time:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Field:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">RA:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Dec:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Filter:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Telescope:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Instrument:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">GroupID:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">TrackID:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">ReqID:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Airmass:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Avg FWHM:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Sky BG:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">SD BG:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Moon Separ:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Elongation:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">NumStars:</b></td>
+     <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Quality:</b></td>
   <ul>
   {% for row in rows %}
-  <tr bgcolor="#ffcc99">
+  <tr bgcolor="{% cycle '#E6E6B8' '#FFFFCC' %}">
       <td>{{ row.0 }} </td>
       <td>{{ row.1 }} </td>
       <td>{{ row.2 }} </td>
