@@ -79,7 +79,11 @@ class Lens():
         if debug==True and log!=None:
             log.info(' -> Identified field: '+str(id_field)+' '+\
                             str(self.ra)+' '+str(self.dec))
-        
+        if 'Outside' in id_field:
+            event_status = 'NF'
+        else:
+            event_status= 'AC'
+            
         # Get the discovery year of the event from the event name to avoid
         # it being autoset to the current year:
         year = str(self.name).split('-')[1]
@@ -88,7 +92,7 @@ class Lens():
         (event_status, ev_ra, ev_dec,response) = update_db_2.add_event(id_field, \
                                                     self.origin, \
                                                     self.ra,self.dec,\
-                                                    status='AC',\
+                                                    status=event_status,\
                                                     year=year)
         if debug==True and log!=None:
             log.info(' -> Tried to add_event with output:')
