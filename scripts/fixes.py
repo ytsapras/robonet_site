@@ -4,10 +4,10 @@ def notnf():
     events = Event.objects.all()
     for ev in events.values():
         evstatus = ev['status']
-	evfldid = ev['field_id']
-	evid = ev['id']
-	# Set status to NF if outside footprint
-	if evfldid==21:
-	    p = Event.objects.get(id=evid)
-	    p.status = 'NF'
-	    p.save()
+        evfldid = ev['field_id']
+        evid = ev['id']
+        # Set status to NF if outside footprint
+        if evfldid==21:
+            p = Event.objects.get(id=evid)
+            p.status = 'NF'
+            p.save()
