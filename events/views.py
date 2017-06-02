@@ -197,33 +197,35 @@ def add_telescope(request):
 
 ##############################################################################################################
 def dashboard(request):
-   """
-   Will display the database front view (dashboard).
-   """
-   if request.user.is_authenticated():
-      try:
-         filepath = log_path+"/errors.txt"
-	 errfile = open(filepath).readlines()
-	 timestr = []
-	 commentstr = []
-	 for line in errfile:
-	    timetmp = line.split('; ')[1]
-	    timestr.append(timetmp)
-	    commenttmp = line.split('; ')[2].replace('\n','')
-	    commentstr.append(commenttmp)
-	 
-         status_time = datetime.now()
-         date_today = str(status_time.year)+str(status_time.month).zfill(2)+str(status_time.day).zfill(2)
-         status_time_jd = Time(status_time).jd
-      except:
-         raise Http404("Encountered a problem while loading. Please contact the site administrator.")
-      context = {'status_time':status_time, 'status_time_jd':status_time_jd, 'date_today':date_today, 
-                 'upd1':timestr[0], 'upd2':timestr[1], 'upd3':timestr[2], 
-		 'upd4':timestr[3], 'upd5':timestr[4], 'com1':commentstr[0], 'com2':commentstr[1], 
-		 'com3':commentstr[2], 'com4':commentstr[3], 'com5':commentstr[4]}
-      return render(request, 'events/dashboard.html', context)
-   else:
-      return HttpResponseRedirect('login')
+    """
+    Will display the database front view (dashboard).
+    """
+    if request.user.is_authenticated():
+        try:
+            config = config_parser.read_config_for_code('obs_control')
+            filepath = path.join(config['log_directory'],'errors.txt')
+            errfile = open(filepath).readlines()
+            timestr = []
+            commentstr = []
+            for line in errfile:
+                timetmp = line.split('; ')[1]
+                timestr.append(timetmp)
+                commenttmp = line.split('; ')[2].replace('\n','')
+                commentstr.append(commenttmp)
+                
+            status_time = datetime.now()
+            date_today = str(status_time.year)+str(status_time.month).zfill(2)+str(status_time.day).zfill(2)
+            status_time_jd = Time(status_time).jd
+        except:
+            raise Http404("Encountered a problem while loading. Please contact the site administrator.")
+        context = {'status_time':status_time, 'status_time_jd':status_time_jd, 
+                   'date_today':date_today, 'upd1':timestr[0], 
+                   'upd2':timestr[1], 'upd3':timestr[2], 
+                   'upd4':timestr[3], 'upd5':timestr[4], 'com1':commentstr[0], 
+                   'com3':commentstr[2], 'com4':commentstr[3], 'com5':commentstr[4]}
+        return render(request, 'events/dashboard.html', context)
+    else:
+        return HttpResponseRedirect('login')
       
 ##############################################################################################################
 @login_required(login_url='/db/login/')
