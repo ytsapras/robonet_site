@@ -12,7 +12,7 @@ host_name = socket.gethostname()
 if 'cursa' in host_name:
     log_path = '/work/Tux8/ytsapras/Data/RoboNet/Logs/2017'
 else:
-    config = config_parser.read_config("../configs/obscontrol_config.xml")
+    config = config_parser.read_config("/var/www/robonetsite/configs/obscontrol_config.xml")
     log_path = config['log_directory']
 
 # process_name can be one of the following:
