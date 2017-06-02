@@ -11,6 +11,7 @@
 import xml.sax.handler
 from os import path
 from sys import argv
+import socket
 
 #############################
 # MAIN CLASS: CONFIG HANDLER
@@ -62,6 +63,30 @@ def read_config(config_file_path):
     config = config_handler.mapping
 
     return config
+
+def read_config_for_code(code_name):
+    """Function to read XML configuration files
+    code_name = { 'obscontrol', 'artemis_subscriber' }    
+    """
+    
+    configs = { 'obs_control': 'obscontrol_config.xml',
+               'artemis_subscriber': 'artemis_sync.xml'}
+    if code_name in configs.keys():
+        config_file = configs[code_name]
+    
+    host_name = socket.gethostname()
+    if 'rachel' in str(host_name).lower():
+        config_file_path = path.join('/Users/rstreet/.robonet_site/',configs[code_name])
+    elif 'cursa' in host_name:
+        config_file_path = path.join('../../configs',configs[code_name])
+    else:
+        config_file_path = path.join('/var/www/robonetsite/configs/',configs[code_name])
+    
+    if path.isfile(config_file_path) == False:
+        raise IOError('Cannot find configuration file, looking for:'+config_file_path)
+    script_config = read_config(config_file_path)
+    
+    return script_config
 
 #################################
 # TEST CONFIG PARSER:

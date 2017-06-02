@@ -28,3 +28,12 @@ def test_config_params():
     
     assert 'log_directory' in config.keys()
 
+def test_config_for_code():
+    """Test the function to resolve the name of a piece of software and
+    pick up the correct configuration file
+    """
+    
+    config = config_parser.read_config_for_code('obs_control')
+    assert len(config) > 0
+    assert 'log_directory' in config.keys()
+    
