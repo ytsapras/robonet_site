@@ -25,6 +25,8 @@ from scripts.plotter import *
 from scripts.local_conf import get_conf
 from scripts.blgvis_ephem import *
 from scripts.utilities import short_to_long_name
+from scripts import config_parser
+from scripts.get_errors import *
 from scripts import update_db_2
 
 # Path to ARTEMiS files
@@ -200,12 +202,25 @@ def dashboard(request):
    """
    if request.user.is_authenticated():
       try:
+         filepath = log_path+"/errors.txt"
+	 errfile = open(filepath).readlines()
+	 timestr = []
+	 commentstr = []
+	 for line in errfile:
+	    timetmp = line.split('; ')[1]
+	    timestr.append(timetmp)
+	    commenttmp = line.split('; ')[2].replace('\n','')
+	    commentstr.append(commenttmp)
+	 
          status_time = datetime.now()
          date_today = str(status_time.year)+str(status_time.month).zfill(2)+str(status_time.day).zfill(2)
          status_time_jd = Time(status_time).jd
       except:
          raise Http404("Encountered a problem while loading. Please contact the site administrator.")
-      context = {'status_time':status_time, 'status_time_jd':status_time_jd, 'date_today':date_today}
+      context = {'status_time':status_time, 'status_time_jd':status_time_jd, 'date_today':date_today, 
+                 'upd1':timestr[0], 'upd2':timestr[1], 'upd3':timestr[2], 
+		 'upd4':timestr[3], 'upd5':timestr[4], 'com1':commentstr[0], 'com2':commentstr[1], 
+		 'com3':commentstr[2], 'com4':commentstr[3], 'com5':commentstr[4]}
       return render(request, 'events/dashboard.html', context)
    else:
       return HttpResponseRedirect('login')
