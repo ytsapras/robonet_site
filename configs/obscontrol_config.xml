@@ -2,7 +2,7 @@
 
 <obscontrolconfig>
     <parameter name='log_directory'>
-      	<value>/logs/2017</value>
+      	<value>/work/Tux8/ytsapras/Data/RoboNet/Logs/2017</value>
     </parameter>
     <parameter name='log_root_name'>
       	<value>obscontrol</value>
