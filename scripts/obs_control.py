@@ -172,9 +172,15 @@ def submit_obs_requests(script_config,obs_requests,log=None):
                         'track_id':obs.track_id, 'req_id':obs.req_id, \
                         'n_exp':obs.exposure_counts[i]}
                 
+                if obs.submit_status == 'add_OK':
+                    req_status = 'AC'
+                else:
+                    req_status = 'CN'
+                    
                 (status, msg) = validation.check_obs_request(params)
                 if log != None: 
                     log.info('    => Validation result: ' + repr(status) + ' ' + msg)
+                
                 
                 status = update_db_2.add_request(obs.name, (obs.cadence*60.0), \
                     int(obs.exposure_times[i]), timestamp=obs.ts_submit, \
@@ -183,7 +189,8 @@ def submit_obs_requests(script_config,obs_requests,log=None):
                     request_type=obs.request_type, \
                     which_filter=obs.filters[i],which_inst=obs.instrument, \
                     grp_id=obs.group_id, track_id=obs.track_id, req_id=obs.req_id,\
-                    n_exp=obs.exposure_counts[i])
+                    n_exp=obs.exposure_counts[i],\
+                    request_status=req_status)
                     
                 if log != None: 
                     log.info('    => Updated DB with status ' + repr(status))

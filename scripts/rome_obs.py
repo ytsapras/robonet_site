@@ -49,7 +49,7 @@ def build_rome_obs(script_config,log=None):
             obs.ttl = obs_sequence['TTL_days']
             obs.user_id = script_config['user_id']
             obs.proposal_id = script_config['proposal_id']
-            obs.pswd = script_config['lco_access']
+            obs.token = script_config['token']
             obs.focus_offset = obs_sequence['defocus'][s]
             obs.request_type = 'L'
             obs.req_origin = 'obscontrol'
@@ -105,7 +105,7 @@ def rome_obs_sequence():
 if __name__ == '__main__':
     script_config = {'user_id': 'tester@lco.global', 
                      'proposal_id': 'TEST',
-                     'lco_access': 'XXX',
+                     'token': 'XXX',
                      'selected_field': 'ROME-FIELD-01'}
     rome_field_obs = build_rome_obs(script_config,log=None)
     for field_seq in rome_field_obs:

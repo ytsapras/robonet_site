@@ -35,9 +35,7 @@ def get_test_config():
     
     config = {'log_root_name': 'test_obs',
               'log_directory': logdir,
-              'token': '94294335fe4d91ef714bd89a051139b22ab15ed8',
-              'simulate': 'False'
-              }
+              'simulate': 'false'}
     return config
         
 def get_test_obs_request():
@@ -59,9 +57,9 @@ def get_test_obs_request():
     obs.jitter = 1.0
     obs.priority = 1.0
     obs.ttl = 7.0
-    obs.user_id = 'foo@lco.global'
-    obs.pswd = 'bar'
-    obs.proposal_id = 'wibble'
+    obs.user_id = 'tester@lco.global'
+    obs.token = 'foobar'
+    obs.proposal_id = 'TEST2017-001'
     obs.focus_offset = [ 0.0, 0.0, 0.0 ]
     obs.request_type = 'L'
     obs.req_origin = 'obscontrol'

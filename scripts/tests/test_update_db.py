@@ -51,9 +51,9 @@ def test_coords_exist():
     """Function to verify that the function coords_exist correctly 
     finds an object in the DB by its coordinates"""
     
-    name = 'OGLE-2012-BLG-0970'
-    ra = '17:54:51.78'
-    dec = '-28:18:40.10'
+    name = 'OGLE-2017-BLG-1066'
+    ra = '17:45:05.34'
+    dec = '-32:52:27.40'
     
     event = query_db.get_event_by_position(ra,dec)
     assert event != None

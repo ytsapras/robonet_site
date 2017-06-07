@@ -27,8 +27,6 @@ import httplib
 from sys import exit
 from exceptions import ValueError
 
-LCO_API_URL = 'https://lco.global/observe/api/'
-
 class ObsRequest:
     
     def __init__(self):
@@ -54,7 +52,7 @@ class ObsRequest:
         self.ts_submit = None
         self.ts_expire = None
         self.user_id = None
-        self.pswd = None
+        self.token = None
         self.proposal_id = None
         self.ttl = None
         self.focus_offset = []
@@ -99,14 +97,38 @@ class ObsRequest:
         return output
 
     def build_cadence_request(self, log=None, debug=False):
-                        
-        proposal = { 
-                    'proposal_id': self.proposal_id,
-                    'user_id'    : self.user_id, 
+        
+        if debug == True and log != None:
+            log.info('Building Valhalla observation request')
+            
+        self.get_group_id()
+        ur = {
+            'group_id': self.group_id, 
+            'proposal': self.proposal_id,
+            'ipp_value': self.priority,
+            'operator': 'SINGLE',
+            'observation_type': 'NORMAL', 
+              }
+        if debug == True and log != None:
+            log.info('User request parameters: ' + str( ur ))
+        
+        if type(self.ra) == type(1.0):
+            ra_deg = self.ra
+            dec_deg = self.dec
+        else:
+            (ra_deg, dec_deg) = utilities.sex2decdeg(self.ra, self.dec)
+        target =   {
+                    'name': str(self.name),
+                    'type': 'SIDEREAL',
+                    'ra'	: ra_deg,
+                    'dec': dec_deg,
+                    'proper_motion_ra': 0, 
+                    'proper_motion_dec': 0,
+                    'parallax': 0, 
+                    'epoch': 2000,	  
                     }
         if debug == True and log != None:
-            log.info('Building ODIN observation request')
-            log.info('Proposal dictionary: ' + str( proposal ))
+            log.info('Target dictionary: ' + str( target ))
             
         location = {
                     'telescope_class' : str(self.tel).replace('a',''),
@@ -116,65 +138,33 @@ class ObsRequest:
         if debug == True and log != None:
             log.info('Location dictionary: ' + str( location ))
         
-        if type(self.ra) == type(1.0):
-            ra_deg = self.ra
-            dec_deg = self.dec
-        else:
-            (ra_deg, dec_deg) = utilities.sex2decdeg(self.ra, self.dec)
-        target =   {
-                    'name'		    : str(self.name),
-                    'ra'		          : ra_deg,
-                    'dec'		    : dec_deg,
-                    'proper_motion_ra'  : 0, 
-                    'proper_motion_dec' : 0,
-                    'parallax'	   : 0, 
-                    'epoch'  	   : 2000,	  
-                    }
-        if debug == True and log != None:
-            log.info('Target dictionary: ' + str( target ))
-            
         constraints = { 
         		  'max_airmass': 2.0,
                     'min_lunar_distance': 10
                     }
         if debug == True and log != None:
             log.info('Constraints dictionary: ' + str( constraints ))
-            
-        self.get_group_id()
-        ur = {
-            'group_id': self.group_id, 
-            'type': 'compound_request', 
-            'operator': 'many'
-              }
-        reqList = []
         
         self.ts_submit = timezone.now() + timedelta(seconds=(10*60))
         self.ts_expire = self.ts_submit + timedelta(seconds=(self.ttl*24*60*60))
+        cadence = { 'start': self.ts_submit.strftime("%Y-%m-%d %H:%M:%S"),
+                    'end': self.ts_expire.strftime("%Y-%m-%d %H:%M:%S"),
+                    'period': float(self.cadence),
+                    'jitter': float(self.jitter) }
         if debug == True and log != None:
-            log.info('Observations start datetime: '+self.ts_submit.strftime("%Y-%m-%d %H:%M:%S"))
-            log.info('Observations stop datetime: '+self.ts_expire.strftime("%Y-%m-%d %H:%M:%S"))
+            log.info('Cadence dictionary: '+str(cadence))
             
-        ur['cadence'] = { 'start': self.ts_submit.strftime("%Y-%m-%d %H:%M:%S"), 
-                        'end': self.ts_expire.strftime("%Y-%m-%d %H:%M:%S"), 
-                        'period': float(self.cadence), 
-                        'jitter': float(self.jitter) }
-        ur['ipp_value'] = self.priority
         ur['requests'] = []
-        
         molecule_list = self.build_molecule_list(debug=debug,log=log)
         
         if len(molecule_list) > 0:
-            req = { 'observation_note':'',
-                    'observation_type': 'NORMAL', 
-                    'target': target , 
-                    'windows': [ ],
-                    'fail_count': 0,
-                    'location': location,
+            req = { 
+                    'target': target,
                     'molecules': molecule_list,
-                    'type': 'request', 
+                    'cadence': cadence,
+                    'location': location,
                     'constraints': constraints
-                    }
-            
+                   }
             ur['requests'].append(req)
             if debug == True and log != None:
                 log.info('Request dictionary: ' + str(req))
@@ -182,18 +172,37 @@ class ObsRequest:
             ur = self.get_cadence_requests(ur,log=log)
             
             if debug == True and log != None:
-                for r in ur['requests']:
-                    if len(r['windows']) == 0:
-                        log.info('WARNING: scheduler returned no observing windows for this target')
-                        self.submit_status = 'No_obs_submitted'
-                        self.submit_response = 'No_obs_submitted'
-                        self.req_id = '9999999999'
-                        self.track_id = '99999999999'
+                if 'requests' in ur.keys():
+                    for r in ur['requests']:
+                        if len(r['windows']) == 0:
+                            log.info('WARNING: scheduler returned no observing windows for this target')
+                            self.submit_status = 'No_obs_submitted'
+                            self.submit_response = 'No_obs_submitted'
+                            self.req_id = '9999999999'
+                            self.track_id = '99999999999'
+                        else:
+                            log.info('Request windows: '+repr(r['windows']))
+                elif 'detail' in ur.keys():
+                    self.submit_status = 'No_obs_submitted'
+                    if self.submit_response != None:
+                        self.submit_response = self.submit_response+' '+ur['detail']
                     else:
-                        log.info('Request windows: '+repr(r['windows']))
+                        self.submit_response = 'WARNING: ' + ur['detail']
+                    if debug == True and log != None:
+                            log.info('WARNING: problem obtaining observing windows for this target: '+ur['detail'])
+                elif 'non_field_errors' in ur.keys():
+                    self.submit_status = 'No_obs_submitted'
+                    if self.submit_response != None:
+                        self.submit_response = self.submit_response+' '.join(ur['non_field_errors'])
+                    else:
+                        self.submit_response = 'WARNING: ' + ' '.join(ur['non_field_errors'])
+                    if debug == True and log != None:
+                            log.info('WARNING: problem obtaining observing windows for this target:'+' '.join(ur['non_field_errors']))
+                    
                 
         if debug == True and log != None:
             log.info(' -> Completed build of observation request ' + self.group_id)
+            log.info(' -> Submit response: '+str(self.submit_response))
             
         return ur
         
@@ -215,21 +224,20 @@ class ObsRequest:
             nexp = self.exposure_counts[i]
             f = self.filters[i]
             defocus = self.focus_offset[i]
-        
-            molecule = { 
-            		 # Required fields
-            		 'exposure_time'   : exptime,    
-            		 'exposure_count'  : nexp,	     
-            		 'filter'	   : parse_filter(f),      
-            		 
-            		 'type' 	   : 'EXPOSE',      
-            		 'ag_name'	   : '',	     
-            		 'ag_mode'	   : 'Optional',
-            		 'instrument_name' : self.instrument_class,
-            		 'bin_x'	   : 1,
-            		 'bin_y'	   : 1,
-            		 'defocus'	   : defocus      
-            	       }
+            
+            molecule = {
+                        'type': 'EXPOSE',
+                        'instrument_name': self.instrument_class,
+                        'filter': parse_filter(f),
+                        'exposure_time': exptime,
+                        'exposure_count': nexp,
+                        'bin_x': 1,
+                        'bin_y': 1,
+                        'fill_window': False,
+                        'defocus': defocus,
+                        'ag_mode': 'OPTIONAL',
+                        }
+                        
             if debug == True and log != None:
                 log.info(' -> Molecule: ' + str(molecule))
     
@@ -239,25 +247,18 @@ class ObsRequest:
                 
     def get_cadence_requests(self,ur,log=None):
         
-        end_point = "/observe/service/request/get_cadence_requests"
-        jur = self.talk_to_lco(ur,end_point)
         
-        try:
-            ur = json.loads(jur)
-        except ValueError:
-            if log != None:
-                log.info('ERROR understanding returned cadence sequence, output is: ')
-                log.info(repr(jur))
-        except TypeError:
-            if log != None:
-                log.info('ERROR understanding returned cadence sequence, output is: ')
-                log.info(repr(jur))
+        end_point = "userrequests/cadence"
+        ur = self.talk_to_lco(ur,end_point,'POST')
+        
+        if 'error_type' in ur.keys():
+            self.submit_response = 'ERROR: '+ur['error_msg']
         
         if log != None:
             if 'error_type' in ur.keys():
-                log.info('ERROR building observation request: '+ur['error_msg'])
+                log.info('ERROR getting cadence request: '+ur['error_msg'])
             else:
-                log.info('Received observable cadence sequence from LCO API')
+                log.info('Received response from LCO cadence API')
             
         return ur
     
@@ -279,94 +280,65 @@ class ObsRequest:
                 log.info(' -> IN SIMULATION MODE: ' + self.submit_status)
         
         else:
-            end_point = '/observe/service/request/submit'
-            response = self.talk_to_lco(ur,end_point)
-            self.parse_submit_response( config, response, log=log )
-
+            end_point = 'userrequests'
+            response = self.talk_to_lco(ur,end_point,'POST')
+            self.parse_submit_response( response, log=log )
+            
         if log != None:
-            log.info(' -> Completed obs submission')
+            log.info(' -> Completed obs submission, submit response:')
+            log.info(str(self.submit_response))
         
         return self.submit_status
     
-    def talk_to_lco(self,ur,end_point):
+    def talk_to_lco(self,ur,end_point,method):
         """Method to communicate with various APIs of the LCO network. 
         ur should be a user request while end_point is the URL string which 
         should be concatenated to the observe portal path to complete the URL.  
         Accepted end_points are:
-            "/observe/service/request/submit"  
-            "/observe/service/request/get_cadence_requests"
+            "userrequests" 
+            "userrequests/cadence"  
+        Accepted methods are:
+            POST GET
         """
         
         jur = json.dumps(ur)
         
-        params = {'username': self.user_id ,
-                  'password': self.pswd, 
-                  'proposal': self.proposal_id, 
-                  'request_data' : jur}
+        headers = {'Authorization': 'Token ' + self.token}
         
-        urlrequest = urllib.urlencode(params)
-        headers = {'Content-type': 'application/x-www-form-urlencoded'}
+        if end_point[0:1] == '/':
+            end_point = end_point[1:]
+        if end_point[-1:] != '/':
+            end_point = end_point+'/'
+        url = path.join('https://observe.lco.global/api',end_point)
         
-        secure_connect = httplib.HTTPSConnection("lco.global") 
-        secure_connect.request("POST", end_point, urlrequest, headers) 
-        submit_response = secure_connect.getresponse().read()
-        secure_connect.close()
+        if method == 'POST':
+            response = requests.post(url, headers=headers, json=ur).json()
+        elif method == 'GET':
+            response = requests.get(url, headers=headers, json=ur).json()
         
-        return submit_response
+        return response
 
         
-    def parse_submit_response( self, config, submit_string, log=None, debug=False ):
+    def parse_submit_response( self, response, log=None, debug=False ):
         
         if debug == True and log != None:
             log.info('Request response = ' + str(submit_string) )
-            
-        submit_string = submit_string.replace('{','').replace('}','')
-        submit_string = submit_string.replace('"','').split(',')
         
-        for entry in submit_string: 
-            if 'Unauthorized' in entry:
-                self.submit_status = 'ERROR'
-                self.submit_response = entry
-            elif 'time window' in submit_string:
-      		self.submit_status = 'ERROR'
-                self.submit_response = entry
-            else:
-                try: 
-                    (key,value) = entry.split(':')
-                    self.submit_response = str(key) + ' = ' + str(value)
-                    self.track_id = str(value)
-                    self.submit_status = 'add_OK'
-                    self.get_request_numbers(config,log=log)
-                except ValueError:
-                    try:
-                        (key,value) = entry.split('=')
-                        self.submit_response = str(key) + ' = ' + str(value)
-                        self.track_id = str(value)
-                        self.submit_status = 'add_OK'
-                        self.get_request_numbers(config,log=log)
-                    except:
-                        self.submit_response = str(submit_string)
-                        self.submit_status = 'WARNING'
-                        self.track_id = '9999999999'
-                        self.req_id = '9999999999'
+        if 'id' in response.keys():
+            self.track_id = str(response['id'])
+            self.req_id = '9999999999'
+            self.submit_response = 'id = '+str(response['id'])
+            self.submit_status = 'add_OK'
+        else:
+            self.submit_response = 'error'
+            self.submit_status = 'WARNING'
+            self.track_id = '9999999999'
+            self.req_id = '9999999999'
        
         if debug == True and log != None:
             log.info('Submit status: ' + str(self.submit_status))
             log.info('Submit response: ' + str(self.submit_response))
-    
-    def get_request_numbers(self,config,log=None):
-        
-        self.req_id = ''
-        if self.track_id != None:
-            token = config['token']
-            headers = {'Authorization': 'Token ' + config['token']}
-            url = path.join(LCO_API_URL,'user_requests',str(self.track_id)+'/')
-            response = requests.get(url, headers=headers).json()
-            if 'requests' in response.keys():
-                for r in response['requests']:
-                    self.req_id = self.req_id +':'+str(r['request_number'])
-                self.req_id = self.req_id +':'
-            
+               
     def obs_record( self, config ):
         """Method to output a record, in standard format, of the current 
         observation request"""

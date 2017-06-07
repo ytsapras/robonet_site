@@ -33,7 +33,7 @@ def test_get_rome_fields():
 def test_get_rome_obs():
     script_config = {'user_id': 'tester@lco.global', 
                      'proposal_id': 'TEST',
-                     'lco_access': 'XXX',
+                     'token': 'XXX',
                      'selected_field': None}
     rome_field_obs = rome_obs.build_rome_obs(script_config,log=None)
     assert len(rome_field_obs) == 60

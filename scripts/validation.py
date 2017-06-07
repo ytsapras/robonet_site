@@ -13,7 +13,7 @@ def test_type(par_list,t,params):
         if type(params[p]) is not t:
             status = False
             msg = 'Request ' + p + ' must be type ' + repr(t) + \
-                    ' got ' + repr(type(p))
+                    ' got ' + repr(type(params[p]))
             return status, msg
     return status, msg
     

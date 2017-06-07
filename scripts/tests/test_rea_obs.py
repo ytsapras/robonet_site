@@ -23,7 +23,7 @@ import rea_obs
 
 def test_build_rea_obs():
     config = {'user_id': 'tester@lco.global',
-              'lco_access': 'XXXX', 
+              'token': 'XXXX', 
               'proposal_id': 'TEST'}
     obs_requests = rea_obs.build_rea_obs(config)
     assert len(obs_requests) > 0
