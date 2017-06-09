@@ -14,6 +14,7 @@ import log_utilities
 import glob
 from datetime import datetime
 import event_classes
+import pytest
 
 def test_read_config():
     """Function to verify that the artemis subscriber software can read its
@@ -24,6 +25,7 @@ def test_read_config():
     assert type(config) == type({})
     assert 'log_directory' in config.keys()
         
+@pytest.mark.skip(reason="Rsync datalog test is time consuming")
 def test_rsync_data_log():
     """Function to verify that data can be downloaded from ARTEMiS"""
     
@@ -42,7 +44,8 @@ def clear_test_directory(dir_path):
     if len(file_list) > 0:
         for f in file_list:
             remove(f)
-    
+
+@pytest.mark.skip(reason="Rsync all data test is time consuming")
 def test_sync_artemis_data_db():
     
     config = artemis_subscriber.read_config()
@@ -69,16 +72,15 @@ def test_read_artemis_model_file():
     assert type(event) == type(test_event)
     assert type(last_modified) == type(ts)
 
-def test_sync_model_file_with_db():
+def test_read_artemis_align_file():
     
-    config = artemis_subscriber.read_config()
+    f = '../../data/OB170570.align'
+    filt = 'I'
+    params = artemis_subscriber.read_artemis_align_params(f,filt)
+    assert params['g'] == 7.12221288e+01
+    assert params['baseline'] == 19.16817
+    assert params['name_code'] == 'OI'
     
-    log = log_utilities.start_day_log( config, '_test_artemis_subscriber' )
+if __name__ == '__main__':
+    test_data_file_with_db()
     
-    f = '../../data/OB120970.model'
-
-    artemis_subscriber.sync_model_file_with_db(config,f,log)
-    
-    log_utilities.end_day_log( log )
-    
-    assert 1 == 2

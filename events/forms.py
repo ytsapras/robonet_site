@@ -29,7 +29,7 @@ class EventForm(forms.ModelForm):
 class EventNameForm(forms.ModelForm):
    class Meta:
       model = EventName
-      fields = '__all__'
+      fields = ('name',)
 
 class SingleModelForm(forms.ModelForm):
    class Meta:
@@ -65,6 +65,15 @@ class RecordObsRequestForm(forms.ModelForm):
     class Meta:
         model = ObsRequest
         fields = ('field','t_sample','exptime','timestamp','time_expire')
+    timestamp = forms.DateTimeField(label='timestamp',input_formats=["%Y-%m-%dT%H:%M:%S"])
+    time_expire = forms.DateTimeField(label='time_expire',input_formats=["%Y-%m-%dT%H:%M:%S"])
+    
+class RecordDataFileForm(forms.ModelForm):
+    class Meta:
+        model = DataFile
+        fields = ('datafile','last_mag', 'tel', 'filt',
+                  'baseline','g','ndata','last_obs','last_upd')
+    last_obs = forms.DateTimeField(label='last_obs',input_formats=["%Y-%m-%dT%H:%M:%S"])
+    last_upd = forms.DateTimeField(label='last_upd',input_formats=["%Y-%m-%dT%H:%M:%S"])
     timestamp = forms.DateField(label='timestamp',input_formats=["%Y-%m-%dT%H:%M:%S"])
     time_expire = forms.DateField(label='time_expire',input_formats=["%Y-%m-%dT%H:%M:%S"])
-    

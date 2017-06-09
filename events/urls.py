@@ -19,6 +19,7 @@ urlpatterns = [
     url(r'^obs_details/(?P<event_name>[\w-]+)', views.event_obs_details, name='event_obs_details'),
     url(r'^query_obs_requests/$', views.query_obs_requests, name='query_obs_requests'),
     url(r'^record_obs_request/$', views.record_obs_request, name='record_obs_requests'),
+    url(r'^record_data_file/$', views.record_data_file, name='record_data_file'),
     url(r'^add_operator/$', views.add_operator, name='add_operator'),
     url(r'^add_telescope/$', views.add_telescope, name='add_telescope'),
     url(r'^tap/', views.tap, name='tap'),

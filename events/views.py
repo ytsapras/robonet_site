@@ -9,6 +9,7 @@ from django.db.models import Max
 from django.utils import timezone
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, TelescopeForm
+from .forms import RecordDataFileForm, EventNameForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from itertools import chain
@@ -1003,3 +1004,53 @@ def record_obs_request(request):
                                     'message': 'none'})
     else:
         return HttpResponseRedirect('login')
+
+@login_required(login_url='/db/login/')
+def record_data_file(request):
+    """Function to allow ARTEMiS data files to be recorded in the database"""
+    
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            fform = RecordDataFileForm(request.POST)
+            eform = EventNameForm(request.POST)
+            if fform.is_valid() and eform.is_valid():
+                fpost = fform.save(commit=False)
+                epost = eform.save(commit=False)
+                params = extract_data_file_post_params(fpost,epost)
+                
+                (status,message) = update_db_2.add_datafile_via_api(params)
+                
+                return render(request, 'events/record_data_file.html', \
+                                    {'fform': fform, 'eform':eform, \
+                                    'message': message})
+            else:
+                fform = RecordDataFileForm()
+                eform = EventNameForm(request.POST)
+                return render(request, 'events/record_data_file.html', \
+                                    {'fform': fform, 'eform': eform,\
+                                    'message':'Form entry was invalid.  Please try again. \n'})
+        else:
+            fform = RecordDataFileForm()
+            eform = EventNameForm(request.POST)
+            return render(request, 'events/record_data_file.html', \
+                                    {'fform': fform, 'eform': eform,
+                                    'message': 'none'})
+    else:
+        return HttpResponseRedirect('login')
+
+def extract_data_file_post_params(fpost,epost):
+    """Function to extract the parameters from a form post to a dictionary."""
+    
+    params = {'event_name': epost.name,\
+              'datafile': fpost.datafile,\
+              'last_mag': float(fpost.last_mag),\
+              'tel': fpost.tel,
+              'filt': fpost.filt,
+              'baseline': float(fpost.baseline),
+              'g': float(fpost.g),
+              'ndata': int(fpost.ndata),
+              'last_obs': fpost.last_obs,\
+              'last_upd': fpost.last_upd
+              }
+    
+    return params
