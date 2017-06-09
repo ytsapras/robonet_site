@@ -16,6 +16,7 @@ import numpy as np
 from jdcal import gcal2jd
 from django.db.models import Max
 import log_utilities
+from get_errors import update_err
 
 warnings.filterwarnings('ignore', module='astropy.coordinates')
 
@@ -127,6 +128,7 @@ def assign_tap_priorities(logger):
     logger.info('RoboTAP: Processing ' +
                 str(len(active_events_list)) + ' active events.')
     
+    nmissing = 0
     for event in active_events_list:
         event_id = event.pk
         event_name = EventName.objects.select_related().filter(event=event)[
@@ -169,6 +171,10 @@ def assign_tap_priorities(logger):
             #expire events -> deactivated
             #if t_current > te_pspl+t0_pspl:
             #    Event.objects.filter(event_id=event_id).update(status="EX")
+        else:
+            nmissing += 1
+    if nmissing>0:
+        update_err('run_rea_tap', 'Missing DataFile: '+str(nmissing)+' events') 
 
 
 def run_tap_prioritization(logger):
