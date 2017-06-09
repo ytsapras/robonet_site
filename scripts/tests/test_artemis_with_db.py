@@ -27,7 +27,20 @@ def test_sync_model_file_with_db():
     
     log_utilities.end_day_log( log )
     
-
-if __name__ == '__main__':
+def test_data_align_files_with_db():
     
+    config = artemis_subscriber.read_config()
+    
+    log = log_utilities.start_day_log( config, '_test_artemis_subscriber' )
+    
+    f = '../../data/OOB170570I.dat'
+    a = '../../data/OB170570.align'
+
+    artemis_subscriber.sync_data_align_files_with_db(config,f,a,log)
+    
+    log_utilities.end_day_log( log )
+    
+if __name__ == '__main__':
     test_sync_model_file_with_db()
+    test_data_align_files_with_db()
+    

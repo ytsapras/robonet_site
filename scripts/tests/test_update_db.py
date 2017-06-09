@@ -69,10 +69,6 @@ def test_add_datafile_via_api():
     """Function to check that the function to add a data file to the DB
     correctly parses the parameters given."""
     
-    last_obs = datetime.utcnow()
-    last_obs = last_obs.replace(tzinfo=pytz.UTC)
-    last_obs = last_obs.strftime("%Y-%m-%dT%H:%M:%S")
-    
     last_upd = datetime.utcnow()
     last_upd = last_upd.replace(tzinfo=pytz.UTC)
     last_upd = last_upd.strftime("%Y-%m-%dT%H:%M:%S")
@@ -85,7 +81,7 @@ def test_add_datafile_via_api():
               'baseline': 22.5,
               'g': 18.45,
               'ndata': 2234,
-              'last_obs': last_obs,
+              'last_hjd': 2457880.9999,
               'last_upd': last_upd,
             }
             

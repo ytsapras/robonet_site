@@ -814,51 +814,55 @@ def add_status(event_name, timestamp=timezone.now(), status='NF', comment='',
 
 ###################################################################################
 def add_datafile(event_name, datafile, last_upd, last_hjd, last_mag, tel, ndata, inst='', 
-             filt='', baseline=22.0, g=0.0):
-   """
-   Add a data file to the database.
-   Uses the .dat files rsynced from ARTEMiS.
-   
-   Keyword arguments:
-   event_name -- The event name. 
-                (string, required)
-   datafile -- Full path to the data file. 
-              (string, required)
-   last_upd -- Datetime of last update. (datetime, required, 
-                                         default=timezone.now())
-   last_hjd -- HJD of last observation. (float, required)
-   last_mag -- Last recorded magnitude. 
-               (float, required)
-   tel -- Telescope identifier. 
-         (string, required)
-   inst -- Instrument used for the observations.
-           (string, optional, default='')
-   filt -- Filter used for the observations.
-           (string, optional, default='')
-   baseline -- I0 blend parameter from ARTEMiS .align file.
-               (float, optional, default=22.0)
-   g -- g blend parameter from ARTEMiS .align file.
-        (float, optional, default=0.0)
-   ndata -- Number of data points. 
-         (integer, required)
-   """
-   # Check if the event already exists in the database.
-   if check_exists(event_name)==True:
-      # Get event identifier
-      event_id = EventName.objects.get(name=event_name).event_id
-      event = Event.objects.get(id=event_id)
-      try:
-         add_new = DataFile(event=event, datafile=datafile, last_upd=last_upd, 
-	                    last_hjd=last_hjd, last_mag=last_mag, tel=tel, 
-			    inst=inst, filt=filt, baseline=baseline, 
-			    g=g, ndata=ndata)
-	 add_new.save()
-	 successful = True
-      except:
-         successful = False
-   else:
-      successful = False
-   return successful
+                 filt='', baseline=22.0, g=0.0):
+    """
+    Add a data file to the database.
+    Uses the .dat files rsynced from ARTEMiS.
+    
+    Keyword arguments:
+    event_name -- The event name.
+                    (string, required)
+    datafile -- Full path to the data file.
+                    (string, required)
+    last_upd -- Datetime of last update. 
+                    (datetime, required, default=timezone.now())
+    last_hjd -- HJD of last observation. (float, required)
+    last_mag -- Last recorded magnitude.
+                    (float, required)
+    tel -- Telescope identifier.
+                    (string, required)
+    inst -- Instrument used for the observations.
+                    (string, optional, default='')
+    filt -- Filter used for the observations.
+                    (string, optional, default='')
+    baseline -- I0 blend parameter from ARTEMiS .align file.
+                    (float, optional, default=22.0)
+    g -- g blend parameter from ARTEMiS .align file.
+                    (float, optional, default=0.0)
+    ndata -- Number of data points.
+                    (integer, required)
+    """
+    # Check if the event already exists in the database.
+    message = 'OK'
+    if check_exists(event_name)==True:
+        # Get event identifier
+        event_id = EventName.objects.get(name=event_name).event_id
+        event = Event.objects.get(id=event_id)
+        try:
+            add_new = DataFile(event=event, datafile=datafile, last_upd=last_upd,
+                               last_hjd=last_hjd, last_mag=last_mag, tel=tel,
+                               inst=inst, filt=filt, baseline=baseline,
+                               g=g, ndata=ndata)
+            add_new.save()
+            successful = True
+            message = 'OK'
+        except:
+            successful = False
+            message = 'Error ingesting datafile to database'
+    else:
+        successful = False
+        message = 'Error ingesting datafile - event not found'
+    return successful, message
    
 def add_datafile_via_api(params):
     """
@@ -885,13 +889,7 @@ def add_datafile_via_api(params):
     if check_exists(params['event_name'])==True:
         event_id = EventName.objects.get(name=params['event_name']).event_id
         event = Event.objects.get(id=event_id)
-        
-        if type(params['last_obs']) == type('foo'):
-            last_obs = datetime.strptime(params['last_obs'],"%Y-%m-%dT%H:%M:%S")
-        else:
-            last_obs = params['last_obs']
-        last_obs = last_obs.replace(tzinfo=pytz.UTC)
-        
+                
         if type(params['last_upd']) == type('foo'):
             last_upd = datetime.strptime(params['last_upd'],"%Y-%m-%dT%H:%M:%S")
         else:
@@ -911,7 +909,7 @@ def add_datafile_via_api(params):
                 message = 'DBREPLY: DB entry for this data file is up to date'
             else:
                 file_entry.last_upd = last_upd
-                file_entry.last_obs = last_obs
+                file_entry.last_hjd = last_hjd
                 file_entry.last_mag = float(params['last_mag'])
                 file_entry.tel=params['tel']
                 file_entry.filt=params['filt']
@@ -926,7 +924,7 @@ def add_datafile_via_api(params):
             (new_file,result) = DataFile.objects.get_or_create(event=event, 
                             datafile=params['datafile'],
                             last_upd=last_upd,
-                            last_obs=last_obs, 
+                            last_hjd=params['last_hjd'], 
                             last_mag=float(params['last_mag']), 
                             tel=params['tel'],
                             filt=params['filt'], 

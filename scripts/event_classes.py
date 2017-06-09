@@ -153,7 +153,7 @@ class Lens():
             if debug==True and log!=None:
                 log.info(' -> Outcome of adding the single lens model:')
                 log.info(str(model_status)+' '+str(response))
-        
+    
     def get_params(self):
         """Method to return the parameters of the current event in a 
         dictionary format
@@ -166,3 +166,36 @@ class Lens():
         return params
 
             
+class EventDataSet():
+    """Class describing all parameters associated with a data set taken for
+    a microlensing event"""
+    
+    def __init__(self):
+        self.event_name = None
+        self.data_file = None
+        self.last_updated = None
+        self.last_hjd = None
+        self.last_mag= None
+        self.tel = None
+        self.instrument = ''
+        self.filter = None
+        self.ndata = 0
+        self.baseline = None
+        self.g = None
+        
+    def sync_artemis_data_pars_with_db(self,log=None):
+        """Method to update the database with the data and alignment 
+        parameters from ARTEMiS"""
+
+        if log!=None:
+            log.info('Syncing ARTEMiS data and align parameters with DB')
+            log.info(repr(self.event_name))
+        (status,message) = update_db_2.add_datafile(self.event_name,self.data_file, 
+                                            self.last_upd, self.last_hjd,
+                                            self.last_mag,self.tel,
+                                            self.ndata, inst=self.instrument,
+                                            filt=self.filter,
+                                            baseline=self.baseline,g=self.g)
+        if log!=None:
+            log.info(' -> Status: '+repr(status)+', '+message)
+        
