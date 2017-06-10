@@ -226,13 +226,16 @@ def read_first_and_last(file_path):
 
 def mapcount_file_lines(file_path):
     """Function (thank you again Stack Overflow) to count the number of 
-    lines in a file efficiently by using memory mapping"""
+    lines in a file efficiently by using memory mapping.
+    Function counts all lines of the file, subtracting the assumed 1-line header
+    """
     f = open(file_path, "r+")
     buf = mmap.mmap(f.fileno(), 0)
     lines = 0
     readline = buf.readline
     while readline():
         lines += 1
+    lines -= 1
     return lines
 
 ###########################
