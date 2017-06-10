@@ -135,8 +135,7 @@ def sync_artemis_data_db(config,data_type,log):
             log.info('Syncing contents of ARTEMiS data files with DB:')
         for f in event_files:
             a = path.basename(f).split('.')[0][1:-1]+'.align'
-            dir_path = path.join(path.dirname(f),'../models')
-            a = path.join(dir_path,a)
+            a = path.join(config['models_local_location'],a)
             if config['verbose'] == True:
                 log.info(' -> '+f+' '+a)
             sync_data_align_files_with_db(config,f,a,log)
