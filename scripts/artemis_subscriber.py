@@ -167,11 +167,16 @@ def sync_data_align_files_with_db(config,data_file,align_file,log):
     filt = path.basename(data_file).split('.')[0][-1:]
     origin = path.basename(data_file).split('.')[0][0:1]
     tel = look_up_origin(origin)
-    (first, last) = read_first_and_last(data_file)
-    last_mag = float(last.split()[0])
-    last_hjd = float(last.split()[2])
-    if last_hjd < 2450000.0:
-        last_hjd = last_hjd + 2450000.0
+    ndata = mapcount_file_lines(data_file)
+    if ndata > 0:
+        (first, last) = read_first_and_last(data_file)
+        last_mag = float(last.split()[0])
+        last_hjd = float(last.split()[2])
+        if last_hjd < 2450000.0:
+            last_hjd = last_hjd + 2450000.0
+    else:
+        last_mag = 0.0
+        last_hjd = 0.0
     last_upd = datetime.fromtimestamp(path.getmtime(data_file))
     last_upd = last_upd.replace(tzinfo=pytz.UTC)
     align_pars = read_artemis_align_params(align_file,filt)
@@ -403,9 +408,9 @@ def read_artemis_data_file(data_file_path):
 def read_artemis_align_params(data_file,filt):
     """Function to read the parameters from the ARTEMiS' format .align file"""
     
-    params = {'name_code': None, 
-              'baseline': None,
-              'g': None
+    params = {'name_code': '', 
+              'baseline': 0.0,
+              'g': 0.0
               }
     if 'OB' in path.basename(data_file):
         origin = 'O'
