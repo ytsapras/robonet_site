@@ -909,7 +909,7 @@ def add_datafile_via_api(params):
                 message = 'DBREPLY: DB entry for this data file is up to date'
             else:
                 file_entry.last_upd = last_upd
-                file_entry.last_hjd = last_hjd
+                file_entry.last_hjd = float(params['last_hjd'])
                 file_entry.last_mag = float(params['last_mag'])
                 file_entry.tel=params['tel']
                 file_entry.filt=params['filt']
