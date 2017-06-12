@@ -314,7 +314,8 @@ def read_rsync_log(config,log_path,data_type,log=None):
     for line in file_lines:
         if search_key in line:
             file_name = line.split(' ')[-1].replace('\n','')
-            if file_name[0:1] != '.' and len(file_name.split('.')) == 2:
+            if file_name[0:1] != '.' and len(file_name.split('.')) == 2 and \
+                'index.dat' not in file_name:
                 event_model_files.append( path.join( config[local_location], file_name ) )
     if log!=None:
         log.info('Extracted list of '+str(len(event_model_files))+' model files to be processed')
