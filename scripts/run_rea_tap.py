@@ -174,7 +174,7 @@ def assign_tap_priorities(logger):
         else:
             nmissing += 1
     if nmissing>0:
-        update_err('run_rea_tap', 'Missing DataFile: '+str(nmissing)+' events') 
+        update_err('run_rea_tap', 'Missing DataFile: '+str(nmissing)+' events')
 
 
 def run_tap_prioritization(logger):
@@ -245,7 +245,11 @@ if __name__ == '__main__':
     lock_status = log_utilities.lock(script_config, 'check', logger)
     if lock_status == 'clashing_lock':
         log_utilities.end_day_log(logger)
+        update_err('run_rea_tap', 'Lock file found') 
         exit()
+    else:
+        #reset errors.txt to ok
+        update_err('run_rea_tap', 'Status OK') 
     lock_status = log_utilities.lock( script_config, 'lock', logger)
     assign_tap_priorities(logger)
     run_tap_prioritization(logger)
