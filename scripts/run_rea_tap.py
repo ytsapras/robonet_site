@@ -163,10 +163,17 @@ def assign_tap_priorities(logger):
             texp = calculate_exptime_romerea(imag)
             cost1m = daily_visibility / tsamp * ((60. + texp) / 60.)
             err_omega = 0.
-            add_tap(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
-                    texp=texp, nexp=1., imag=imag, omega=omega_now,
-                    err_omega=err_omega, peak_omega=omega_peak,
-                    visibility=full_visibility, cost1m=cost1m)
+
+	    if ibase_pspl>0. and g_pspl<300.:
+                add_tap(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
+                        texp=texp, nexp=1., imag=imag, omega=omega_now,
+                        err_omega=err_omega, peak_omega=omega_peak,
+                        visibility=full_visibility, cost1m=cost1m)
+            else:
+                add_tap(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
+                        texp=texp, nexp=1., imag=imag, omega=0.0,
+                        err_omega=err_omega, peak_omega=omega_peak,
+                       	visibility=full_visibility, cost1m=cost1m)
 
             #expire events -> deactivated
             #if t_current > te_pspl+t0_pspl:
@@ -174,7 +181,7 @@ def assign_tap_priorities(logger):
         else:
             nmissing += 1
     if nmissing>0:
-        update_err('run_rea_tap', 'Missing DataFile: '+str(nmissing)+' events') 
+        update_err('run_rea_tap', 'Missing DataFile: '+str(nmissing)+' events')
 
 
 def run_tap_prioritization(logger):
@@ -245,7 +252,11 @@ if __name__ == '__main__':
     lock_status = log_utilities.lock(script_config, 'check', logger)
     if lock_status == 'clashing_lock':
         log_utilities.end_day_log(logger)
+        update_err('run_rea_tap', 'Lock file found') 
         exit()
+    else:
+        #reset errors.txt to ok
+        update_err('run_rea_tap', 'Status OK') 
     lock_status = log_utilities.lock( script_config, 'lock', logger)
     assign_tap_priorities(logger)
     run_tap_prioritization(logger)
