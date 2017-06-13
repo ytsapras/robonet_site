@@ -45,7 +45,7 @@ def build_rome_obs(script_config,log=None):
             obs.exposure_counts = obs_sequence['exp_counts'][s]
             obs.cadence = obs_sequence['cadence_hrs']
             obs.jitter = obs_sequence['jitter_hrs']
-            obs.priority = 1.0
+            obs.priority = obs_sequence['priority']
             obs.ttl = obs_sequence['TTL_days']
             obs.user_id = script_config['user_id']
             obs.proposal_id = script_config['proposal_id']
@@ -97,8 +97,9 @@ def rome_obs_sequence():
                     'tels':         [ '1m0', '1m0', '1m0' ],
                     'instruments':  ['fl15', 'fl16', 'fl12'],
                     'cadence_hrs': 7.0,
-                    'jitter_hrs': 1.0,
+                    'jitter_hrs': 7.0,
                     'TTL_days': 7.0,
+                    'priority': 1.05
                     }
     return obs_sequence
 
