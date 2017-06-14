@@ -25,6 +25,7 @@ import socket
 import mmap
 import pytz
 import get_errors
+import glob
 
 version = 1.0
 
@@ -141,9 +142,8 @@ def sync_artemis_data_db(config,data_type,log):
     log.info('-> downloaded datalog')
     
     # Read the list of updated models:
-    event_files = read_rsync_log(config,rsync_log_path,data_type,log=log)
+    event_files = list_data_files(config,data_type,log=log)
     log.info('-> '+str(len(event_files))+' entries have been updated')
-    
     
     # Loop over all updated models and update the database:
     if data_type == 'model' and int(config['update_db']) == 1:
@@ -314,36 +314,25 @@ def rsync_internal_data(config):
     
 ###########################
 # READ RSYNC LOG
-def read_rsync_log(config,log_path,data_type,log=None):
-    '''Function to parse the rsync -azu log output and return a list of event model file paths with updated parameters.
-    '''
+def list_data_files(config,data_type,log=None):
+    """Function to return a list of ARTEMiS data product file paths.  
+    
+    Updated: previously this function returned a list by reading the rsync log 
+    output and returning just those events which had been updated since the 
+    last rsync.  However, this was found to occasionally miss events, if there
+    was any issues with the subscriber where the data were rsync'ed but the 
+    ingest incomplete.  To ensure robustness against this, this function now
+    reports all available model files.  
+    """
     
     # Initialize, returning an empty list if no log file is found:
-    event_model_files = []
+    data_files = []
     local_location = config['data_locations'][data_type]['local_location']
     search_key = config['data_locations'][data_type]['search_key']
-    if path.isfile(log_path) == False: 
-        if log!=None:
-            log.info('ERROR: cannot find log path: '+log_path)
-        return event_model_files
     
-    # Read the log file, parsing the contents into a list of model files to be updated.
-    file = open(log_path,'r')
-    file_lines = file.readlines()
-    file.close()
-    if log!=None:
-        log.info('Read list of '+str(len(file_lines))+' model files')
-        
-    for line in file_lines:
-        if search_key in line:
-            file_name = line.split(' ')[-1].replace('\n','')
-            if file_name[0:1] != '.' and len(file_name.split('.')) == 2 and \
-                'index.dat' not in file_name:
-                event_model_files.append( path.join( config[local_location], file_name ) )
-    if log!=None:
-        log.info('Extracted list of '+str(len(event_model_files))+' model files to be processed')
-    
-    return event_model_files
+    data_files = glob.glob(path.join(config[local_location],'*'+search_key))
+
+    return data_files
 
 ###########################
 # READ ARTEMIS MODEL FILE

@@ -54,7 +54,7 @@ def test_get_event_names():
 
 def test_get_last_single_model():
     
-    event_name = 'OGLE-2012-BLG-0970'
+    event_name = 'MOA-2008-BLG-0006'
     event_id = EventName.objects.get(name=event_name).event_id
     event = Event.objects.get(id=event_id)
     
@@ -102,4 +102,18 @@ def test_get_event_by_name():
     (event,message) = query_db.get_event_by_name(event_name)
     assert event.ev_ra == ra
     assert event.ev_dec == dec
+    
+def test_get_events_within_radius():
+    
+    ra = '17:52:39.22'
+    dec = '-28:54:02.94'
+    radius = 2.0
+    events_list = query_db.get_events_within_radius(ra, dec, radius)
+    assert len(events_list) == 1
+    
+    ra = '17:58:27.51'
+    dec = '-29:20:30.38'
+    radius = 4.0
+    events_list = query_db.get_events_within_radius(ra, dec, radius)
+    assert len(events_list) == 1
     

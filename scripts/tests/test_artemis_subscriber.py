@@ -92,7 +92,19 @@ def test_check_rsync_config():
     assert(status==False)
     
     log_utilities.end_day_log( log )
+
+def test_list_data_files():
+    
+    config = artemis_subscriber.read_config()
+    
+    log = log_utilities.start_day_log( config, '_test_artemis_subscriber' )
+
+    for data_type in ['model','data']:
+        file_list = artemis_subscriber.list_data_files(config,data_type,log=log)
+        assert data_type in file_list[0]
+    
+    log_utilities.end_day_log( log )
     
 if __name__ == '__main__':
-    test_data_file_with_db()
+    test_list_data_files()
     
