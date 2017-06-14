@@ -80,6 +80,18 @@ def test_read_artemis_align_file():
     assert params['g'] == 7.12221288e+01
     assert params['baseline'] == 19.16817
     assert params['name_code'] == 'OI'
+
+def test_check_rsync_config():
+    
+    config = artemis_subscriber.read_config()
+    
+    log = log_utilities.start_day_log( config, '_test_artemis_subscriber' )
+    
+    status = artemis_subscriber.check_rsync_config(config,log=log)
+    
+    assert(status==False)
+    
+    log_utilities.end_day_log( log )
     
 if __name__ == '__main__':
     test_data_file_with_db()

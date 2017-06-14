@@ -12,6 +12,7 @@ from astropy.time import Time
 import subprocess
 from sys import exit
 from os import path, stat
+import pwd
 #import update_db
 import utilities
 from datetime import datetime
@@ -23,6 +24,7 @@ import update_db_2
 import socket
 import mmap
 import pytz
+import get_errors
 
 version = 1.0
 
@@ -41,13 +43,16 @@ def sync_artemis():
 
     log = init_log(config)
     
-    sync_artemis_data_db(config,'model',log)
+    status = check_rsync_config(config,log=log)
     
-    sync_artemis_data_db(config,'pubpars',log)
-    
-    sync_artemis_data_db(config,'data',log)
-    
-    rsync_internal_data(config)
+    if status == True:
+        sync_artemis_data_db(config,'model',log)
+        
+        sync_artemis_data_db(config,'pubpars',log)
+        
+        sync_artemis_data_db(config,'data',log)
+        
+        rsync_internal_data(config)
     
     log_utilities.end_day_log( log )
 
@@ -103,7 +108,22 @@ def init_log(config):
     else:
         log.info('Database update switched ON, normal operation')
     return log
+
+def check_rsync_config(config,log=None):
+    """Function to verify that the rsync configuration to ARTEMiS is OK"""
     
+    status = True
+    for file_path in [config['auth'], config['auth_internal']]:
+        uidcode = stat(file_path).st_uid
+        uid = pwd.getpwuid(uidcode).pw_name
+        if uid != 'root':
+            error_report = 'ERROR with rsync authorization file permissions'
+            if log!=None:
+                log.info(path.basename(file_path)+': '+error_report)
+            get_errors.update_err('artemis_subscriber', error_report)
+            status = False
+    return status
+
 def sync_artemis_data_db(config,data_type,log):
     '''Function to sync a local copy of the ARTEMiS model fit files for all events from the
        server at the Univ. of St. Andrews.
