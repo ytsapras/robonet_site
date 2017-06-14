@@ -122,6 +122,9 @@ def check_rsync_config(config,log=None):
                 log.info(path.basename(file_path)+': '+error_report)
             get_errors.update_err('artemis_subscriber', error_report)
             status = False
+    if status == True:
+        get_errors.update_err('artemis_subscriber', 'Status OK')
+        
     return status
 
 def sync_artemis_data_db(config,data_type,log):
