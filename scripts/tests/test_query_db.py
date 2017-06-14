@@ -93,3 +93,13 @@ def test_get_coords_in_degs():
     
     assert test_ra_deg == ra_deg
     assert test_dec_deg == dec_deg
+
+def test_get_event_by_name():
+    
+    event_name = 'MOA-2008-BLG-0006'
+    ra = '17:52:39.22'
+    dec = '-28:54:02.94'
+    (event,message) = query_db.get_event_by_name(event_name)
+    assert event.ev_ra == ra
+    assert event.ev_dec == dec
+    

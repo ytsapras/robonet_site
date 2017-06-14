@@ -185,6 +185,19 @@ def get_event(event_pk):
     qs = Event.objects.get(pk=event_pk)
     return qs
 
+def get_event_by_name(event_name):
+    """Function to extract an event object from the DB based on any of its 
+    assigned names
+    Inputs:
+            event_name  str   Full-length name e.g. OGLE-2017-BLG-1234
+    """
+    qs_name = EventName.objects.filter(name=event_name)
+    if len(qs_name) == 0:
+        return None, 'Event name not in DB'
+    else:
+        event = Event.objects.get(pk=qs_name[0].event_id)
+        return event, 'OK'
+
 def get_event_names(event_id):
     """Function to extract the names of a target, given its position
     on sky, with RA and Dec in decimal degrees"""
