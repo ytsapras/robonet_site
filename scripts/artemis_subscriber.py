@@ -112,12 +112,18 @@ def init_log(config):
 
 def check_rsync_config(config,log=None):
     """Function to verify that the rsync configuration to ARTEMiS is OK"""
-    
+
+    host_machine = socket.gethostname()
+    if 'rachel' in host_machine or 'Rachel' in host_machine:
+        uid_required = 'rstreet'
+    else:
+        uid_required = 'root'
+            
     status = True
     for file_path in [config['auth'], config['auth_internal']]:
         uidcode = stat(file_path).st_uid
         uid = pwd.getpwuid(uidcode).pw_name
-        if uid != 'root':
+        if uid != uid_required:
             error_report = 'ERROR with rsync authorization file permissions'
             if log!=None:
                 log.info(path.basename(file_path)+': '+error_report)
@@ -327,10 +333,16 @@ def list_data_files(config,data_type,log=None):
     
     # Initialize, returning an empty list if no log file is found:
     data_files = []
+    year = str(datetime.utcnow().year)[2:]
     local_location = config['data_locations'][data_type]['local_location']
     search_key = config['data_locations'][data_type]['search_key']
     
-    data_files = glob.glob(path.join(config[local_location],'*'+search_key))
+    if data_type == 'model' or data_type == 'pubpars':
+        data_files = glob.glob(path.join(config[local_location],\
+                            '??'+year+'*'+search_key))
+    else:
+        data_files = glob.glob(path.join(config[local_location],\
+                            '???'+year+'*'+search_key))
 
     return data_files
 
