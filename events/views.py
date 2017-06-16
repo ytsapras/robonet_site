@@ -667,9 +667,8 @@ def show_event(request, event_name):
             status = 'EX'
             ogle_url = ''
 	 try:
-            obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
-            last_obs = obs_recent['last_obs']
-            last_obs_hjd = Time(last_obs).jd
+            obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_hjd')
+            last_obs_hjd = obs_recent['last_hjd']
             tel_id = obs_recent['datafile'].split('/')[-1].split('_')
             if len(tel_id) == 2:
                tel_id = tel_id[0]+'_'
