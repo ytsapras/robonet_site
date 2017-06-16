@@ -669,6 +669,7 @@ def show_event(request, event_name):
 	 try:
             obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_hjd')
             last_obs_hjd = obs_recent['last_hjd']
+            last_obs = Time(float(last_obs_hjd), format='jd', scale='utc').iso
             tel_id = obs_recent['datafile'].split('/')[-1].split('_')
             if len(tel_id) == 2:
                tel_id = tel_id[0]+'_'
