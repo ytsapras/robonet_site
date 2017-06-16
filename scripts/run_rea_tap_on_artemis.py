@@ -136,7 +136,7 @@ def assign_tap_priorities(logger):
             0].name
         timestamp = timezone.now()
 
-	modelpath = '/somewhere/artemis/model/'
+	modelpath = '/var/www/robonetsite/data/artemis/model/'
         if 'MOA' in event_name:
             eventname_short = 'KB' + event_name[6:8] + event_name[13:17]
         else:
@@ -275,7 +275,7 @@ if __name__ == '__main__':
         exit()
     else:
         #reset errors.txt to ok
-        update_err('run_rea_tap', 'Status OK') 
+        update_err('run_rea_tap', 'Status OK (ARTEMiS mode)') 
     lock_status = log_utilities.lock( script_config, 'lock', logger)
     assign_tap_priorities(logger)
     run_tap_prioritization(logger)
