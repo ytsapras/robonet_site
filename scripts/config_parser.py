@@ -78,7 +78,7 @@ def read_config_for_code(code_name):
     if 'rachel' in str(host_name).lower():
         config_file_path = path.join('/Users/rstreet/.robonet_site/',configs[code_name])
     elif 'cursa' in host_name:
-        config_file_path = path.join('../configs',configs[code_name])
+        config_file_path = path.join('/home/Tux/ytsapras/robonet_site/configs/',configs[code_name])
     else:
         config_file_path = path.join('/var/www/robonetsite/configs/',configs[code_name])
     

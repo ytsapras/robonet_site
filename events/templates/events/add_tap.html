@@ -1,0 +1,124 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<h3>Record submitted TAP request</h3>
+<div>
+      <form method="POST" class="post-form">{% csrf_token %}
+        <center>
+            <table>
+                <tr>
+                   <td><div class="fieldWrapper">
+                       {{ form.event.errors }}
+                       <label for="{{ form.event.id_for_label }}">event:</label>
+                       {{ form.event }}
+                   </div></td>
+                   <td></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.timestamp.errors }}
+                       <label for="{{ form.timestamp.id_for_label }}">timestamp:</label>
+                       {{ form.timestamp }}
+                   </div></td>
+                </tr>
+                <tr>
+                   <td><div class="fieldWrapper">
+                       {{ form.priority.errors }}
+                       <label for="{{ form.priority.id_for_label }}">priority:</label>
+                       {{ form.priority }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.tsamp.errors }}
+                       <label for="{{ form.tsamp.id_for_label }}">tsamp:</label>
+                       {{ form.tsamp }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.texp.errors }}
+                       <label for="{{ form.texp.id_for_label }}">texp:</label>
+                       {{ form.texp }}
+                   </div></td>
+		</tr>
+		<tr>
+                   <td><div class="fieldWrapper">
+		       {{ form.nexp.errors }}
+		       <label for="{{ form.nexp.id_for_label }}">nexp:</label>
+		       {{ form.nexp }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.telclass.errors }}
+		       <label for="{{ form.telclass.id_for_label }}">telclass:</label>
+		       {{ form.telclass }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.imag.errors }}
+		       <label for="{{ form.imag.id_for_label }}">imag:</label>
+		       {{ form.imag }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.omega.errors }}
+		       <label for="{{ form.omega.id_for_label }}">omega:</label>
+		       {{ form.omega }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.err_omega.errors }}
+		       <label for="{{ form.err_omega.id_for_label }}">err_omega:</label>
+		       {{ form.err_omega }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.peak_omega.errors }}
+		       <label for="{{ form.peak_omega.id_for_label }}">peak_omega:</label>
+		       {{ form.peak_omega }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.blended.errors }}
+		       <label for="{{ form.blended.id_for_label }}">blended:</label>
+		       {{ form.blended }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.visibility.errors }}
+		       <label for="{{ form.visibility.id_for_label }}">visibility:</label>
+		       {{ form.visibility }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.cost1m.errors }}
+		       <label for="{{ form.cost1m.id_for_label }}">cost1m:</label>
+		       {{ form.cost1m }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.passband.errors }}
+		       <label for="{{ form.passband.id_for_label }}">passband:</label>
+		       {{ form.passband }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.ipp.errors }}
+		       <label for="{{ form.ipp.id_for_label }}">ipp:</label>
+		       {{ form.ipp }}
+		   </div></td>
+		   <td></td>
+		</tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                    <button type="sumbit" class="save btn btn-default">Submit</button>
+                    </div></td>
+		    <td></td>
+		    <td></td>
+                </tr>
+             </table>
+        </center>
+    </form>
+</div>  
+
+{% if message != 'none' %}
+<div>
+    <center>
+        <h5>{{ message }}</h5>
+    </center>
+</div>
+{% endif %}
+{% endblock %}

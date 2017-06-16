@@ -1,0 +1,73 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<h3>Record new event</h3>
+<div>
+      <form method="POST" class="post-form">{% csrf_token %}
+        <center>
+            <table>
+                <tr>
+                    <td><div class="fieldWrapper">
+                        {{ form.field.errors }}
+                        <label for="{{ form.field.id_for_label }}">Field ID:</label>
+                        {{ form.field }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ form.operator.errors }}
+                        <label for="{{ form.operator.id_for_label }}">Operator ID:</label>
+                        {{ form.operator }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ form.ev_ra.errors }}
+                        <label for="{{ form.ev_ra.id_for_label }}">RA:</label>
+                        {{ form.ev_ra }}
+                    </div></td>
+                </tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                        {{ form.ev_dec.errors }}
+                        <label for="{{ form.ev_dec.id_for_label }}">Dec:</label>
+                        {{ form.ev_dec }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ form.status.errors }}
+                        <label for="{{ form.status.id_for_label }}">Status:</label>
+                        {{ form.status }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ form.anomaly_rank.errors }}
+                        <label for="{{ form.anomaly_rank.id_for_label }}">Anomaly Rank:</label>
+                        {{ form.anomaly_rank }}
+                    </div></td>
+                </tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                        {{ form.year.errors }}
+                        <label for="{{ form.year.id_for_label }}">Discovery Year:</label>
+                        {{ form.year }}
+                    </div></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                    <button type="sumbit" class="save btn btn-default">Submit</button>
+                    </div></td>
+		    <td></td>
+		    <td></td>
+                </tr>
+            </table>
+        </center>
+    </form>
+</div>  
+
+{% if message != 'none' %}
+<div>
+    <center>
+        <h5>{{ message }}</h5>
+    </center>
+</div>
+{% endif %}
+{% endblock %}

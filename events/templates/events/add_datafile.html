@@ -1,0 +1,93 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<h3>Record submitted ARTEMiS DataFile request</h3>
+<div>
+      <form method="POST" class="post-form">{% csrf_token %}
+        <center>
+            <table>
+                <tr>
+                   <td><div class="fieldWrapper">
+                       {{ form.event.errors }}
+                       <label for="{{ form.event.id_for_label }}">event:</label>
+                       {{ form.event }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.datafile.errors }}
+                       <label for="{{ form.datafile.id_for_label }}">datafile:</label>
+                       {{ form.datafile }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.last_upd.errors }}
+                       <label for="{{ form.last_upd.id_for_label }}">last_upd:</label>
+                       {{ form.last_upd }}
+                   </div></td>
+                </tr>
+                <tr>
+                   <td><div class="fieldWrapper">
+                       {{ form.last_hjd.errors }}
+                       <label for="{{ form.last_hjd.id_for_label }}">last_hjd:</label>
+                       {{ form.last_hjd }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.last_mag.errors }}
+                       <label for="{{ form.last_mag.id_for_label }}">last_mag:</label>
+                       {{ form.last_mag }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+		       {{ form.tel.errors }}
+		       <label for="{{ form.tel.id_for_label }}">tel:</label>
+                       {{ form.tel }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.inst.errors }}
+		       <label for="{{ form.inst.id_for_label }}">inst:</label>
+		       {{ form.inst }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.filt.errors }}
+		       <label for="{{ form.filt.id_for_label }}">filt:</label>
+		       {{ form.filt }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.baseline.errors }}
+		       <label for="{{ form.baseline.id_for_label }}">baseline:</label>
+		       {{ form.baseline }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.g.errors }}
+		       <label for="{{ form.g.id_for_label }}">g:</label>
+		       {{ form.g }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.ndata.errors }}
+		       <label for="{{ form.ndata.id_for_label }}">ndata:</label>
+		       {{ form.ndata }}
+		   </div></td>
+		</tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                    <button type="sumbit" class="save btn btn-default">Submit</button>
+                    </div></td>
+		    <td></td>
+		    <td></td>
+                </tr>
+             </table>
+        </center>
+    </form>
+</div>  
+
+{% if message != 'none' %}
+<div>
+    <center>
+        <h5>{{ message }}</h5>
+    </center>
+</div>
+{% endif %}
+{% endblock %}

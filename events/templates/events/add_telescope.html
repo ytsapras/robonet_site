@@ -1,0 +1,73 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<h3>Record new telescope</h3>
+<div>
+      <form method="POST" class="post-form">{% csrf_token %}
+        <center>
+            <table>
+                <tr>
+                    <td><div class="fieldWrapper">
+                        {{ form.operator.errors }}
+                        <label for="{{ form.operator.id_for_label }}">Operator:</label>
+                        {{ form.operator}}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ form.name.errors }}
+                        <label for="{{ form.name.id_for_label }}">Telescope name:</label>
+                        {{ form.name }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ form.aperture.errors }}
+                        <label for="{{ form.aperture.id_for_label }}">Aperture (m):</label>
+                        {{ form.aperture }}
+                    </div></td>
+                </tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                        {{ form.latitude.errors }}
+                        <label for="{{ form.latitude.id_for_label }}">Latitude (N):</label>
+                        {{ form.latitude }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ form.longitude.errors }}
+                        <label for="{{ form.longitude.id_for_label }}">Longitude (E):</label>
+                        {{ form.longitude }}
+                    </div></td>
+		    <td><div class="fieldWrapper">
+                        {{ form.altitude.errors }}
+                        <label for="{{ form.altitude.id_for_label }}">Altitude (m):</label>
+                        {{ form.altitude }}
+                    </div></td>
+                </tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                        {{ form.site.errors }}
+                        <label for="{{ form.site.id_for_label }}">Site:</label>
+                        {{ form.site }}
+                    </div></td>
+                    <td></td>
+		    <td></td>
+                </tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                    <button type="sumbit" class="save btn btn-default">Submit</button>
+                    </div></td>
+		    <td></td>
+		    <td></td>
+                </tr>
+            </table>
+        </center>
+    </form>
+</div>  
+
+{% if message != 'none' %}
+<div>
+    <center>
+        <h5>{{ message }}</h5>
+    </center>
+</div>
+{% endif %}
+{% endblock %}

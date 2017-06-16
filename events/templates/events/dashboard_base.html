@@ -77,9 +77,11 @@ dy.bmp&imgsize=320&dynimg=y&opt=-p&lat=&lon=&alt=&tle=&date=0&utc=&jd=" width="5
 <table border="1" bgcolor="#FFFFFF">
   <tr>
    <!-- Column 1 -->
-   <td bgcolor="#E6E6B8"><b style="color: #000000"><a href={% url 'list_all' %} STYLE="text-decoration:none">List all events</a></b></td>
+   <td bgcolor="#E6E6B8" title="List of all events in the database"><b style="color: #000000"><a href={% url 'list_all' %} STYLE="text-decoration:none">List all events</a></b></td>
    <!-- Column 2 -->
-   <td bgcolor="#E6E6B8"><b style="color: #000000"><a href={% url 'obs_log' date=date_today %} STYLE="text-decoration:none">Observations in last 24 hours</a></b></td>
+   <td bgcolor="#E6E6B8" title="List of images obtained in the last 24 hours"><b style="color: #000000"><a href={% url 'obs_log' date=date_today %} STYLE="text-decoration:none">Observations in last 24 hours</a></b></td>
+   <!-- Column 3 -->
+   <td bgcolor="#E6E6B8" title="List of observation requests submitted in the last 24 hours"><b style="color: #000000"><a href={% url 'obs_requests24' %} STYLE="text-decoration:none">Obs. Requests in last 24 hours</a></b></td>
   </tr>
 </table>
 <!-- END TABLE ONE -->

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% block content %}
+{% if rows %}
+<center>
+    <script type="text/javascript" src="{% static 'events/sorttable.js' %}"></script>
+    <h2>Observation Requests in database in the last 24 hours</h2>
+    <table class="sortable" border="0">
+    <tr>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Field Name:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Sampling(min):</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Exp.time(sec):</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Submitted @:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Expires @:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Status:</b></td>
+       <td bgcolor="#609ab6" title="A for REA High, M for REA Low, L for ROME standard."><b style="color: #FFFFFF ">Req. Type:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Site:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Instr:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Filter:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">GRP ID:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">TRK ID:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">REQ ID:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">N exp:</b></td>
+   </tr>
+    <ul>
+    {% for row in rows %}
+    <tr bgcolor="{% cycle '#E6E6B8' '#FFFFCC' %}">
+        <td><font size="2">{{ row.0 }}</font> </td>
+	<td><font size="2">{{ row.1 }}</font> </td>
+	<td><font size="2">{{ row.2 }}</font> </td>
+	<td><font size="2">{{ row.3 }}</font> </td>
+	<td><font size="2">{{ row.4 }}</font> </td>
+	<td><font size="2">{{ row.5 }}</font> </td>
+	<td title="A for REA High, M for REA Low, L for ROME standard."><font size="2">{{ row.6 }}</font> </td>
+	<td><font size="2">{{ row.7 }}</font> </td>
+	<td><font size="2">{{ row.8 }}</font> </td>
+	<td><font size="2">{{ row.9 }}</font> </td>
+	<td><font size="2">{{ row.10 }}</font> </td>
+	<td><font size="2">{{ row.11 }}</font> </td>
+	<td><font size="2">{{ row.12 }}</font> </td>
+	<td><font size="2">{{ row.13 }}</font> </td>
+    </tr>
+    {% endfor %}
+    </ul>
+    </table>
+{% else %}
+    <p>The database contains no Observing Requests submitted in the last 24 hours.</p>
+{% endif %}
+</center>
+{% endblock %}

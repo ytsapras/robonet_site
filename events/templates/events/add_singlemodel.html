@@ -1,0 +1,128 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<h3>Record Single Lens Model request</h3>
+<div>
+      <form method="POST" class="post-form">{% csrf_token %}
+        <center>
+            <table>
+                <tr>
+                    <td><div class="fieldWrapper">
+                        {{ form.event.errors }}
+                        <label for="{{ form.event.id_for_label }}">Event ID:</label>
+                        {{ form.event }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ form.Tmax.errors }}
+                        <label for="{{ form.Tmax.id_for_label }}">Tmax:</label>
+                        {{ form.Tmax }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ form.e_Tmax.errors }}
+                        <label for="{{ form.e_Tmax.id_for_label }}">&sigma;(Tmax):</label>
+                        {{ form.e_Tmax }}
+                    </div></td>
+                </tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                        {{ form.tau.errors }}
+                        <label for="{{ form.tau.id_for_label }}">tau:</label>
+                        {{ form.tau }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ form.e_tau.errors }}
+                        <label for="{{ form.e_tau.id_for_label }}">&sigma;(tau):</label>
+                        {{ form.e_tau }}
+                    </div></td>
+		    <td><div class="fieldWrapper">
+                        {{ form.umin.errors }}
+                        <label for="{{ form.umin.id_for_label }}">umin:</label>
+                        {{ form.umin }}
+                    </div></td>
+                </tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                        {{ form.e_umin.errors }}
+                        <label for="{{ form.e_umin.id_for_label }}">&sigma;(umin):</label>
+                        {{ form.e_umin }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ form.rho.errors }}
+                        <label for="{{ form.rho.id_for_label }}">rho:</label>
+                        {{ form.rho }}
+                    </div></td>
+		    <td><div class="fieldWrapper">
+                        {{ form.e_rho.errors }}
+                        <label for="{{ form.e_rho.id_for_label }}">&sigma;(rho):</label>
+                        {{ form.e_rho }}
+                    </div></td>
+                </tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                        {{ form.pi_e_n.errors }}
+                        <label for="{{ form.pi_e_n.id_for_label }}">pi_e_n:</label>
+                        {{ form.pi_e_n }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ form.e_pi_e_n.errors }}
+                        <label for="{{ form.e_pi_e_n.id_for_label }}">&sigma;(pi_e_n):</label>
+                        {{ form.e_pi_e_n }}
+                    </div></td>
+		    <td><div class="fieldWrapper">
+                        {{ form.pi_e_e.errors }}
+                        <label for="{{ form.pi_e_e.id_for_label }}">pi_e_e:</label>
+                        {{ form.pi_e_e }}
+                    </div></td>
+                </tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                        {{ form.e_pi_e_e.errors }}
+                        <label for="{{ form.e_pi_e_e.id_for_label }}">&sigma;(pi_e_e):</label>
+                        {{ form.e_pi_e_e }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ form.modeler.errors }}
+                        <label for="{{ form.modeler.id_for_label }}">modeler:</label>
+                        {{ form.modeler }}
+                    </div></td>
+		    <td><div class="fieldWrapper">
+                        {{ form.last_updated.errors }}
+                        <label for="{{ form.last_updated.id_for_label }}">last updated:</label>
+                        {{ form.last_updated }}
+                    </div></td>
+                </tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                        {{ form.tap_omega.errors }}
+                        <label for="{{ form.tap_omega.id_for_label }}">tap_omega:</label>
+                        {{ form.tap_omega }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ form.chi_sq.errors }}
+                        <label for="{{ form.chi_sq.id_for_label }}">chi_sq:</label>
+                        {{ form.chi_sq }}
+                    </div></td>
+		    <td></td>
+                </tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                    <button type="sumbit" class="save btn btn-default">Submit</button>
+                    </div></td>
+		    <td></td>
+		    <td></td>
+                </tr>
+            </table>
+        </center>
+    </form>
+</div>  
+
+{% if message != 'none' %}
+<div>
+    <center>
+        <h5>{{ message }}</h5>
+    </center>
+</div>
+{% endif %}
+{% endblock %}

@@ -31,11 +31,50 @@ def submit_obs_request_record(config,params):
                             config['db_user_id'],config['db_pswd'],
                             testing=True)
 
+################################################################################
+def submit_event_record(config,params):
+    """Function to submit a record of a new event to the database 
+    using the API add_event endpoint
+    Required parameters:
+        config    dict    script configuration parameters
+        params    dict    event request parameters, including
+                    field_name       str
+                    operator_name    str
+                    ev_ra            str
+		    ev_dec           str
+		    status           str
+                    anomaly rank     float
+                    year             str
+    """
+    
+    end_point = 'add_event'
+    
+    response = talk_to_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=True)
+
+################################################################################
+def submit_eventname_record(config,params):
+    """Function to submit a record of a new event name to the database 
+    using the API add_eventname endpoint
+    Required parameters:
+        config    dict    script configuration parameters
+        params    dict    eventname request parameters, including
+                    event         str
+                    operator      str
+                    name          str
+    """
+    
+    end_point = 'add_eventname'
+    
+    response = talk_to_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=True)
 
 ################################################################################
 def submit_operator_record(config,params):
     """Function to submit a record of a new operator to the database 
-    using the API record_operator endpoint
+    using the API add_operator endpoint
     Required parameters:
         config    dict    script configuration parameters
         params    dict    operator parameters, including
@@ -51,20 +90,259 @@ def submit_operator_record(config,params):
 ################################################################################
 def submit_telescope_record(config,params):
     """Function to submit a record of a new telescope to the database 
-    using the API record_operator endpoint
+    using the API add_telescope endpoint
     Required parameters:
         config    dict    script configuration parameters
         params    dict    telescope parameters, including
-                    operator str
-                    telescope_name str
-                    aperture float
-                    latitude float
-                    longitude float
-                    altitude float
-                    site str
+                    operator 		str
+                    telescope_name 	str
+                    aperture 		float
+                    latitude 		float
+                    longitude 		float
+                    altitude 		float
+                    site 		str
     """
     
     end_point = 'add_telescope'
+    
+    response = talk_to_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=True)
+
+################################################################################
+def submit_singlemodel_record(config,params):
+    """Function to submit a record of a new single lens model to the database 
+    using the API add_singlemodel endpoint
+    Required parameters:
+        config    dict    script configuration parameters
+        params    dict    singlemodel parameters, including
+                    event 	str
+                    Tmax 	float
+                    e_Tmax 	float
+                    tau 	float
+                    e_tau 	float
+                    umin 	float
+                    e_umin 	float
+		    rho		float
+		    e_rho	float
+		    pi_e_n	float
+		    e_pi_e_n	float
+		    pi_e_e	float
+		    e_pi_e_e	float
+		    modeler	str
+		    last_updated str
+		    tap_omega	float
+		    chi_sq	float
+    """
+    
+    end_point = 'add_singlemodel'
+    
+    response = talk_to_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=True)
+
+################################################################################
+def submit_binarymodel_record(config,params):
+    """Function to submit a record of a new binary lens model to the database 
+    using the API add_binarymodel endpoint
+    Required parameters:
+        config    dict    script configuration parameters
+        params    dict    binarymodel parameters, including
+                    event 	str
+                    Tmax 	float
+                    e_Tmax 	float
+                    tau 	float
+                    e_tau 	float
+                    umin 	float
+                    e_umin 	float
+		    mass_ratio 	float
+		    e_mass_ratio float
+		    separation 	float
+		    e_separation float
+		    angle_a 	float
+		    e_angle_a	float
+		    dsdt 	float
+		    e_dsdt 	float
+		    dadt 	float
+		    e_dadt 	float
+		    rho		float
+		    e_rho	float
+		    pi_e_n	float
+		    e_pi_e_n	float
+		    pi_e_e	float
+		    e_pi_e_e	float
+		    modeler	str
+		    last_updated str
+		    tap_omega	float
+		    chi_sq	float
+    """
+    
+    end_point = 'add_binarymodel'
+    
+    response = talk_to_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=True)
+
+################################################################################
+def submit_eventreduction_record(config,params):
+    """Function to submit a record of a new event reduction to the database 
+    using the API add_eventreduction endpoint
+    Required parameters:
+        config    dict    script configuration parameters
+        params    dict    eventreduction parameters, including
+                    event	    str
+                    lc_file         str
+                    timestamp	    str
+                    ref_image	    str
+                    target_found    bool
+                    ron 	    float
+                    gain	    float
+		    oscanx1	    int
+		    oscanx2	    int
+		    oscany1	    int
+		    oscany2	    int
+		    imagex1	    int
+		    imagex2	    int
+		    imagey1	    int
+		    imagey2	    int
+		    minval	    int
+		    maxval	    int
+		    growsatx	    int
+		    growsaty	    int
+		    coeff2	    str
+		    coeff3	    str
+		    sigclip	    float
+		    sigfrac	    float
+		    flim	    float
+		    niter	    int
+		    use_reflist     int
+		    max_nimages     int
+		    max_sky	    float
+		    min_ell	    float
+		    trans_type      str
+		    trans_auto      int
+		    replace_cr      int
+		    min_scale	    float
+		    max_scale	    float
+		    fov 	    float
+		    star_space      int
+		    init_mthresh    float
+		    smooth_pro      int
+		    smooth_fwhm     float
+		    var_deg	    int
+		    det_thresh      float
+		    psf_thresh      float
+		    psf_size	    float
+		    psf_comp_dist   float
+		    psf_comp_flux   float
+		    psf_corr_thresh float
+		    ker_rad	    float
+		    lres_ker_rad    float
+		    subframes_x     int
+		    subframes_y     int
+		    grow	    float
+		    ps_var	    int
+		    back_var	    int
+		    diffpro         int
+    """
+    
+    end_point = 'add_eventreduction'
+    
+    response = talk_to_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=True)
+
+################################################################################
+def submit_tap_record(config,params):
+    """Function to submit a record of a new TAP to the database 
+    using the API add_tap endpoint
+    Required parameters:
+        config    dict    script configuration parameters
+        params    dict    tap parameters, including
+        event     		str
+        possible_priority	str
+        timestamp		str
+        priority		str
+        tsamp			float
+        texp			int
+        nexp			int
+        telclass		str
+        imag			float
+        omega			float
+        err_omega		float
+        peak_omega		float
+        blended			bool
+        visibility		float
+        cost1m			float
+        passband		str
+        ipp			float
+    """
+    
+    end_point = 'add_tap'
+    
+    response = talk_to_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=True)
+
+################################################################################
+def submit_datafile_record(config,params):
+    """Function to submit a record of a new ARTEMiS DataFile to the database 
+    using the API add_datafile endpoint
+    Required parameters:
+        config    dict    script configuration parameters
+        params    dict    datafile parameters, including
+        event     		str
+	datafile		str
+	last_upd		str
+	last_hjd		float
+	last_mag		float
+	tel			str
+	ndata			int
+	inst			str		
+	filt			str
+	baseline		float
+	g			float
+     """
+    
+    end_point = 'add_datafile'
+    
+    response = talk_to_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=True)
+
+################################################################################
+def submit_image_record(config,params):
+    """Function to submit a record of a new image to the database 
+    using the API add_image endpoint
+    Required parameters:
+        config    dict    script configuration parameters
+        params    dict    image parameters, including
+	field_name     	str
+	image_name	str
+	date_obs  	str
+	timestamp 	str
+	tel       	str
+	inst      	str
+	filt      	str
+	grp_id    	str
+	track_id  	str
+	req_id    	str
+	airmass   	float
+	avg_fwhm  	float
+	avg_sky   	float
+	avg_sigsky	float
+	moon_sep  	float
+	moon_phase	float
+	moon_up   	bool
+	elongation	float
+	nstars    	int
+	ztemp     	float
+	shift_x   	int
+	shift_y   	int
+	quality   	str
+     """
+    
+    end_point = 'add_image'
     
     response = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],

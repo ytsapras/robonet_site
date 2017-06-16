@@ -1,0 +1,336 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<h3>Record Event Reduction request</h3>
+<div>
+      <form method="POST" class="post-form">{% csrf_token %}
+        <center>
+            <table>
+                <tr>
+                   <td><div class="fieldWrapper">
+                       {{ form.event.errors }}
+                       <label for="{{ form.event.id_for_label }}">Event ID:</label>
+                       {{ form.event }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.lc_file.errors }}
+                       <label for="{{ form.lc_file.id_for_label }}">lc_file:</label>
+                       {{ form.lc_file }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.timestamp.errors }}
+                       <label for="{{ form.timestamp.id_for_label }}">timestamp:</label>
+                       {{ form.timestamp }}
+                   </div></td>
+                </tr>
+                <tr>
+                   <td><div class="fieldWrapper">
+                       {{ form.ref_image.errors }}
+                       <label for="{{ form.ref_image.id_for_label }}">ref_image:</label>
+                       {{ form.ref_image }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.target_found.errors }}
+                       <label for="{{ form.target_found.id_for_label }}">target_found:</label>
+                       {{ form.target_found }}
+                   </div></td>
+		   <td><div class="fieldWrapper">
+                       {{ form.ron.errors }}
+                       <label for="{{ form.ron.id_for_label }}">ron:</label>
+                       {{ form.ron }}
+                   </div></td>
+                </tr>
+                <tr>
+                   <td><div class="fieldWrapper">
+                       {{ form.gain.errors }}
+                       <label for="{{ form.gain.id_for_label }}">gain:</label>
+                       {{ form.gain }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.oscanx1.errors }}
+                       <label for="{{ form.oscanx1.id_for_label }}">oscanx1:</label>
+                       {{ form.oscanx1 }}
+                   </div></td>
+		   <td><div class="fieldWrapper">
+                       {{ form.oscanx2.errors }}
+                       <label for="{{ form.oscanx2.id_for_label }}">oscanx2:</label>
+                       {{ form.oscanx2 }}
+                   </div></td>
+                </tr>
+                <tr>
+                   <td><div class="fieldWrapper">
+                       {{ form.oscany1.errors }}
+                       <label for="{{ form.oscany1.id_for_label }}">oscany1:</label>
+                       {{ form.oscany1 }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.oscany2.errors }}
+                       <label for="{{ form.oscany2.id_for_label }}">oscany2:</label>
+                       {{ form.oscany2 }}
+                   </div></td>
+		   <td><div class="fieldWrapper">
+                       {{ form.imagex1.errors }}
+                       <label for="{{ form.imagex1.id_for_label }}">imagex1:</label>
+                       {{ form.imagex1 }}
+                   </div></td>
+                </tr>
+                <tr>
+                   <td><div class="fieldWrapper">
+                       {{ form.imagex2.errors }}
+                       <label for="{{ form.imagex2.id_for_label }}">imagex2:</label>
+                       {{ form.imagex2 }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.imagey1.errors }}
+                       <label for="{{ form.imagey1.id_for_label }}">imagey1:</label>
+                       {{ form.imagey1 }}
+                   </div></td>
+		   <td><div class="fieldWrapper">
+                       {{ form.imagey2.errors }}
+                       <label for="{{ form.imagey2.id_for_label }}">imagey2:</label>
+                       {{ form.imagey2 }}
+                   </div></td>
+                </tr>
+                <tr>
+                   <td><div class="fieldWrapper">
+                       {{ form.minval.errors }}
+                       <label for="{{ form.minval.id_for_label }}">minval:</label>
+                       {{ form.minval }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+		       {{ form.maxval.errors }}
+                       <label for="{{ form.maxval.id_for_label }}">maxval:</label>
+                       {{ form.maxval }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.growsatx.errors }}
+                       <label for="{{ form.growsatx.id_for_label }}">growsatx:</label>
+                       {{ form.growsatx }}
+                   </div></td>
+                </tr>
+                <tr>
+                   <td><div class="fieldWrapper">
+                       {{ form.growsaty.errors }}
+		       <label for="{{ form.growsaty.id_for_label }}">growsaty:</label>
+                       {{ form.growsaty }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.coeff2.errors }}
+                       <label for="{{ form.coeff2.id_for_label }}">coeff2:</label>
+                       {{ form.coeff2 }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.coeff3.errors }}
+                       <label for="{{ form.coeff3.id_for_label }}">coeff3:</label>
+                       {{ form.coeff3 }}
+                   </div></td>
+                </tr>
+                <tr>
+                   <td><div class="fieldWrapper">
+                       {{ form.sigclip.errors }}
+		       <label for="{{ form.sigclip.id_for_label }}">sigclip:</label>
+                       {{ form.sigclip }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.sigfrac.errors }}
+                       <label for="{{ form.sigfrac.id_for_label }}">sigfrac:</label>
+                       {{ form.sigfrac }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.flim.errors }}
+                       <label for="{{ form.flim.id_for_label }}">flim:</label>
+                       {{ form.flim }}
+                   </div></td>
+                </tr>
+                <tr>
+                   <td><div class="fieldWrapper">
+                       {{ form.niter.errors }}
+		       <label for="{{ form.niter.id_for_label }}">niter:</label>
+                       {{ form.niter }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.use_reflist.errors }}
+                       <label for="{{ form.use_reflist.id_for_label }}">use_reflist:</label>
+                       {{ form.use_reflist }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.max_nimages.errors }}
+                       <label for="{{ form.max_nimages.id_for_label }}">max_nimages:</label>
+                       {{ form.max_nimages }}
+                   </div></td>
+		</tr>
+                <tr>
+                   <td><div class="fieldWrapper">
+                       {{ form.max_sky.errors }}
+                       <label for="{{ form.max_sky.id_for_label }}">max_sky:</label>
+                       {{ form.max_sky }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+                       {{ form.min_ell.errors }}
+		       <label for="{{ form.min_ell.id_for_label }}">min_ell:</label>
+		       {{ form.min_ell }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.trans_type.errors }}
+		       <label for="{{ form.trans_type.id_for_label }}">trans_type:</label>
+		       {{ form.trans_type }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.trans_auto.errors }}
+		       <label for="{{ form.trans_auto.id_for_label }}">trans_auto:</label>
+		       {{ form.trans_auto }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.replace_cr.errors }}
+		       <label for="{{ form.replace_cr.id_for_label }}">replace_cr:</label>
+		       {{ form.replace_cr }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.min_scale.errors }}
+		       <label for="{{ form.min_scale.id_for_label }}">min_scale:</label>
+		       {{ form.min_scale }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.max_scale.errors }}
+		       <label for="{{ form.max_scale.id_for_label }}">max_scale:</label>
+		       {{ form.max_scale }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.fov.errors }}
+		       <label for="{{ form.fov.id_for_label }}">fov:</label>
+		       {{ form.fov }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.star_space.errors }}
+		       <label for="{{ form.star_space.id_for_label }}">star_space:</label>
+		       {{ form.star_space }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.init_mthresh.errors }}
+		       <label for="{{ form.init_mthresh.id_for_label }}">init_mthresh:</label>
+		       {{ form.init_mthresh }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.smooth_pro.errors }}
+		       <label for="{{ form.smooth_pro.id_for_label }}">smooth_pro:</label>
+		       {{ form.smooth_pro }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.smooth_fwhm.errors }}
+		       <label for="{{ form.smooth_fwhm.id_for_label }}">smooth_fwhm:</label>
+		       {{ form.smooth_fwhm }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.var_deg.errors }}
+		       <label for="{{ form.var_deg.id_for_label }}">var_deg:</label>
+		       {{ form.var_deg }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.det_thresh.errors }}
+		       <label for="{{ form.det_thresh.id_for_label }}">det_thresh:</label>
+		       {{ form.det_thresh }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.psf_thresh.errors }}
+		       <label for="{{ form.psf_thresh.id_for_label }}">psf_thresh:</label>
+		       {{ form.psf_thresh }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.psf_size.errors }}
+		       <label for="{{ form.psf_size.id_for_label }}">psf_size:</label>
+		       {{ form.psf_size }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.psf_comp_dist.errors }}
+		       <label for="{{ form.psf_comp_dist.id_for_label }}">psf_comp_dist:</label>
+		       {{ form.psf_comp_dist }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.psf_comp_flux.errors }}
+		       <label for="{{ form.psf_comp_flux.id_for_label }}">psf_comp_flux:</label>
+		       {{ form.psf_comp_flux }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.psf_corr_thresh.errors }}
+		       <label for="{{ form.psf_corr_thresh.id_for_label }}">psf_corr_thresh:</label>
+		       {{ form.psf_corr_thresh }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.ker_rad.errors }}
+		       <label for="{{ form.ker_rad.id_for_label }}">ker_rad:</label>
+		       {{ form.ker_rad }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.lres_ker_rad.errors }}
+		       <label for="{{ form.lres_ker_rad.id_for_label }}">lres_ker_rad:</label>
+		       {{ form.lres_ker_rad }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.subframes_x.errors }}
+		       <label for="{{ form.subframes_x.id_for_label }}">subframes_x:</label>
+		       {{ form.subframes_x }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.subframes_y.errors }}
+		       <label for="{{ form.subframes_y.id_for_label }}">subframes_y:</label>
+		       {{ form.subframes_y }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.grow.errors }}
+		       <label for="{{ form.grow.id_for_label }}">grow:</label>
+		       {{ form.grow }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.ps_var.errors }}
+		       <label for="{{ form.ps_var.id_for_label }}">ps_var:</label>
+		       {{ form.ps_var }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.back_var.errors }}
+		       <label for="{{ form.back_var.id_for_label }}">back_var:</label>
+		       {{ form.back_var }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.diffpro.errors }}
+		       <label for="{{ form.diffpro.id_for_label }}">diffpro:</label>
+		       {{ form.diffpro }}
+		   </div></td>
+		</tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                    <button type="sumbit" class="save btn btn-default">Submit</button>
+                    </div></td>
+		    <td></td>
+		    <td></td>
+                </tr>
+            </table>
+        </center>
+    </form>
+</div>  
+
+{% if message != 'none' %}
+<div>
+    <center>
+        <h5>{{ message }}</h5>
+    </center>
+</div>
+{% endif %}
+{% endblock %}

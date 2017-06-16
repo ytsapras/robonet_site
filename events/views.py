@@ -8,7 +8,8 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.db.models import Max
 from django.utils import timezone
 from django.http import HttpResponse, Http404, HttpResponseRedirect
-from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, TelescopeForm
+from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, TelescopeForm, EventForm, EventNameForm, SingleModelForm
+from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, ImageForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from itertools import chain
@@ -132,68 +133,6 @@ def simple(request):
    canvas.print_png(response)
    #response = HttpResponse(buffer_1.getvalue(), content_type="image/png")
    return response
-
-##############################################################################################################
-@login_required(login_url='/db/login/')
-def add_operator(request):
-    """Function to allow new operator to be 
-    recorded in the database"""
-        
-    if request.user.is_authenticated():
-        if request.method == "POST":
-            form = OperatorForm(request.POST)
-            if form.is_valid():
-                post = form.save(commit=False)
-                status = update_db_2.add_operator(post.name)
-                
-                return render(request, 'events/add_operator.html', \
-                                    {'form': form, 'message': status})
-            else:
-                form = OperatorForm(request.POST)
-                # Add form data to output for debugging
-                return render(request, 'events/add_operator.html', \
-                                    {'form': form, \
-                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
-                                    repr(form.errors)+'<br>Please try again.'})
-        else:
-            form = OperatorForm(request.POST)
-            return render(request, 'events/add_operator.html', \
-                                    {'form': form, 
-                                    'message': 'none'})
-    else:
-        return HttpResponseRedirect('login')
-
-##############################################################################################################
-@login_required(login_url='/db/login/')
-def add_telescope(request):
-    """Function to allow new telescope to be 
-    recorded in the database"""
-        
-    if request.user.is_authenticated():
-        if request.method == "POST":
-            form = TelescopeForm(request.POST)
-            if form.is_valid():
-                post = form.save(commit=False)
-                status = update_db_2.add_telescope(operator=post.operator,telescope_name=post.telescope_name,\
-                            aperture=post.aperture, longitude=post.longitude, latitude=post.latitude,\
-                            altitude=post.altitude, site=post.site)
-                
-                return render(request, 'events/add_telescope.html', \
-                                    {'form': form, 'message': status})
-            else:
-                form = TelescopeForm(request.POST)
-                # Add form data to output for debugging
-                return render(request, 'events/add_telescope.html', \
-                                    {'form': form, \
-                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
-                                    repr(form.errors)+'<br>Please try again.'})
-        else:
-            form = TelescopeForm(request.POST)
-            return render(request, 'events/add_telescope.html', \
-                                    {'form': form, 
-                                    'message': 'none'})
-    else:
-        return HttpResponseRedirect('login')
 
 ##############################################################################################################
 def dashboard(request):
@@ -348,6 +287,47 @@ def obs_log(request, date):
          raise Http404("Encountered a problem while loading. Please contact the site administrator.")
       context = {'rows': rows, 'date': date[0:4]+'-'+date[4:6]+'-'+date[6:8]}
       return render(request, 'events/obs_log.html', context)
+   else:
+      return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def obs_requests24(request):
+   from django.utils import timezone
+   """
+   Will display the observation requests for the last 24 hours.
+   """
+   if request.user.is_authenticated():
+      try:
+         date_max = datetime.now()
+	 date_max = timezone.make_aware(date_max, timezone.get_current_timezone())
+         date_min = date_max + timedelta(hours=-24)
+      except:
+         raise Http404("Encountered an error: Date must be provided in the format: YYYYMMDD")
+      try:
+         obs_requests = ObsRequest.objects.filter(timestamp__range=(date_min, date_max))
+	 field = [k.field.name for k in obs_requests]       
+	 t_sample = [k.t_sample for k in obs_requests] 
+	 exptime = [k.exptime for k in obs_requests]   
+	 timestamp = [k.timestamp.strftime("%Y-%m-%dT%H:%M:%S") for k in obs_requests]  
+	 time_expire = [k.time_expire.strftime("%Y-%m-%dT%H:%M:%S") for k in obs_requests] 
+	 request_status = [k.request_status for k in obs_requests]   
+	 request_type = [k.request_type for k in obs_requests]
+	 which_site = [k.which_site for k in obs_requests]
+	 which_inst = [k.which_inst for k in obs_requests]
+	 which_filter = [k.which_filter for k in obs_requests]
+	 grp_id = [k.grp_id for k in obs_requests]
+	 track_id = [k.track_id for k in obs_requests]
+	 req_id = [k.req_id for k in obs_requests] 
+	 n_exp  = [k.n_exp for k in obs_requests]    
+         rows = zip(field,t_sample,exptime,timestamp,time_expire,request_status,
+	            request_type,which_site,which_inst,which_filter,grp_id,
+		    track_id,req_id,n_exp)
+         rows = sorted(rows, key=lambda row: row[1])
+      except:
+         raise Http404("Encountered a problem while loading. Please contact the site administrator.")
+      context = {'rows': rows}
+      return render(request, 'events/obs_requests24.html', context)
    else:
       return HttpResponseRedirect('login')
 
@@ -664,7 +644,7 @@ def show_event(request, event_name):
          try:
             event = Event.objects.get(id=event_id)
             status_recent = Event.objects.get(pk=event_id).status	    
-            single_recent = SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')
+            single_recent = SingleModel.objects.select_related().filter(event=event).filter(modeler='ARTEMiS').values().latest('last_updated')
             Tmax = single_recent['Tmax']
             e_Tmax = single_recent['e_Tmax']
             tau = single_recent['tau']
@@ -935,6 +915,7 @@ def event_obs_details(request, event_name):
       return HttpResponseRedirect('login')
  
 
+##############################################################################################################
 @login_required(login_url='/db/login/')
 def query_obs_requests(request):
     """Function to provide an endpoint for users to query what observation
@@ -973,6 +954,7 @@ def query_obs_requests(request):
         return HttpResponseRedirect('login')
 
 
+##############################################################################################################
 @login_required(login_url='/db/login/')
 def record_obs_request(request):
     """Function to allow new (submitted) observation requests to be 
@@ -999,6 +981,457 @@ def record_obs_request(request):
         else:
             form = RecordObsRequestForm()
             return render(request, 'events/record_obs_request.html', \
+                                    {'form': form, 
+                                    'message': 'none'})
+    else:
+        return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def add_operator(request):
+    """Function to allow new operator to be 
+    recorded in the database"""
+        
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = OperatorForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                status = update_db_2.add_operator(post.name)
+                
+                return render(request, 'events/add_operator.html', \
+                                    {'form': form, 'message': status})
+            else:
+                form = OperatorForm(request.POST)
+                # Add form data to output for debugging
+                return render(request, 'events/add_operator.html', \
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
+        else:
+            form = OperatorForm(request.POST)
+            return render(request, 'events/add_operator.html', \
+                                    {'form': form, 
+                                    'message': 'none'})
+    else:
+        return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def add_telescope(request):
+    """Function to allow new telescope to be 
+    recorded in the database"""
+        
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = TelescopeForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                status = update_db_2.add_telescope(operator=post.operator,telescope_name=post.telescope_name,\
+                            aperture=post.aperture, longitude=post.longitude, latitude=post.latitude,\
+                            altitude=post.altitude, site=post.site)
+                
+                return render(request, 'events/add_telescope.html', \
+                                    {'form': form, 'message': status})
+            else:
+                form = TelescopeForm(request.POST)
+                # Add form data to output for debugging
+                return render(request, 'events/add_telescope.html', \
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
+        else:
+            form = TelescopeForm(request.POST)
+            return render(request, 'events/add_telescope.html', \
+                                    {'form': form, 
+                                    'message': 'none'})
+    else:
+        return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def add_event(request):
+    """Function to allow new event to be 
+    recorded in the database"""
+        
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = EventForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                status = update_db_2.add_event(field_name=post.field, operator_name=post.operator,
+		                               ev_ra=post.ev_ra, ev_dec=post.ev_dec, status=post.status,
+					       anomaly_rank=post.anomaly_rank, year=post.year)
+                
+                return render(request, 'events/add_event.html', \
+                                    {'form': form, 'message': status})
+            else:
+                form = EventForm(request.POST)
+                # Add form data to output for debugging
+                return render(request, 'events/add_event.html', \
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
+        else:
+            form = EventForm(request.POST)
+            return render(request, 'events/add_event.html', \
+                                    {'form': form, 
+                                    'message': 'none'})
+    else:
+        return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def add_eventname(request):
+    """Function to allow new eventname to be 
+    recorded in the database"""
+        
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = EventNameForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                status = update_db_2.add_event_name(event=post.event, operator=post.operator,
+		                                    name=post.name)
+                
+                return render(request, 'events/add_eventname.html', \
+                                    {'form': form, 'message': status})
+            else:
+                form = EventNameForm(request.POST)
+                # Add form data to output for debugging
+                return render(request, 'events/add_eventname.html', \
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
+        else:
+            form = EventNameForm(request.POST)
+            return render(request, 'events/add_eventname.html', \
+                                    {'form': form, 
+                                    'message': 'none'})
+    else:
+        return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def add_singlemodel(request):
+    """Function to allow new Single Model to be 
+    recorded in the database"""
+        
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = SingleModelForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+		evname = EventName.objects.filter(event_id=post.event)[0].name
+                status = update_db_2.add_single_lens(event_name=str(evname),
+		                                     Tmax=post.Tmax,
+						     tau=post.tau,
+						     umin=post.umin,
+						     e_Tmax=post.e_Tmax,
+						     e_tau=post.e_tau,
+						     e_umin=post.e_umin,
+						     modeler=post.modeler,
+						     rho=post.rho,
+						     e_rho=post.e_rho,
+						     pi_e_n=post.pi_e_n,
+						     e_pi_e_n=post.e_pi_e_n,
+						     pi_e_e=post.pi_e_e,
+						     e_pi_e_e=post.e_pi_e_e,
+						     last_updated=post.last_updated,
+						     tap_omega=post.tap_omega,
+						     chi_sq=post.chi_sq)
+                
+                return render(request, 'events/add_singlemodel.html', \
+                                    {'form': form, 'message': status})
+            else:
+                form = SingleModelForm(request.POST)
+                # Add form data to output for debugging
+                return render(request, 'events/add_singlemodel.html', \
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
+        else:
+            form = SingleModelForm(request.POST)
+            return render(request, 'events/add_singlemodel.html', \
+                                    {'form': form, 
+                                    'message': 'none'})
+    else:
+        return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def add_binarymodel(request):
+    """Function to allow new Binary Model to be 
+    recorded in the database"""
+        
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = BinaryModelForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+		evname = EventName.objects.filter(event_id=post.event)[0].name
+                status = update_db_2.add_binary_lens(event_name=str(evname),
+		                                     Tmax=post.Tmax,
+						     tau=post.tau,
+						     umin=post.umin,
+						     e_Tmax=post.e_Tmax,
+						     e_tau=post.e_tau,
+						     e_umin=post.e_umin,
+						     mass_ratio=post.mass_ratio,
+						     e_mass_ratio=post.e_mass_ratio,
+						     separation=post.separation,
+ 						     e_separation=post.e_separation,
+ 						     angle_a=post.angle_a,
+ 						     e_angle_a=post.e_angle_a,
+ 						     dsdt=post.dsdt,
+ 						     e_dsdt=post.e_dsdt,
+ 						     dadt=post.dadt,
+ 						     e_dadt=post.e_dadt,
+						     modeler=post.modeler,
+						     rho=post.rho,
+						     e_rho=post.e_rho,
+						     pi_e_n=post.pi_e_n,
+						     e_pi_e_n=post.e_pi_e_n,
+						     pi_e_e=post.pi_e_e,
+						     e_pi_e_e=post.e_pi_e_e,
+						     last_updated=post.last_updated,
+						     chi_sq=post.chi_sq)
+                
+                return render(request, 'events/add_binarymodel.html', \
+                                    {'form': form, 'message': status})
+            else:
+                form = BinaryModelForm(request.POST)
+                # Add form data to output for debugging
+                return render(request, 'events/add_binarymodel.html', \
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
+        else:
+            form = BinaryModelForm(request.POST)
+            return render(request, 'events/add_binarymodel.html', \
+                                    {'form': form, 
+                                    'message': 'none'})
+    else:
+        return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def add_eventreduction(request):
+    """Function to allow new Event Reduction to be 
+    recorded in the database"""
+        
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = EventReductionForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+		evname = EventName.objects.filter(event_id=post.event)[0].name
+                status = update_db_2.add_reduction(event_name=str(evname),
+		                                   lc_file = post.lc_file,
+						   timestamp = post.timestamp,
+						   ref_image = post.ref_image,
+						   target_found = post.target_found,
+						   ron  = post.ron,
+						   gain = post.gain,
+                     				   oscanx1 = post.oscanx1,
+						   oscanx2 = post.oscanx2,
+						   oscany1 = post.oscany1,
+						   oscany2 = post.oscany2,
+						   imagex1 = post.imagex1,
+						   imagex2 = post.imagex2,
+		     				   imagey1 = post.imagey1,
+						   imagey2 = post.imagey2,
+						   minval = post.minval,
+						   maxval  = post.maxval,
+						   growsatx = post.growsatx,
+		     				   growsaty  = post.growsaty,
+						   coeff2  = post.coeff2,
+						   coeff3 = post.coeff3,
+		     				   sigclip  = post.sigclip,
+						   sigfrac  = post.sigfrac,
+						   flim = post.flim,
+						   niter = post.niter,
+						   use_reflist  = post.use_reflist,
+						   max_nimages = post.max_nimages,
+		     				   max_sky  = post.max_sky,
+						   min_ell  = post.min_ell,
+						   trans_type  = post.trans_type,
+						   trans_auto  = post.trans_auto,
+						   replace_cr = post.replace_cr,
+		     				   min_scale  = post.min_scale,
+						   max_scale = post.max_scale,
+		     				   fov  = post.fov,
+						   star_space = post.star_space,
+						   init_mthresh = post.init_mthresh,
+						   smooth_pro  = post.smooth_pro,
+						   smooth_fwhm = post.smooth_fwhm,
+		     				   var_deg  = post.var_deg,
+						   det_thresh  = post.det_thresh,
+						   psf_thresh  = post.psf_thresh,
+						   psf_size = post.psf_size,
+						   psf_comp_dist = post.psf_comp_dist,
+		     				   psf_comp_flux = post.psf_comp_flux,
+						   psf_corr_thresh = post.psf_corr_thresh,
+						   ker_rad  = post.ker_rad,
+						   lres_ker_rad = post.lres_ker_rad,
+		     				   subframes_x  = post.subframes_x,
+						   subframes_y  = post.subframes_y,
+						   grow = post.grow,
+						   ps_var  = post.ps_var,
+						   back_var  = post.back_var,
+						   diffpro = post.diffpro)
+                
+                return render(request, 'events/add_eventreduction.html', \
+                                    {'form': form, 'message': status})
+            else:
+                form = EventReductionForm(request.POST)
+                # Add form data to output for debugging
+                return render(request, 'events/add_eventreduction.html', \
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
+        else:
+            form = EventReductionForm(request.POST)
+            return render(request, 'events/add_eventreduction.html', \
+                                    {'form': form, 
+                                    'message': 'none'})
+    else:
+        return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def add_tap(request):
+    """Function to allow a new tap entry to be 
+    recorded in the database"""
+        
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = TapForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+		evname = EventName.objects.filter(event_id=post.event)[0].name
+                status = update_db_2.add_tap(event_name=evname, 
+		                             timestamp=post.timestamp, 
+					     priority=post.priority, 
+					     tsamp=post.tsamp, 
+					     texp=post.texp, 
+					     nexp=post.nexp,
+					     telclass=post.telclass, 
+					     imag=post.imag, 
+					     omega=post.omega, 
+					     err_omega=post.err_omega, 
+					     peak_omega=post.peak_omega, 
+					     blended=post.blended,
+					     visibility=post.visibility, 
+					     cost1m=post.cost1m, 
+					     passband=post.passband,
+					     ipp=post.ipp)
+                
+                return render(request, 'events/add_tap.html', \
+                                    {'form': form, 'message': status})
+            else:
+                form = TapForm(request.POST)
+                # Add form data to output for debugging
+                return render(request, 'events/add_tap.html', \
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
+        else:
+            form = TapForm(request.POST)
+            return render(request, 'events/add_tap.html', \
+                                    {'form': form, 
+                                    'message': 'none'})
+    else:
+        return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def add_datafile(request):
+    """Function to allow a new ARTEMiS datafile entry to be 
+    recorded in the database"""
+        
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = DataFileForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+		evname = EventName.objects.filter(event_id=post.event)[0].name
+                status = update_db_2.add_datafile(event_name=evname,
+						  datafile=post.datafile,
+						  last_upd=post.last_upd,
+						  last_hjd=post.last_hjd,
+						  last_mag=post.last_mag, 
+						  tel=post.tel, 
+						  ndata=post.ndata, 
+						  inst=post.inst, 
+						  filt=post.filt, 
+						  baseline=post.baseline, 
+						  g=post.g)
+                
+                return render(request, 'events/add_datafile.html', \
+                                    {'form': form, 'message': status})
+            else:
+                form = DataFileForm(request.POST)
+                # Add form data to output for debugging
+                return render(request, 'events/add_datafile.html', \
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
+        else:
+            form = DataFileForm(request.POST)
+            return render(request, 'events/add_datafile.html', \
+                                    {'form': form, 
+                                    'message': 'none'})
+    else:
+        return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def add_image(request):
+    """Function to allow a new image entry to be 
+    recorded in the database"""
+        
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = ImageForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                status = update_db_2.add_image(field_name = post.field,
+					       image_name = post.image_name,
+					       date_obs = post.date_obs,
+					       timestamp = post.timestamp,
+					       tel = post.tel,
+					       inst = post.inst,
+					       filt = post.filt,
+					       grp_id = post.grp_id,
+					       track_id = post.track_id,
+					       req_id = post.req_id,
+					       airmass = post.airmass,
+					       avg_fwhm = post.avg_fwhm,
+					       avg_sky = post.avg_sky,
+					       avg_sigsky = post.avg_sigsky,
+					       moon_sep = post.moon_sep,
+					       moon_phase = post.moon_phase,
+					       moon_up = post.moon_up,
+					       elongation = post.elongation,
+					       nstars = post.nstars,
+					       ztemp = post.ztemp,
+					       shift_x = post.shift_x,
+					       shift_y = post.shift_y,
+					       quality = post.quality)
+                
+                return render(request, 'events/add_image.html', \
+                                    {'form': form, 'message': status})
+            else:
+                form = ImageForm(request.POST)
+                # Add form data to output for debugging
+                return render(request, 'events/add_image.html', \
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
+        else:
+            form = ImageForm(request.POST)
+            return render(request, 'events/add_image.html', \
                                     {'form': form, 
                                     'message': 'none'})
     else:

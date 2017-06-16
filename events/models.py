@@ -294,7 +294,7 @@ class BinaryModel(models.Model):
            (float, optional, default=None)
    e_dsdt -- Error in ds/dt
            (float, optional, default=None)
-   dadt -- Orbinatl motion da/dt
+   dadt -- Orbital motion da/dt
            (float, optional, default=None)
    e_dadt -- Error in da/dt
            (float, optional, default=None)

@@ -1,0 +1,161 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<h3>Record submitted image request</h3>
+<div>
+      <form method="POST" class="post-form">{% csrf_token %}
+        <center>
+            <table>
+                <tr>
+                   <td><div class="fieldWrapper">
+                       {{ form.field.errors }}
+                       <label for="{{ form.field.id_for_label }}">field:</label>
+                       {{ form.field }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.image_name.errors }}
+                       <label for="{{ form.image_name.id_for_label }}">image_name:</label>
+                       {{ form.image_name }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.date_obs.errors }}
+                       <label for="{{ form.date_obs.id_for_label }}">date_obs:</label>
+                       {{ form.date_obs }}
+                   </div></td>
+                </tr>
+                <tr>
+                   <td><div class="fieldWrapper">
+                       {{ form.timestamp.errors }}
+                       <label for="{{ form.timestamp.id_for_label }}">timestamp:</label>
+                       {{ form.timestamp }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+                       {{ form.tel.errors }}
+                       <label for="{{ form.tel.id_for_label }}">tel:</label>
+                       {{ form.tel }}
+                   </div></td>
+                   <td><div class="fieldWrapper">
+		       {{ form.inst.errors }}
+		       <label for="{{ form.inst.id_for_label }}">inst:</label>
+                       {{ form.inst }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.filt.errors }}
+		       <label for="{{ form.filt.id_for_label }}">filt:</label>
+		       {{ form.filt }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.grp_id.errors }}
+		       <label for="{{ form.grp_id.id_for_label }}">grp_id:</label>
+		       {{ form.grp_id }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.track_id.errors }}
+		       <label for="{{ form.track_id.id_for_label }}">track_id:</label>
+		       {{ form.track_id }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.req_id.errors }}
+		       <label for="{{ form.req_id.id_for_label }}">req_id:</label>
+		       {{ form.req_id }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.airmass.errors }}
+		       <label for="{{ form.airmass.id_for_label }}">airmass:</label>
+		       {{ form.airmass }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.avg_fwhm.errors }}
+		       <label for="{{ form.avg_fwhm.id_for_label }}">avg_fwhm:</label>
+		       {{ form.avg_fwhm }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.avg_sky.errors }}
+		       <label for="{{ form.avg_sky.id_for_label }}">avg_sky:</label>
+		       {{ form.avg_sky }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.avg_sigsky.errors }}
+		       <label for="{{ form.avg_sigsky.id_for_label }}">avg_sigsky:</label>
+		       {{ form.avg_sigsky }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.moon_sep.errors }}
+		       <label for="{{ form.moon_sep.id_for_label }}">moon_sep:</label>
+		       {{ form.moon_sep }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.moon_phase.errors }}
+		       <label for="{{ form.moon_phase.id_for_label }}">moon_phase:</label>
+		       {{ form.moon_phase }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.moon_up.errors }}
+		       <label for="{{ form.moon_up.id_for_label }}">moon_up:</label>
+		       {{ form.moon_up }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.elongation.errors }}
+		       <label for="{{ form.elongation.id_for_label }}">elongation:</label>
+		       {{ form.elongation }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.nstars.errors }}
+		       <label for="{{ form.nstars.id_for_label }}">nstars:</label>
+		       {{ form.nstars }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.ztemp.errors }}
+		       <label for="{{ form.ztemp.id_for_label }}">ztemp:</label>
+		       {{ form.ztemp }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.shift_x.errors }}
+		       <label for="{{ form.shift_x.id_for_label }}">shift_x:</label>
+		       {{ form.shift_x }}
+		   </div></td>
+		</tr>
+		<tr>
+		   <td><div class="fieldWrapper">
+		       {{ form.shift_y.errors }}
+		       <label for="{{ form.shift_y.id_for_label }}">shift_y:</label>
+		       {{ form.shift_y }}
+		   </div></td>
+		   <td><div class="fieldWrapper">
+		       {{ form.quality.errors }}
+		       <label for="{{ form.quality.id_for_label }}">quality:</label>
+		       {{ form.quality }}
+		   </div></td>
+		</tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                    <button type="sumbit" class="save btn btn-default">Submit</button>
+                    </div></td>
+		    <td></td>
+		    <td></td>
+                </tr>
+             </table>
+        </center>
+    </form>
+</div>  
+
+{% if message != 'none' %}
+<div>
+    <center>
+        <h5>{{ message }}</h5>
+    </center>
+</div>
+{% endif %}
+{% endblock %}
