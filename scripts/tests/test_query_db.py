@@ -47,11 +47,17 @@ def test_get_event():
 
 def test_get_event_names():
     
-    event_id = 460
+    event_id = 1010
     qs = query_db.get_event_names(event_id)
     assert qs.count >= 1
     
 
+def test_get_event_name_list():
+    
+    event_id = 1010
+    names = query_db.get_event_name_list(event_id)
+    assert len(names) >= 1
+    
 def test_get_last_single_model():
     
     event_name = 'MOA-2008-BLG-0006'

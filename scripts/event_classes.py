@@ -14,8 +14,9 @@ import numpy as np
 import update_db_2
 from field_check import romecheck
 from rome_fields_dict import field_dict
-from utilities import sex2decdeg
+import utilities
 import query_db
+import get_errors
 
 from local_conf import get_conf
 robonet_site = get_conf('robonet_site')
@@ -103,7 +104,7 @@ class Lens():
         # is linked to the correct Event sky location:
         if debug==True and log!=None:
                 log.info(' -> Checking event name in DB:')
-        if event_status == True and response == 'OK':
+        if event_status == True and 'OK' in response:
             event = Event.objects.filter(ev_ra=ev_ra).filter(ev_dec=ev_dec)[0]
             operator = Operator.objects.filter(name=self.origin)[0]
             (status, response) = update_db_2.add_event_name(event=event,\
@@ -112,21 +113,40 @@ class Lens():
             if debug==True and log!=None:
                 log.info(' -> New event, added eventname with output '+str(status)+' '+str(response))
                 
-        elif event_status == False and 'event exists' in response:
-            event = Event.objects.filter(ev_ra=ev_ra).filter(ev_dec=ev_dec)[0]
-            eventnames = EventName.objects.filter(
-                                                event=event.id,
-                                                name__contains=self.name
-                                                )
-            if eventnames.count == 0:
+        elif event_status == False and 'exists' in response:
+            event = query_db.get_event_by_position(ev_ra,ev_dec)
+            if event != None:
+                name_list = query_db.get_event_name_list(event.pk)
+                name_str = utilities.combined_survey_name(name_list)
+                if debug==True and log!=None:
+                    log.info(' -> Current names for this event: '+name_str)
+                    log.info(' -> Looking for name: '+str(self.name))
+            else:
+                message = 'ERROR: Event appears in DB but could not find it by position'
+                get_errors.update_err('artemis_subscriber', message)
+                if log!=None:
+                    log.info(message)
+                name_list = []
+                
+            if event != None and self.name not in name_list:
                 operator = Operator.objects.filter(name=self.origin)[0]
                 (status, response) = update_db_2.add_event_name(event=event,\
                                                             operator=operator,\
                                                             name=self.name)
                 if debug==True and log!=None:
                     log.info(' -> Added eventname for known event with output '+str(status)+' '+str(response))
-        
+            else:
+                if debug==True and log!=None:
+                    log.info(' -> Event name already known to DB')
+        else:
+            message = 'ERROR: Incomprehensible combination of event and names'
+            get_errors.update_err('artemis_subscriber', message)
+            if log!=None:
+                log.info(message)
+                
         # Confirm that both Event and EventName are properly registered:
+        if log!=None:
+            log.info(' -> Verifying event and names registered with DB:')
         event = Event.objects.filter(ev_ra=ev_ra).filter(ev_dec=ev_dec)[0]
         eventnames = EventName.objects.filter(event=event.id)
         if debug==True and log!=None:

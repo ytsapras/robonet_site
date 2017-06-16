@@ -199,11 +199,22 @@ def get_event_by_name(event_name):
         return event, 'OK'
 
 def get_event_names(event_id):
-    """Function to extract the names of a target, given its position
-    on sky, with RA and Dec in decimal degrees"""
+    """Function to extract the names of a target, given the event ID number
+    Returns a Django QuerySet"""
     
     qs = EventName.objects.filter(event_id=event_id)
     return qs
+    
+def get_event_name_list(event_id):
+    """Function to extract the names of a target, given the event ID number
+    Returns a list of the name strings"""
+    
+    names = []
+    qs = EventName.objects.filter(event_id=event_id)
+    for q in qs:
+        names.append(q.name)
+    
+    return names
 
 def get_coords_in_degrees(ra,dec):
     

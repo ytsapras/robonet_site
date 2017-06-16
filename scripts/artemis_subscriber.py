@@ -371,7 +371,7 @@ def read_artemis_model_file(model_file_path):
                     dec = entries[1]
                     event.set_par('ra',ra)
                     event.set_par('dec',dec)
-                    short_name = entries[2]
+                    short_name = path.basename(model_file_path).split('.')[0]
                     event.set_par('name',utilities.short_to_long_name(short_name))
                     event.set_par('t0',float(entries[3]) + 2450000.0)
                     event.set_par('e_t0',float(entries[4]))
