@@ -134,6 +134,45 @@ def check_rsync_config(config,log=None):
         
     return status
 
+def event_data_check(config,model_file=None,align_file=None,
+                         data_file=None,log=None):
+    """Function to check that both the ARTEMiS .model and .align files
+    exist for a given event, to ensure that the complete set of parameters
+    are ingested
+    Outputs:
+        status  Boolean  True if both files are present, otherwise False
+    """
+    def check_for_file(test_file):
+        if path.isfile(test_file):
+            status = True
+            message = ' -> Data are complete for this event'
+        else:
+            status = False
+            message = ' -> Warning: '+path.basename(test_file)+\
+                            ' is missing for this event'
+        return status, message
+        
+    status = False
+    message = ''
+    if data_file != None:
+        align_file = path.basename(data_file).split('.')[0][1:-1]+'.align'
+        align_file = path.join(config['models_local_location'],align_file)
+        (status, message) = check_for_file(align_file)
+    elif model_file != None:
+        align_file = model_file.replace('.model','.align')
+        (status, message) = check_for_file(align_file)
+    elif align_file != None:
+        model_file = align_file.replace('.align','.model')
+        (status, message) = check_for_file(model_file)
+    else:
+        status = False
+        message = 'ERROR: Neither .model or .align file specified'
+        
+    if log!=None:
+        log.info(message)
+        
+    return status
+    
 def sync_artemis_data_db(config,data_type,log):
     '''Function to sync a local copy of the ARTEMiS model fit files for all events from the
        server at the Univ. of St. Andrews.
@@ -160,15 +199,18 @@ def sync_artemis_data_db(config,data_type,log):
 
     # Loop over all updated data files and update the database:
     if data_type == 'data' and int(config['update_db']) == 1:
-        if config['verbose'] == True:
-            log.info('Syncing contents of ARTEMiS data files with DB:')
         for f in event_files:
+            short_name = path.basename(f).split('.')[0][1:-1]
+            if log!=None and config['verbose'] == True:
+                log.info('Syncing ARTEMiS data and align parameters with DB for '+short_name)
             a = path.basename(f).split('.')[0][1:-1]+'.align'
             a = path.join(config['models_local_location'],a)
-            if config['verbose'] == True:
-                log.info(' -> '+f+' '+a)
-            sync_data_align_files_with_db(config,f,a,log)
-
+            check = event_data_check(config,data_file=f,log=log)
+            if check == True:
+                sync_data_align_files_with_db(config,f,a,log)
+            else:
+                log.info(' -> WARNING: Skipped ingest of incomplete data')
+                
 def sync_model_file_with_db(config,model_file,log):
     """Function to read an ARTEMiS-format .model file and sync its contents
     with the database"""
@@ -189,8 +231,6 @@ def sync_model_file_with_db(config,model_file,log):
 def sync_data_align_files_with_db(config,data_file,align_file,log):
     """Function to ensure the DB record of the latest data is up to date"""
     
-    if log!=None:
-        log.info('Syncing ARTEMiS data and align parameters with DB')
     short_name = path.basename(data_file).split('.')[0][1:-1]
     filt = path.basename(data_file).split('.')[0][-1:]
     origin = path.basename(data_file).split('.')[0][0:1]

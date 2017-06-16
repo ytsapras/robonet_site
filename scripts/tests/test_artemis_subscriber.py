@@ -89,7 +89,7 @@ def test_check_rsync_config():
     
     status = artemis_subscriber.check_rsync_config(config,log=log)
     
-    assert(status==False)
+    assert(status==True)
     
     log_utilities.end_day_log( log )
 
@@ -104,7 +104,26 @@ def test_list_data_files():
         assert data_type in file_list[0]
     
     log_utilities.end_day_log( log )
+
+def test_event_data_check():
     
+    config = artemis_subscriber.read_config()
+    
+    log = log_utilities.start_day_log( config, '_test_artemis_subscriber' )
+
+    align_file = '../../data/OB170570.align'
+    data_file = '../../data/OOB170570I.dat'
+    model_file = '../../data/OB170570.model'
+    status = artemis_subscriber.event_data_check(config,model_file=model_file,
+                                                         log=log)
+    assert status == True
+    status = artemis_subscriber.event_data_check(config,align_file=align_file,
+                                                         log=log)
+    assert status == True
+    status = artemis_subscriber.event_data_check(config,data_file=data_file,
+                                                         log=log)
+    assert status == True
+
 if __name__ == '__main__':
     test_list_data_files()
     
