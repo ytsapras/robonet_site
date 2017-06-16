@@ -140,7 +140,6 @@ def lock( config, state, log ):
             if path.isfile( lock_file ) == True:
                 log.info('Clashing lock file encountered ( ' + lock_name + \
                                 ' ), halting')
-                end_day_log( log )
                 return 'clashing_lock'
                 
         log.info('Checked for clashing locks; found none')

@@ -29,7 +29,7 @@ class EventForm(forms.ModelForm):
 class EventNameForm(forms.ModelForm):
    class Meta:
       model = EventName
-      fields = '__all__'
+      fields = ('name',)
 
 class SingleModelForm(forms.ModelForm):
    class Meta:

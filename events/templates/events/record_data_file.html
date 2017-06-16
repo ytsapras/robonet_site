@@ -1,0 +1,84 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<h3>Record ARTEMiS Data File</h3>
+<div>
+      <form method="POST" class="post-form">{% csrf_token %}
+        <center>
+            <table>
+                <tr>
+                    <td><div class="fieldWrapper">
+                        <label for="{{ eform.name.id_for_label }}">Event name:</label>
+                        {{ eform.name }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ fform.datafile.errors }}
+                        <label for="{{ fform.datafile.id_for_label }}">Data file:</label>
+                        {{ fform.datafile }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ fform.tel.errors }}
+                        <label for="{{ fform.tel.id_for_label }}">Telescope:</label>
+                        {{ fform.tel }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ fform.filt.errors }}
+                        <label for="{{ fform.filt.id_for_label }}">Filter:</label>
+                        {{ fform.filt }}
+                    </div></td>
+                </tr><tr>
+                    <td><div class="fieldWrapper">
+                        {{ fform.last_mag.errors }}
+                        <label for="{{ fform.last_mag.id_for_label }}">Last measured brightness [mag]:</label>
+                        {{ fform.last_mag }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ fform.baseline.errors }}
+                        <label for="{{ fform.baseline.id_for_label }}">Baseline brightness [mag]:</label>
+                        {{ fform.baseline }}
+                    </div></td>
+                    <td><div class="fieldWrapper">
+                        {{ fform.g.errors }}
+                        <label for="{{ fform.g.id_for_label }}">Blend parameter value:</label>
+                        {{ fform.g }}
+                    <td><div class="fieldWrapper">
+                        {{ fform.ndata.errors }}
+                        <label for="{{ fform.ndata.id_for_label }}">Number of datapoints:</label>
+                        {{ fform.ndata }}
+                    </div></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td><div class="fieldWrapper">
+                            {{ fform.last_obs.errors }}
+                            <label for="{{ fform.last_obs.id_for_label }}">Timestamp of last observation:</label>
+                            {{ fform.last_obs }}
+                        </div></td>
+                        <td><div class="fieldWrapper">
+                            {{ fform.last_upd.errors }}
+                            <label for="{{ fform.last_upd.id_for_label }}">Timestamp of last update:</label>
+                            {{ fform.last_upd }}
+                    </div></td><td></td><td></td>
+                </tr>
+                <tr>
+                    <td>
+                    <div class="fieldWrapper">
+                    <button type="sumbit" class="save btn btn-default">Submit</button>
+                    </div>
+                    </td><td></td><td></td>
+                </tr>
+            </table>
+        </center>
+    </form>
+</div>  
+
+{% if message != 'none' %}
+<div>
+    <center>
+        <h5>{{ message }}</h5>
+    </center>
+</div>
+{% endif %}
+{% endblock %}

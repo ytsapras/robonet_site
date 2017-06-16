@@ -185,6 +185,19 @@ def get_event(event_pk):
     qs = Event.objects.get(pk=event_pk)
     return qs
 
+def get_event_by_name(event_name):
+    """Function to extract an event object from the DB based on any of its 
+    assigned names
+    Inputs:
+            event_name  str   Full-length name e.g. OGLE-2017-BLG-1234
+    """
+    qs_name = EventName.objects.filter(name=event_name)
+    if len(qs_name) == 0:
+        return None, 'Event name not in DB'
+    else:
+        event = Event.objects.get(pk=qs_name[0].event_id)
+        return event, 'OK'
+
 def get_event_names(event_id):
     """Function to extract the names of a target, given its position
     on sky, with RA and Dec in decimal degrees"""
@@ -230,6 +243,52 @@ def get_event_by_position(ra_str,dec_str):
         event = None
 
     return event
+
+def get_events_within_radius(ra_str, dec_str, radius):
+    """Function to find a list of all events within a specified radius less than
+    1 arcmin.  Related to update_db_2's check_coords function. 
+    Inputs:
+        ra_str   str    RA in sexagesimal format
+        dec_str  str    Dec in sexagesimal format
+        radius   float  Search radius in decimal arcsec < 60 arcsec
+    Outputs:
+        events_list list  Event objects
+    Events_list is returned sorted, with the nearest match first
+    """
+
+    (ra1,dec1) = utilities.sex2decdeg(ra_str,dec_str)
+    radius = radius / 3600.0
+
+    events_list = []
+    separations = []
     
+    qs_events = Event.objects.filter(ev_ra__contains=ra_str[0:5]).filter(ev_dec__contains=dec_str[0:5])
+    for event in qs_events:
+        (ra2, dec2) = utilities.sex2decdeg(event.ev_ra,event.ev_dec)
+        sep = utilities.separation_two_points((ra1,dec2),(ra2,dec2))
+        if sep <= radius:
+            events_list.append(event)
+            separations.append(sep)
+    if len(events_list) > 1:
+        (separations, events_list) = zip(*sorted(zip(separations,events_list)))
+    
+    return events_list
+
+def combine_event_names(qs_event_names):
+    """Function to return the combined name of an event discovered by multiple
+    surveys.
+    Input:
+        qs_event_names  QuerySet   EventName objects
+    Output:
+        combined_name   string     Combined name string
+    """
+    
+    name_list = []
+    for name in qs_event_names:
+        name_list.append(name.name)
+    combined_name = utilities.combined_survey_name(name_list)
+    return combined_name
+    
+
 if __name__ == '__main__':
     get_rea_targets()

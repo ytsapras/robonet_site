@@ -289,6 +289,19 @@ class ObsRequest:
             log.info(str(self.submit_response))
         
         return self.submit_status
+
+    def cancel_request(self):
+        """Method to cancel an observation request within the LCO network
+        scheduler"""
+        
+        if self.track_id != None:
+            end_point = 'userrequests/'+str(self.track_id)+'/cancel'
+            response = self.talk_to_lco(None,end_point,'POST')
+            
+            if 'state' in response.keys():
+                self.submit_status = response['state']
+                
+        return self.submit_status
     
     def talk_to_lco(self,ur,end_point,method):
         """Method to communicate with various APIs of the LCO network. 
@@ -296,7 +309,8 @@ class ObsRequest:
         should be concatenated to the observe portal path to complete the URL.  
         Accepted end_points are:
             "userrequests" 
-            "userrequests/cadence"  
+            "userrequests/cadence"
+            "userrequests/<id>/cancel"
         Accepted methods are:
             POST GET
         """
@@ -312,10 +326,13 @@ class ObsRequest:
         url = path.join('https://observe.lco.global/api',end_point)
         
         if method == 'POST':
-            response = requests.post(url, headers=headers, json=ur).json()
+            if ur != None:
+                response = requests.post(url, headers=headers, json=ur).json()
+            else:
+                response = requests.post(url, headers=headers).json()
         elif method == 'GET':
             response = requests.get(url, headers=headers, json=ur).json()
-        
+            
         return response
 
         

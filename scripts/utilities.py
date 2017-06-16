@@ -83,6 +83,22 @@ def long_to_short_name(long_name):
 
     return short_name
 
+def combined_survey_name(name_list):
+    """Function to return the complete name string for an event with multiple 
+    survey detections
+    Inputs:
+        name_list  list   List of long-format name strings from surveys
+    Outputs:
+        name       string Combined name string
+    """
+    
+    combined_name = ''
+    for name in name_list:
+        combined_name += name+'/'
+    if '/' in combined_name[-1:]:
+        combined_name = combined_name[:-1]
+    return combined_name
+    
 ###################################
 # FETCH AND PARSE A URL PAGE
 def get_http_page(URL, parse=True):

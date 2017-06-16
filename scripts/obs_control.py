@@ -17,6 +17,7 @@ from exceptions import IOError
 from observation_classes import get_request_desc
 import validation
 import socket
+import get_errors
 
 def obs_control():
     """Observation Control Software for the LCO Network
@@ -32,12 +33,10 @@ def obs_control():
     
     log = log_utilities.start_day_log( script_config, 'obs_control', version=version )
     log.info('Obscontrol running in ' + script_config['MODE'] + ' mode')
+    if str(script_config['simulate']).lower() == 'true':
+        log.info('*** SIMULATION MODE ***')
     
-    lock_state = log_utilities.lock( script_config, 'check', log )
-    if lock_state == 'clashing_lock':
-        log_utilities.end_day_log( log )
-        exit()
-    lock_state = log_utilities.lock( script_config, 'lock', log )
+    set_lock( script_config, log )
 
     active_obs = query_db.get_active_obs(log=log)
     
@@ -84,6 +83,20 @@ def read_config():
     script_config = config_parser.read_config(config_file_path)
     
     return script_config
+
+def set_lock(script_config,log):
+    """Function to check for the existance of a lockfile, issue an error 
+    warning if one is found and set the lock if not"""
+    
+    code = 'obs_control_'+str(script_config['MODE']).lower()
+    lock_state = log_utilities.lock( script_config, 'check', log )
+    if lock_state == 'clashing_lock':
+        get_errors.update_err(code, 'WARNING: persistent lockfile')
+        log_utilities.end_day_log( log )
+        exit()
+    else:
+        get_errors.update_err(code, 'Status OK')
+    lock_state = log_utilities.lock( script_config, 'lock', log )
 
 def rm_duplicate_obs(obs_request_list, active_obs,log=None,debug=False):
     """Function to compare the list of observations to be requested with the

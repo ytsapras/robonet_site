@@ -27,7 +27,7 @@ def submit_obs_request_record(config,params):
     
     end_point = 'record_obs_request'
     
-    response = talk_to_db(params,end_point,\
+    message = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=True)
 
@@ -71,6 +71,33 @@ def submit_eventname_record(config,params):
                             config['db_user_id'],config['db_pswd'],
                             testing=True)
 
+
+################################################################################
+def submit_data_file_record(config,params,testing=False):
+    """Function to submit a record of a new observation to the database 
+    using the API record_obs_request endpoint
+    Required parameters:
+        config    dict    script configuration parameters
+        params    dict    observation request parameters, including
+                    event_name  str   Name of the event
+                    datafile    str   Path to the data
+                    tel         str   Name of the telescope
+                    filt        str   Name of the filter used
+                    last_mag    float Last measured magnitude
+                    last_upd    datetime Last updated time stamp
+                    last_obs    datetime of last observation
+                    baseline    float Event's baseline magnitude
+                    g           float ARTEMiS' fitted blend parameter
+                    ndata       int   Number of datapoints
+    """
+    
+    end_point = 'record_data_file'
+    
+    message = talk_to_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=testing)
+    return message
+    
 ################################################################################
 def submit_operator_record(config,params):
     """Function to submit a record of a new operator to the database 
@@ -401,3 +428,10 @@ def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
         print response.text
         print 'Completed successfully'
     
+    message = 'OK'
+    for line in response.text.split('\n'):
+        if 'DBREPLY' in line:
+            message = line.lstrip().replace('<h5>','').replace('</h5>','')
+            message = message.replace('DBREPLY: ','')
+    
+    return message
