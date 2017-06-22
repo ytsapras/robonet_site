@@ -237,11 +237,15 @@ def sync_data_align_files_with_db(config,data_file,align_file,log):
     tel = look_up_origin(origin)
     ndata = mapcount_file_lines(data_file)
     if ndata > 0:
-        (first, last) = read_first_and_last(data_file)
-        last_mag = float(last.split()[0])
-        last_hjd = float(last.split()[2])
-        if last_hjd < 2450000.0:
-            last_hjd = last_hjd + 2450000.0
+        try:
+            (first, last) = read_first_and_last(data_file)
+            last_mag = float(last.split()[0])
+            last_hjd = float(last.split()[2])
+            if last_hjd < 2450000.0:
+                last_hjd = last_hjd + 2450000.0
+        except IndexError:
+            last_mag = 0.0
+            last_hjd = 0.0
     else:
         last_mag = 0.0
         last_hjd = 0.0
