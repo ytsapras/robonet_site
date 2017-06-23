@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
 <backup_config>
-    <parameter name="data_dir">
-        <value>/Users/rstreet/software/robonet_site/</value>
+    <parameter name="db_location">
+        <value>/Users/rstreet/software/robonet_site/db.sqlite3</value>
     </parameter>
     
     <parameter name="backup_dir">
@@ -11,10 +11,6 @@
     
     <parameter name="user_id">
         <value>rstreet</value>
-    </parameter>
-    
-    <parameter name="db_file">
-        <value>db.sqlite3</value>
     </parameter>
     
     <parameter name="log_directory">

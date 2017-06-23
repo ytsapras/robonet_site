@@ -53,8 +53,9 @@ def read_config():
 
     ts = datetime.utcnow()
     ts = ts.strftime("%Y-%m-%dT%H:%M:%S")
-    db_path = path.join(config['data_dir'], config['db_file'])
-    bkup_path = path.join(config['backup_dir'], config['db_file']+'_'+ts)
+    db_path = config['db_location']
+    db_file = path.basename(db_path)+'_'+ts
+    bkup_path = path.join(config['backup_dir'], db_file)
     config['rsync_command'] = 'rsync -a ' + db_path + ' ' + bkup_path
 
     if path.isdir(config['backup_dir']) == False:
