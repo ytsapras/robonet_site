@@ -45,7 +45,7 @@ class LCOSinistro(object):
 		self.ron = 12
 		self.ccd_temp = -100 # Celsius
 		self.define_header_conventions()
-		self.filter_convention = {'ip' : 'sdss-i', 'gp' : 'sdss-g', 'rp' : 'sdds-r'}
+		self.filter_convention = {'ip' : 'sdss-i', 'gp' : 'sdss-g', 'rp' : 'sdss-r'}
 
 	def define_header_conventions(self):
 		
