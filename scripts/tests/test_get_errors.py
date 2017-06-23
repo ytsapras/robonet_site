@@ -17,7 +17,7 @@ def test_get_errors():
     config = config_parser.read_config_for_code('obs_control')
     file_out = path.join(config['log_directory'],'errors.txt')
     comment = 'TEST'
-    get_errors.update_err('obs_control_rome', comment)
+    get_errors.update_err('backup', comment)
     assert path.isfile(file_out)
     
     file_lines = open(file_out,'r').readlines()

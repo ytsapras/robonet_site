@@ -2,12 +2,11 @@ from os import path, makedirs, chdir, getcwd
 from sys import exit, stdout
 import logging
 import subprocess
-from astropy.time import Time
+from datetime import datetime
 import log_utilities
 import config_parser
 import socket
-from io import TextIOWrapper, BytesIO
-import alert
+import get_errors
 
 def backup_database():
     """Function to automatically back-up the ROMEREA database"""
@@ -24,12 +23,15 @@ def backup_database():
         for e in err:
             log.info(e)
             
-            message = "ERROR encountered backing-up ROME/REA database"
-            subject = "ROME/REA Alert: back-up"
-            iexec = alert.send_alert(message,subject,config['alert_mailing_list'])
+            get_errors.update_err('backup', \
+                            'ERROR encountered backing-up ROME/REA database')
         if child.poll() != None:
             break
-
+    if len(err) == 0:
+        get_errors.update_err('backup', \
+                            'Status OK')
+    
+    log.info('Completed DB back-up')
     log_utilities.end_day_log(log)
 
 def read_config():
@@ -49,10 +51,10 @@ def read_config():
     
     config = config_parser.read_config(config_file_path)
 
-    config['alert_mailing_list'] = config['alert_mailing_list'].split(',')
-
+    ts = datetime.utcnow()
+    ts = ts.strftime("%Y-%m-%dT%H:%M:%S")
     db_path = path.join(config['data_dir'], config['db_file'])
-    bkup_path = path.join(config['backup_dir'], config['db_file'])
+    bkup_path = path.join(config['backup_dir'], config['db_file']+'_'+ts)
     config['rsync_command'] = 'rsync -a ' + db_path + ' ' + bkup_path
 
     if path.isdir(config['backup_dir']) == False:

@@ -28,7 +28,8 @@ def update_err(process_name, comments, date_updated=datetime.now().strftime("%Y-
     """Function to add to a central file containing current errors within the 
     system
         process_name can be one of the following:
-            'artemis_subscriber', 'obs_control_rome', 'obs_control_rea', 'run_rea_tap', 'reception'
+            'artemis_subscriber', 'obs_control_rome', 'obs_control_rea', 
+            'run_rea_tap', 'reception', 'backup'
         comments is a string
         date_updated is in the format 2017-05-31T14:10:19
     """

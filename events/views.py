@@ -157,8 +157,11 @@ def dashboard(request):
         context = {'status_time':status_time, 'status_time_jd':status_time_jd, 
                    'date_today':date_today, 'upd1':timestr[0], 
                    'upd2':timestr[1], 'upd3':timestr[2], 
-                   'upd4':timestr[3], 'upd5':timestr[4], 'com1':commentstr[0], 'com2':commentstr[1],
-                   'com3':commentstr[2], 'com4':commentstr[3], 'com5':commentstr[4]}
+                   'upd4':timestr[3], 'upd5':timestr[4], 'upd6':timestr[5],
+                   'com1':commentstr[0], 'com2':commentstr[1],
+                   'com3':commentstr[2], 'com4':commentstr[3], 
+                   'com5':commentstr[4], 'com6':commentstr[5]
+                    }
         return render(request, 'events/dashboard.html', context)
     else:
         return HttpResponseRedirect('login')
