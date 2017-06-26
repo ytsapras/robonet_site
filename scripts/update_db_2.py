@@ -997,6 +997,71 @@ def add_tap(event_name, timestamp=timezone.now(), priority='N', tsamp=0, texp=0,
    return successful
 
 ###################################################################################
+def add_taplima(event_name, timestamp=timezone.now(), priority='N', tsamp=0, texp=0, nexp=1,
+            telclass='1m', imag=22.0, omega=None, err_omega=None, peak_omega=None, blended=False,
+	    visibility=None, cost1m=None, passband='SDSS-i', ipp=1.0):
+   """
+   Add a TAP entry to the database.
+   Assumes TAP has already evaluated the necessary parameters.
+   
+   Keyword arguments:
+   event_name -- The event name. 
+                (string, required)
+   timestamp -- The TAP submission time.
+                (datetime, optional, default=timezone.now())
+        	e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
+   priority -- Priority flag for human observers. 
+	       (string, optional, default='N')
+	        'A':'REA High',
+		'L':'REA Low',
+		'B':'REA Post-High'
+		'N':'None'
+   tsamp -- Recommended cadence (in hours).
+            (float, optional, default=0)
+   texp -- Recommended exposure time (in seconds).
+           (integer, optional, default=0)
+   nexp -- Recommended number of exposures.
+           (integer, optional, default=1)
+   telclass --  Recommended telescope aperture class.
+                (string, optional, default='1m')
+   imag -- Current I magnitude.
+           (float, optional, default=22.0)
+   omega -- omega_s.
+            (float, optional, default=None)
+   err_omega -- sig(omega_s).
+                (float, optional, default=None)
+   peak_omega -- omega_s at peak
+                 (float, optional, default=None)
+   blended -- target blended?
+             (boolean, optional, default=False)
+   visibility -- Current target visibility (in hours)
+                 (float, optional, default=None)
+   cost1m -- Estimated observational cost per night for the 1m network (in minutes)
+                 (float, optional, default=None)
+   passband -- Passband for which the priority function has been evaluated
+                 (string, optional, default='SDSS-i')
+   ipp -- Inter Proposal Priority Value
+          (float, optional, default='1.0')
+   """
+   # Check if the event already exists in the database.
+   if check_exists(event_name)==True:
+      # Get event identifier
+      event_id = EventName.objects.get(name=event_name).event_id
+      event = Event.objects.get(id=event_id)
+      try:
+         add_new = TapLima(event=event, timestamp=timestamp, priority=priority, tsamp=tsamp, 
+	               texp=texp, nexp=nexp, telclass=telclass, imag=imag, omega=omega, 
+		       err_omega=err_omega, peak_omega=peak_omega, blended=blended,
+		       visibility=visibility, cost1m=cost1m, passband=passband, ipp=ipp)
+	 add_new.save()
+	 successful = True
+      except:
+         successful = False
+   else:
+      successful = False
+   return successful
+
+###################################################################################
 def add_image(field_name, image_name, date_obs, timestamp=timezone.now(), tel='', inst='',
               filt='', grp_id='', track_id='', req_id='', airmass=None, avg_fwhm=None, 
 	      avg_sky=None, avg_sigsky=None, moon_sep=None, moon_phase=None, moon_up=False,

@@ -9,7 +9,7 @@ from django.db.models import Max
 from django.utils import timezone
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, TelescopeForm, EventForm, EventNameForm, SingleModelForm
-from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, ImageForm, RecordDataFileForm
+from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, ImageForm, RecordDataFileForm, TapLimaForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from itertools import chain
@@ -1343,6 +1343,53 @@ def add_tap(request):
                                     'message': 'none'})
     else:
         return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def add_taplima(request):
+    """Function to allow a new taplima entry to be 
+    recorded in the database"""
+        
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = TapLimaForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+		evname = EventName.objects.filter(event_id=post.event)[0].name
+                status = update_db_2.add_taplima(event_name=evname, 
+		                             timestamp=post.timestamp, 
+					     priority=post.priority, 
+					     tsamp=post.tsamp, 
+					     texp=post.texp, 
+					     nexp=post.nexp,
+					     telclass=post.telclass, 
+					     imag=post.imag, 
+					     omega=post.omega, 
+					     err_omega=post.err_omega, 
+					     peak_omega=post.peak_omega, 
+					     blended=post.blended,
+					     visibility=post.visibility, 
+					     cost1m=post.cost1m, 
+					     passband=post.passband,
+					     ipp=post.ipp)
+                
+                return render(request, 'events/add_taplima.html', \
+                                    {'form': form, 'message': status})
+            else:
+                form = TapForm(request.POST)
+                # Add form data to output for debugging
+                return render(request, 'events/add_taplima.html', \
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
+        else:
+            form = TapForm(request.POST)
+            return render(request, 'events/add_taplima.html', \
+                                    {'form': form, 
+                                    'message': 'none'})
+    else:
+        return HttpResponseRedirect('login')
+
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')

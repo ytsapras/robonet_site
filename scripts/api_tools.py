@@ -312,6 +312,39 @@ def submit_tap_record(config,params):
                             testing=True)
 
 ################################################################################
+def submit_taplima_record(config,params):
+    """Function to submit a record of a new TAPLima to the database 
+    using the API add_taplima endpoint
+    Required parameters:
+        config    dict    script configuration parameters
+        params    dict    tap parameters, including
+        event     		str
+        possible_priority	str
+        timestamp		str
+        priority		str
+        tsamp			float
+        texp			int
+        nexp			int
+        telclass		str
+        imag			float
+        omega			float
+        err_omega		float
+        peak_omega		float
+        blended			bool
+        visibility		float
+        cost1m			float
+        passband		str
+        ipp			float
+    """
+    
+    end_point = 'add_taplima'
+    
+    response = talk_to_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=True)
+
+
+################################################################################
 def submit_datafile_record(config,params):
     """Function to submit a record of a new ARTEMiS DataFile to the database 
     using the API add_datafile endpoint

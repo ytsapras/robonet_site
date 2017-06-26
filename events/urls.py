@@ -29,6 +29,7 @@ urlpatterns = [
     url(r'^add_binarymodel/$', views.add_binarymodel, name='add_binarymodel'),
     url(r'^add_eventreduction/$', views.add_eventreduction, name='add_eventreduction'),
     url(r'^add_tap/$', views.add_tap, name='add_tap'),
+    url(r'^add_taplima/$', views.add_taplima, name='add_taplima'),
     url(r'^add_datafile/$', views.add_datafile, name='add_datafile'),
     url(r'^add_image/$', views.add_image, name='add_image'),
     url(r'^tap/', views.tap, name='tap'),

@@ -62,6 +62,12 @@ class TapForm(forms.ModelForm):
       model = Tap
       fields = '__all__'
    timestamp = forms.DateTimeField(label='timestamp',input_formats=["%Y-%m-%dT%H:%M:%S"])
+
+class TapLimaForm(forms.ModelForm):
+   class Meta:
+      model = TapLima
+      fields = '__all__'
+   timestamp = forms.DateTimeField(label='timestamp',input_formats=["%Y-%m-%dT%H:%M:%S"])
    
 class ImageForm(forms.ModelForm):
    class Meta:
