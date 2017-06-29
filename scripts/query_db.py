@@ -76,6 +76,32 @@ def get_active_obs(log=None):
 
     return qs
 
+def get_old_active_obs(log=None):
+    """Function to extract a QuerySet of observation requests that have
+    exceeded their expiry date but still have the status set to 'AC'"""
+    
+    now = timezone.now()
+    qs = ObsRequest.objects.filter(
+                    time_expire__lte = now,
+                    request_status='AC'
+                    )
+    
+    if log != None:
+        log.info('\n')
+        log.info('Queried DB for list of out-of-date active observations:')
+        if qs.count() == 0:
+            log.info('DB returned no expired observations marked as active')
+        else:
+            for q in qs:
+                log.info(' '.join([q.grp_id, q.field.name,\
+                            get_request_desc(q.request_type), \
+                            'submitted=',q.timestamp.strftime('%Y-%m-%dT%H:%M:%S'), \
+                            'expires=',q.time_expire.strftime('%Y-%m-%dT%H:%M:%S'),\
+                            'status=',q.request_status]))
+        log.info('\n')
+
+    return qs
+    
 def get_rea_targets(log=None):
     """Function to query the DB for a list of targets recommended for 
     observation under the REA strategy."""

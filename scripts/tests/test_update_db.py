@@ -88,5 +88,13 @@ def test_add_datafile_via_api():
     (status,message) = update_db_2.add_datafile_via_api(params)
     print status, message
 
+def test_expire_old_obs():
+    """Function to test the function that expires observations from the DB
+    that have exceeded their expiry date"""
+    
+    update_db_2.expire_old_obs()
+    qs = query_db.get_old_active_obs()
+    assert len(qs) == 0
+
 if __name__ == '__main__':
     test_add_datafile_via_api()

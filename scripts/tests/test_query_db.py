@@ -31,7 +31,15 @@ def test_get_active_obs():
     assert qs.count > 0
     if len(qs) > 0:
         assert hasattr(qs[0],'field') and hasattr(qs[0],'request_type')
+        
+def test_get_old_active_obs():
 
+    qs = query_db.get_old_active_obs()
+    
+    assert qs.count > 0
+    if len(qs) > 0:
+        assert hasattr(qs[0],'field') and hasattr(qs[0],'request_type')
+    
 def test_get_tap_list():
     
     qs = query_db.get_tap_list()

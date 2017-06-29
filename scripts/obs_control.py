@@ -38,6 +38,8 @@ def obs_control():
     
     set_lock( script_config, log )
 
+    update_db_2.expire_old_obs(log=log)
+
     active_obs = query_db.get_active_obs(log=log)
     
     if script_config['MODE'] == 'ROME':

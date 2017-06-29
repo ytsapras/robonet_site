@@ -22,7 +22,7 @@ setup()
 
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
-from scripts import api_tools
+from scripts import api_tools, query_db
 import pytz
 
 ##################################################################################
@@ -1139,6 +1139,25 @@ def add_image(field_name, image_name, date_obs, timestamp=timezone.now(), tel=''
       successful = False
    return successful
 
+###################################################################################
+def expire_old_obs(log=None):
+    """Function to identify observations in the DB which have exceeded their 
+    expiry date and set their status to 'EX'"""
+    
+    if log!=None:
+        log.info('Expiring active observations that have exceeded their expiry date')
+        
+    qs = query_db.get_old_active_obs()
+    if log!=None:
+        log.info(' -> Found '+str(len(qs)))
+        
+    for obs in qs:
+        obs.request_status = 'EX'
+        obs.save()
+        if log!=None:
+            log.info(' -> Expired '+obs.grp_id+' expiry date='+\
+                    obs.time_expire.strftime('%Y-%m-%dT%H:%M:%S'))
+    
 ###################################################################################
 def run_test2():
    from astropy.time import Time
