@@ -13,4 +13,13 @@
     <parameter name='scripts_path'>
         <value>/home/Tux/ytsapras/robonet_site/scripts/</value>
     </parameter>
+    <parameter name='token'>
+        <value>xxxx</value>
+    </parameter>
+     <parameter name='user_id'>
+        <value>ytsapras@lcogt.net</value>
+    </parameter>
+    <parameter name='lco_access'>
+        <value>xxxx</value>
+    </parameter>
 </setup_config>

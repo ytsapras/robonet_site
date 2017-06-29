@@ -66,11 +66,12 @@ def read_config(config_file_path):
 
 def read_config_for_code(code_name):
     """Function to read XML configuration files
-    code_name = { 'obscontrol', 'artemis_subscriber' }    
+    code_name = { 'obscontrol', 'artemis_subscriber', 'setup' }    
     """
     
     configs = { 'obs_control': 'obscontrol_config.xml',
-               'artemis_subscriber': 'artemis_sync.xml'}
+               'artemis_subscriber': 'artemis_sync.xml',
+	       'setup': 'setup.xml'}
     if code_name in configs.keys():
         config_file = configs[code_name]
     

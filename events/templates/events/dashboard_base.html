@@ -46,20 +46,45 @@ dy.bmp&imgsize=320&dynimg=y&opt=-p&lat=&lon=&alt=&tle=&date=0&utc=&jd=" width="5
 <table>
 <tr>
 <td background="http://www.fourmilab.ch/cgi-bin/Earth?img=cloudy.bmp&imgsize=320&dynimg=y&opt=-p&lat=&lon=&alt=&tle=&date=0&utc=&jd=" width="640" height="320" valign=top>
-  {% ifequal coj_status "OPEN" %}
-    <DIV style="position: relative; top:186px; left:580px; width:20px; height:25px"><font color=green>*</font></DIV><!-- COJ -->
+  {% ifequal coj_doma "AVAILABLE" %}
+    <DIV style="position: relative; top:210px; left:570px; width:20px; height:25px"><font color='#3EED32'><b>A</b></font></DIV><!-- COJ -->
   {% else %}
-    <DIV style="position: relative; top:186px; left:580px; width:20px; height:25px"><font color=yellow>*</font></DIV><!-- COJ -->
+    <DIV style="position: relative; top:210px; left:570px; width:20px; height:25px"><font color='#EDC532'><b>A</b></font></DIV><!-- COJ -->
   {% endifequal %}
-  {% ifequal lsc_status "OPEN" %}
-    <DIV style="position: relative; top:153px; left:188px; width:20px; height:25px"><font color=green>*</font></DIV><!-- LSC -->
+  {% ifequal coj_domb "AVAILABLE" %}
+    <DIV style="position: relative; top:185px; left:585px; width:20px; height:25px"><font color='#3EED32'><b>B</b></font></DIV><!-- COJ -->
   {% else %}
-    <DIV style="position: relative; top:153px; left:188px; width:20px; height:25px"><font color=yellow>*</font></DIV><!-- LSC -->
+    <DIV style="position: relative; top:185px; left:585px; width:20px; height:25px"><font color='#EDC532'><b>B</b></font></DIV><!-- COJ -->
   {% endifequal %}
-  {% ifequal cpt_status "OPEN" %}
-    <DIV style="position: relative; top:131px; left:356px; width:20px; height:25px"><font color=green>*</font></DIV><!-- CPT -->
+  {% ifequal lsc_doma "AVAILABLE" %}
+    <DIV style="position: relative; top:153px; left:185px; width:20px; height:25px"><font color='#3EED32'><b>A</b></font></DIV><!-- LSC -->
   {% else %}
-    <DIV style="position: relative; top:131px; left:356px; width:20px; height:25px"><font color=yellow>*</font></DIV><!-- CPT -->
+    <DIV style="position: relative; top:153px; left:185px; width:20px; height:25px"><font color='#EDC532'><b>A</b></font></DIV><!-- LSC -->
+  {% endifequal %}
+  {% ifequal lsc_domb "AVAILABLE" %}
+    <DIV style="position: relative; top:128px; left:200px; width:20px; height:25px"><font color='#3EED32'><b>B</b></font></DIV><!-- LSC -->
+  {% else %}
+    <DIV style="position: relative; top:128px; left:200px; width:20px; height:25px"><font color='#EDC532'><b>B</b></font></DIV><!-- LSC -->
+  {% endifequal %}
+  {% ifequal lsc_domc "AVAILABLE" %}
+    <DIV style="position: relative; top:103px; left:215px; width:20px; height:25px"><font color='#3EED32'><b>C</b></font></DIV><!-- LSC -->
+  {% else %}
+    <DIV style="position: relative; top:103px; left:215px; width:20px; height:25px"><font color='#EDC532'><b>C</b></font></DIV><!-- LSC -->
+  {% endifequal %}
+  {% ifequal cpt_doma "AVAILABLE" %}
+    <DIV style="position: relative; top:80px; left:335px; width:20px; height:25px"><font color='#3EED32'><b>A</b></font></DIV><!-- CPT -->
+  {% else %}
+    <DIV style="position: relative; top:80px; left:335px; width:20px; height:25px"><font color='#EDC532'><b>A</b></font></DIV><!-- CPT -->
+  {% endifequal %}
+  {% ifequal cpt_domb "AVAILABLE" %}
+    <DIV style="position: relative; top:55px; left:350px; width:20px; height:25px"><font color='#3EED32'><b>B</b></font></DIV><!-- CPT -->
+  {% else %}
+    <DIV style="position: relative; top:55px; left:350px; width:20px; height:25px"><font color='#EDC532'><b>B</b></font></DIV><!-- CPT -->
+  {% endifequal %}
+  {% ifequal cpt_domc "AVAILABLE" %}
+    <DIV style="position: relative; top:30px; left:365px; width:20px; height:25px"><font color='#3EED32'><b>C</b></font></DIV><!-- CPT -->
+  {% else %}
+    <DIV style="position: relative; top:30px; left:365px; width:20px; height:25px"><font color='#EDC532'><b>C</b></font></DIV><!-- CPT -->
   {% endifequal %}
 </td>
 </tr>
@@ -72,16 +97,28 @@ dy.bmp&imgsize=320&dynimg=y&opt=-p&lat=&lon=&alt=&tle=&date=0&utc=&jd=" width="5
 .ch/cgi-bin/Earth?img=learth.evif&imgsize=320&dynimg=y&opt=-p&lat=&lon=&alt=&tle=&date=0&utc=
 &jd=" width = "500" border="0"/>
 </a> --> 
-
+<table border="0" width=400>
+  <tr>
+    <td width=40><b>Time</b></td><td width=40>Used:{{ time_used }} hrs</td> <td width=80>Allocated:{{ time_available }} hrs</td>
+  </tr>
+  <tr>
+    <td width=40><b>IPP </b></td><td width=40>Available:{{ ipp_time_available }}</td> <td width=80> Limit:{{ ipp_limit }}</td>
+  </tr>
+</table>
+<br>
 <!-- BEGIN TABLE ONE -->
-<table border="1" bgcolor="#FFFFFF">
+<table border="" bgcolor="#FFFFFF">
   <tr>
    <!-- Column 1 -->
-   <td bgcolor="#E6E6B8" title="List of all events in the database"><b style="color: #000000"><a href={% url 'list_all' %} STYLE="text-decoration:none">List all events</a></b></td>
+   <td bgcolor="#E6E6B8" title="List of all events in the database"><b style="color: #000000"><a href={% url 'list_all' %} STYLE="text-decoration:none">Events</a></b></td>
    <!-- Column 2 -->
-   <td bgcolor="#E6E6B8" title="List of images obtained in the last 24 hours"><b style="color: #000000"><a href={% url 'obs_log' date=date_today %} STYLE="text-decoration:none">Observations in last 24 hours</a></b></td>
+   <td bgcolor="#E6E6B8" title="List of images obtained in the last 24 hours"><b style="color: #000000"><a href={% url 'obs_log' date=date_today %} STYLE="text-decoration:none">Observations</a></b></td>
    <!-- Column 3 -->
-   <td bgcolor="#E6E6B8" title="List of observation requests submitted in the last 24 hours"><b style="color: #000000"><a href={% url 'obs_requests24' %} STYLE="text-decoration:none">Obs. Requests in last 24 hours</a></b></td>
+   <td bgcolor="#E6E6B8" title="List of observation requests submitted in the last 24 hours"><b style="color: #000000"><a href={% url 'obs_requests24' %} STYLE="text-decoration:none">ObsRequests24</a></b></td>
+   <!-- Column 4 -->
+   <td bgcolor="#E6E6B8" title="List of active observation requests"><b style="color: #000000"><a href={% url 'active_obs_requests' %} STYLE="text-decoration:none">ActiveObsReqs</a></b></td>
+   <!-- Column 5 -->
+   <td bgcolor="#E6E6B8" title="REA/TAP list or prioritized targets"><b style="color: #000000"><a href={% url 'tap' %} STYLE="text-decoration:none">TAP</a></b></td>
   </tr>
 </table>
 <!-- END TABLE ONE -->
@@ -149,11 +186,11 @@ dy.bmp&imgsize=320&dynimg=y&opt=-p&lat=&lon=&alt=&tle=&date=0&utc=&jd=" width="5
   <!-- ROW 7 -->
   <tr>
    <!-- Column 1 -->
-   <td bgcolor="#E6E6B8" width=200><b style="color: #000000">6.backup</b></td>
+   <td bgcolor="#FFFFCC" width=200><b style="color: #000000">6.backup</b></td>
    <!-- Column 2 -->
-   <td bgcolor="#E6E6B8" width=200><font style="color: #000000">{% block updated6 %}2525-05-31T14:10:19{% endblock %}</font></td>
+   <td bgcolor="#FFFFCC" width=200><font style="color: #000000">{% block updated6 %}2525-05-31T14:10:19{% endblock %}</font></td>
    <!-- Column 3 -->
-   <td bgcolor="#E6E6B8" width=500><font style="color: #000000">{% block comments6 %}Some long comment string about the process.{% endblock %}</font></td>
+   <td bgcolor="#FFFFCC" width=500><font style="color: #000000">{% block comments6 %}Some long comment string about the process.{% endblock %}</font></td>
   </tr>
 </table>
 <!-- END TABLE TWO -->

@@ -17,6 +17,7 @@ urlpatterns = [
     url(r'^download_lc_by_id/(?P<event_id>[0-9]+)', views.download_lc_by_id, name='download_lc_by_id'),
     url(r'^obs_log/(?P<date>[0-9]+)', views.obs_log, name='obs_log'),
     url(r'^obs_requests24/$', views.obs_requests24, name='obs_requests24'),
+    url(r'^active_obs_requests/$', views.active_obs_requests, name='active_obs_requests'),
     url(r'^obs_details/(?P<event_name>[\w-]+)', views.event_obs_details, name='event_obs_details'),
     url(r'^query_obs_requests/$', views.query_obs_requests, name='query_obs_requests'),
     url(r'^record_obs_request/$', views.record_obs_request, name='record_obs_requests'),

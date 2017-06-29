@@ -26,6 +26,7 @@ from scripts.utilities import short_to_long_name
 from scripts import config_parser
 from scripts.get_errors import *
 from scripts import update_db_2
+import requests
 
 # Path to ARTEMiS files
 artemis_col = get_conf('artemis_cols')
@@ -138,7 +139,30 @@ def dashboard(request):
     """
     if request.user.is_authenticated():
         try:
-            config = config_parser.read_config_for_code('obs_control')
+	    config2 = config_parser.read_config_for_code('setup')
+	    api_token = config2['token']
+	    # Retrieve time usage information
+	    response = requests.get(
+	    	'https://observe.lco.global/api/proposals/?id=KEY2017AB-004',
+	    	headers={'Authorization': 'Token {}'.format(api_token)}
+	    )
+	    # Make sure this api call was successful
+	    try:
+	    	response.raise_for_status()
+	    except requests.exceptions.HTTPError as exc:
+	    	print('Request failed: {}'.format(response.content))
+	    	raise exc
+	    proposals_dict = response.json()  # api returns a json dictionary containing proposal information
+	    time_alloc_dict = proposals_dict['results'][0]['timeallocation_set'][0]
+	    time_available = time_alloc_dict['std_allocation']
+	    time_used = time_alloc_dict['std_time_used']
+	    ipp_time_available = time_alloc_dict['ipp_time_available']
+	    ipp_limit = time_alloc_dict['ipp_limit']
+        except:
+            raise Http404("Encountered a problem while trying to access the LCO observe api. Please contact the site administrator.")
+	try:
+	    # Read errors file
+            config = config_parser.read_config_for_code('obs_control')	    
             filepath = path.join(config['log_directory'],'errors.txt')
             errfile = open(filepath).readlines()
             timestr = []
@@ -148,19 +172,71 @@ def dashboard(request):
                 timestr.append(timetmp)
                 commenttmp = line.split('; ')[2].replace('\n','')
                 commentstr.append(commenttmp)
-                
-            status_time = datetime.now()
-            date_today = str(status_time.year)+str(status_time.month).zfill(2)+str(status_time.day).zfill(2)
-            status_time_jd = Time(status_time).jd
         except:
-            raise Http404("Encountered a problem while loading. Please contact the site administrator.")
+	    raise Http404("Encountered a problem while trying to access errors.txt. Please contact the site administrator.")
+	try:
+            # Get telescope status information
+	    response3 = requests.get(
+	    	'https://observe.lco.global/api/telescope_states/',
+	    	headers={'Authorization': 'Token {}'.format(api_token)}
+	    )
+	    # Make sure this api call was successful
+	    try:
+	    	response3.raise_for_status()
+	    except requests.exceptions.HTTPError as exc:
+	    	print('Request failed: {}'.format(response3.content))
+	    	raise exc
+	    telstate_dict = response3.json()
+	    try:
+	        coj_doma = telstate_dict['coj.doma.1m0a'][0]['event_type']
+	    except:
+	        coj_doma = 'Unknown'
+	    try:
+	        coj_domb = telstate_dict['coj.domb.1m0a'][0]['event_type']
+	    except:
+	        coj_domb = 'Unknown'
+	    try:
+	        cpt_doma = telstate_dict['cpt.doma.1m0a'][0]['event_type']
+	    except:
+	        cpt_doma = 'Unknown'
+	    try:
+	        cpt_domb = telstate_dict['cpt.domb.1m0a'][0]['event_type']
+	    except:
+	        cpt_domb = 'Unknown'
+	    try:
+	        cpt_domc = telstate_dict['cpt.domc.1m0a'][0]['event_type']
+	    except:
+	        cpt_domc = 'Unknown'
+	    try:
+	        lsc_doma = telstate_dict['lsc.doma.1m0a'][0]['event_type']
+	    except:
+	        lsc_doma = 'Unknown'
+	    try:
+	        lsc_domb = telstate_dict['lsc.domb.1m0a'][0]['event_type']
+	    except:
+	        lsc_domb = 'Unknown'
+	    try:
+	        lsc_domc = telstate_dict['lsc.domc.1m0a'][0]['event_type']
+	    except:
+	        lsc_domc = 'Unknown'
+        except:
+	    raise Http404("Encountered a problem while trying to access the LCO observe api to read the telescope states. Please contact the site administrator.")
+	    # Get current time (UTC now)
+        status_time = datetime.now()
+        date_today = str(status_time.year)+str(status_time.month).zfill(2)+str(status_time.day).zfill(2)
+        status_time_jd = Time(status_time).jd
         context = {'status_time':status_time, 'status_time_jd':status_time_jd, 
                    'date_today':date_today, 'upd1':timestr[0], 
                    'upd2':timestr[1], 'upd3':timestr[2], 
                    'upd4':timestr[3], 'upd5':timestr[4], 'upd6':timestr[5],
                    'com1':commentstr[0], 'com2':commentstr[1],
                    'com3':commentstr[2], 'com4':commentstr[3], 
-                   'com5':commentstr[4], 'com6':commentstr[5]
+                   'com5':commentstr[4], 'com6':commentstr[5],
+		   'coj_doma':coj_doma, 'coj_domb':coj_domb,
+		   'cpt_doma':cpt_doma, 'cpt_domb':cpt_domb, 'cpt_domc':cpt_domc,
+		   'lsc_doma':lsc_doma, 'lsc_domb':lsc_domb, 'lsc_domc':lsc_domc,
+		   'time_used':str.format('{0:.1f}', time_used),'time_available':str.format('{0:.1f}', time_available),
+		   'ipp_limit':str.format('{0:.1f}', ipp_limit),'ipp_time_available':str.format('{0:.1f}', ipp_time_available)
                     }
         return render(request, 'events/dashboard.html', context)
     else:
@@ -328,6 +404,42 @@ def obs_requests24(request):
          raise Http404("Encountered a problem while loading. Please contact the site administrator.")
       context = {'rows': rows}
       return render(request, 'events/obs_requests24.html', context)
+   else:
+      return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def active_obs_requests(request):
+   from django.utils import timezone
+   """
+   Will display all active observation requests.
+   """
+   if request.user.is_authenticated():
+      try:
+         obs_requests = ObsRequest.objects.filter(request_status='AC')
+	 field_id = [k.field for k in obs_requests]
+	 field = [k.name for k in field_id]
+	 t_sample = [k.t_sample for k in obs_requests]
+	 exptime = [k.exptime for k in obs_requests]
+	 timestamp = [k.timestamp.strftime("%Y-%m-%dT%H:%M:%S") for k in obs_requests]  
+	 time_expire = [k.time_expire.strftime("%Y-%m-%dT%H:%M:%S") for k in obs_requests] 
+	 request_status = [k.request_status for k in obs_requests]   
+	 request_type = [k.request_type for k in obs_requests]
+	 which_site = [k.which_site for k in obs_requests]
+	 which_inst = [k.which_inst for k in obs_requests]
+	 which_filter = [k.which_filter for k in obs_requests]
+	 grp_id = [k.grp_id for k in obs_requests]
+	 track_id = [k.track_id for k in obs_requests]
+	 req_id = [k.req_id for k in obs_requests] 
+	 n_exp  = [k.n_exp for k in obs_requests]    
+         rows = zip(field,t_sample,exptime,timestamp,time_expire,request_status,
+	            request_type,which_site,which_inst,which_filter,grp_id,
+		    track_id,req_id,n_exp)
+         rows = sorted(rows, key=lambda row: row[1])
+      except:
+         raise Http404("Encountered a problem while loading. Please contact the site administrator.")
+      context = {'rows': rows}
+      return render(request, 'events/active_obs_requests.html', context)
    else:
       return HttpResponseRedirect('login')
 
