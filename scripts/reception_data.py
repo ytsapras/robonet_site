@@ -244,13 +244,33 @@ class Image(object):
 
 			self.output_directory = output_directory
 		        self.catalog_directory = origin_directory.replace('images','catalog0')
-			self.logger.info('Successfully find the output directory : '+self.output_directory)
-			self.logger.info('Successfully find the catalog directory : '+self.catalog_directory)
+			self.logger.info('Successfully construct the output directory : '+self.output_directory)
+			self.logger.info('Successfully construct the catalog directory : '+self.catalog_directory)
 	
 		except:
 		
-			self.logger.error('I can not find the output directory or/and  output directory!')
+			self.logger.error('I can not construct the output directory!')
 
+
+	def find_or_construct_the_output_directory(self):
+
+		try :	
+
+			flag = os.path.isdir(self.output_directory)
+
+			if flag == True:	
+			
+				self.logger.info('Successfully find the output directory : '+self.output_directory)
+
+			else :
+
+				os.makedirs(self.output_directory)
+				self.logger.info('Successfully mkdir the output directory : '+self.output_directory)
+
+		except:
+
+				self.logger.error('I can not find or mkdir the output directory!')		
+	
 	def find_WCS_offset(self):
 		
 		try:
@@ -559,6 +579,7 @@ def process_new_images(new_frames_directory, image_output_origin_directory, logs
 			image.generate_sextractor_catalog()
 			image.assess_image_quality()
 			image.determine_the_output_directory()
+			image.find_or_construct_the_output_directory()
 			success = image.ingest_the_image_in_the_database()
 
 			if success == True:
