@@ -174,14 +174,22 @@ class ObsRequest:
             if debug == True and log != None:
                 if 'requests' in ur.keys():
                     for r in ur['requests']:
-                        if len(r['windows']) == 0:
-                            log.info('WARNING: scheduler returned no observing windows for this target')
+                        try:
+                            if len(r['windows']) == 0:
+                                log.info('WARNING: scheduler returned no observing windows for this target')
+                                self.submit_status = 'No_obs_submitted'
+                                self.submit_response = 'No_obs_submitted'
+                                self.req_id = '9999999999'
+                                self.track_id = '99999999999'
+                            else:
+                                log.info('Request windows: '+repr(r['windows']))
+                        except TypeError:
+                            log.info('WARNING: scheduler returned invalid observing windows for this target')
+                            log.info('request dictionary contains: '+repr(r))
                             self.submit_status = 'No_obs_submitted'
                             self.submit_response = 'No_obs_submitted'
                             self.req_id = '9999999999'
                             self.track_id = '99999999999'
-                        else:
-                            log.info('Request windows: '+repr(r['windows']))
                 elif 'detail' in ur.keys():
                     self.submit_status = 'No_obs_submitted'
                     if self.submit_response != None:
@@ -189,7 +197,7 @@ class ObsRequest:
                     else:
                         self.submit_response = 'WARNING: ' + ur['detail']
                     if debug == True and log != None:
-                            log.info('WARNING: problem obtaining observing windows for this target: '+ur['detail'])
+                        log.info('WARNING: problem obtaining observing windows for this target: '+ur['detail'])
                 elif 'non_field_errors' in ur.keys():
                     self.submit_status = 'No_obs_submitted'
                     if self.submit_response != None:
