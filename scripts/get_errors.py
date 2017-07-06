@@ -23,6 +23,32 @@ import socket
 # comments is just a string
 
 # date_updated is in the format 2017-05-31T14:10:19
+class Error:
+    def __init__(self):
+        self.codename = None
+        self.ts = None
+        self.status = None
+
+def read_err():
+    """Function to the errors file and return a dictionary of the contents
+    in the format:
+    Output:
+        errors = { code_name: [datetime, status] }
+    """
+    errors = []
+    config = config_parser.read_config_for_code('obs_control')
+    errfile = path.join(config['log_directory'],'errors.txt')
+    if path.isfile(errfile) == True:
+        file_lines = open(errfile,'r').readlines()
+        for line in file_lines:
+            entries = line.replace('\n','').split(';')
+            if len(entries) == 3:
+                e = Error()
+                e.codename = entries[0]
+                e.ts = entries[1]
+                e.status = entries[2]
+                errors.append(e)
+    return errors
 
 def update_err(process_name, comments, date_updated=datetime.now().strftime("%Y-%m-%dT%H:%M:%S")):
     """Function to add to a central file containing current errors within the 
@@ -60,4 +86,5 @@ def update_err(process_name, comments, date_updated=datetime.now().strftime("%Y-
     # Clean up
     if path.isfile(filepath_old) == True:
         remove(filepath_old)
-    move(filepath_new, filepath_old)
+    if path.isfile(filepath_new) == True:
+        move(filepath_new, filepath_old)
