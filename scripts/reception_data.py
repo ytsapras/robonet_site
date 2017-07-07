@@ -7,6 +7,7 @@ from astropy import wcs
 from astropy.table import Table
 from astropy.io import ascii
 from astropy.time import Time
+import pytz
 import numpy as np
 import os
 import time 
@@ -458,7 +459,7 @@ class Image(object):
 		quality_flag = ' ; '.join(self.quality_flags)
 
 		observing_date  = datetime.datetime.strptime(self.header_date_obs,'%Y-%m-%dT%H:%M:%S.%f')
-		observing_date.replace(tzinfo=timezone.utc)
+		observing_date.replace(tzinfo=pytz.UTC)
 
 
 		telescope = self.header_telescope_site + self.header_dome_id
