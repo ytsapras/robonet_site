@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 setup()
 
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
-from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
+from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, TapLima, Image
 from scripts import api_tools, query_db
 import pytz
 

@@ -61,6 +61,9 @@ SingleModel.objects.filter(event_id=e).values()
 # If you're only interested in the values of the most recent model
 SingleModel.objects.filter(event_id=e).values().latest('last_updated')
 
+# You can also specify the modeler if you want
+SingleModel.objects.filter(event_id=e).filter(modeler='ARTEMiS').values().latest('last_updated')
+
 # Find all ARTEMiS data files for a specific event (we'll use the same event as before)
 DataFile.objects.filter(event_id=e).values('datafile')
 

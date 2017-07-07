@@ -1,6 +1,6 @@
 from django.contrib import admin
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
-from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
+from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, TapLima, Image
  
 # Register your models here.
 admin.site.register(Field)
@@ -17,5 +17,6 @@ admin.site.register(ObsRequest)
 admin.site.register(EventStatus)
 admin.site.register(DataFile)
 admin.site.register(Tap)
+admin.site.register(TapLima)
 admin.site.register(Image)
 
