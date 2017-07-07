@@ -160,7 +160,7 @@ def assign_tap_priorities(logger):
             # SAMPLING TIME FOR REA IS 1h
             tsamp = 1.
             imag = -2.5 * np.log10(fs_pspl * amp_now + fb_pspl)
-            texp = calculate_exptime_romerea(imag)
+            texp = min(calculate_exptime_romerea(imag),300.)
             cost1m = daily_visibility / tsamp * ((60. + texp) / 60.)
             err_omega = 0.
 

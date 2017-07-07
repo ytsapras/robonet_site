@@ -136,14 +136,15 @@ def assign_tap_priorities(logger):
             0].name
         timestamp = timezone.now()
 
-	modelpath = '/var/www/robonetsite/data/artemis/model/'
+	modelpath = '/var/www/robonetsite/data/models/pylima/'
+        
         if 'MOA' in event_name:
             eventname_short = 'KB' + event_name[6:8] + event_name[13:17]
         else:
             eventname_short = 'OB' + event_name[7:9] + event_name[14:18]
 
-        if os.path.exists(os.path.join(modelpath, eventname_short + '.align')):
-            filein = open(os.path.join(modelpath, eventname_short + '.align'))
+        if os.path.exists(os.path.join(modelpath, eventname_short + '.pyLIMA_align')):
+            filein = open(os.path.join(modelpath, eventname_short + '.pyLIMA_align'))
             for fentry in filein:
                 if 'OI' in fentry and 'O' in eventname_short:
                     alignpars = str.split(fentry)
@@ -151,8 +152,8 @@ def assign_tap_priorities(logger):
                     alignpars = str.split(fentry)
             filein.close()
 
-        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')):
-            filein = open(os.path.join(modelpath, eventname_short + '.model'))
+        if os.path.exists(os.path.join(modelpath, eventname_short + '.pyLIMA_model')):
+            filein = open(os.path.join(modelpath, eventname_short + '.pyLIMA_model'))
             psplpars = str.split(filein.readline())
             filein.close()
             gfac = abs(float(alignpars[2]))
@@ -181,12 +182,12 @@ def assign_tap_priorities(logger):
             err_omega = 0.
 
 	    if ibase_pspl>0. and g_pspl<300.:
-                add_tap(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
+                add_taplima(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
                         texp=texp, nexp=1., imag=imag, omega=omega_now,
                         err_omega=err_omega, peak_omega=omega_peak,
                         visibility=full_visibility, cost1m=cost1m)
             else:
-                add_tap(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
+                add_taplima(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
                         texp=texp, nexp=1., imag=imag, omega=0.0,
                         err_omega=err_omega, peak_omega=omega_peak,
                        	visibility=full_visibility, cost1m=cost1m)
@@ -196,8 +197,7 @@ def assign_tap_priorities(logger):
             #    Event.objects.filter(event_id=event_id).update(status="EX")
         else:
             nmissing += 1
-    if nmissing>0:
-        update_err('run_rea_tap', 'Missing DataFile: '+str(nmissing)+' events')
+
 
 
 def run_tap_prioritization(logger):
@@ -263,19 +263,16 @@ def run_tap_prioritization(logger):
 
 if __name__ == '__main__':
     #DIRECTORY TO BE OBTAINED FROM XML...
-    logs_directory='/var/www/robonetsite/data/logs/2017/'
+    logs_directory='.'#/var/www/robonetsite/data/logs/2017/'
     #logs_directory='/home/Tux/ytsapras/Data/ROMEREA/logs/2017'
     script_config = {'log_directory':logs_directory, 
-                     'log_root_name':'robotap_rea','lock_file':'robotap.lock'}
-    logger = log_utilities.start_day_log( script_config, 'robotap', console=False )
+                     'log_root_name':'robotap_rea_pylima','lock_file':'robotap_pylima.lock'}
+    logger = log_utilities.start_day_log( script_config, 'robotap_pylima', console=False )
     lock_status = log_utilities.lock(script_config, 'check', logger)
     if lock_status == 'clashing_lock':
         log_utilities.end_day_log(logger)
-        update_err('run_rea_tap', 'Lock file found') 
         exit()
-    else:
-        #reset errors.txt to ok
-        update_err('run_rea_tap', 'Status OK (ARTEMiS mode)') 
+
     lock_status = log_utilities.lock( script_config, 'lock', logger)
     assign_tap_priorities(logger)
     run_tap_prioritization(logger)
