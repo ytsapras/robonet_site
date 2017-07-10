@@ -7,6 +7,7 @@ from math import pi
 import numpy as np
 import ephem
 import matplotlib
+matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from jdcal import gcal2jd
 from matplotlib.cm import coolwarm
