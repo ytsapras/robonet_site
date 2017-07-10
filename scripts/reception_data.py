@@ -459,7 +459,7 @@ class Image(object):
 		quality_flag = ' ; '.join(self.quality_flags)
 
 		observing_date  = datetime.datetime.strptime(self.header_date_obs,'%Y-%m-%dT%H:%M:%S.%f')
-		observing_date.replace(tzinfo=pytz.UTC)
+		observing_date = observing_date.replace(tzinfo=pytz.UTC)
 
 
 		telescope = self.header_telescope_site + self.header_dome_id
