@@ -98,7 +98,7 @@ def rome_obs_sequence():
                     'instruments':  ['fl15', 'fl16', 'fl12'],
                     'cadence_hrs': 7.0,
                     'jitter_hrs': 7.0,
-                    'TTL_days': 7.0,
+                    'TTL_days': 6.98,
                     'priority': 1.05
                     }
     return obs_sequence
