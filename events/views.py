@@ -252,11 +252,17 @@ def download_lc_by_id(request, event_id):
          lightcurves.append(i['datafile'])
       try:
          filename = tar_lc(lightcurves)
+      except:
+         raise Http404("Encountered a problem while generating the tar file.") 
+      try:
          download = open(filename,'rb')
+      except:
+         raise Http404("Encountered a problem while reading the tar file.") 
+      try:
          response = HttpResponse(download.read(),content_type='application/x-tar')
          response['Content-Disposition'] = 'attachment; filename="%s"' % filename.split('/')[-1]
       except:
-         raise Http404("Encountered a problem while generating the tar file.")  
+         raise Http404("Encountered a problem while generating the HttpResponse.")  
       return response
    else:
       return HttpResponseRedirect('login')
@@ -292,11 +298,17 @@ def download_lc(request, event_name):
          lightcurves.append(i['datafile'])
       try:
          filename = tar_lc(lightcurves)
+      except:
+         raise Http404("Encountered a problem while generating the tar file.") 
+      try:
          download = open(filename,'rb')
+      except:
+         raise Http404("Encountered a problem while reading the tar file.") 
+      try:
          response = HttpResponse(download.read(),content_type='application/x-tar')
          response['Content-Disposition'] = 'attachment; filename="%s"' % filename.split('/')[-1]
       except:
-         raise Http404("Encountered a problem while generating the tar file.")  
+         raise Http404("Encountered a problem while generating the HttpResponse.")  
       return response
    else:
       return HttpResponseRedirect('login')
