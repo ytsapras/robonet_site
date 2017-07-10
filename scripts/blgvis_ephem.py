@@ -63,7 +63,7 @@ def generate_visibility_plot():
     plt.grid(alpha=0.3)
     cbar = plt.colorbar(tmp,cmap=coolwarm,orientation='vertical')
     plt.clim(0.,90.)
-    plt.savefig(robonet_site+'/events/static/events/blgvis_now.png')
+    plt.savefig(robonet_site+'/static/events/blgvis_now.png')
 #    plt.show()
 
 if __name__ == '__main__':
