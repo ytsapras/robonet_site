@@ -28,7 +28,10 @@ class Error:
         self.codename = None
         self.ts = None
         self.status = None
-
+    
+    def summary(self):
+        return self.codename+' '+self.ts+' '+self.status
+    
 def read_err():
     """Function to the errors file and return a dictionary of the contents
     in the format:
