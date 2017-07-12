@@ -145,7 +145,7 @@ def get_tap_list(log=None):
         target.ev_dec = q.ev_dec
         target.tap_status = q.status
         
-        tap_entry = Tap.objects.filter(event=q.pk)[0]
+        tap_entry = Tap.objects.filter(event=q.pk).order_by('timestamp').reverse()[0]
         target.priority = tap_entry.priority
         target.tsamp = float(tap_entry.tsamp)
         target.texp = float(tap_entry.texp)
@@ -178,13 +178,13 @@ def get_last_single_model(event,modeler=None,log=None):
     """
     
     if modeler==None:
-        qs = SingleModel.objects.filter(event=event).order_by('last_updated')
+        qs = SingleModel.objects.filter(event=event).order_by('last_updated').reverse()
     else:
         qs = SingleModel.objects.filter(
                                         event=event
                                         ).filter(
                                         modeler=modeler
-                                        ).order_by('last_updated')
+                                        ).order_by('last_updated').reverse()
     
     try:    
         model = qs[0]
