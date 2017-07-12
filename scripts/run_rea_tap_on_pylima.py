@@ -74,6 +74,8 @@ def omegarea(time_requested, u0_pspl, te_pspl, t0_pspl, fs_pspl, fb_pspl):
     """
     usqr = u0_pspl**2 + ((time_requested - t0_pspl) / te_pspl)**2
     pspl_deno = (usqr * (usqr + 4.))**0.5
+    if pspl_deno<1e-10:
+	pspl_deno=1000.
     psip = 4.0 / (pspl_deno) - 2.0 / (usqr + 2.0 + pspl_deno)
     amp = (usqr + 2.) / pspl_deno
     mag = -2.5 * np.log10(fs_pspl * amp + fb_pspl)
