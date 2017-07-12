@@ -777,7 +777,7 @@ class DataFile(models.Model):
    filt = models.CharField(max_length=50, blank=True, default='')
    # blend parameters from ARTEMiS (.align) for lightcurve calibration
    baseline = models.DecimalField(max_digits=6, decimal_places=2, default=22.0, blank=True)
-   g = models.DecimalField(max_digits=6, decimal_places=2, default=0.0, blank=True)
+   g = models.DecimalField(max_digits=8, decimal_places=2, default=0.0, blank=True)
    # Number of data points in file
    ndata =models.IntegerField()
 

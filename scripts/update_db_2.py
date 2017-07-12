@@ -18,6 +18,7 @@ from django.conf import settings
 from django.utils import timezone
 from django import setup
 from datetime import datetime, timedelta
+from decimal import InvalidOperation
 setup()
 
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
@@ -900,20 +901,27 @@ def add_datafile_via_api(params):
                 status = True
                 message = 'DBREPLY: DB entry for this data file is up to date'
             else:
-                file_entry.last_upd = last_upd
-                file_entry.last_hjd = float(params['last_hjd'])
-                file_entry.last_mag = float(params['last_mag'])
-                file_entry.tel=params['tel']
-                file_entry.filt=params['filt']
-                file_entry.baseline=float(params['baseline'])
-                file_entry.g=float(params['g'])
-                file_entry.ndata=int(params['ndata'])
-                file_entry.save()
-                status = True
-                message = 'DBREPLY: Updated database entry'
-                
+                try:
+                    file_entry.last_upd = last_upd
+                    file_entry.last_hjd = float(params['last_hjd'])
+                    file_entry.last_mag = float(params['last_mag'])
+                    file_entry.tel=params['tel']
+                    file_entry.filt=params['filt']
+                    file_entry.baseline=float(params['baseline'])
+                    file_entry.g=float(params['g'])
+                    file_entry.ndata=int(params['ndata'])
+                    file_entry.save()
+                    status = True
+                    message = 'DBREPLY: Updated database entry'
+                except InvalidOperation:
+                    err = ''
+                    for key, value in params.items():
+                        err += str(key)+'='+str(value)+' '
+                    message = 'DBREPLY: ERROR storing datafile entry.  Received parameters:\n'+err
+                    status = False
         else:
-            (new_file,result) = DataFile.objects.get_or_create(event=event, 
+            try:
+                (new_file,result) = DataFile.objects.get_or_create(event=event, 
                             datafile=params['datafile'],
                             last_upd=last_upd,
                             last_hjd=params['last_hjd'], 
@@ -922,9 +930,15 @@ def add_datafile_via_api(params):
                             filt=params['filt'], 
                             baseline=float(params['baseline']), 
                             g=float(params['g']), ndata=int(params['ndata']))
-            status = True
-            message = 'DBREPLY: Created new database entry'
+                status = True
+                message = 'DBREPLY: Created new database entry'
             
+            except InvalidOperation:
+                err = ''
+                for key, value in params.items():
+                    err += str(key)+'='+str(value)+' '
+                message = 'DBREPLY: ERROR creating datafile entry.  Received parameters:\n'+err
+                status = False
     else:
         status = False
         message = 'DBREPLY: Event not in database'

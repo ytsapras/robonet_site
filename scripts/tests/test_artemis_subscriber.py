@@ -81,6 +81,13 @@ def test_read_artemis_align_file():
     assert params['baseline'] == 19.16817
     assert params['name_code'] == 'OI'
 
+    f = '../../data/OB171284.align'
+    filt = 'I'
+    params = artemis_subscriber.read_artemis_align_params(f,filt)
+    assert params['g'] == 1.04522426e+04
+    assert params['baseline'] == 15.43316
+    assert params['name_code'] == 'OI'
+    
 def test_check_rsync_config():
     
     config = artemis_subscriber.read_config()
