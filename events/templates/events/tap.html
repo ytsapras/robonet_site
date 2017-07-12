@@ -50,6 +50,7 @@ a:active {
   <th bgcolor="#609ab6"><b style="color: #FFFFFF ">&Omega;<sub>S</sub></b></th>
   <th bgcolor="#609ab6"><b style="color: #FFFFFF ">&Omega;<sub>S</sub>@peak</b></th>
   <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Visibility [h]</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Field</b></th>
  </tr>
  {% for row in rows %}
  <tr bgcolor="{{ row.0 }}">
@@ -67,6 +68,7 @@ a:active {
    <td>{{ row.9 }}</td>
    <td>{{ row.10 }}</td>
    <td>{{ row.11 }}</td>
+   <td>{{ row.12 }}</td>
  </tr>
  {% endfor %}
  </table>
@@ -84,6 +86,7 @@ a:active {
   <th bgcolor="#609ab6"><b style="color: #FFFFFF ">&Omega;<sub>S</sub></b></th>
   <th bgcolor="#609ab6"><b style="color: #FFFFFF ">&Omega;<sub>S</sub>@peak</b></th>
   <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Visibility [h]</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Field</b></th>
  </tr>
  {% for row in rowsrej %}
  <tr bgcolor="{{ row.0 }}">
@@ -101,6 +104,7 @@ a:active {
    <td>{{ row.9 }}</td>
    <td>{{ row.10 }}</td>
    <td>{{ row.11 }}</td>
+   <td>{{ row.12 }}</td>
  </tr>
  {% endfor %}
  </table>

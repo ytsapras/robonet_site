@@ -474,12 +474,14 @@ def tap(request):
          omega_peak = []
          colors = []
          visibility = []
+	 field_names = []
          count = 0
          for i in ev_id:
             evnm = EventName.objects.filter(event=i)
             names = [k.name for k in evnm]
             ev_ra = Event.objects.all().get(pk=i).ev_ra
             ev_dec = Event.objects.all().get(pk=i).ev_dec
+	    field_name = (Event.objects.get(id=i)).field.name
             sampling_time = Tap.objects.all().get(event=i, timestamp=timestamp[count]).tsamp
             time_exp = Tap.objects.all().get(event=i, timestamp=timestamp[count]).texp
             prior = Tap.objects.all().get(event=i, timestamp=timestamp[count]).priority
@@ -507,10 +509,11 @@ def tap(request):
             visibility.append(vis)
             ra.append(ev_ra)
             dec.append(ev_dec)
+	    field_names.append(field_name)
             count = count + 1
          #### TAP rows need to be defined here ####
          rows = zip(colors, ev_id, names_list, ra, dec, texp, priority, tsamp, imag, omega_s,
-        	    omega_peak, visibility)
+        	    omega_peak, visibility, field_names)
          rowsrej = ''
          time1 = 'Unknown' # This should be an estimate of when the target list will be uploaded next (in minutes)
          #time2 = str(blg_visibility(mlsites=['CPT','COJ','LSC'])) # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
