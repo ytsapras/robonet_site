@@ -903,11 +903,11 @@ def event_obs_details(request, event_name):
          try:
             event = Event.objects.get(id=event_id)
             single_recent = SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')
-            obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
+            obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_hjd')
             status_recent = Event.objects.get(pk=event_id).status
             #status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
             # Make sure duplicate entries are avoided. Start adding by most recent files
-            data_all = DataFile.objects.filter(event_id=event_id).order_by('last_upd').reverse()
+            data_all = DataFile.objects.filter(event_id=event_id).order_by('last_hjd').reverse()
             data = []
             check_list = []
             for f in data_all:
@@ -939,43 +939,8 @@ def event_obs_details(request, event_name):
                cadence = Tap.objects.filter(event_id=event_id)[0].tsamp
             except:
                cadence = -1
-            # Generate the plot.ly pie chart
-            ######### Online Mode #########
-            #import plotly.plotly as py
-            #import plotly.graph_objs as go
-            ######### Offline Mode #########
-            #from plotly.offline import download_plotlyjs, plot
-            #import plotly.graph_objs as go
-            #fig = {
-            #	 'data': [{'labels': labels,
-            #		  'values': values,
-            #		  'type': 'pie',
-            #		  'textposition':"none",
-            #		  'textinfo':"percent",
-            #		  'textfont':{'size':'12'},
-            #		  'showlegend':'false'}],
-            #	 'layout': {'title': 'Obsevations:'+str(ndata),
-            #		    'showlegend':'false',
-            #		    'height':'200',
-            #		    'width':'200',
-            #		    'autosize':'false',
-            #		    'margin':{'t':'50','l':'75','r':'0','b':'10'},
-            #		    'separators':'.,'}
-            #}
-            ######### Online mode ##########
-            # Get the correspongin plotly url for the chart
-            #plotly_url = py.plot(fig, filename='Observations by site', auto_open=False)
-            # Save the url in a variable to pass to the template
-            #pie_url = '<iframe width="200" height="200" frameborder="0" seamless="seamless" scrolling="no" src='+plotly_url+'.embed?width=200&height=200&link=false&showlegend=false></iframe>'
-            ################################
-            ######### Offline mode #########
-            # Get the correspongin plotly url for the chart
-            #plotly_url = plot(fig, filename=plotly_path+'pie.html', auto_open=False)
-            # Save the url in a variable to pass to the template
-            #pie_url = '''<iframe width="200" height="200" frameborder="0" seamless="seamless" scrolling="no" src=\"'''+plotly_url+'''.embed?width=200&height=200&link=false&showlegend=false\"></iframe>'''
-            ################################
-            last_obs = obs_recent['last_obs']
-            last_obs_hjd = Time(last_obs).jd
+            last_obs_hjd = obs_recent['last_hjd']
+            last_obs = Time(float(last_obs_hjd), format='jd', scale='utc').iso
             last_updated = single_recent['last_updated']
             last_updated_hjd =  Time(last_updated).jd
             tel_id = obs_recent['datafile'].split('/')[-1].split('_')
@@ -998,8 +963,16 @@ def event_obs_details(request, event_name):
             last_updated = "N/A"
             last_updated_hjd = "N/A"
             last_obs_tel = "N/A"
-            status = 'EX'
-            ogle_url = ''
+	    try:
+               status = Event.objects.get(pk=event_id).status
+	    except:
+	       status = "EX"
+	    ogle_url = ''
+	    try:
+	       if "OGLE" in ev_name:
+                  ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])
+	    except:
+               ogle_url = ''
          # Convert the name to ARTEMiS format for bokeh plotting
          if 'OGLE' in ev_name:
             artemis_name = 'OB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
