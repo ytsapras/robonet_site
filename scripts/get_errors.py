@@ -6,6 +6,7 @@ import config_parser
 from shutil import move
 from os import remove, close, path
 import socket
+import uuid
 
 # Get hostname and set paths
 # RAS: This section moved into a function call because it cannot work in the
@@ -63,7 +64,8 @@ def update_err(process_name, comments, date_updated=datetime.now().strftime("%Y-
         date_updated is in the format 2017-05-31T14:10:19
     """
     config = config_parser.read_config_for_code('obs_control')
-    filepath_new = path.join(config['log_directory'],'errors_new.txt')
+    tempfile = str(uuid.uuid4())+'.txt'
+    filepath_new = path.join(config['log_directory'],tempfile)
     filepath_old = path.join(config['log_directory'],'errors.txt')
     errfile_new = open(filepath_new,"a")
     if path.isfile(filepath_old) == True:
