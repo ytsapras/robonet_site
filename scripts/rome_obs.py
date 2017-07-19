@@ -80,17 +80,17 @@ def rome_obs_sequence():
     survey pointings"""
     
     obs_sequence = {
-                    'exp_times': [ [300.0],
+                    'exp_times': [ [300.0, 300.0, 300.0],
                                   [300.0, 300.0, 300.0],
                                     [300.0, 300.0, 300.0]],
-                    'exp_counts': [ [ 1 ],
+                    'exp_counts': [ [ 1, 1, 1 ],
                                     [ 1, 1, 1 ],
                                     [ 1, 1, 1 ]],
-                    'filters':   [ [ 'SDSS-i'],
+                    'filters':   [ [ 'SDSS-g', 'SDSS-r', 'SDSS-i'],
                                   [ 'SDSS-g', 'SDSS-r', 'SDSS-i'],
                                     [ 'SDSS-g', 'SDSS-r', 'SDSS-i'] ],
-                    'defocus':  [ [ 0.0 ],
-                                 [ 0.0, 0.0, 0.0],
+                    'defocus':  [ [ 0.0, 0.0, 0.0 ],
+                                   [ 0.0, 0.0, 0.0],
                                     [ 0.0, 0.0, 0.0]],
                     'sites':        ['lsc', 'cpt', 'coj'],
                     'domes':        ['doma', 'doma', 'doma'],
