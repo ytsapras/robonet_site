@@ -6,7 +6,7 @@ host_name = socket.gethostname()
 if 'cursa' in host_name:
    sys.path.append("/home/Tux/ytsapras/robonet_site/")
    site_url = 'http://127.0.0.1:8000/'
-elif 'rachel' in host_name:
+elif 'rachel' in str(host_name).lower():
    sys.path.append("/Users/rstreet/software/robonet_site/")
    site_url = 'http://127.0.0.1:8000/'
 elif 'ebachelet' in host_name:
@@ -21,6 +21,7 @@ elif 'einstein' in host_name:
 else:
    sys.path.append("/var/www/robonetsite/")
    site_url = 'http://romerea.lco.global/'
+
 
 from django.conf import settings
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'robonet_site.settings')
