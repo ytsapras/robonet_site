@@ -139,7 +139,7 @@ def assign_tap_priorities(logger):
         timestamp = timezone.now()
 
 	modelpath = '/var/www/robonetsite/data/artemis/model/'
-	modelpath = '/Users/rstreet/ROMEREA/sandbox/models/'
+	#modelpath = '/Users/rstreet/ROMEREA/sandbox/models/'
         if 'MOA' in event_name:
             eventname_short = 'KB' + event_name[6:8] + event_name[13:17]
         else:
@@ -267,7 +267,7 @@ def run_tap_prioritization(logger):
 if __name__ == '__main__':
     #DIRECTORY TO BE OBTAINED FROM XML...
     logs_directory='/var/www/robonetsite/data/logs/2017/'
-    logs_directory='/Users/rstreet/ROMEREA/sandbox/'
+    #logs_directory='/Users/rstreet/ROMEREA/sandbox/'
     #logs_directory='/home/Tux/ytsapras/Data/ROMEREA/logs/2017'
     script_config = {'log_directory':logs_directory, 
                      'log_root_name':'robotap_rea','lock_file':'robotap.lock'}
