@@ -104,6 +104,8 @@ def psplrea(u):
     """
     usqr = float(u)**2
     pspl_deno = (usqr * (usqr + 4.))**0.5
+    if pspl_deno<1e-10:
+        pspl_deno=10000.
     amp = (usqr + 2.) / pspl_deno
     return amp
 
