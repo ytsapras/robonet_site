@@ -229,7 +229,8 @@ def run_tap_prioritization(logger):
             latest_ev_tap_val = Tap.objects.filter(
                 event=ev).values().latest('timestamp')
             #print 'done', ev.id, ev.status
-            output.append(latest_ev_tap_val)
+            if float(latest_ev_tap_val['omega']) >= 0.02:
+                output.append(latest_ev_tap_val)
         except Exception as errmsg:
             serrmsg = str(errmsg)
             logger.info('skipping '+str(ev.id)+' '+str(ev.status)+' '+str(EventName.objects.select_related().filter(event=ev.id)[0].name))
