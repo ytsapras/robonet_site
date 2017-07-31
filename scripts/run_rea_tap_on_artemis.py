@@ -184,8 +184,9 @@ def assign_tap_priorities(logger):
             cost1m = daily_visibility / tsamp * ((60. + texp) / 60.)
 
             err_omega = 0.
-
-	    if ibase_pspl>0. and g_pspl<300.:
+ 
+            #CRITERIA FOR PERMITTING A NON-ZERO PRIORITY
+	    if ibase_pspl > 0. and g_pspl < 300. and omega_now > 0.02:
                 add_tap(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
                         texp=texp, nexp=1., imag=imag, omega=omega_now,
                         err_omega=err_omega, peak_omega=omega_peak,
@@ -256,8 +257,7 @@ def run_tap_prioritization(logger):
         #ROME provides baseline data beyond that
         elif SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['tau'] < 210. and psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin'])>1.34 and event_in_season(float(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['Tmax'])-2450000.):
             tsys = 24. * (float(sorted_list[idx]['texp']) + toverhead) / 3600.
-	    #MINIMum PRIORITY: 0.02 to be queued...
-            if trun + tsys < daily_visibility and float(sorted_list[idx]['omega']) > 0.02:
+            if trun + tsys < daily_visibility:
                 logger.info('RoboTAP requests: Amax '+str(round(psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin']),2))+' '+EventName.objects.select_related().filter(event=sorted_list[idx]['event_id'])[0].name)
                 #The model requires here to use id
                 Event.objects.filter(id=sorted_list[idx]['event_id']).update(status="MO")
