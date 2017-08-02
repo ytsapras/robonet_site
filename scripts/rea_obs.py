@@ -68,7 +68,7 @@ def rea_obs_sequence():
                     'filters':   [ 'SDSS-i'],
                     'defocus':  [ 0.0 ],
                     'sites':        ['lsc', 'cpt', 'coj'],
-                    'domes':        ['domb', 'domc', 'domb'],
+                    'domes':        ['domc', 'domc', 'domb'],
                     'tels':         [ '1m0', '1m0', '1m0' ],
                     'instruments':  ['fl03', 'fl06', 'fl11'],
                     'TTL_N_days':  1.0,
