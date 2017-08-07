@@ -10,7 +10,11 @@ from os import path, getcwd
 import socket
 from sys import path as systempath
 cwd = getcwd()
-systempath.append(path.join(cwd,'../'))
+host_name = socket.gethostname()
+if 'einstein' in str(host_name).lower():
+    systempath.append('/data/robouser/software/robonet_site/scripts')
+else:
+    systempath.append('../')
 from local_conf import get_conf
 
 def test_crontab():
