@@ -54,7 +54,9 @@ def read_err():
                 errors.append(e)
     return errors
 
-def update_err(process_name, comments, date_updated=datetime.now().strftime("%Y-%m-%dT%H:%M:%S")):
+def update_err(process_name, comments, \
+        date_updated=datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        use_config='obs_control'):
     """Function to add to a central file containing current errors within the 
     system
         process_name can be one of the following:
@@ -63,7 +65,7 @@ def update_err(process_name, comments, date_updated=datetime.now().strftime("%Y-
         comments is a string
         date_updated is in the format 2017-05-31T14:10:19
     """
-    config = config_parser.read_config_for_code('obs_control')
+    config = config_parser.read_config_for_code(use_config)
     tempfile = str(uuid.uuid4())+'.txt'
     filepath_new = path.join(config['log_directory'],tempfile)
     filepath_old = path.join(config['log_directory'],'errors.txt')

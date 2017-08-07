@@ -128,10 +128,10 @@ def check_rsync_config(config,log=None):
             error_report = 'ERROR with rsync authorization file permissions'
             if log!=None:
                 log.info(path.basename(file_path)+': '+error_report)
-            get_errors.update_err('artemis_subscriber', error_report)
+            get_errors.update_err('artemis_subscriber', error_report,use_config='artemis_subscriber')
             status = False
     if status == True:
-        get_errors.update_err('artemis_subscriber', 'Status OK')
+        get_errors.update_err('artemis_subscriber', 'Status OK',use_config='artemis_subscriber')
         
     return status
 
