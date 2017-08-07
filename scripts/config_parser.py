@@ -81,7 +81,10 @@ def read_config_for_code(code_name):
     elif 'cursa' in host_name:
         config_file_path = path.join('/home/Tux/ytsapras/robonet_site/configs/',configs[code_name])
     else:
-        config_file_path = path.join('/var/www/robonetsite/configs/',configs[code_name])
+        if path.isdir('/var/www/robonetsite') == True:
+            config_file_path = path.join('/var/www/robonetsite/configs/',configs[code_name])
+        else:
+            config_file_path = path.join('/data/romerea/configs/',configs[code_name])
     
     if path.isfile(config_file_path) == False:
         raise IOError('Cannot find configuration file, looking for:'+config_file_path)
