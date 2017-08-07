@@ -4,23 +4,27 @@ import socket
 # Get hostname and set paths
 host_name = socket.gethostname()
 if 'cursa' in host_name:
-   sys.path.append("/home/Tux/ytsapras/robonet_site/")
-   site_url = 'http://127.0.0.1:8000/'
+    sys.path.append("/home/Tux/ytsapras/robonet_site/")
+    site_url = 'http://127.0.0.1:8000/'
 elif 'rachel' in str(host_name).lower():
-   sys.path.append("/Users/rstreet/software/robonet_site/")
-   site_url = 'http://127.0.0.1:8000/'
+    sys.path.append("/Users/rstreet/software/robonet_site/")
+    site_url = 'http://127.0.0.1:8000/'
 elif 'ebachelet' in host_name:
-   sys.path.append("/home/ebachelet/ROMEREA/db/robonet_site")
-   site_url = 'http://127.0.0.1:8000/'
+    sys.path.append("/home/ebachelet/ROMEREA/db/robonet_site")
+    site_url = 'http://127.0.0.1:8000/'
 elif 'titania' in host_name:
-   sys.path.append("/work/Titania/github/robonet_site/")
-   site_url = 'http://127.0.0.1:8000/'
+    sys.path.append("/work/Titania/github/robonet_site/")
+    site_url = 'http://127.0.0.1:8000/'
 elif 'einstein' in host_name:
-   sys.path.append("/var/www/robonetsite/")
-   site_url = 'http://romerea.lco.global/'
+    if os.path.isdir('/var/www/robonetsite/') == True:
+        sys.path.append("/var/www/robonetsite/")
+        site_url = 'http://romerea.lco.global/'
+    else:
+        sys.path.append("/data/robouser/software/robonet_site/")
+        site_url = 'http://romerea.lco.global/'
 else:
-   sys.path.append("/var/www/robonetsite/")
-   site_url = 'http://romerea.lco.global/'
+    sys.path.append("/var/www/robonetsite/")
+    site_url = 'http://romerea.lco.global/'
 
 
 from django.conf import settings

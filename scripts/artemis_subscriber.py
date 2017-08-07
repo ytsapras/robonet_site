@@ -68,7 +68,8 @@ def read_config():
     elif 'rachel' in host_machine or 'Rachel' in host_machine:
         config_file_path = '/Users/rstreet/.robonet_site/artemis_sync.xml'
     else:
-        config_file_path = '/var/www/robonetsite/configs/artemis_sync.xml'
+        #config_file_path = '/var/www/robonetsite/configs/artemis_sync.xml'
+        config_file_path = '/data/romerea/configs/artemis_sync.xml'
     
     if path.isfile(config_file_path) == False:
         print 'ERROR: Cannot find configuration file, looked for '+config_file_path
@@ -117,7 +118,7 @@ def check_rsync_config(config,log=None):
     if 'rachel' in host_machine or 'Rachel' in host_machine:
         uid_required = 'rstreet'
     else:
-        uid_required = 'root'
+        uid_required = 'robouser'
             
     status = True
     for file_path in [config['auth'], config['auth_internal']]:
