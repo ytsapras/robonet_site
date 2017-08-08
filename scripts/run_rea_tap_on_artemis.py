@@ -21,6 +21,7 @@ from os import listdir
 
 warnings.filterwarnings('ignore', module='astropy.coordinates')
 
+
 def romerea_visibility_3sites_40deg(julian_date):
     """
     The ROME REA visibility function calculates the available
@@ -74,8 +75,8 @@ def omegarea(time_requested, u0_pspl, te_pspl, t0_pspl, fs_pspl, fb_pspl):
     """
     usqr = u0_pspl**2 + ((time_requested - t0_pspl) / te_pspl)**2
     pspl_deno = (usqr * (usqr + 4.))**0.5
-    if pspl_deno<1e-10:
-	pspl_deno=10000.
+    if pspl_deno < 1e-10:
+        pspl_deno = 10000.
     psip = 4.0 / (pspl_deno) - 2.0 / (usqr + 2.0 + pspl_deno)
     amp = (usqr + 2.) / pspl_deno
     mag = -2.5 * np.log10(fs_pspl * amp + fb_pspl)
@@ -87,25 +88,25 @@ def event_in_season(t0):
     """
     Checks if t0 is in the ROME/REA season
     """
-    if t0>7844.5 and t0<8026.5:
+    if t0 > 7844.5 and t0 < 8026.5:
         return True
-    elif t0>8209.5 and t0<8391.5:
+    elif t0 > 8209.5 and t0 < 8391.5:
         return True
-    elif t0>8574.5 and t0<8756.5:
+    elif t0 > 8574.5 and t0 < 8756.5:
         return True
     else:
         return False
 
 
-def psplrea(u):
+def psplrea(u_pspl):
     """
     Calculates the magnification for a given source-lens
     separation u (PSPL)
     """
-    usqr = float(u)**2
+    usqr = float(u_pspl)**2
     pspl_deno = (usqr * (usqr + 4.))**0.5
-    if pspl_deno<1e-10:
-        pspl_deno=10000.
+    if pspl_deno < 1e-10:
+        pspl_deno = 10000.
     amp = (usqr + 2.) / pspl_deno
     return amp
 
@@ -114,7 +115,7 @@ def assign_tap_priorities(logger):
     """
     This function runs TAP and updates entries in the database.
     It only calculates the priority for active events if the reported Einstein time
-    stays below 210 days assuming that ROME observations will
+    stays below 300 days assuming that ROME observations will
     characterise the event sufficiently. For the start events with A>50 are triggered
     as anomalies. TAP itself does not request observations, but sets flags
     pointing to relevant events. Blending and baseline parameters live with the
@@ -126,13 +127,14 @@ def assign_tap_priorities(logger):
     t_current = gcal2jd(ut_current[0], ut_current[1], ut_current[2])[
         1] - 49999.5 + ut_current[3] / 24.0 + ut_current[4] / (1440.)
     full_visibility = romerea_visibility_3sites_40deg(t_current)
-    daily_visibility = 1.4 * full_visibility * 300. / 3198.
+    daily_visibility = 2.8 * full_visibility * 300. / 3198.
 
     # FILTER FOR ACTIVE EVENTS (BY DEFINITION WITHIN ROME FOOTPRINT0
-    active_events_list = Event.objects.select_related().filter(status__in=['AC','MO'])
+    active_events_list = Event.objects.select_related().filter(status__in=[
+        'AC', 'MO'])
     logger.info('RoboTAP: Processing ' +
                 str(len(active_events_list)) + ' active events.')
-    
+
     nmissing = 0
     for event in active_events_list:
         event_id = event.pk
@@ -140,8 +142,8 @@ def assign_tap_priorities(logger):
             0].name
         timestamp = timezone.now()
 
-	modelpath = '/var/www/robonetsite/data/artemis/model/'
-	#modelpath = '/Users/rstreet/ROMEREA/sandbox/models/'
+        modelpath = '/var/www/robonetsite/data/artemis/model/'
+        #modelpath = '/Users/rstreet/ROMEREA/sandbox/models/'
         if 'MOA' in event_name:
             eventname_short = 'KB' + event_name[6:8] + event_name[13:17]
         else:
@@ -180,13 +182,13 @@ def assign_tap_priorities(logger):
             # SAMPLING TIME FOR REA IS 1h
             tsamp = 1.
             imag = -2.5 * np.log10(fs_pspl * amp_now + fb_pspl)
-            texp = min(calculate_exptime_romerea(imag),300.)
+            texp = min(calculate_exptime_romerea(imag), 300.)
             cost1m = daily_visibility / tsamp * ((60. + texp) / 60.)
 
             err_omega = 0.
- 
-            #CRITERIA FOR PERMITTING A NON-ZERO PRIORITY
-	    if ibase_pspl > 0. and g_pspl < 300. and omega_now > 0.02:
+
+            # CRITERIA FOR PERMITTING A NON-ZERO PRIORITY
+            if ibase_pspl > 0. and g_pspl < 300. and omega_now > 0.02:
                 add_tap(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
                         texp=texp, nexp=1., imag=imag, omega=omega_now,
                         err_omega=err_omega, peak_omega=omega_peak,
@@ -195,21 +197,21 @@ def assign_tap_priorities(logger):
                 add_tap(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
                         texp=texp, nexp=1., imag=imag, omega=0.0,
                         err_omega=err_omega, peak_omega=omega_peak,
-                       	visibility=full_visibility, cost1m=cost1m)
+                        visibility=full_visibility, cost1m=cost1m)
 
-            #expire events -> deactivated
-            #if t_current > te_pspl+t0_pspl:
+            # expire events -> deactivated
+            # if t_current > te_pspl+t0_pspl:
             #    Event.objects.filter(event_id=event_id).update(status="EX")
         else:
             nmissing += 1
-    if nmissing>0:
-        update_err('run_rea_tap', 'Missing DataFile: '+str(nmissing)+' events')
+    if nmissing > 0:
+        update_err('run_rea_tap', 'Missing DataFile: ' +
+                   str(nmissing) + ' events')
 
 
 def run_tap_prioritization(logger):
-
     """
-    Sort events on RoboTAP and check a request can be made with 
+    Sort events on RoboTAP and check a request can be made with
     an assumed REA-LOW time allocation of 300 hours.
     For very high priority events A_now>500, the anomaly status
     can be set (not implemented yet).
@@ -219,72 +221,78 @@ def run_tap_prioritization(logger):
     t_current = gcal2jd(ut_current[0], ut_current[1], ut_current[2])[
         1] - 49999.5 + ut_current[3] / 24.0 + ut_current[4] / (1440.)
     full_visibility = romerea_visibility_3sites_40deg(t_current)
-    daily_visibility = 1.4 * full_visibility * 300. / 3198.
+    daily_visibility = 2.8 * full_visibility * 300. / 3198.
 
     list_evnt = Event.objects.filter(status__in=['AC', 'MO'])
     output = []
-    nmissing=0
+    nmissing = 0
     for ev in list_evnt:
         try:
             latest_ev_tap_val = Tap.objects.filter(
                 event=ev).values().latest('timestamp')
-            #print 'done', ev.id, ev.status
+            # print 'done', ev.id, ev.status
             if float(latest_ev_tap_val['omega']) >= 0.02:
                 output.append(latest_ev_tap_val)
+                logger.info('adding to be sorted (not queued!) ' + str(ev.id) + ' ' + str(
+                    ev.status) + ' ' + str(EventName.objects.select_related().filter(event=ev.id)[0].name))
         except Exception as errmsg:
             serrmsg = str(errmsg)
-            logger.info('skipping '+str(ev.id)+' '+str(ev.status)+' '+str(EventName.objects.select_related().filter(event=ev.id)[0].name))
-	    logger.info(serrmsg)
-            nmissing=nmissing+1
+            logger.info('skipping ' + str(ev.id) + ' ' + str(ev.status) + ' ' +
+                        str(EventName.objects.select_related().filter(event=ev.id)[0].name))
+            logger.info(serrmsg)
+            nmissing = nmissing + 1
     sorted_list = sorted(output, key=lambda k: k['omega'], reverse=True)
 
     # FIRST RESET ALL MONITORING EVENTS TO ACTIVE
     Event.objects.filter(status='MO').update(status="AC")
     # RESET ANOMALIES (PERMITS RE-CHECK)
     #logger.info('revert anomalies to active - no anomaly trigger active!')
-    #Event.objects.filter(status='AN').update(status="AC")
-    
+    # Event.objects.filter(status='AN').update(status="AC")
+
     toverhead = 60.
     trun = 0.
 
     # CHECK ALLOCATED TIME AND SET MONITOR
     for idx in range(len(sorted_list)):
-        # CHECK CURRENT MAGNIFICATION IF >500 SET IT TO ANOMALOUS 
-        #IF IT NEVER WAS ANOMALOUS BEFORE
-        if psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin'])>5000.:
-            #Event.objects.filter(event_id=sorted_list[idx]['event_id']).update(status="AN")
+        # CHECK CURRENT MAGNIFICATION IF >500 SET IT TO ANOMALOUS
+        # IF IT NEVER WAS ANOMALOUS BEFORE
+        if psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin']) > 5000.:
+            # Event.objects.filter(event_id=sorted_list[idx]['event_id']).update(status="AN")
             pass
-        #Filter events with te>210, t0 in the season and Anow>1.34 (within Einstein radius)
-        #ROME provides baseline data beyond that
-        elif SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['tau'] < 210. and psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin'])>1.34 and event_in_season(float(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['Tmax'])-2450000.):
+        # Filter events with te>300, t0 in the season and Anow>1.34 (within Einstein radius)
+        # ROME provides baseline data beyond that
+        elif SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['tau'] < 300. and psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin']) > 1.34 and event_in_season(float(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['Tmax']) - 2450000.):
             tsys = 24. * (float(sorted_list[idx]['texp']) + toverhead) / 3600.
             if trun + tsys < daily_visibility:
-                logger.info('RoboTAP requests: Amax '+str(round(psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values().latest('last_updated')['umin']),2))+' '+EventName.objects.select_related().filter(event=sorted_list[idx]['event_id'])[0].name)
-                #The model requires here to use id
-                Event.objects.filter(id=sorted_list[idx]['event_id']).update(status="MO")
-                #The model requires here to use event_id (consistency?)
-                Tap.objects.filter(event_id=sorted_list[idx]['event_id']).values().update(priority='L')
+                logger.info('RoboTAP requests: Amax ' + str(round(psplrea(SingleModel.objects.select_related().filter(event=sorted_list[idx]['event_id']).values(
+                ).latest('last_updated')['umin']), 2)) + ' ' + EventName.objects.select_related().filter(event=sorted_list[idx]['event_id'])[0].name)
+                # The model requires here to use id
+                Event.objects.filter(
+                    id=sorted_list[idx]['event_id']).update(status="MO")
+                # The model requires here to use event_id (consistency?)
+                Tap.objects.filter(
+                    event_id=sorted_list[idx]['event_id']).values().update(priority='L')
                 trun = trun + tsys
-        
-            
+
 
 if __name__ == '__main__':
-    #DIRECTORY TO BE OBTAINED FROM XML...
-    logs_directory='/var/www/robonetsite/data/logs/2017/'
-    #logs_directory='/Users/rstreet/ROMEREA/sandbox/'
-    #logs_directory='/home/Tux/ytsapras/Data/ROMEREA/logs/2017'
-    script_config = {'log_directory':logs_directory, 
-                     'log_root_name':'robotap_rea','lock_file':'robotap.lock'}
-    logger = log_utilities.start_day_log( script_config, 'robotap', console=False )
+    # DIRECTORY TO BE OBTAINED FROM XML...
+    logs_directory = '/var/www/robonetsite/data/logs/2017/'
+    # logs_directory='/Users/rstreet/ROMEREA/sandbox/'
+    # logs_directory='/home/Tux/ytsapras/Data/ROMEREA/logs/2017'
+    script_config = {'log_directory': logs_directory,
+                     'log_root_name': 'robotap_rea', 'lock_file': 'robotap.lock'}
+    logger = log_utilities.start_day_log(
+        script_config, 'robotap', console=False)
     lock_status = log_utilities.lock(script_config, 'check', logger)
     if lock_status == 'clashing_lock':
         log_utilities.end_day_log(logger)
-        update_err('run_rea_tap', 'Lock file found') 
+        update_err('run_rea_tap', 'Lock file found')
         exit()
     else:
-        #reset errors.txt to ok
-        update_err('run_rea_tap', 'Status OK (ARTEMiS mode)') 
-    lock_status = log_utilities.lock( script_config, 'lock', logger)
+        # reset errors.txt to ok
+        update_err('run_rea_tap', 'Status OK (ARTEMiS mode)')
+    lock_status = log_utilities.lock(script_config, 'lock', logger)
     assign_tap_priorities(logger)
     run_tap_prioritization(logger)
     log_utilities.end_day_log(logger)
