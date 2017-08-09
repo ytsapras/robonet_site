@@ -112,8 +112,3 @@ class QueryEventNameForm(forms.ModelForm):
     class Meta:
         model = EventName
         fields = ('name',)
-
-class QueryEventNameAssocForm(forms.ModelForm):
-    class Meta:
-        model = EventName
-        fields = ('name','event')

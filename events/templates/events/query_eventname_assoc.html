@@ -3,7 +3,7 @@
 {% block page_title %}{{page.name}}{% endblock %}
 
 {% block content %}
-<h3>Check that an EventName is associated with the correct event</h3>
+<h3>Check that an EventName is associated with the correct Event (sky coordinates)</h3>
 {% if status == 'ERROR' %}
     <div>
         <center><h5>{{ message }}</h5></center>
@@ -15,11 +15,26 @@
             <table><tr>
                 <td>
                 <div class="fieldWrapper">
-                    {{ form.name.errors }}
-                    <label for="{{ form.name.id_for_label }}">Please enter Event primary key:</label>
-                    {{ form.name }}
+                    {{ name_form.name.errors }}
+                    <label for="{{ name_form.name.id_for_label }}">Please enter EventName:</label>
+                    {{ name_form.name }}
                 </div>
                 </td>
+                <td></td></tr>
+                <tr><td>
+                <div class="fieldWrapper">
+                    {{ coords_form.ev_ra.errors }}
+                    <label for="{{ coords_form.ev_ra.id_for_label }}">Event RA in sexigesimal format:</label>
+                    {{ coords_form.ev_ra }}
+                </div>
+                </td><td>
+                <div class="fieldWrapper">
+                    {{ coords_form.ev_dec.errors }}
+                    <label for="{{ coords_form.ev_dec.id_for_label }}">Event Dec in sexigesimal format:</label>
+                    {{ coords_form.ev_dec }}
+                </div>
+                </td>
+                </tr><tr>
                 <td>
                 <div class="fieldWrapper">
                     <button type="submit" class="save btn btn-default">Submit</button>

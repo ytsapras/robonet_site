@@ -112,7 +112,7 @@ class Lens():
         
         params = {'event': self.event_pk,
                       'name': self.name}
-        response = api_tools.check_eventname_assoc(config,params)
+        response = bool(api_tools.check_eventname_assoc(config,params))
     
     def check_event_in_DB(self,log=None,debug=False):
         """Method to check whether the event is already known to the DB.
@@ -144,6 +144,9 @@ class Lens():
         self.check_event_in_DB(log=log,debug=debug)
         if self.event_pk > 0:
             self.check_event_name_in_DB(log=log,debug=debug)
+            
+            if self.eventname_pk > 0:
+                self.check_event_name_assoc_event(log=log,debug=debug)
         
         if debug==True and log!=None:
             log.info(' -> Tried to add_event with output:')

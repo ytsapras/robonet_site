@@ -472,7 +472,7 @@ def check_eventname_assoc(config,params,testing=False):
     eventname_pk = -1 if the name is not recognized
     """
     
-    end_point = 'check_eventname_assoc'
+    end_point = 'query_eventname_assoc'
     
     response = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
@@ -531,7 +531,7 @@ def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
     if verbose==True:
         print response.text
         print 'Completed successfully'
-    
+
     message = 'OK'
     for line in response.text.split('\n'):
         if 'DBREPLY' in line:

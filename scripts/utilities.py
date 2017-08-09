@@ -278,7 +278,17 @@ def separation_two_points(pointA,pointB):
     gamma = r2d( gamma )
     
     return gamma
+
+def get_coords_in_degrees(ra,dec):
     
+    if ':' in str(ra):
+        ra_deg, dec_deg = sex2decdeg(ra, dec)
+    else:
+        ra_deg = ra
+        dec_deg = dec
+
+    return ra_deg, dec_deg
+
 ####################################
 # TIME UTILITIES
 def ts_to_hjd(ts, target_position, debug=False):

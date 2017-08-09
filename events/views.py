@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -11,7 +12,6 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect
 from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, TelescopeForm, EventForm, EventNameForm, SingleModelForm
 from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, ImageForm, RecordDataFileForm, TapLimaForm
 from .forms import QueryFieldIDForm, QueryEventCoordsForm, QueryEventNameForm
-from .forms import QueryEventNameAssocForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from itertools import chain
@@ -30,6 +30,7 @@ from scripts import utilities
 from scripts import config_parser
 from scripts.get_errors import *
 from scripts import update_db_2
+from scripts import query_db
 import requests
 from astropy import units
 from astropy.coordinates import SkyCoord
@@ -1186,39 +1187,65 @@ def query_eventname(request):
 def query_eventname_assoc(request):
     """Function to provide an endpoint for users to query whether a
     specific event name is associated with a specific event"""
+    status = 'OK'
     
     if request.user.is_authenticated():
         if request.method == "POST":
-            form = QueryEventNameAssocForm(request.POST)
-            if form.is_valid():
-                post = form.save(commit=False)
+            name_form = QueryEventNameForm(request.POST)
+            coords_form = QueryEventCoordsForm(request.POST)
+            if name_form.is_valid() and coords_form.is_valid():
+                name_post = name_form.save(commit=False)
+                coords_post = coords_form.save(commit=False)
                 
-                qs = EventName.objects.get(pk=post.eventname_pk)
+                try:
+                    event = query_db.get_event_by_position(coords_post.ev_ra,
+                                                    coords_post.ev_dec)
+                except ObjectDoesNotExist:
+                    message = 'DBREPLY: False'
+                    status = 'ERROR: Could not find event'
                 
-                if len(qs) != 1:
-                    message = 'EventName primary key not recognized'
-                    status = 'ERROR'
+                try:
+                    eventname = EventName.objects.get(name=name_post.name)
+                except ObjectDoesNotExist:
+                    message = 'DBREPLY: False'
+                    status = 'ERROR: Could not find eventname'
+                    
+                if 'ERROR' in status or event == None:
+                    name_form = QueryEventNameForm()
+                    coords_form = QueryEventCoordsForm()
+                    message = 'Form entry was invalid.  Please try again.'
+                    
+                    return render(request, 'events/query_eventname_assoc.html', \
+                                    {'name_form': name_form, 
+                                    'coords_form': coords_form,
+                                    'status': 'ERROR',
+                                    'message':message})
+                
+                if eventname.event.pk == event.pk:
+                    message = 'DBREPLY: True'
+                    status = 'DBREPLY'
                 else:
-                    eventname = qs[0]
-                    if eventname.event == post.event_pk:
-                        message = 'DBREPLY: True'
-                        status = 'DBREPLY'
-                    else:
-                        message = 'DBREPLY: False'
-                        status = 'DBREPLY'
+                    message = 'DBREPLY: False'
+                    status = 'DBREPLY'
                     
                 return render(request, 'events/query_eventname_assoc.html', \
-                                    {'form': form, 'status': status,
+                                    {'name_form': name_form, 
+                                    'coords_form': coords_form,'status': status,
                                      'message': message})
             else:
-                form = QueryEventNameAssocForm()
+                name_form = QueryEventNameForm()
+                coords_form = QueryEventCoordsForm()
                 return render(request, 'events/query_eventname_assoc.html', \
-                                    {'form': form, 'status': 'ERROR',
+                                    {'name_form': name_form, 
+                                    'coords_form': coords_form,
+                                    'status': 'ERROR',
                                     'message':'Form entry was invalid.  Please try again.'})
         else:
-            form = QueryEventNameAssocForm()
+            name_form = QueryEventNameForm()
+            coords_form = QueryEventCoordsForm()
             return render(request, 'events/query_eventname_assoc.html', \
-                                    {'form': form, 'status': 'OK',
+                                    {'name_form': name_form, 
+                                    'coords_form': coords_form, 'status': 'OK',
                                     'message': 'OK'})
     else:
         return HttpResponseRedirect('login')
