@@ -10,6 +10,8 @@ from django.utils import timezone
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, TelescopeForm, EventForm, EventNameForm, SingleModelForm
 from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, ImageForm, RecordDataFileForm, TapLimaForm
+from .forms import QueryFieldIDForm, QueryEventCoordsForm, QueryEventNameForm
+from .forms import QueryEventNameAssocForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from itertools import chain
@@ -22,11 +24,15 @@ import sys, os
 from scripts.plotter import *
 from scripts.local_conf import get_conf
 from scripts.blgvis_ephem import *
-from scripts.utilities import short_to_long_name
+from scripts.rome_fields_dict import field_dict
+from scripts.field_check import romecheck
+from scripts import utilities
 from scripts import config_parser
 from scripts.get_errors import *
 from scripts import update_db_2
 import requests
+from astropy import units
+from astropy.coordinates import SkyCoord
 
 # Path to ARTEMiS files
 artemis_col = get_conf('artemis_cols')
@@ -275,7 +281,7 @@ def download_lc(request, event_name):
    """
    if request.user.is_authenticated():
       # Convert shorthand format to long format to make compatible with the DB
-      event_name = short_to_long_name(event_name)
+      event_name = utilities.short_to_long_name(event_name)
       # Get the ID for this event
       event_id = EventName.objects.get(name=event_name).event_id
       def tar_lc(lightcurves):
@@ -712,7 +718,7 @@ def show_event(request, event_name):
          'EX':'expired'}
       try:
          # Convert shorthand format to long format to make compatible with the DB
-         event_name = short_to_long_name(event_name)
+         event_name = utilities.short_to_long_name(event_name)
          this_event_number = event_name.split('-')[-1]
          next_event_number = str(int(this_event_number)+1).zfill(4)
          prev_event_number = str(int(this_event_number)-1).zfill(4)
@@ -830,7 +836,7 @@ def event_obs_details(request, event_name):
    """
    if request.user.is_authenticated():
       # Convert shorthand format to long format to make compatible with the DB
-      event_name = short_to_long_name(event_name)
+      event_name = utilities.short_to_long_name(event_name)
       # Get the ID for this event
       event_id = EventName.objects.get(name=event_name).event_id
       # Define pie chart plotting
@@ -1031,6 +1037,188 @@ def query_obs_requests(request):
             form = QueryObsRequestForm()
             return render(request, 'events/query_obs_requests.html', \
                                     {'form': form, 'qs': [],
+                                    'message': 'OK'})
+    else:
+        return HttpResponseRedirect('login')
+
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def query_field_id(request):
+    """Function to provide an endpoint for users to query what which ROME
+    field, if any, a specific target position lies in"""
+    
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = QueryFieldIDForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                
+                (ev_ra_deg, ev_dec_deg) = utilities.get_coords_in_degrees(post.field_ra,post.field_dec)
+                (id_field, rate) = romecheck(ev_ra_deg, ev_dec_deg)
+                
+                if id_field == -1:
+                    id_field = 'Outside ROMEREA footprint'
+                    field_pk = -1
+                else:
+                    id_field = sorted(field_dict.keys())[id_field]
+                    qs = Field.objects.filter(name=id_field)
+                    field_pk = qs[0].pk
+                message = 'DBREPLY: '+id_field+' '+str(field_pk)
+                return render(request, 'events/query_field_id.html', \
+                                    {'form': form, 'status': 'DBREPLY',
+                                     'message': message})
+            else:
+                form = QueryFieldIDForm()
+                return render(request, 'events/query_field_id.html', \
+                                    {'form': form, 'status': 'ERROR',
+                                    'message':'Form entry was invalid.  Please try again.'})
+        else:
+            form = QueryFieldIDForm()
+            return render(request, 'events/query_field_id.html', \
+                                    {'form': form, 'status': 'OK',
+                                    'message': 'OK'})
+    else:
+        return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def query_event_by_coords(request):
+    """Function to provide an endpoint for users to query whether an event
+    is known at a given set of sky coordinates
+    """
+    
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = QueryEventCoordsForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                
+                qs = Event.objects.filter(ev_ra__contains=post.ev_ra[0:5],
+                                          ev_dec__contains=post.ev_dec[0:5])
+                if len(qs) == 1:
+                    event_pk = qs[0].pk
+                elif len(qs) != 1:
+                    new_coords = SkyCoord(post.ev_ra[0:8]+' '+post.ev_dec[0:9],
+                                      unit=(units.hourangle, units.deg),
+                                        frame='icrs')
+                    if len(qs) == 0:
+                        qs = Event.objects.all()
+                
+                    event = None
+                    i = 0
+                    while event == None and i < len(qs):
+                        e = qs[i]
+                        known_coords = SkyCoord(e.ev_ra+' '+e.ev_dec,
+                                        unit=(units.hourangle, units.deg),frame='icrs')
+                        separation = new_coords.separation(known_coords).arcsec
+                        if separation < 2.5:
+                            event = Event.objects.filter(ev_ra=e.ev_ra, 
+                                                         ev_dec=e.ev_dec)[0]
+                            
+                        i += 1
+                    if event == None:
+                        event_pk = -1
+                    else:
+                        event_pk = event.pk
+                
+                message = 'DBREPLY: '+str(event_pk)
+                return render(request, 'events/query_event_coords.html', \
+                                    {'form': form, 'status': 'DBREPLY',
+                                     'message': message})
+            else:
+                form = QueryEventCoordsForm()
+                return render(request, 'events/query_event_coords.html', \
+                                    {'form': form, 'status': 'ERROR',
+                                    'message':'Form entry was invalid.  Please try again.'})
+        else:
+            form = QueryEventCoordsForm()
+            return render(request, 'events/query_event_coords.html', \
+                                    {'form': form, 'status': 'OK',
+                                    'message': 'OK'})
+    else:
+        return HttpResponseRedirect('login')
+
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def query_eventname(request):
+    """Function to provide an endpoint for users to query whether a
+    long-format event name is known to the DB"""
+    
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = QueryEventNameForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                
+                qs = EventName.objects.filter(name=post.name)
+                
+                if len(qs) == 0:
+                    message = 'DBREPLY: -1'
+                    status = 'DBREPLY'
+                elif len(qs) == 1:
+                    message = 'DBREPLY: '+str(qs[0].pk)
+                    status = 'DBREPLY'
+                else:
+                    message = 'DB returned multiple hits'
+                    status = 'ERROR'
+                    form = QueryEventNameForm()
+                    
+                return render(request, 'events/query_eventname.html', \
+                                    {'form': form, 'status': status,
+                                     'message': message})
+            else:
+                form = QueryEventNameForm()
+                return render(request, 'events/query_eventname.html', \
+                                    {'form': form, 'status': 'ERROR',
+                                    'message':'Form entry was invalid.  Please try again.'})
+        else:
+            form = QueryEventNameForm()
+            return render(request, 'events/query_eventname.html', \
+                                    {'form': form, 'status': 'OK',
+                                    'message': 'OK'})
+    else:
+        return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def query_eventname_assoc(request):
+    """Function to provide an endpoint for users to query whether a
+    specific event name is associated with a specific event"""
+    
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = QueryEventNameAssocForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                
+                qs = EventName.objects.get(pk=post.eventname_pk)
+                
+                if len(qs) != 1:
+                    message = 'EventName primary key not recognized'
+                    status = 'ERROR'
+                else:
+                    eventname = qs[0]
+                    if eventname.event == post.event_pk:
+                        message = 'DBREPLY: True'
+                        status = 'DBREPLY'
+                    else:
+                        message = 'DBREPLY: False'
+                        status = 'DBREPLY'
+                    
+                return render(request, 'events/query_eventname_assoc.html', \
+                                    {'form': form, 'status': status,
+                                     'message': message})
+            else:
+                form = QueryEventNameAssocForm()
+                return render(request, 'events/query_eventname_assoc.html', \
+                                    {'form': form, 'status': 'ERROR',
+                                    'message':'Form entry was invalid.  Please try again.'})
+        else:
+            form = QueryEventNameAssocForm()
+            return render(request, 'events/query_eventname_assoc.html', \
+                                    {'form': form, 'status': 'OK',
                                     'message': 'OK'})
     else:
         return HttpResponseRedirect('login')
@@ -1484,7 +1672,7 @@ def add_datafile(request):
             form = DataFileForm(request.POST)
             if form.is_valid():
                 post = form.save(commit=False)
-		evname = EventName.objects.filter(event_id=post.event)[0].name
+                evname = EventName.objects.filter(event_id=post.event)[0].name
                 status = update_db_2.add_datafile(event_name=evname,
 						  datafile=post.datafile,
 						  last_upd=post.last_upd,

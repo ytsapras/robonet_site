@@ -1,0 +1,50 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<h3>Identify event by sky coordinates</h3>
+{% if status == 'ERROR' %}
+    <div>
+        <center><h5>{{ message }}</h5></center>
+    </div>
+{% endif %}
+<div>
+      <form method="POST" class="post-form">{% csrf_token %}
+        <center>
+            <table><tr>
+                <td>
+                <div class="fieldWrapper">
+                    {{ form.ev_ra.errors }}
+                    <label for="{{ form.ev_ra.id_for_label }}">Please enter target RA in sexigesimal format:</label>
+                    {{ form.ev_ra }}
+                </div>
+                </td>
+                <td>
+                <div class="fieldWrapper">
+                    {{ form.ev_dec.errors }}
+                    <label for="{{ form.ev_dec.id_for_label }}">Please enter target Dec in sexigesimal format:</label>
+                    {{ form.ev_dec }}
+                </div>
+                </td>
+                </tr>
+                <tr>
+                <td>
+                <div class="fieldWrapper">
+                    <button type="submit" class="save btn btn-default">Submit</button>
+                </div>
+                </td>
+                <td></td>
+                </tr></table>
+        </center>
+    </form>
+</div>  
+
+{% if status == 'DBREPLY' %}
+<div>
+    <center>
+        {{message}}
+    </center>
+</div>
+{% endif %}
+{% endblock %}

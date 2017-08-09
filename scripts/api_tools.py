@@ -409,6 +409,77 @@ def submit_image_record(config,params):
                             testing=True)
 
 ################################################################################
+def query_field_id(config,params,testing=False):
+    """Function to query the database to obtain the ROME survey field that 
+    an object lies within based on its RA, Dec.  
+    Input parameters:
+        ra     str     RA in sexigesimal format
+        dec    str     Dec in sexigesimal format
+    Returns:
+        response    str   field_id<space>field_pk
+    """
+    
+    end_point = 'query_field_id'
+    
+    response = talk_to_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=testing)
+    return response
+
+def query_event_by_coords(config,params,testing=False):
+    """Function to query the database to check whether an event is 
+    present in the database based on sky location.
+    Input parameters:
+        ra      str   RA in sexigesimal format
+        dec     str   Dec in sexigesimal format
+    Returns:
+        response    str    event_pk
+    event_pk = -1 if no event is known at those coordinates. 
+    """
+    
+    end_point = 'query_event_by_coords'
+    
+    response = talk_to_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=testing)
+    return response
+    
+def query_eventname(config,params,testing=False):
+    """Function to query the database to check whether an event name is 
+    present in the database.
+    Input parameters:
+        name    str   Event name in long format
+    Returns:
+        response    str    eventname_pk
+    eventname_pk = -1 if the name is not recognized
+    """
+    
+    end_point = 'query_eventname'
+    
+    response = talk_to_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=testing)
+    return response
+
+def check_eventname_assoc(config,params,testing=False):
+    """Function to query the database to check whether an event name is 
+    present in the database.
+    Input parameters:
+        event_pk    int   Event primary key
+        eventname_pk   int   EventName primary key
+    Returns:
+        response    str    eventname_pk
+    eventname_pk = -1 if the name is not recognized
+    """
+    
+    end_point = 'check_eventname_assoc'
+    
+    response = talk_to_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=testing)
+    return response
+    
+################################################################################
 def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
     """Method to communicate with various APIs of the ROME/REA database. 
     Required arguments are:

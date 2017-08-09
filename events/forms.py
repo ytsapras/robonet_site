@@ -97,3 +97,23 @@ class RecordDataFileForm(forms.ModelForm):
     last_upd = forms.DateTimeField(label='last_upd',input_formats=["%Y-%m-%dT%H:%M:%S"])
     timestamp = forms.DateField(label='timestamp',input_formats=["%Y-%m-%dT%H:%M:%S"])
     time_expire = forms.DateField(label='time_expire',input_formats=["%Y-%m-%dT%H:%M:%S"])
+
+class QueryFieldIDForm(forms.ModelForm):
+    class Meta:
+        model = Field
+        fields = ('field_ra', 'field_dec')
+
+class QueryEventCoordsForm(forms.ModelForm):
+    class Meta:
+        model = Event
+        fields = ('ev_ra', 'ev_dec')
+
+class QueryEventNameForm(forms.ModelForm):
+    class Meta:
+        model = EventName
+        fields = ('name',)
+
+class QueryEventNameAssocForm(forms.ModelForm):
+    class Meta:
+        model = EventName
+        fields = ('name','event')

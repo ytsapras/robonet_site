@@ -11,12 +11,12 @@ from sys import path as systempath
 cwd = getcwd()
 systempath.append(path.join(cwd,'..'))
 import numpy as np
-import update_db_2
 from field_check import romecheck
 from rome_fields_dict import field_dict
 import utilities
 import query_db
 import get_errors
+import api_tools
 
 from local_conf import get_conf
 robonet_site = get_conf('robonet_site')
@@ -51,6 +51,12 @@ class Lens():
         self.modeler = None
         self.classification = 'microlensing'
         self.last_updated = None
+        self.field_id = None
+        self.field_pk = None
+        self.event_status = None
+        self.event_pk = -1
+        self.eventname_pk = -1
+        self.got_eventname = False
         
     def set_par(self,par,par_value):
 
@@ -71,30 +77,74 @@ class Lens():
                 str(self.t0) + ' ' + str(self.te) + ' ' + str(self.u0) + '  ' +\
                 str(self.a0) + ' ' + str(self.i0) + ' ' + str(self.classification)
                 
+    def get_field(self,log=None,debug=False):
+        """Method to identify which ROME survey field the event falls within,
+        based on a query by sky position. 
+        Populates the field_id, field_pk and event_status attributes.  
+        A negative field_pk indicates that the object falls outside the ROME 
+        footprint. 
+        """
+        response = api_tools.query_field_id(config,{self.ra,self.dec})
+        (self.field_id, self.field_pk) = response.split(' ')
         
-    def sync_event_with_DB(self,last_updated,log=None,debug=False):
-        '''Method to sync the latest survey parameters with the database.'''
-        
-        # Find out which sky region the target falls into:
-        (id_field,rate) = query_db.get_event_field_id(self.ra,self.dec)
         if debug==True and log!=None:
-            log.info(' -> Identified field: '+str(id_field)+' '+\
-                            str(self.ra)+' '+str(self.dec))
+            log.info(' -> Identified field: '+str(self.field_id)+' '+\
+            str(self.field_pk)+' '+str(self.ra)+' '+str(self.dec))
         if 'Outside' in id_field:
-            event_status = 'NF'
+            self.event_status = 'NF'
         else:
-            event_status= 'AC'
-            
+            self.event_status= 'AC'
+    
+    def check_event_name_in_DB(self,log=None,debug=False):
+        """Method to check whether the event name is already known to the DB.
+        This method sets the eventname_pk attribute.  An index of -1 is returned
+        if the event name is not yet in the DB."""
+        
+        params = {'name': self.name}
+        self.eventname_pk = int(api_tools.submit_eventname_record(config,params))
+    
+    def check_event_name_assoc_event(self,log=None,debug=False):
+        """Method to check whether an event name is already associated with 
+        a specific event.
+        This method sets the boolean got_eventname attribute. 
+        False indicates that the eventname is not associated with the event.
+        """
+        
+        params = {'event': self.event_pk,
+                      'name': self.name}
+        response = api_tools.check_eventname_assoc(config,params)
+    
+    def check_event_in_DB(self,log=None,debug=False):
+        """Method to check whether the event is already known to the DB.
+        This method sets the event_pk attribute, returning a value of -1 if the
+        event is not yet present in the DB."""
+        params = {'ev_ra': self.ra,
+                  'ev_dec': self.dec
+                  }
+        self.event_pk = int(api_tools.query_event_by_coords(config,params))
+    
+    def sync_event_with_DB(self,config,last_updated,log=None,debug=False):
+        """Method to sync the latest survey parameters with the database.
+        
+        Identifies which ROME field the event falls within
+        Checks if event is known to the DB
+        Checks if eventname is known to the DB
+        Adds the event if not known
+        Adds the eventname if not known
+        Queries for most recent single-lens model parameters
+        Updates the single-lens model parameters if necessary
+        """
+        
+        self.get_field(log=log,debug=debug)
+        
         # Get the discovery year of the event from the event name to avoid
         # it being autoset to the current year:
         year = str(self.name).split('-')[1]
         
-        # Add the event to the database - returns False if already present
-        (event_status, ev_ra, ev_dec,response) = update_db_2.add_event(id_field, \
-                                                    self.origin, \
-                                                    self.ra,self.dec,\
-                                                    status=event_status,\
-                                                    year=year)
+        self.check_event_in_DB(log=log,debug=debug)
+        if self.event_pk > 0:
+            self.check_event_name_in_DB(log=log,debug=debug)
+        
         if debug==True and log!=None:
             log.info(' -> Tried to add_event with output:')
             log.info(' -> '+str(event_status)+' '+str(ev_ra)+' '+str(ev_dec)+\
@@ -107,11 +157,14 @@ class Lens():
         if event_status == True and 'OK' in response:
             event = Event.objects.filter(ev_ra=ev_ra).filter(ev_dec=ev_dec)[0]
             operator = Operator.objects.filter(name=self.origin)[0]
-            (status, response) = update_db_2.add_event_name(event=event,\
-                                                            operator=operator,\
-                                                            name=self.name)
+            params = {'event': event.pk,
+                      'operator': operator.pk,
+                      'name': self.name
+                      }
+            response = api_tools.submit_eventname_record(config,params)
+            
             if debug==True and log!=None:
-                log.info(' -> New event, added eventname with output '+str(status)+' '+str(response))
+                log.info(' -> New event, added eventname with output '+str(response))
                 
         elif event_status == False and 'exists' in response:
             event = query_db.get_event_by_position(ev_ra,ev_dec)
@@ -130,11 +183,13 @@ class Lens():
                 
             if event != None and self.name not in name_list:
                 operator = Operator.objects.filter(name=self.origin)[0]
-                (status, response) = update_db_2.add_event_name(event=event,\
-                                                            operator=operator,\
-                                                            name=self.name)
+                params = {'event': event.pk,
+                      'operator': operator.pk,
+                      'name': self.name
+                      }
+                response = api_tools.submit_eventname_record(config,params)
                 if debug==True and log!=None:
-                    log.info(' -> Added eventname for known event with output '+str(status)+' '+str(response))
+                    log.info(' -> Added eventname for known event with output '+str(response))
             else:
                 if debug==True and log!=None:
                     log.info(' -> Event name already known to DB')
@@ -169,14 +224,19 @@ class Lens():
                 log.info(' -> Attempting to add a single lens model with parameters:')
                 log.info(str(self.name)+' '+str(self.t0)+' '+str(self.te)+\
                         str(self.u0)+' '+str(last_updated)+' '+str(self.modeler))
-                        
-            (model_status,response) = update_db_2.add_single_lens(self.name, \
-                            self.t0, self.te, self.u0, last_updated, 
-                            modeler=self.modeler)
-                            
+            params = {'event': event.pl,
+                      'Tmax':self.t0,'e_Tmax':0.0,
+                      'tau':self.te,'e_tau':0.0,
+                      'umin':self.u0,'e_umin':0.0,
+                      'modeler':self.modeler,
+                      'last_updated':str(last_updated)
+                      }
+            
+            response = api_tools.submit_singlemodel_record(config,params)
+            
             if debug==True and log!=None:
                 log.info(' -> Outcome of adding the single lens model:')
-                log.info(str(model_status)+' '+str(response))
+                log.info(str(response))
     
     def get_params(self):
         """Method to return the parameters of the current event in a 
@@ -214,12 +274,23 @@ class EventDataSet():
         if log!=None:
             log.info('Syncing ARTEMiS data and align parameters with DB')
             log.info(repr(self.event_name))
-        (status,message) = update_db_2.add_datafile(self.event_name,self.data_file, 
-                                            self.last_upd, self.last_hjd,
-                                            self.last_mag,self.tel,
-                                            self.ndata, inst=self.instrument,
-                                            filt=self.filter,
-                                            baseline=self.baseline,g=self.g)
+        
+        FETCH EVENT INDEX
+        
+        params = {'event': event.pk,
+                  'datafile': self.data_file,
+                  'last_upd': self.last_updated,
+                  'last_hjd': self.last_hjd,
+                  'last_mag': self.last_mag,
+                  'ndata': self.ndata,
+                  'tel': self.tel,
+                  'inst': self.instrument,
+                  'filt': self.filter,
+                  'baseline': self.baseline,
+                  'g': self.g,
+                  }
+        response = api_tools.submit_datafile_record(config,params)
+        
         if log!=None:
-            log.info(' -> Status: '+repr(status)+', '+message)
+            log.info(' -> Status: '+repr(response))
         

@@ -13,19 +13,18 @@ import subprocess
 from sys import exit
 from os import path, stat
 import pwd
-#import update_db
 import utilities
 from datetime import datetime
 import pytz
 import log_utilities
 from numpy import array
 import event_classes
-import update_db_2
 import socket
 import mmap
 import pytz
 import get_errors
 import glob
+import api_tools
 
 version = 1.0
 
@@ -224,7 +223,7 @@ def sync_model_file_with_db(config,model_file,log):
         if int(config['update_db']) == 1:
             if config['verbose'] == True:
                 log.info('-> Updating '+path.basename(model_file))
-            event.sync_event_with_DB(last_modified,log=log,debug=config['verbose'])
+            event.sync_event_with_DB(config,last_modified,log=log,debug=config['verbose'])
         else:
             log.info('-> Warning: Database update switched off in configuration')
     else:
@@ -260,13 +259,16 @@ def sync_data_align_files_with_db(config,data_file,align_file,log):
               'last_mag': last_mag,
               'last_hjd': last_hjd,
               'tel': tel,
+              'inst': ' ',
               'filt': filt,
               'baseline': align_pars['baseline'],
               'g': align_pars['g'],
               'ndata': mapcount_file_lines(data_file),
               'last_upd': last_upd,
               }
-    (status,message) = update_db_2.add_datafile_via_api(params)
+    db_config = {'db_user_id':config['db_user_id'], 'db_pswd': config['db_pswd']}
+    response = api_tools.submit_datafile_record(config,params)
+    
     if log!=None:
         log.info(' -> Status: '+repr(status)+', '+message)
     
