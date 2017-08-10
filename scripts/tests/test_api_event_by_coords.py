@@ -16,20 +16,30 @@ import api_tools
 def test_api_event_by_coords():
     """Function to test the recording of a new event 
     by submitting it to the ROME/REA
-    database via API. """
+    database via API. 
+    Input parameters:
+        ra      str   RA in sexigesimal format
+        dec     str   Dec in sexigesimal format
+    Returns:
+        response    str    event_pk
+    event_pk = -1 if no event is known at those coordinates.     
+    """
     
     params = {'ev_ra': '18:00:00',\
 	      'ev_dec': '-30:00:00'}
     config = {'db_user_id': 'rstreet', \
                 'db_pswd': 'xxx'
                 }
-    response = api_tools.query_event_by_coords(config,params,testing=True)
+    response = api_tools.contact_db(config,params,'query_event_by_coords',testing=True)
     assert '386' in response
+    print(response)
     
-    params = {'ev_ra': '-17:26:49.06',\
-	      'ev_dec': '-29:33:59.00'}
-    response = api_tools.query_event_by_coords(config,params,testing=True)
-    assert -1 in response
-    
+    search = False
+    if search == True:
+        params = {'ev_ra': '-17:26:49.06',\
+    	      'ev_dec': '-29:33:59.00'}
+        response = api_tools.contact_db(config,params,'query_event_by_coords',testing=True)
+        assert response == -1
+
 if __name__ == '__main__':
     test_api_event_by_coords()

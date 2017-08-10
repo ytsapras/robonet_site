@@ -112,3 +112,8 @@ class QueryEventNameForm(forms.ModelForm):
     class Meta:
         model = EventName
         fields = ('name',)
+
+class QueryOperatorForm(forms.ModelForm):
+    class Meta:
+        model = Operator
+        fields = ('name',)

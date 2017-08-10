@@ -53,6 +53,8 @@ class Lens():
         self.last_updated = None
         self.field_id = None
         self.field_pk = None
+        self.operator_id = None
+        self.operator_pk = None
         self.event_status = None
         self.event_pk = -1
         self.eventname_pk = -1
@@ -84,7 +86,7 @@ class Lens():
         A negative field_pk indicates that the object falls outside the ROME 
         footprint. 
         """
-        response = api_tools.query_field_id(config,{self.ra,self.dec})
+        response = api_tools.contact_db(config,{self.ra,self.dec},'query_field_id')
         (self.field_id, self.field_pk) = response.split(' ')
         
         if debug==True and log!=None:
@@ -94,7 +96,23 @@ class Lens():
             self.event_status = 'NF'
         else:
             self.event_status= 'AC'
-    
+            
+    def get_operator(self,log=None,debug=False):
+        """Method to identify which survey operator has found the event,
+        based on its long-format name. 
+        Populates the operator attribute, and returns 'other' if the
+        operator is not recognised.
+        """
+        
+        operator_name = str(self.name).split('-')[0]
+        response = api_tools.contact_db(config,{self.ra,self.dec},'query_operator')
+        self.operator_pk = int(response.split(' ')[0])
+        self.operator_id = response.split(' ')[1]
+        
+        if debug==True and log!=None:
+            log.info(' -> Identified operator: '+str(self.operator_pk)+' '+\
+            self.operator_id
+            
     def check_event_name_in_DB(self,log=None,debug=False):
         """Method to check whether the event name is already known to the DB.
         This method sets the eventname_pk attribute.  An index of -1 is returned
@@ -112,7 +130,7 @@ class Lens():
         
         params = {'event': self.event_pk,
                       'name': self.name}
-        response = bool(api_tools.check_eventname_assoc(config,params))
+        self.got_eventname = bool(api_tools.check_eventname_assoc(config,params))
     
     def check_event_in_DB(self,log=None,debug=False):
         """Method to check whether the event is already known to the DB.
@@ -123,10 +141,38 @@ class Lens():
                   }
         self.event_pk = int(api_tools.query_event_by_coords(config,params))
     
+    def add_event_to_DB(self,config,log=None,debug=False):
+        """Method to add a new event's details to the DB.
+        This function also performs the look-up functions to obtain the
+        survey field and operator IDs, and sets the event_pk attribute. 
+        """
+        
+        self.get_field(log=log,debug=debug)
+        self.get_operator(log=log,debug=debug)
+        year = str(self.name).split('-')[1]
+        
+        params = { field=self.field_id,
+                   operator=self.operator_id, 
+                   ev_ra=self.ra, 
+                   ev_dec=self.dec, 
+		       status=self.event_status, 
+			 anomaly_rank=-1,
+			 year = year
+                }
+        response = api_tools.contact_db(config,params,'add_event')
+        
+        if debug==True and log!=None:
+            log.info(' -> Tried to add_event with output:')
+            log.info(' -> '+str(response))
+        
+        if 'OK' in response or 'already exists' in response:
+            params = {'ev_ra': self.ra,'ev_dec': self.dec}
+            self.event_pk = int(api_tools.contact_db(config,params,
+                                                     'query_event_by_coords'))
+        
     def sync_event_with_DB(self,config,last_updated,log=None,debug=False):
         """Method to sync the latest survey parameters with the database.
         
-        Identifies which ROME field the event falls within
         Checks if event is known to the DB
         Checks if eventname is known to the DB
         Adds the event if not known
@@ -135,19 +181,22 @@ class Lens():
         Updates the single-lens model parameters if necessary
         """
         
-        self.get_field(log=log,debug=debug)
+        self.check_event_in_DB(config,log=log,debug=debug)
+        if self.event_pk == -1:
+            self.add_event_to_DB(config,log=log,debug=debug)
         
-        # Get the discovery year of the event from the event name to avoid
-        # it being autoset to the current year:
-        year = str(self.name).split('-')[1]
-        
-        self.check_event_in_DB(log=log,debug=debug)
-        if self.event_pk > 0:
-            self.check_event_name_in_DB(log=log,debug=debug)
+        self.check_event_name_in_DB(log=log,debug=debug)
+        if self.eventname_pk == -1:
+            ADD_EVENTNAME
+            SET_EVENTNAME_pk
+            ASSOC_EVENTNAME
+        else:
+            self.check_event_name_assoc_event(log=log,debug=debug)
+            if self.got_eventname == False:
+                ADD_EVENT_NAME_TO_EVENT
             
-            if self.eventname_pk > 0:
-                self.check_event_name_assoc_event(log=log,debug=debug)
-        
+            
+                    
         if debug==True and log!=None:
             log.info(' -> Tried to add_event with output:')
             log.info(' -> '+str(event_status)+' '+str(ev_ra)+' '+str(ev_dec)+\

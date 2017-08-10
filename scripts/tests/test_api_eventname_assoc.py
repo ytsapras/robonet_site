@@ -15,13 +15,21 @@ import api_tools
 def test_api_eventname_assoc():
     """Function to test the recording of a new event 
     by submitting it to the ROME/REA
-    database via API. """
+    database via API. 
+    
+    Input parameters:
+        event_pk    int   Event primary key
+        eventname_pk   int   EventName primary key
+    Returns:
+        response    str    eventname_pk
+    eventname_pk = -1 if the name is not recognized
+    """
     
     params = {'name': 'OGLE-2017-BLG-1515',\
               'ev_ra': '17:28:03.84', 'ev_dec': '-29:01:25.20'}
     config = {'db_user_id': 'rstreet', \
                 'db_pswd': 'xxx'}
-    response = api_tools.check_eventname_assoc(config,params,testing=True)
+    response = api_tools.contact_db(config,params,'query_eventname_assoc',testing=True)
     print(response)
     
 if __name__ == '__main__':

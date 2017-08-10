@@ -11,6 +11,26 @@ import json
 import requests
 from os import path
 
+ALLOWED_END_POINTS = [ 'record_obs_request',
+                       'add_event',
+                       'add_eventname',
+                       'record_data_file',
+                       'add_operator',
+                       'add_telescope',
+                       'add_singlemodel',
+                       'add_binarymodel',
+                       'add_eventreduction',
+                       'add_tap',
+                       'add_taplima',
+                       'add_datafile',
+                       'add_image',
+                       'query_field_id',
+                       'query_event_by_coords',
+                       'query_eventname',
+                       'query_eventname_assoc',
+                       'query_operator',
+                      ]
+
 ################################################################################
 def submit_obs_request_record(config,params):
     """Function to submit a record of a new observation to the database 
@@ -409,74 +429,19 @@ def submit_image_record(config,params):
                             testing=True)
 
 ################################################################################
-def query_field_id(config,params,testing=False):
-    """Function to query the database to obtain the ROME survey field that 
-    an object lies within based on its RA, Dec.  
-    Input parameters:
-        ra     str     RA in sexigesimal format
-        dec    str     Dec in sexigesimal format
-    Returns:
-        response    str   field_id<space>field_pk
-    """
+def contact_db(config,params,end_point,testing=False):
+    """Function to send a communicate with of the database end_points"""
     
-    end_point = 'query_field_id'
+    if end_point not in ALLOWED_END_POINTS:
+        response = 'ERROR: No such database end point'
+        return response
     
     response = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=testing)
-    return response
-
-def query_event_by_coords(config,params,testing=False):
-    """Function to query the database to check whether an event is 
-    present in the database based on sky location.
-    Input parameters:
-        ra      str   RA in sexigesimal format
-        dec     str   Dec in sexigesimal format
-    Returns:
-        response    str    event_pk
-    event_pk = -1 if no event is known at those coordinates. 
-    """
     
-    end_point = 'query_event_by_coords'
+    response = parse_db_reply(response)
     
-    response = talk_to_db(params,end_point,\
-                            config['db_user_id'],config['db_pswd'],
-                            testing=testing)
-    return response
-    
-def query_eventname(config,params,testing=False):
-    """Function to query the database to check whether an event name is 
-    present in the database.
-    Input parameters:
-        name    str   Event name in long format
-    Returns:
-        response    str    eventname_pk
-    eventname_pk = -1 if the name is not recognized
-    """
-    
-    end_point = 'query_eventname'
-    
-    response = talk_to_db(params,end_point,\
-                            config['db_user_id'],config['db_pswd'],
-                            testing=testing)
-    return response
-
-def check_eventname_assoc(config,params,testing=False):
-    """Function to query the database to check whether an event name is 
-    present in the database.
-    Input parameters:
-        event_pk    int   Event primary key
-        eventname_pk   int   EventName primary key
-    Returns:
-        response    str    eventname_pk
-    eventname_pk = -1 if the name is not recognized
-    """
-    
-    end_point = 'query_eventname_assoc'
-    
-    response = talk_to_db(params,end_point,\
-                            config['db_user_id'],config['db_pswd'],
-                            testing=testing)
     return response
     
 ################################################################################
@@ -531,7 +496,13 @@ def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
     if verbose==True:
         print response.text
         print 'Completed successfully'
+    
+    return response
 
+def parse_db_reply(response):
+    """Function to extract the paramter values returned by the DB in standard
+    format"""
+    
     message = 'OK'
     for line in response.text.split('\n'):
         if 'DBREPLY' in line:

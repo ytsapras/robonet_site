@@ -12,6 +12,7 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect
 from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, TelescopeForm, EventForm, EventNameForm, SingleModelForm
 from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, ImageForm, RecordDataFileForm, TapLimaForm
 from .forms import QueryFieldIDForm, QueryEventCoordsForm, QueryEventNameForm
+from .forms import QueryOperatorForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from itertools import chain
@@ -1082,6 +1083,43 @@ def query_field_id(request):
     else:
         return HttpResponseRedirect('login')
 
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def query_operator(request):
+    """Function to provide an endpoint for users to query what which ROME
+    field, if any, a specific target position lies in"""
+    
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = QueryOperatorForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                
+                qs = Operator.objects.filter(name=post.name)
+                
+                if len(qs) == 0:
+                    op = Operator.objects.get(name='OTHER')
+                else:
+                    op = qs[0]
+                
+                message = 'DBREPLY: '+str(op.pk)+' '+str(op.name)
+                return render(request, 'events/query_operator.html', \
+                                    {'form': form, 'status': 'DBREPLY',
+                                     'message': message})
+            else:
+                form = QueryOperatorForm()
+                return render(request, 'events/query_operator.html', \
+                                    {'form': form, 'status': 'ERROR',
+                                    'message':'Form entry was invalid.  Please try again.'})
+        else:
+            form = QueryOperatorForm()
+            return render(request, 'events/query_operator.html', \
+                                    {'form': form, 'status': 'OK',
+                                    'message': 'OK'})
+    else:
+        return HttpResponseRedirect('login')
+
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def query_event_by_coords(request):
@@ -1356,12 +1394,13 @@ def add_event(request):
             form = EventForm(request.POST)
             if form.is_valid():
                 post = form.save(commit=False)
-                status = update_db_2.add_event(field_name=post.field, operator_name=post.operator,
+                (status,ra,dec,response) = update_db_2.add_event(field_name=post.field, operator_name=post.operator,
 		                               ev_ra=post.ev_ra, ev_dec=post.ev_dec, status=post.status,
 					       anomaly_rank=post.anomaly_rank, year=post.year)
+                message = 'DBREPLY: '+repr(status)+' '+str(response)
                 
                 return render(request, 'events/add_event.html', \
-                                    {'form': form, 'message': status})
+                                    {'form': form, 'message': message})
             else:
                 form = EventForm(request.POST)
                 # Add form data to output for debugging
