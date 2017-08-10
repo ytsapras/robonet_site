@@ -849,7 +849,7 @@ def add_datafile(event_name, datafile, last_upd, last_hjd, last_mag, tel, ndata,
                                g=g, ndata=ndata)
             add_new.save()
             successful = True
-            message = 'OK'
+            message = 'Added datafile OK'
         except:
             successful = False
             message = 'Error ingesting datafile to database'

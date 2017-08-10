@@ -293,32 +293,6 @@ def submit_taplima_record(config,params):
 
 
 ################################################################################
-def submit_datafile_record(config,params):
-    """Function to submit a record of a new ARTEMiS DataFile to the database 
-    using the API add_datafile endpoint
-    Required parameters:
-        config    dict    script configuration parameters
-        params    dict    datafile parameters, including
-        event     		str
-	datafile		str
-	last_upd		str
-	last_hjd		float
-	last_mag		float
-	tel			str
-	ndata			int
-	inst			str		
-	filt			str
-	baseline		float
-	g			float
-     """
-    
-    end_point = 'add_datafile'
-    
-    response = talk_to_db(params,end_point,\
-                            config['db_user_id'],config['db_pswd'],
-                            testing=True)
-
-################################################################################
 def submit_image_record(config,params):
     """Function to submit a record of a new image to the database 
     using the API add_image endpoint

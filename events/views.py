@@ -1776,7 +1776,7 @@ def add_datafile(request):
             if form.is_valid():
                 post = form.save(commit=False)
                 evname = EventName.objects.filter(event_id=post.event)[0].name
-                status = update_db_2.add_datafile(event_name=evname,
+                (status,response) = update_db_2.add_datafile(event_name=evname,
 						  datafile=post.datafile,
 						  last_upd=post.last_upd,
 						  last_hjd=post.last_hjd,
@@ -1788,15 +1788,16 @@ def add_datafile(request):
 						  baseline=post.baseline, 
 						  g=post.g)
                 
+                message = 'DBREPLY: '+repr(status)+' '+response
                 return render(request, 'events/add_datafile.html', \
-                                    {'form': form, 'message': status})
+                                    {'form': form, 'message': message})
             else:
                 form = DataFileForm(request.POST)
                 # Add form data to output for debugging
+                message = 'DBREPLY: Form entry was invalid - '+str(form.errors)
                 return render(request, 'events/add_datafile.html', \
                                     {'form': form, \
-                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
-                                    repr(form.errors)+'<br>Please try again.'})
+                                    'message':message})
         else:
             form = DataFileForm(request.POST)
             return render(request, 'events/add_datafile.html', \

@@ -50,7 +50,7 @@ def test_sync_artemis_data_db():
     
     config = artemis_subscriber.read_config()
     
-    log = log_utilities.start_day_log( config, '_test_artemis_subscriber' )
+    log = log_utilities.start_day_log( config, 'test_artemis_subscriber' )
     
     clear_test_directory(config['models_local_location'])
     
@@ -92,7 +92,7 @@ def test_check_rsync_config():
     
     config = artemis_subscriber.read_config()
     
-    log = log_utilities.start_day_log( config, '_test_artemis_subscriber' )
+    log = log_utilities.start_day_log( config, 'test_artemis_subscriber' )
     
     status = artemis_subscriber.check_rsync_config(config,log=log)
     
@@ -104,7 +104,7 @@ def test_list_data_files():
     
     config = artemis_subscriber.read_config()
     
-    log = log_utilities.start_day_log( config, '_test_artemis_subscriber' )
+    log = log_utilities.start_day_log( config, 'test_artemis_subscriber' )
 
     for data_type in ['model','data']:
         file_list = artemis_subscriber.list_data_files(config,data_type,log=log)
@@ -116,7 +116,7 @@ def test_event_data_check():
     
     config = artemis_subscriber.read_config()
     
-    log = log_utilities.start_day_log( config, '_test_artemis_subscriber' )
+    log = log_utilities.start_day_log( config, 'test_artemis_subscriber' )
 
     align_file = '../../data/OB170570.align'
     data_file = '../../data/OOB170570I.dat'
@@ -131,6 +131,23 @@ def test_event_data_check():
                                                          log=log)
     assert status == True
 
+    log_utilities.end_day_log( log )
+    
+def test_sync_data_align_files_with_db():
+    
+    config = artemis_subscriber.read_config()
+    
+    log = log_utilities.start_day_log( config, 'test_artemis_subscriber' )
+
+    align_file = '../../data/OB170570.align'
+    data_file = '../../data/OOB170570I.dat'
+
+    response = artemis_subscriber.sync_data_align_files_with_db(config,data_file,align_file,log)
+    
+    assert 'True' in response
+    
+    log_utilities.end_day_log( log )
+
 if __name__ == '__main__':
-    test_list_data_files()
+    test_sync_data_align_files_with_db()
     

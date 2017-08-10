@@ -5,6 +5,10 @@
     <parameter name='verbose'>
         <value>True</value>
     </parameter>
+
+    <parameter name='testing'>
+        <value>True</value>
+    </parameter>
     
     <parameter name='update_db'>
         <value>0</value>

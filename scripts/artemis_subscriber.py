@@ -216,14 +216,16 @@ def sync_model_file_with_db(config,model_file,log):
     """Function to read an ARTEMiS-format .model file and sync its contents
     with the database"""
     
-    (event, last_modified) = read_artemis_model_file(model_file)
+    event = read_artemis_model_file(model_file)
     log.info('Read details of event '+str(event.name)+' from file '+model_file)
     
     if event.ra != None and event.dec != None:
         if int(config['update_db']) == 1:
             if config['verbose'] == True:
                 log.info('-> Updating '+path.basename(model_file))
-            event.sync_event_with_DB(config,last_modified,log=log,debug=config['verbose'])
+            event.sync_event_with_DB(config,log=log,
+                                     debug=config['verbose'],
+                                        testing=bool(config['testing']))
         else:
             log.info('-> Warning: Database update switched off in configuration')
     else:
@@ -240,7 +242,7 @@ def sync_data_align_files_with_db(config,data_file,align_file,log):
     if ndata > 0:
         try:
             (first, last) = read_first_and_last(data_file)
-            last_mag = float(last.split()[0])
+            last_mag = round(float(last.split()[0]),2)
             last_hjd = float(last.split()[2])
             if last_hjd < 2450000.0:
                 last_hjd = last_hjd + 2450000.0
@@ -253,24 +255,33 @@ def sync_data_align_files_with_db(config,data_file,align_file,log):
     last_upd = datetime.fromtimestamp(path.getmtime(data_file))
     last_upd = last_upd.replace(tzinfo=pytz.UTC)
     align_pars = read_artemis_align_params(align_file,filt)
-
-    params = {'event_name': utilities.short_to_long_name(short_name),
+    
+    params = {'name': utilities.short_to_long_name(short_name)}
+    event_pk = int(api_tools.contact_db(config,params,
+                                            'query_eventname',
+                                            testing=bool(config['testing'])))
+    
+    params = {'event': event_pk,
               'datafile': data_file,
               'last_mag': last_mag,
-              'last_hjd': last_hjd,
+              'last_hjd': round(last_hjd,8),
               'tel': tel,
               'inst': ' ',
               'filt': filt,
-              'baseline': align_pars['baseline'],
-              'g': align_pars['g'],
+              'baseline': round(align_pars['baseline'],2),
+              'g': round(align_pars['g'],2),
               'ndata': mapcount_file_lines(data_file),
-              'last_upd': last_upd,
+              'last_upd': last_upd.strftime("%Y-%m-%dT%H:%M:%S"),
               }
+    
     db_config = {'db_user_id':config['db_user_id'], 'db_pswd': config['db_pswd']}
-    response = api_tools.submit_datafile_record(config,params)
+    response = api_tools.contact_db(config,params,'add_datafile',
+                                    testing=bool(config['testing']))
     
     if log!=None:
-        log.info(' -> Status: '+repr(status)+', '+message)
+        log.info(' -> Status: '+str(response))
+    
+    return response
     
 def look_up_origin(origin):
     """Function to return the full telescope ID for common survey names"""
