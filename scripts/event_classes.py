@@ -225,23 +225,29 @@ class Lens():
             if debug==True and log!=None:
                 log.info(' -> Eventname PK: '+str(self.eventname_pk))
     
-    def check_last_singlemodel(self,config,log=None,debug=False):
+    def check_last_singlemodel(self,config,log=None,debug=False,testing=False):
         """Method to check for the last singlemodel for the current event"""
         
         params = { 'event': self.event_pk,
                    'modeler': self.modeler }
-        response = api_tools.contact_db(config,params,'query_last_singlemodel')
+        
+        response = api_tools.contact_db(config,params,
+                                        'query_last_singlemodel',testing=testing)
         
         self.singlemodel_pk = int(response.split(' ')[0])
-        self.singlemodel_ts = datetime.strptime("%Y-%m-%dT%H:%M:%S",response.split(' ')[1])
+        self.singlemodel_ts = datetime.strptime(response.split(' ')[1],"%Y-%m-%dT%H:%M:%S")
         
-    def add_singlemodel_to_DB(self,config,log=None,debug=False):
+        if log != None:
+            log.info(' -> Last singlemodel '+str(self.singlemodel_pk)+\
+                    ' updated at '+self.singlemodel_ts.strftime("%Y-%m-%dT%H:%M:%S"))
+        
+    def add_singlemodel_to_DB(self,config,log=None,debug=False,testing=False):
         """Method to add a singlemodel to the DB."""
         
         if debug==True and log!=None:
             log.info(' -> Attempting to add a single lens model with parameters:')
             log.info(str(self.name)+' '+str(self.t0)+' '+str(self.te)+\
-                str(self.u0)+' '+str(last_updated)+' '+str(self.modeler))
+                str(self.u0)+' '+str(self.last_updated)+' '+str(self.modeler))
                 
         params = {'event': self.event_pk,
                   'Tmax':self.t0,'e_Tmax':0.0,
@@ -251,13 +257,16 @@ class Lens():
                   'last_updated':self.last_updated.strftime("%Y-%m-%dT%H:%M:%S")
                   }
             
-        response = api_tools.contact_db(config,params,'add_singlemodel')
+        response = api_tools.contact_db(config,params,'add_singlemodel',
+                                        testing=testing)
     
         if debug==True and log!=None:
             log.info(' -> Outcome of adding the single lens model:')
             log.info(str(response))
+        
+        self.check_last_singlemodel(config,log=log,debug=debug,testing=testing)
             
-    def sync_event_with_DB(self,config,last_updated,log=None,debug=False):
+    def sync_event_with_DB(self,config,log=None,debug=False,testing=False):
         """Method to sync the latest survey parameters with the database.
         
         Checks if event is known to the DB
@@ -268,18 +277,18 @@ class Lens():
         Updates the single-lens model parameters if necessary
         """
         
-        self.check_event_in_DB(config,log=log,debug=debug)
+        self.check_event_in_DB(config,log=log,debug=debug,testing=testing)
         if self.event_pk == -1:
-            self.add_event_to_DB(config,log=log,debug=debug)
+            self.add_event_to_DB(config,log=log,debug=debug,testing=testing)
         
-        self.check_event_name_in_DB(log=log,debug=debug)
+        self.check_event_name_in_DB(config,log=log,debug=debug,testing=testing)
         if self.eventname_pk == -1:
-            self.add_eventname_to_DB(config,log=log,debug=debug)
+            self.add_eventname_to_DB(config,log=log,debug=debug,testing=testing)
             
-        self.check_last_singlemodel(log=log,debug=debug)
+        self.check_last_singlemodel(config,log=log,debug=debug,testing=testing)
         if self.singlemodel_pk == -1 or self.last_updated > self.singlemodel_ts:
-            self.add_singlemodel_to_DB(config,log=log,debug=debug)
-            
+            self.add_singlemodel_to_DB(config,log=log,debug=debug,testing=testing)
+        
     
     def get_params(self):
         """Method to return the parameters of the current event in a 

@@ -1317,9 +1317,10 @@ def query_last_singlemodel(request):
                                      'message': message})
             else:
                 form = QueryLastSingleModelForm()
+                message = 'DBREPLY: Form entry was invalid, please try again.'
                 return render(request, 'events/query_last_singlemodel.html', \
                                     {'form': form, 'status': 'ERROR',
-                                    'message':'Form entry was invalid.  Please try again.'})
+                                    'message':message})
         else:
             form = QueryLastSingleModelForm()
             return render(request, 'events/query_last_singlemodel.html', \

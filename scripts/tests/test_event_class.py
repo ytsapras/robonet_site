@@ -12,6 +12,7 @@ systempath.append(path.join(cwd,'..'))
 import event_classes
 import artemis_subscriber
 import log_utilities
+from datetime import datetime
 
 e = event_classes.Lens()
 e.name = 'OGLE-2017-BLG-1516'
@@ -24,6 +25,8 @@ e.u0 = 0.1
 e.a0 = 10.0
 e.i0 = 20.0
 e.origin = 'OGLE'
+e.modeler = 'ARTEMiS'
+e.last_updated = datetime.utcnow()
 
 event_pk = 2016
 field_id = 'Outside ROMEREA footprint'
@@ -121,6 +124,56 @@ def test_check_event_name_assoc_event():
     
     log_utilities.end_day_log( log )
 
+def test_check_last_singlemodel():
+    
+    config = artemis_subscriber.read_config()
+
+    log = log_utilities.start_day_log( config, 'test_artemis_subscriber' )
+    
+    debug = True
+    testing = True
+
+    e.check_last_singlemodel(config,log=log,debug=debug,testing=testing)
+    
+    assert e.singlemodel_pk != -1
+    
+    log_utilities.end_day_log( log )
+
+def test_add_singlemodel_to_DB():
+    
+    config = artemis_subscriber.read_config()
+
+    log = log_utilities.start_day_log( config, 'test_artemis_subscriber' )
+    
+    debug = True
+    testing = True
+
+    e.add_singlemodel_to_DB(config,log=log,debug=debug,testing=testing)
+    
+    assert e.singlemodel_pk != -1
+    
+    log_utilities.end_day_log( log )
+
+def test_sync_event_with_DB():
+    
+    config = artemis_subscriber.read_config()
+
+    log = log_utilities.start_day_log( config, 'test_artemis_subscriber' )
+    
+    debug = True
+    testing = True
+
+    e.sync_event_with_DB(config,log=log,debug=debug,testing=testing)
+    
+    assert e.event_pk == event_pk
+    assert e.field_id == field_id
+    assert e.operator_id == operator_id
+    assert e.eventname_pk == eventname_pk
+    assert e.got_eventname == True
+    assert e.singlemodel_pk != -1
+    
+    log_utilities.end_day_log( log )
+
 if __name__ == '__main__':
     test_check_event_in_DB()
     test_get_field()
@@ -128,3 +181,7 @@ if __name__ == '__main__':
     test_add_event_to_DB()
     test_check_event_name_in_DB()
     test_check_event_name_assoc_event()
+    test_check_last_singlemodel()
+    test_add_singlemodel_to_DB()
+    test_sync_event_with_DB()
+    
