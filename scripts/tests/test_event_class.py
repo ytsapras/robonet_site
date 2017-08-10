@@ -9,42 +9,122 @@ from os import getcwd, path, remove, environ
 from sys import path as systempath
 cwd = getcwd()
 systempath.append(path.join(cwd,'..'))
-from local_conf import get_conf
-robonet_site = get_conf('robonet_site')
-systempath.append(robonet_site)
-environ.setdefault('DJANGO_SETTINGS_MODULE', 'robonet_site.settings')
-from django.core import management
-from django.conf import settings
-from django.utils import timezone
-from django import setup
-from datetime import datetime, timedelta
-setup()
-from events.models import Event, SingleModel
 import event_classes
+import artemis_subscriber
+import log_utilities
 
 e = event_classes.Lens()
-e.name = 'OGLE-2017-BLG-0001'
+e.name = 'OGLE-2017-BLG-1516'
 e.survey_id = 'field 1'
-e.ra = '17:18:19.20'
-e.dec = '-25:26:27.28'
+e.ra = '17:26:49.06'
+e.dec = '-29:33:60.0'
 e.t0 = 2457000.0
 e.te = 30.0
 e.u0 = 0.1
 e.a0 = 10.0
 e.i0 = 20.0
 e.origin = 'OGLE'
+
+event_pk = 2016
+field_id = 'Outside ROMEREA footprint'
+operator_id = 'OGLE'
+eventname_pk = 2289
+
+def test_check_event_in_DB():
     
-def test_get_event_field_id():
-    (id_field, rate) = e.get_event_field_id()
-    print id_field, rate
+    config = artemis_subscriber.read_config()
+
+    log = log_utilities.start_day_log( config, 'test_artemis_subscriber' )
     
-def test_sync_event_with_DB():
+    debug = True
+    testing = True
+
+    e.check_event_in_DB(config,log=log,debug=debug,testing=testing)
     
-    last_updated = datetime.now()    
+    assert e.event_pk == event_pk
     
-    e.sync_event_with_DB(last_updated)
+    log_utilities.end_day_log( log )
+
+def test_get_field():
+    
+    config = artemis_subscriber.read_config()
+
+    log = log_utilities.start_day_log( config, 'test_artemis_subscriber' )
+    
+    debug = True
+    testing = True
+
+    e.get_field(config,log=log,debug=debug,testing=testing)
+    
+    assert e.field_id == field_id
+    
+    log_utilities.end_day_log( log )
+
+def test_get_operator():
+    
+    config = artemis_subscriber.read_config()
+
+    log = log_utilities.start_day_log( config, 'test_artemis_subscriber' )
+    
+    debug = True
+    testing = True
+
+    e.get_operator(config,log=log,debug=debug,testing=testing)
+    
+    assert e.operator_id == operator_id
+    
+    log_utilities.end_day_log( log )
+
+def test_add_event_to_DB():
+    """Function to test the addition of a new event to the DB. """
+    
+    config = artemis_subscriber.read_config()
+
+    log = log_utilities.start_day_log( config, 'test_artemis_subscriber' )
+    
+    debug = True
+    testing = True
+    
+    e.add_event_to_DB(config,log=log,debug=debug,testing=testing)
+
+    assert e.event_pk == event_pk
+    
+    log_utilities.end_day_log( log )
+
+def test_check_event_name_in_DB():
+    
+    config = artemis_subscriber.read_config()
+
+    log = log_utilities.start_day_log( config, 'test_artemis_subscriber' )
+    
+    debug = True
+    testing = True
+
+    e.check_event_name_in_DB(config,log=log,debug=debug,testing=testing)
+    
+    assert e.eventname_pk == eventname_pk
+    
+    log_utilities.end_day_log( log )
+
+def test_check_event_name_assoc_event():
+    
+    config = artemis_subscriber.read_config()
+
+    log = log_utilities.start_day_log( config, 'test_artemis_subscriber' )
+    
+    debug = True
+    testing = True
+
+    e.check_event_name_assoc_event(config,log=log,debug=debug,testing=testing)
+    
+    assert e.got_eventname == True
+    
+    log_utilities.end_day_log( log )
 
 if __name__ == '__main__':
-    test_sync_event_with_DB()
-    #test_get_event_field()
-    
+    test_check_event_in_DB()
+    test_get_field()
+    test_get_operator()
+    test_add_event_to_DB()
+    test_check_event_name_in_DB()
+    test_check_event_name_assoc_event()

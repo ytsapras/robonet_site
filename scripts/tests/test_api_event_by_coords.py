@@ -33,7 +33,7 @@ def test_api_event_by_coords():
     response = api_tools.contact_db(config,params,'query_event_by_coords',testing=True)
     assert '386' in response
     print(response)
-    
+
     search = False
     if search == True:
         params = {'ev_ra': '-17:26:49.06',\

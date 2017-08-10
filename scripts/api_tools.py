@@ -53,28 +53,6 @@ def submit_obs_request_record(config,params):
                             testing=True)
 
 ################################################################################
-def submit_event_record(config,params):
-    """Function to submit a record of a new event to the database 
-    using the API add_event endpoint
-    Required parameters:
-        config    dict    script configuration parameters
-        params    dict    event request parameters, including
-                    field_name       str
-                    operator_name    str
-                    ev_ra            str
-		    ev_dec           str
-		    status           str
-                    anomaly rank     float
-                    year             str
-    """
-    
-    end_point = 'add_event'
-    
-    response = talk_to_db(params,end_point,\
-                            config['db_user_id'],config['db_pswd'],
-                            testing=True)
-
-################################################################################
 def submit_data_file_record(config,params,testing=False):
     """Function to submit a record of a new observation to the database 
     using the API record_obs_request endpoint
@@ -133,38 +111,6 @@ def submit_telescope_record(config,params):
     """
     
     end_point = 'add_telescope'
-    
-    response = talk_to_db(params,end_point,\
-                            config['db_user_id'],config['db_pswd'],
-                            testing=True)
-
-################################################################################
-def submit_singlemodel_record(config,params):
-    """Function to submit a record of a new single lens model to the database 
-    using the API add_singlemodel endpoint
-    Required parameters:
-        config    dict    script configuration parameters
-        params    dict    singlemodel parameters, including
-                    event 	str
-                    Tmax 	float
-                    e_Tmax 	float
-                    tau 	float
-                    e_tau 	float
-                    umin 	float
-                    e_umin 	float
-		    rho		float
-		    e_rho	float
-		    pi_e_n	float
-		    e_pi_e_n	float
-		    pi_e_e	float
-		    e_pi_e_e	float
-		    modeler	str
-		    last_updated str
-		    tap_omega	float
-		    chi_sq	float
-    """
-    
-    end_point = 'add_singlemodel'
     
     response = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],

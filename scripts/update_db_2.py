@@ -386,21 +386,22 @@ def add_single_lens(event_name, Tmax, tau, umin, last_updated,
         # Get event identifier
         event_id = EventName.objects.get(name=event_name).event_id
         event = Event.objects.get(id=event_id)
-	# Ensure that Tmax is given in full, e.g.2457135.422, not 7135.422
-	if Tmax < 2450000.0:
-	    Tmax = Tmax + 2450000.0
-        # Try adding single lens parameters in the database.
-        add_new = SingleModel(event=event, Tmax=Tmax, e_Tmax=e_Tmax, tau=tau,
-        		      e_tau=e_tau, umin=umin, e_umin=e_umin, rho=rho,
-        		      e_rho=e_rho, pi_e_n=pi_e_n, e_pi_e_n=e_pi_e_n,
-        		      pi_e_e=pi_e_e, e_pi_e_e=e_pi_e_e, modeler=modeler,
-        		      last_updated=last_updated, tap_omega=tap_omega, chi_sq=chi_sq)
-        add_new.save()
-        successful = True
-        response = 'OK'
-    else:
-        successful = False
-        response = 'Event does not exist.'
+        # Ensure that Tmax is given in full, e.g.2457135.422, not 7135.422
+        if Tmax < 2450000.0:
+            Tmax = Tmax + 2450000.0
+            # Try adding single lens parameters in the database.
+            add_new = SingleModel(event=event, Tmax=Tmax, e_Tmax=e_Tmax, tau=tau,
+                                  e_tau=e_tau, umin=umin, e_umin=e_umin, rho=rho,
+                                  e_rho=e_rho, pi_e_n=pi_e_n, e_pi_e_n=e_pi_e_n,
+                                  pi_e_e=pi_e_e, e_pi_e_e=e_pi_e_e, modeler=modeler,
+                                  last_updated=last_updated, tap_omega=tap_omega,
+                                  chi_sq=chi_sq)
+            add_new.save()
+            successful = True
+            response = 'Updated parameters for existing event'
+        else:
+            successful = False
+            response = 'Event does not exist.'
     
     return successful, response
 

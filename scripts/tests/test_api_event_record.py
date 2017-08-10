@@ -16,7 +16,18 @@ import api_tools
 def test_api_event_record():
     """Function to test the recording of a new event 
     by submitting it to the ROME/REA
-    database via API. """
+    database via API. 
+    Required parameters:
+        config    dict    script configuration parameters
+        params    dict    event request parameters, including
+        field_name       str
+        operator_name    str
+        ev_ra            str
+        ev_dec           str
+        status           str
+        anomaly rank     float
+        year             str
+    """
     
     params = {'field': '21',\
               'operator': '1',\
@@ -27,8 +38,7 @@ def test_api_event_record():
 	      'year': '2017'
              }
     config = {'db_user_id': 'rstreet', \
-                'db_pswd': 'skynet1186'
-                }
+                'db_pswd': 'xxx'}
     response = api_tools.contact_db(config,params,'add_event',
                                     testing=True)
     print(response)

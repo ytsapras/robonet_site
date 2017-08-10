@@ -1061,7 +1061,8 @@ def query_field_id(request):
                 
                 if id_field == -1:
                     id_field = 'Outside ROMEREA footprint'
-                    field_pk = -1
+                    f = Field.objects.get(name='Outside ROMEREA footprint')
+                    field_pk = f.pk
                 else:
                     id_field = sorted(field_dict.keys())[id_field]
                     qs = Field.objects.filter(name=id_field)
@@ -1408,7 +1409,6 @@ def add_telescope(request):
                                     {'form': form, 'message': status})
             else:
                 form = TelescopeForm(request.POST)
-                # Add form data to output for debugging
                 return render(request, 'events/add_telescope.html', \
                                     {'form': form, \
                                     'message':'Form entry was invalid.<br> Reason: <br>'+\
@@ -1441,11 +1441,9 @@ def add_event(request):
                                     {'form': form, 'message': message})
             else:
                 form = EventForm(request.POST)
-                # Add form data to output for debugging
+                message = 'DBREPLY: Form entry was invalid, please try again'
                 return render(request, 'events/add_event.html', \
-                                    {'form': form, \
-                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
-                                    repr(form.errors)+'<br>Please try again.'})
+                                    {'form': form, 'message':message})
         else:
             form = EventForm(request.POST)
             return render(request, 'events/add_event.html', \
@@ -1496,9 +1494,9 @@ def add_singlemodel(request):
             form = SingleModelForm(request.POST)
             if form.is_valid():
                 post = form.save(commit=False)
-		evname = EventName.objects.filter(event_id=post.event)[0].name
-                status = update_db_2.add_single_lens(event_name=str(evname),
-		                                     Tmax=post.Tmax,
+                evname = EventName.objects.filter(event_id=post.event)[0].name
+                (status,response) = update_db_2.add_single_lens(event_name=str(evname),
+		                             Tmax=post.Tmax,
 						     tau=post.tau,
 						     umin=post.umin,
 						     e_Tmax=post.e_Tmax,
@@ -1515,15 +1513,15 @@ def add_singlemodel(request):
 						     tap_omega=post.tap_omega,
 						     chi_sq=post.chi_sq)
                 
+                message = 'DBREPLY: '+repr(status)+' '+response
+                
                 return render(request, 'events/add_singlemodel.html', \
-                                    {'form': form, 'message': status})
+                                    {'form': form, 'message': message})
             else:
                 form = SingleModelForm(request.POST)
-                # Add form data to output for debugging
                 return render(request, 'events/add_singlemodel.html', \
                                     {'form': form, \
-                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
-                                    repr(form.errors)+'<br>Please try again.'})
+                                    'message':'Form entry was invalid, please try again.'})
         else:
             form = SingleModelForm(request.POST)
             return render(request, 'events/add_singlemodel.html', \
