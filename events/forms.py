@@ -29,7 +29,7 @@ class EventForm(forms.ModelForm):
 class EventNameForm(forms.ModelForm):
    class Meta:
       model = EventName
-      fields = ('name',)
+      fields = ('name','event','operator')
 
 class SingleModelForm(forms.ModelForm):
    class Meta:
@@ -117,3 +117,9 @@ class QueryOperatorForm(forms.ModelForm):
     class Meta:
         model = Operator
         fields = ('name',)
+
+class QueryLastSingleModelForm(forms.ModelForm):
+    class Meta:
+        model = SingleModel
+        fields = ('event','modeler')
+        

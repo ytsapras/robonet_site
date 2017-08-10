@@ -1,0 +1,48 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<h3>Form to return the last single model for an event</h3>
+{% if status == 'ERROR' %}
+    <div>
+        <center><h5>{{ message }}</h5></center>
+    </div>
+{% endif %}
+<div>
+      <form method="POST" class="post-form">{% csrf_token %}
+        <center>
+            <table><tr>
+                <td>
+                <div class="fieldWrapper">
+                    {{ form.event.errors }}
+                    <label for="{{ form.event.id_for_label }}">Please select event:</label>
+                    {{ form.event }}
+                </div>
+                </td>
+                <td>
+                <div class="fieldWrapper">
+                    {{ form.modeler.errors }}
+                    <label for="{{ form.modeler.id_for_label }}">Please select modeler:</label>
+                    {{ form.modeler }}
+                </div>
+                </td>
+                <td>
+                <div class="fieldWrapper">
+                    <button type="submit" class="save btn btn-default">Submit</button>
+                </div>
+                </td>
+                <td></td>
+                </tr></table>
+        </center>
+    </form>
+</div>  
+
+{% if status == 'DBREPLY' %}
+<div>
+    <center>
+        {{message}}
+    </center>
+</div>
+{% endif %}
+{% endblock %}

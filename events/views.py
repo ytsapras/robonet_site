@@ -12,7 +12,7 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect
 from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, TelescopeForm, EventForm, EventNameForm, SingleModelForm
 from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, ImageForm, RecordDataFileForm, TapLimaForm
 from .forms import QueryFieldIDForm, QueryEventCoordsForm, QueryEventNameForm
-from .forms import QueryOperatorForm
+from .forms import QueryOperatorForm, QueryLastSingleModelForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from itertools import chain
@@ -1291,6 +1291,44 @@ def query_eventname_assoc(request):
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')
+def query_last_singlemodel(request):
+    """Function to provide an endpoint for users to find the last
+    singlemodel for an event."""
+    
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            form = QueryLastSingleModelForm(request.POST)
+            if form.is_valid():
+                post = form.save(commit=False)
+                
+                model = query_db.get_last_single_model(post.event,
+                                                       modeler=post.modeler)
+                
+                if model == None:
+                    message = 'DBREPLY: -1 9999-99-99T99:99:99'
+                    status = 'DBREPLY'
+                else:
+                    message = 'DBREPLY: '+str(model.pk)+' '+str(model.last_updated.strftime("%Y-%m-%dT%H:%M:%S"))
+                    status = 'DBREPLY'
+                    
+                return render(request, 'events/query_last_singlemodel.html', \
+                                    {'form': form, 'status': status,
+                                     'message': message})
+            else:
+                form = QueryLastSingleModelForm()
+                return render(request, 'events/query_last_singlemodel.html', \
+                                    {'form': form, 'status': 'ERROR',
+                                    'message':'Form entry was invalid.  Please try again.'})
+        else:
+            form = QueryLastSingleModelForm()
+            return render(request, 'events/query_last_singlemodel.html', \
+                                    {'form': form, 'status': 'OK',
+                                    'message': 'OK'})
+    else:
+        return HttpResponseRedirect('login')
+        
+##############################################################################################################
+@login_required(login_url='/db/login/')
 def record_obs_request(request):
     """Function to allow new (submitted) observation requests to be 
     recorded in the database"""
@@ -1427,18 +1465,18 @@ def add_eventname(request):
             form = EventNameForm(request.POST)
             if form.is_valid():
                 post = form.save(commit=False)
-                status = update_db_2.add_event_name(event=post.event, operator=post.operator,
+                (status, response) = update_db_2.add_event_name(event=post.event, operator=post.operator,
 		                                    name=post.name)
+                print status, response
+                message = 'DBREPLY: '+repr(status)+' '+str(response)
                 
                 return render(request, 'events/add_eventname.html', \
-                                    {'form': form, 'message': status})
+                                    {'form': form, 'message': message})
             else:
                 form = EventNameForm(request.POST)
-                # Add form data to output for debugging
+                message = 'DBREPLY: Form entry was invalid, please try again.'
                 return render(request, 'events/add_eventname.html', \
-                                    {'form': form, \
-                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
-                                    repr(form.errors)+'<br>Please try again.'})
+                                    {'form': form, 'message':message})
         else:
             form = EventNameForm(request.POST)
             return render(request, 'events/add_eventname.html', \

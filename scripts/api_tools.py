@@ -29,6 +29,7 @@ ALLOWED_END_POINTS = [ 'record_obs_request',
                        'query_eventname',
                        'query_eventname_assoc',
                        'query_operator',
+                       'query_last_singlemodel',
                       ]
 
 ################################################################################
@@ -72,25 +73,6 @@ def submit_event_record(config,params):
     response = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=True)
-
-################################################################################
-def submit_eventname_record(config,params):
-    """Function to submit a record of a new event name to the database 
-    using the API add_eventname endpoint
-    Required parameters:
-        config    dict    script configuration parameters
-        params    dict    eventname request parameters, including
-                    event         str
-                    operator      str
-                    name          str
-    """
-    
-    end_point = 'add_eventname'
-    
-    response = talk_to_db(params,end_point,\
-                            config['db_user_id'],config['db_pswd'],
-                            testing=True)
-
 
 ################################################################################
 def submit_data_file_record(config,params,testing=False):
@@ -439,7 +421,7 @@ def contact_db(config,params,end_point,testing=False):
     response = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=testing)
-    
+
     response = parse_db_reply(response)
     
     return response

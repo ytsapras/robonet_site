@@ -59,6 +59,8 @@ class Lens():
         self.event_pk = -1
         self.eventname_pk = -1
         self.got_eventname = False
+        self.singlemodel_pk = -1
+        self.singlemodel_ts = None
         
     def set_par(self,par,par_value):
 
@@ -143,7 +145,7 @@ class Lens():
     
     def add_event_to_DB(self,config,log=None,debug=False):
         """Method to add a new event's details to the DB.
-        This function also performs the look-up functions to obtain the
+        This method also performs the look-up functions to obtain the
         survey field and operator IDs, and sets the event_pk attribute. 
         """
         
@@ -151,13 +153,13 @@ class Lens():
         self.get_operator(log=log,debug=debug)
         year = str(self.name).split('-')[1]
         
-        params = { field=self.field_id,
-                   operator=self.operator_id, 
-                   ev_ra=self.ra, 
-                   ev_dec=self.dec, 
-		       status=self.event_status, 
-			 anomaly_rank=-1,
-			 year = year
+        params = { 'field': self.field_id,
+                   'operator': self.operator_id, 
+                   'ev_ra': self.ra, 
+                   'ev_dec': self.dec, 
+		       'status': self.event_status, 
+			 'anomaly_rank': -1,
+			 'year': year
                 }
         response = api_tools.contact_db(config,params,'add_event')
         
@@ -169,7 +171,62 @@ class Lens():
             params = {'ev_ra': self.ra,'ev_dec': self.dec}
             self.event_pk = int(api_tools.contact_db(config,params,
                                                      'query_event_by_coords'))
+            if debug==True and log!=None:
+                log.info(' -> Event PK: '+str(self.event_pk))
+            
+    def add_eventname_to_DB(self,config,log=None,debug=False):
+        """Method to add a new eventname to the DB, associating it with
+        an event which is already ingested.  
+        This method also performs the look-up functions to set the eventname_pk
+        attribute"""
         
+        if self.operator_id == None:
+            self.get_operator(log=log,debug=debug)
+        
+        params = { 'name': self.name,
+                   'event': self.event_pk,
+                   'operator': self.operator_pk,
+                   }
+        response = api_tools.contact_db(config,params,'add_event')
+        
+        if 'True' in response \
+                or 'name is already associated with an event' in response:
+            self.check_event_name_in_DB(log=log,debug=debug)
+            if debug==True and log!=None:
+                log.info(' -> Eventname PK: '+str(self.eventname_pk))
+    
+    def check_last_singlemodel(self,config,log=None,debug=False):
+        """Method to check for the last singlemodel for the current event"""
+        
+        params = { 'event': self.event_pk,
+                   'modeler': self.modeler }
+        response = api_tools.contact_db(config,params,'query_last_singlemodel')
+        
+        self.singlemodel_pk = int(response.split(' ')[0])
+        self.singlemodel_ts = datetime.strptime("%Y-%m-%dT%H:%M:%S",response.split(' ')[1])
+        
+    def add_singlemodel_to_DB(self,config,log=None,debug=False:
+        """Method to add a singlemodel to the DB."""
+        
+        if debug==True and log!=None:
+            log.info(' -> Attempting to add a single lens model with parameters:')
+            log.info(str(self.name)+' '+str(self.t0)+' '+str(self.te)+\
+                str(self.u0)+' '+str(last_updated)+' '+str(self.modeler))
+                
+        params = {'event': self.event_pk,
+                  'Tmax':self.t0,'e_Tmax':0.0,
+                  'tau':self.te,'e_tau':0.0,
+                  'umin':self.u0,'e_umin':0.0,
+                  'modeler':self.modeler,
+                  'last_updated':self.last_updated.strftime("%Y-%m-%dT%H:%M:%S")
+                  }
+            
+        response = api_tools.submit_singlemodel_record(config,params)
+    
+        if debug==True and log!=None:
+            log.info(' -> Outcome of adding the single lens model:')
+            log.info(str(response))
+            
     def sync_event_with_DB(self,config,last_updated,log=None,debug=False):
         """Method to sync the latest survey parameters with the database.
         
@@ -187,108 +244,12 @@ class Lens():
         
         self.check_event_name_in_DB(log=log,debug=debug)
         if self.eventname_pk == -1:
-            ADD_EVENTNAME
-            SET_EVENTNAME_pk
-            ASSOC_EVENTNAME
-        else:
-            self.check_event_name_assoc_event(log=log,debug=debug)
-            if self.got_eventname == False:
-                ADD_EVENT_NAME_TO_EVENT
+            self.add_eventname_to_DB(config,log=log,debug=debug)
             
+        self.check_last_singlemodel(log=log,debug=debug)
+        if self.singlemodel_pk == -1 or self.last_updated > self.singlemodel_ts:
+            self.add_singlemodel_to_DB(config,log=log,debug=debug)
             
-                    
-        if debug==True and log!=None:
-            log.info(' -> Tried to add_event with output:')
-            log.info(' -> '+str(event_status)+' '+str(ev_ra)+' '+str(ev_dec)+\
-                        ' '+str(response))
-        
-        # Add_event doesn't ingest the EventName, so ensure that the eventname
-        # is linked to the correct Event sky location:
-        if debug==True and log!=None:
-                log.info(' -> Checking event name in DB:')
-        if event_status == True and 'OK' in response:
-            event = Event.objects.filter(ev_ra=ev_ra).filter(ev_dec=ev_dec)[0]
-            operator = Operator.objects.filter(name=self.origin)[0]
-            params = {'event': event.pk,
-                      'operator': operator.pk,
-                      'name': self.name
-                      }
-            response = api_tools.submit_eventname_record(config,params)
-            
-            if debug==True and log!=None:
-                log.info(' -> New event, added eventname with output '+str(response))
-                
-        elif event_status == False and 'exists' in response:
-            event = query_db.get_event_by_position(ev_ra,ev_dec)
-            if event != None:
-                name_list = query_db.get_event_name_list(event.pk)
-                name_str = utilities.combined_survey_name(name_list)
-                if debug==True and log!=None:
-                    log.info(' -> Current names for this event: '+name_str)
-                    log.info(' -> Looking for name: '+str(self.name))
-            else:
-                message = 'ERROR: Event appears in DB but could not find it by position'
-                get_errors.update_err('artemis_subscriber', message)
-                if log!=None:
-                    log.info(message)
-                name_list = []
-                
-            if event != None and self.name not in name_list:
-                operator = Operator.objects.filter(name=self.origin)[0]
-                params = {'event': event.pk,
-                      'operator': operator.pk,
-                      'name': self.name
-                      }
-                response = api_tools.submit_eventname_record(config,params)
-                if debug==True and log!=None:
-                    log.info(' -> Added eventname for known event with output '+str(response))
-            else:
-                if debug==True and log!=None:
-                    log.info(' -> Event name already known to DB')
-        else:
-            message = 'ERROR: Incomprehensible combination of event and names'
-            get_errors.update_err('artemis_subscriber', message)
-            if log!=None:
-                log.info(message)
-                
-        # Confirm that both Event and EventName are properly registered:
-        if log!=None:
-            log.info(' -> Verifying event and names registered with DB:')
-        event = Event.objects.filter(ev_ra=ev_ra).filter(ev_dec=ev_dec)[0]
-        eventnames = EventName.objects.filter(event=event.id)
-        if debug==True and log!=None:
-            log.info(' -> Searched for event, found: '+str(event))
-            eventname = ''
-            for n in eventnames:
-                eventname+=str(n)
-            log.info(' -> Searched for event name, found: '+eventname)
-        
-        # Check that the current model parameters have been ingested and if
-        # not, add them:
-        last_model = query_db.get_last_single_model(event,modeler=self.modeler)
-        if debug==True and log!=None:
-            log.info(' -> Last model for event '+str(self.name)+': '+str(last_model))
-        
-        if last_model == None or self.last_updated == None or \
-                self.last_updated > last_model.last_updated:
-                    
-            if debug==True and log!=None:
-                log.info(' -> Attempting to add a single lens model with parameters:')
-                log.info(str(self.name)+' '+str(self.t0)+' '+str(self.te)+\
-                        str(self.u0)+' '+str(last_updated)+' '+str(self.modeler))
-            params = {'event': event.pl,
-                      'Tmax':self.t0,'e_Tmax':0.0,
-                      'tau':self.te,'e_tau':0.0,
-                      'umin':self.u0,'e_umin':0.0,
-                      'modeler':self.modeler,
-                      'last_updated':str(last_updated)
-                      }
-            
-            response = api_tools.submit_singlemodel_record(config,params)
-            
-            if debug==True and log!=None:
-                log.info(' -> Outcome of adding the single lens model:')
-                log.info(str(response))
     
     def get_params(self):
         """Method to return the parameters of the current event in a 

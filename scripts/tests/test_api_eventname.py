@@ -24,10 +24,12 @@ def test_api_eventname():
     eventname_pk = -1 if the name is not recognized
     """
     
-    params = {'name': 'OGLE-2017-BLG-1516'}
+    params = {'name': 'OGLE-2017-BLG-1516',
+              'event': 2016,
+              'operator': 1}
     config = {'db_user_id': 'rstreet', \
                 'db_pswd': 'xxx'}
-    response = api_tools.contact_db(config,params,'query_eventname',testing=True)
+    response = api_tools.contact_db(config,params,'add_eventname',testing=True)
     print(response)
     
 if __name__ == '__main__':

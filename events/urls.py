@@ -25,6 +25,7 @@ urlpatterns = [
     url(r'^query_eventname/$', views.query_eventname, name='query_eventname'),
     url(r'^query_eventname_assoc/$', views.query_eventname_assoc, name='query_eventname_assoc'),
     url(r'^query_operator/$', views.query_operator, name='query_operator'),
+    url(r'^query_last_singlemodel/$', views.query_last_singlemodel, name='query_last_singlemodel'),
     url(r'^record_obs_request/$', views.record_obs_request, name='record_obs_requests'),
     url(r'^record_data_file/$', views.record_data_file, name='record_data_file'),
     url(r'^add_operator/$', views.add_operator, name='add_operator'),
