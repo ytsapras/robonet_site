@@ -28,7 +28,9 @@ def test_api_event_record():
         anomaly rank     float
         year             str
     """
-    
+    config = {'db_user_id': 'rstreet', 'db_pswd': 'xxx'}
+    client = api_tools.connect_to_db(config,testing=True,verbose=False)
+
     params = {'field': '21',\
               'operator': '1',\
               'ev_ra': '18:00:00',\
@@ -36,12 +38,13 @@ def test_api_event_record():
 	      'status':'NF',\
 	      'anomaly_rank': -1.0,\
 	      'year': '2017'
-             }
-    config = {'db_user_id': 'rstreet', \
-                'db_pswd': 'xxx'}
-    response = api_tools.contact_db(config,params,'add_event',
+    
+         }
+    ts1 = datetime.utcnow()
+    response = api_tools.contact_db(client,config,params,'add_event',
                                     testing=True)
-    print(response)
+    ts2 = datetime.utcnow()
+    print(response+', time taken for query: '+str((ts2-ts1).total_seconds())+'s')
     
 if __name__ == '__main__':
     test_api_event_record()

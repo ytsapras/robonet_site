@@ -44,13 +44,16 @@ def sync_artemis():
     log = init_log(config)
     
     status = check_rsync_config(config,log=log)
+
+    client = api_tools.connect_to_db(config,testing=config['testing'],
+                                             verbose=config['verbose'])
     
     if status == True:
-        sync_artemis_data_db(config,'model',log)
+        sync_artemis_data_db(client,config,'model',log)
         
-        sync_artemis_data_db(config,'pubpars',log)
+        sync_artemis_data_db(client,config,'pubpars',log)
         
-        sync_artemis_data_db(config,'data',log)
+        sync_artemis_data_db(client,config,'data',log)
         
         rsync_internal_data(config)
     
@@ -174,7 +177,7 @@ def event_data_check(config,model_file=None,align_file=None,
         
     return status
     
-def sync_artemis_data_db(config,data_type,log):
+def sync_artemis_data_db(client,config,data_type,log):
     '''Function to sync a local copy of the ARTEMiS model fit files for all events from the
        server at the Univ. of St. Andrews.
     '''
@@ -196,7 +199,7 @@ def sync_artemis_data_db(config,data_type,log):
         if config['verbose'] == True:
             log.info('Syncing contents of ARTEMiS model files with DB:')
         for f in event_files:
-            sync_model_file_with_db(config,f,log)
+            sync_model_file_with_db(client,config,f,log)
 
     # Loop over all updated data files and update the database:
     if data_type == 'data' and int(config['update_db']) == 1:
@@ -212,7 +215,7 @@ def sync_artemis_data_db(config,data_type,log):
             else:
                 log.info(' -> WARNING: Skipped ingest of incomplete data')
                 
-def sync_model_file_with_db(config,model_file,log):
+def sync_model_file_with_db(client,config,model_file,log):
     """Function to read an ARTEMiS-format .model file and sync its contents
     with the database"""
     
@@ -223,7 +226,7 @@ def sync_model_file_with_db(config,model_file,log):
         if int(config['update_db']) == 1:
             if config['verbose'] == True:
                 log.info('-> Updating '+path.basename(model_file))
-            event.sync_event_with_DB(config,log=log,
+            event.sync_event_with_DB(client,config,log=log,
                                      debug=config['verbose'],
                                         testing=bool(config['testing']))
         else:
@@ -460,7 +463,7 @@ def read_artemis_model_file(model_file_path):
             except ValueError:
                 pass
             
-    return event, last_modified
+    return event
 
 ###############################
 # ARTEMIS PHOTOMETRY FILE IO

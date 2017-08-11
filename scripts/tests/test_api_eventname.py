@@ -11,6 +11,7 @@ cwd = getcwd()
 systempath.append(path.join(cwd,'../..'))
 systempath.append(path.join(cwd,'..'))
 import api_tools
+from datetime import datetime
 
 def test_api_eventname():
     """Function to test the recording of a new event 
@@ -23,14 +24,16 @@ def test_api_eventname():
         response    str    eventname_pk
     eventname_pk = -1 if the name is not recognized
     """
+    config = {'db_user_id': 'rstreet', 'db_pswd': 'skynet1186'}
+    client = api_tools.connect_to_db(config,testing=True,verbose=False)
     
     params = {'name': 'OGLE-2017-BLG-1516',
               'event': 2016,
               'operator': 1}
-    config = {'db_user_id': 'rstreet', \
-                'db_pswd': 'xxx'}
-    response = api_tools.contact_db(config,params,'add_eventname',testing=True)
-    print(response)
+    ts1 = datetime.utcnow()
+    response = api_tools.contact_db(client,config,params,'add_eventname',testing=True)
+    ts2 = datetime.utcnow()
+    print(response+', time taken for query: '+str((ts2-ts1).total_seconds())+'s')
     
 if __name__ == '__main__':
     test_api_eventname()

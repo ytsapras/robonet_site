@@ -331,23 +331,53 @@ def submit_image_record(config,params):
                             testing=True)
 
 ################################################################################
-def contact_db(config,params,end_point,testing=False):
+def contact_db(client,config,params,end_point,testing=False):
     """Function to send a communicate with of the database end_points"""
     
     if end_point not in ALLOWED_END_POINTS:
         response = 'ERROR: No such database end point'
         return response
     
-    response = talk_to_db(params,end_point,\
-                            config['db_user_id'],config['db_pswd'],
-                            testing=testing)
+    response = talk_to_db(client,params,end_point,testing=testing)
 
     response = parse_db_reply(response)
     
     return response
     
 ################################################################################
-def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
+def connect_to_db(config,testing=False,verbose=False):
+    """Method to open a connection to the ROME/REA DB and log in
+    Required arguments are:
+        user_id    string   User ID login for database
+        pswd       string   User password login for database
+        testing    boolean  Switch to localhost testing DB or operation one
+        verbose    boolean  Switch on additional printed output
+    """
+    
+    if testing == True:
+        host_url = 'http://127.0.0.1:8000/db'
+        login_url = 'http://127.0.0.1:8000/db/login/'
+    else:
+        host_url = 'http://robonet.lco.global/db'
+        login_url = 'http://robonet.lco.global/db/login/'
+        
+    client = requests.session()
+    response = client.get(login_url)
+    if verbose == True:
+        print 'Started session with response: ',response.text
+    
+    auth_details = {'username': config['db_user_id'], 
+                    'password': config['db_pswd']}
+    headers = { 'Referer': host_url, 'X-CSRFToken': client.cookies['csrftoken'],}
+    
+    response = client.post(login_url, headers=headers, data=auth_details)
+    if verbose==True:
+        print response.text
+        print 'Completed login'
+    
+    return client
+
+def talk_to_db(client,data,end_point,testing=False,verbose=False):
     """Method to communicate with various APIs of the ROME/REA database. 
     Required arguments are:
         data       dict     parameters of the submission
@@ -364,6 +394,7 @@ def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
                                         Def=False for operations
         verbose    boolean            Switch for additional debugging output
     """
+    
     if testing == True:
         host_url = 'http://127.0.0.1:8000/db'
         login_url = 'http://127.0.0.1:8000/db/login/'
@@ -377,21 +408,10 @@ def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
     
     if verbose==True:
         print 'End point URL:',url
-    
-    
-    client = requests.session()
-    response = client.get(login_url)
-    if verbose == True:
-        print 'Started session with response: ',response.text
-    
-    auth_details = {'username': user_id, 'password': pswd}
-    headers = { 'Referer': url, 'X-CSRFToken': client.cookies['csrftoken'],}
-    
-    response = client.post(login_url, headers=headers, data=auth_details)
-    if verbose==True:
-        print response.text
-        print 'Completed login'
-    
+        
+    url = path.join(host_url,end_point)
+    if url[-1:] != '/':
+        url = url + '/'
     response = client.get(url)
     headers = { 'Referer': url, 'X-CSRFToken': client.cookies['csrftoken'],}
     response = client.post(url, headers=headers, data=data)

@@ -11,6 +11,7 @@ cwd = getcwd()
 systempath.append(path.join(cwd,'../..'))
 systempath.append(path.join(cwd,'..'))
 import api_tools
+from datetime import datetime
 
 def test_query_operator():
     """Function to test the API query for the ID of the survey operator
@@ -25,23 +26,28 @@ def test_query_operator():
     Returns:
         response    str   operator_id<space>operator_name
     """
+    config = {'db_user_id': 'rstreet', 'db_pswd': 'xxx'}
+    client = api_tools.connect_to_db(config,testing=True,verbose=False)
     
-    config = {'db_user_id': 'rstreet', \
-                'db_pswd': 'xxx'}
-                
     params = {'name': 'OGLE'}
-    response = api_tools.contact_db(config,params,'query_operator',testing=True)
-    print(response)
+    ts1 = datetime.utcnow()
+    response = api_tools.contact_db(client,config,params,'query_operator',testing=True)
+    ts2 = datetime.utcnow()
+    print(response+', time taken for query: '+str((ts2-ts1).total_seconds())+'s')
     assert '1' in response
     
     params = {'name': 'KMTNET'}
-    response = api_tools.contact_db(config,params,'query_operator',testing=True)
-    print(response)
+    ts1 = datetime.utcnow()
+    response = api_tools.contact_db(client,config,params,'query_operator',testing=True)
+    ts2 = datetime.utcnow()
+    print(response+', time taken for query: '+str((ts2-ts1).total_seconds())+'s')
     assert '3' in response
     
     params = {'name': 'FOO'}
-    response = api_tools.contact_db(config,params,'query_operator',testing=True)
-    print(response)
+    ts1 = datetime.utcnow()
+    response = api_tools.contact_db(client,config,params,'query_operator',testing=True)
+    ts2 = datetime.utcnow()
+    print(response+', time taken for query: '+str((ts2-ts1).total_seconds())+'s')
     assert '7' in response
     
 if __name__ == '__main__':

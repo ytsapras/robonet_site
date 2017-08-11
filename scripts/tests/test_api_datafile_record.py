@@ -32,6 +32,8 @@ def test_api_datafile_record():
 	baseline		float
 	g			float
       """
+    config = {'db_user_id': 'rstreet', 'db_pswd': 'xxx'}
+    client = api_tools.connect_to_db(config,testing=True,verbose=False)
     
     params = {'event': '985',\
               'datafile': '../../data/OOB170570I.dat',\
@@ -45,12 +47,13 @@ def test_api_datafile_record():
 	      'baseline':19.0,\
 	      'g':0.0
              }
-    config = {'db_user_id': 'rstreet', \
-                'db_pswd': 'xxx'
-                }
-    response = api_tools.contact_db(config,params,'add_datafile',testing=True)
+    
+    ts1 = datetime.utcnow()
+    response = api_tools.contact_db(client,config,params,'add_datafile',testing=True)
+    ts2 = datetime.utcnow()
     
     assert bool(response.split(' ')[0]) == True
+    print (response+', time taken for query: '+str((ts2-ts1).total_seconds())+'s')
     
 if __name__ == '__main__':
     test_api_datafile_record()

@@ -11,6 +11,7 @@ cwd = getcwd()
 systempath.append(path.join(cwd,'../..'))
 systempath.append(path.join(cwd,'..'))
 import api_tools
+from datetime import datetime
 
 def test_query_field_id():
     """Function to test the API query for Field ID
@@ -23,14 +24,17 @@ def test_query_field_id():
     Returns:
         response    str   field_id<space>field_pk
     """
+    config = {'db_user_id': 'rstreet', 'db_pswd': 'xxx'}
+    client = api_tools.connect_to_db(config,testing=True,verbose=False)
+    
     
     params = {'field_ra': '17:54:50.3369',\
               'field_dec': '-29:11:12.2107'}
-              
-    config = {'db_user_id': 'rstreet', \
-                'db_pswd': 'xxx'}
-    response = api_tools.contact_db(config,params,'query_field_id',testing=True)
-    print(response)
+    
+    ts1 = datetime.utcnow()
+    response = api_tools.contact_db(client,config,params,'query_field_id',testing=True)
+    ts2 = datetime.utcnow()
+    print(response+', time taken for query: '+str((ts2-ts1).total_seconds())+'s')
     
 if __name__ == '__main__':
     test_query_field_id()

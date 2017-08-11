@@ -1136,15 +1136,16 @@ def query_event_by_coords(request):
                 
                 qs = Event.objects.filter(ev_ra__contains=post.ev_ra[0:5],
                                           ev_dec__contains=post.ev_dec[0:5])
+
                 if len(qs) == 1:
                     event_pk = qs[0].pk
                 elif len(qs) != 1:
-                    new_coords = SkyCoord(post.ev_ra[0:8]+' '+post.ev_dec[0:9],
+                    new_coords = SkyCoord(post.ev_ra+' '+post.ev_dec,
                                       unit=(units.hourangle, units.deg),
                                         frame='icrs')
                     if len(qs) == 0:
                         qs = Event.objects.all()
-                
+                        
                     event = None
                     i = 0
                     while event == None and i < len(qs):
