@@ -13,6 +13,8 @@ import event_classes
 import artemis_subscriber
 import log_utilities
 from datetime import datetime
+import api_tools
+import pytz
 
 e = event_classes.Lens()
 e.name = 'OGLE-2017-BLG-1516'
@@ -27,11 +29,15 @@ e.i0 = 20.0
 e.origin = 'OGLE'
 e.modeler = 'ARTEMiS'
 e.last_updated = datetime.utcnow()
+e.last_updated = e.last_updated.replace(tzinfo=pytz.UTC)
 
 event_pk = 2016
 field_id = 'Outside ROMEREA footprint'
 operator_id = 'OGLE'
 eventname_pk = 2289
+
+config = {'db_user_id': 'rstreet', 'db_pswd': 'skynet1186'}
+client = api_tools.connect_to_db(config,testing=True,verbose=True)
 
 def test_check_event_in_DB():
     
@@ -42,7 +48,7 @@ def test_check_event_in_DB():
     debug = True
     testing = True
 
-    e.check_event_in_DB(config,log=log,debug=debug,testing=testing)
+    e.check_event_in_DB(client,config,log=log,debug=debug,testing=testing)
     
     assert e.event_pk == event_pk
     
@@ -57,7 +63,7 @@ def test_get_field():
     debug = True
     testing = True
 
-    e.get_field(config,log=log,debug=debug,testing=testing)
+    e.get_field(client,config,log=log,debug=debug,testing=testing)
     
     assert e.field_id == field_id
     
@@ -72,7 +78,7 @@ def test_get_operator():
     debug = True
     testing = True
 
-    e.get_operator(config,log=log,debug=debug,testing=testing)
+    e.get_operator(client,config,log=log,debug=debug,testing=testing)
     
     assert e.operator_id == operator_id
     
@@ -88,7 +94,7 @@ def test_add_event_to_DB():
     debug = True
     testing = True
     
-    e.add_event_to_DB(config,log=log,debug=debug,testing=testing)
+    e.add_event_to_DB(client,config,log=log,debug=debug,testing=testing)
 
     assert e.event_pk == event_pk
     
@@ -103,7 +109,7 @@ def test_check_event_name_in_DB():
     debug = True
     testing = True
 
-    e.check_event_name_in_DB(config,log=log,debug=debug,testing=testing)
+    e.check_event_name_in_DB(client,config,log=log,debug=debug,testing=testing)
     
     assert e.eventname_pk == eventname_pk
     
@@ -118,7 +124,7 @@ def test_check_event_name_assoc_event():
     debug = True
     testing = True
 
-    e.check_event_name_assoc_event(config,log=log,debug=debug,testing=testing)
+    e.check_event_name_assoc_event(client,config,log=log,debug=debug,testing=testing)
     
     assert e.got_eventname == True
     
@@ -133,7 +139,7 @@ def test_check_last_singlemodel():
     debug = True
     testing = True
 
-    e.check_last_singlemodel(config,log=log,debug=debug,testing=testing)
+    e.check_last_singlemodel(client,config,log=log,debug=debug,testing=testing)
     
     assert e.singlemodel_pk != -1
     
@@ -148,7 +154,7 @@ def test_add_singlemodel_to_DB():
     debug = True
     testing = True
 
-    e.add_singlemodel_to_DB(config,log=log,debug=debug,testing=testing)
+    e.add_singlemodel_to_DB(client,config,log=log,debug=debug,testing=testing)
     
     assert e.singlemodel_pk != -1
     
@@ -163,7 +169,7 @@ def test_sync_event_with_DB():
     debug = True
     testing = True
 
-    e.sync_event_with_DB(config,log=log,debug=debug,testing=testing)
+    e.sync_event_with_DB(client,config,log=log,debug=debug,testing=testing)
     
     assert e.event_pk == event_pk
     assert e.field_id == field_id

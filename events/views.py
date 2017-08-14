@@ -1136,7 +1136,7 @@ def query_event_by_coords(request):
                 
                 qs = Event.objects.filter(ev_ra__contains=post.ev_ra[0:5],
                                           ev_dec__contains=post.ev_dec[0:5])
-
+                
                 if len(qs) == 1:
                     event_pk = qs[0].pk
                 elif len(qs) != 1:
@@ -1523,7 +1523,7 @@ def add_singlemodel(request):
                 form = SingleModelForm(request.POST)
                 return render(request, 'events/add_singlemodel.html', \
                                     {'form': form, \
-                                    'message':'Form entry was invalid, please try again.'})
+                                    'message':'DBREPLY: Form entry was invalid, please try again.'+repr(form.errors)})
         else:
             form = SingleModelForm(request.POST)
             return render(request, 'events/add_singlemodel.html', \

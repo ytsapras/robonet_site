@@ -25,7 +25,7 @@ def test_query_field_id():
         response    str   field_id<space>field_pk
     """
     config = {'db_user_id': 'rstreet', 'db_pswd': 'xxx'}
-    client = api_tools.connect_to_db(config,testing=True,verbose=False)
+    client = api_tools.connect_to_db(config,testing=True,verbose=True)
     
     
     params = {'field_ra': '17:54:50.3369',\

@@ -151,14 +151,16 @@ class Lens():
         event is not yet present in the DB."""
         
         params = {'ev_ra': self.ra, 'ev_dec': self.dec}
-        self.event_pk = int(api_tools.contact_db(client,config,params,
-                                    'query_event_by_coords',testing=testing))
-        
-        if log!=None:
-            if self.event_pk != -1:
+        response = api_tools.contact_db(client,config,params,
+                                    'query_event_by_coords',testing=testing)
+
+        if '-1' not in response:
+            self.event_pk = int(response)
+            if log!=None:
                 log.info(' -> Identified event as : '+str(self.event_pk))
-            else:
-                log.info(' -> Event not yet known to DB at coords '+
+        else:
+            self.event_pk = -1
+            log.info(' -> Event not yet known to DB at coords '+
                 str(self.ra)+', '+str(self.dec))
         
     def add_event_to_DB(self,client,config,log=None,debug=False,testing=False):
@@ -196,7 +198,7 @@ class Lens():
             if log!=None:
                 log.info(' -> Event PK: '+str(self.event_pk))
             
-    def add_eventname_to_DB(self,client,config,log=None,debug=False):
+    def add_eventname_to_DB(self,client,config,log=None,debug=False,testing=False):
         """Method to add a new eventname to the DB, associating it with
         an event which is already ingested.  
         This method also performs the look-up functions to set the eventname_pk
@@ -209,7 +211,7 @@ class Lens():
                    'event': self.event_pk,
                    'operator': self.operator_pk,
                    }
-        response = api_tools.contact_db(client,config,params,'add_event')
+        response = api_tools.contact_db(client,config,params,'add_event',testing=testing)
         
         if 'True' in response \
                 or 'name is already associated with an event' in response:
@@ -240,8 +242,8 @@ class Lens():
         
         if log!=None:
             log.info(' -> Attempting to add a single lens model with parameters:')
-            log.info(str(self.name)+' '+str(self.t0)+' '+str(self.te)+\
-                str(self.u0)+' '+str(self.last_updated)+' '+str(self.modeler))
+            log.info(str(self.name)+' '+str(self.event_pk)+' '+str(self.t0)+' '+str(self.te)+\
+                ' '+str(self.u0)+' '+str(self.last_updated)+' '+str(self.modeler))
                 
         params = {'event': self.event_pk,
                   'Tmax':self.t0,'e_Tmax':0.0,
@@ -250,7 +252,7 @@ class Lens():
                   'modeler':self.modeler,
                   'last_updated':self.last_updated.strftime("%Y-%m-%dT%H:%M:%S")
                   }
-            
+        
         response = api_tools.contact_db(client,config,params,'add_singlemodel',
                                         testing=testing)
     

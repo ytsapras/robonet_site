@@ -31,7 +31,9 @@ def test_api_singlemodel_record():
     config = {'db_user_id': 'rstreet', \
                 'db_pswd': 'xxx'
                 }
-    response = api_tools.contact_db(config,params,'add_singlemodel',testing=True)
+    client = api_tools.connect_to_db(config,testing=True,verbose=False)
+    
+    response = api_tools.contact_db(client,config,params,'add_singlemodel',testing=True)
     print(response)
     
 if __name__ == '__main__':

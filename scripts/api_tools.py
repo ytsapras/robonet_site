@@ -365,9 +365,11 @@ def connect_to_db(config,testing=False,verbose=False):
     response = client.get(login_url)
     if verbose == True:
         print 'Started session with response: ',response.text
-    
+        print 'End of session start response'
+        
     auth_details = {'username': config['db_user_id'], 
                     'password': config['db_pswd']}
+    
     headers = { 'Referer': host_url, 'X-CSRFToken': client.cookies['csrftoken'],}
     
     response = client.post(login_url, headers=headers, data=auth_details)
@@ -425,7 +427,7 @@ def parse_db_reply(response):
     """Function to extract the paramter values returned by the DB in standard
     format"""
     
-    message = 'OK'
+    message = 'No reply from DB'
     for line in response.text.split('\n'):
         if 'DBREPLY' in line:
             message = line.lstrip().replace('<h5>','').replace('</h5>','')

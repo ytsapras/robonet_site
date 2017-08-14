@@ -26,7 +26,7 @@ import get_errors
 import glob
 import api_tools
 
-version = 1.0
+version = 2.0
 
 def sync_artemis():
     """Driver function to maintain an up to date copy of the data on all microlensing events from 
@@ -44,7 +44,8 @@ def sync_artemis():
     log = init_log(config)
     
     status = check_rsync_config(config,log=log)
-
+    
+    print config['testing'],config['verbose']
     client = api_tools.connect_to_db(config,testing=config['testing'],
                                              verbose=config['verbose'])
     
@@ -211,7 +212,7 @@ def sync_artemis_data_db(client,config,data_type,log):
             a = path.join(config['models_local_location'],a)
             check = event_data_check(config,data_file=f,log=log)
             if check == True:
-                sync_data_align_files_with_db(config,f,a,log)
+                sync_data_align_files_with_db(client,config,f,a,log)
             else:
                 log.info(' -> WARNING: Skipped ingest of incomplete data')
                 
@@ -234,9 +235,9 @@ def sync_model_file_with_db(client,config,model_file,log):
     else:
         log.info('-> ERROR: could not parse model file.  Old format?')
 
-def sync_data_align_files_with_db(config,data_file,align_file,log):
+def sync_data_align_files_with_db(client,config,data_file,align_file,log):
     """Function to ensure the DB record of the latest data is up to date"""
-    
+    log.info('GOT HERE')
     short_name = path.basename(data_file).split('.')[0][1:-1]
     filt = path.basename(data_file).split('.')[0][-1:]
     origin = path.basename(data_file).split('.')[0][0:1]
@@ -258,12 +259,13 @@ def sync_data_align_files_with_db(config,data_file,align_file,log):
     last_upd = datetime.fromtimestamp(path.getmtime(data_file))
     last_upd = last_upd.replace(tzinfo=pytz.UTC)
     align_pars = read_artemis_align_params(align_file,filt)
-    
+    log.info(repr(align_pars))
     params = {'name': utilities.short_to_long_name(short_name)}
-    event_pk = int(api_tools.contact_db(config,params,
+    
+    event_pk = int(api_tools.contact_db(client,config,params,
                                             'query_eventname',
                                             testing=bool(config['testing'])))
-    
+    log.info('event_pk = '+str(event_pk))
     params = {'event': event_pk,
               'datafile': data_file,
               'last_mag': last_mag,
@@ -277,8 +279,7 @@ def sync_data_align_files_with_db(config,data_file,align_file,log):
               'last_upd': last_upd.strftime("%Y-%m-%dT%H:%M:%S"),
               }
     
-    db_config = {'db_user_id':config['db_user_id'], 'db_pswd': config['db_pswd']}
-    response = api_tools.contact_db(config,params,'add_datafile',
+    response = api_tools.contact_db(client,config,params,'add_datafile',
                                     testing=bool(config['testing']))
     
     if log!=None:

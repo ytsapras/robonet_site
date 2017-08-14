@@ -15,6 +15,7 @@ import glob
 from datetime import datetime
 import event_classes
 import pytest
+import api_tools
 
 def test_read_config():
     """Function to verify that the artemis subscriber software can read its
@@ -139,10 +140,15 @@ def test_sync_data_align_files_with_db():
     
     log = log_utilities.start_day_log( config, 'test_artemis_subscriber' )
 
+    client = api_tools.connect_to_db(config,testing=config['testing'],
+                                             verbose=config['verbose'])
+
     align_file = '../../data/OB170570.align'
     data_file = '../../data/OOB170570I.dat'
-
-    response = artemis_subscriber.sync_data_align_files_with_db(config,data_file,align_file,log)
+    
+    response = artemis_subscriber.sync_data_align_files_with_db(client,config,
+                                                                data_file,
+                                                                align_file,log)
     
     assert 'True' in response
     

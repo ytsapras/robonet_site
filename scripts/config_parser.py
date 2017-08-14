@@ -37,7 +37,11 @@ class ConfigHandler(xml.sax.handler.ContentHandler):
 
     # Define behaviour to handle the parameter values:
     def characters(self,data):
-        if self.ivalue == True: self.par_value = data
+        if self.ivalue == True: 
+            if 'True' in data or 'False' in data:
+                self.par_value = bool(data)
+            else:
+                self.par_value = data
 
     # Define behaviour when the end-parameter tag is encountered:
     def endElement(self,name):
