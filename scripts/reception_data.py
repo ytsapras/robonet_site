@@ -542,7 +542,8 @@ class Image(object):
 
 def find_frames_to_process(new_frames_directory, logger):
 
-	IncomingList = [i for i in os.listdir(new_frames_directory) if '.fits' in i]
+	IncomingList = [i for i in os.listdir(new_frames_directory) if ('.fits' in i) and ('.fz' not in i)]
+
 	
 	if len(IncomingList) == 0 :
 
