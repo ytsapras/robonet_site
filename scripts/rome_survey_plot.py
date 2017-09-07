@@ -19,7 +19,7 @@ import rome_fields_dict as fields_radec
 import matplotlib
 import datetime
 
-limit = 14
+limit = 14*3
 
 list_of_images = updb.Image.objects.filter(date_obs__range=[timezone.now()-timedelta(days=limit),timezone.now()], grp_id__contains='ROME')
 fig,ax = plt.subplots(2,1)
