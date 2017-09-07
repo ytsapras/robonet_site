@@ -40,11 +40,12 @@ class Image(object):
 		
 		self.image_directory = image_directory
 		self.image_name = image_name
+
 		self.origin_directory = image_output_origin_directory
 		self.logger = logger
 		self.banzai_bpm = None
 		self.banzai_catalog = None
-
+		
 		try:
 
 			images = fits.open(self.image_directory+self.image_name)
@@ -54,7 +55,7 @@ class Image(object):
 				try :	
 				
 					if image.header['EXTNAME'] == 'BPM':
-				
+				self.x_shift
 						self.banzai_bpm = image
 
 					if image.header['EXTNAME'] == 'SCI':
@@ -89,16 +90,19 @@ class Image(object):
 		self.quality_flags = []
                 self.thumbnail_box_size = 60
                 self.field_name = None
+		self.x_shift = None
+		self.y_shift = None
 
-		self.header_date_obs = None
+
+		self.header_date_obs = '1986-04-04T00:00:00.00' #dummy value
 		self.header_telescope_site = None
 		self.header_dome_id = None
-		self.header_group_id = None
-		self.header_track_id = None
-		self.header_request_id = None
+		self.header_group_id = ''
+		self.header_track_id = ''
+		self.header_request_id = ''
 		self.header_object_name = None
 		self.header_moon_distance = None
-		self.header_moon_status = None
+		self.header_moon_status = False
 		self.header_moon_fraction = None
 		self.header_airmass = None
 		self.header_seeing = None
@@ -162,7 +166,7 @@ class Image(object):
 
 		    self.logger.error('WCS header successfully updated')
 
-	def find_wcs_template(self):
+	def find_wcs_template(self):'1986-04-04T00:00:00.00'
 
 
 		field_name = self.field_name.replace('ROME-','')	
@@ -406,49 +410,72 @@ class Image(object):
 			self.logger.error('I can not assess the image quality, no quality flags produced!')
 
 	def check_background(self):
-	
-		if self.sky_level > self.quantity_limits.sky_background_median_limit:
+		if self.sky_level:
+			if self.sky_level > self.quantity_limits.sky_background_median_limit:
 
-			self.quality_flags.append('High sky background')
-					
-		if self.sky_level_std > self.quantity_limits.sky_background_std_limit:
+				self.quality_flags.append('High sky background')
+		else:
+			self.quality_flags.append('No sky level measured!')	
+		
+		if self.sky_level_std :			
+			if self.sky_level_std > self.quantity_limits.sky_background_std_limit:
 			
 
-			self.quality_flags.append('High sky background variations')
+				self.quality_flags.append('High sky background variations')
+		else:
 
-		if self.sky_minimum_level < self.quantity_limits.sky_background_minimum:
-
-			self.quality_flags.append('Low minimum background')
-
-		if self.sky_maximum_level > self.quantity_limits.sky_background_maximum:
-
-			self.quality_flags.append('High maximum background')
-
-	def check_Moon(self):
-	
-		if self.header_moon_distance < self.quantity_limits.minimum_moon_sep:
-
-			self.quality_flags.append('Moon too close')
-
+			self.quality_flags.append('No sky level variations measured!')	
 		
+		if self.sky_minimum_level:
+			if self.sky_minimum_level < self.quantity_limits.sky_background_minimum:
+
+				self.quality_flags.append('Low minimum background')
+		else:
+			self.quality_flags.append('No minimum sky level measured!')	
+
+		if self.quality_flags.append('No sky level variations measured!'):
+	
+			if self.sky_maximum_level > self.quantity_limits.sky_background_maximum:
+
+				self.quality_flags.append('High maximum background')
+
+		else:
+
+			self.quality_flags.append('No maximum sky level measured!')
+	
+	def check_Moon(self):
+		if self.header_moon_distance:
+			if self.header_moon_distance < self.quantity_limits.minimum_moon_sep:
+
+				self.quality_flags.append('Moon too close')
+
+		else:
+			self.quality_flags.append('No Moon distance measured!')	
 	def check_Nstars(self):
-	
-		if self.number_of_stars < self.quantity_limits.minimum_number_of_stars[self.filter]:
+		if self.number_of_stars:
+			if self.number_of_stars < self.quantity_limits.minimum_number_of_stars[self.filter]:
 
-			self.quality_flags.append('Low number of stars')
-
-	
+				self.quality_flags.append('Low number of stars')
+		else:
+			
+			self.quality_flags.append('No stars measured!')
 	def check_ellipticity(self):
-	
-		if self.ellipticity > self.quantity_limits.maximum_ellipticity:
 
-			self.quality_flags.append('High ellipticity')
+		if self.ellipticity:
+			if self.ellipticity > self.quantity_limits.maximum_ellipticity:
+
+				self.quality_flags.append('High ellipticity')
+		else:
+			self.quality_flags.append('No ellipticity measured!')	
 
 	def check_seeing(self):
-	
-		if self.seeing > self.quantity_limits.maximum_seeing:
+		if self.seeing:
 
-			self.quality_flags.append('Bad seeing')
+			if self.seeing > self.quantity_limits.maximum_seeing:
+
+				self.quality_flags.append('Bad seeing')
+		else:
+			self.quality_flags.append('No seeing measured!')	
 
         def check_if_image_in_database(self):
                 
@@ -461,16 +488,29 @@ class Image(object):
 		observing_date  = datetime.datetime.strptime(self.header_date_obs,'%Y-%m-%dT%H:%M:%S.%f')
 		observing_date = observing_date.replace(tzinfo=pytz.UTC)
 
+		try:
+			telescope = self.header_telescope_site + self.header_dome_id
+			telescope_name = rome_telescopes_dict.telescope_dict[telescope]
+		except:
 
-		telescope = self.header_telescope_site + self.header_dome_id
-		telescope_name = rome_telescopes_dict.telescope_dict[telescope]
+			telescope_name = ''
 
-		camera_filter = rome_filters_dict.filter_dict[self.filter]
+		try:
+
+			camera_filter = rome_filters_dict.filter_dict[self.filter]
+		except:
+
+			camera_filter = ''
+
+		try:
 		
 
-		moon_status_dictionnary = {'UP':True,'DOWN':False}
+			moon_status_dictionnary = {'UP':True,'DOWN':False}
 
-		moon_status = moon_status_dictionnary[self.header_moon_status]
+			moon_status = moon_status_dictionnary[self.header_moon_status]
+		except:
+
+			moon_status = False
 
 		ingest_success = update_db.add_image(self.field_name, self.image_name, observing_date, 
 						     timezone.now(), telescope_name, self.camera.name, 
@@ -534,12 +574,16 @@ class Image(object):
 
 
 	def class_the_catalog_in_the_directory(self):
+		try:
 
 		   catname=self.image_name.replace('.fits','.cat')
 
 		   ascii.write(self.catalog,os.path.join(self.catalog_directory,catname))
+		   self.logger.info('Catalog successfully moved to the catalog directory')
 
-
+		except:
+		   self.logger.error('The catalog can not be copied in the good directory!')			
+		
 def find_frames_to_process(new_frames_directory, logger):
 
 	IncomingList = [i for i in os.listdir(new_frames_directory) if ('.fits' in i) and ('.fz' not in i)]
@@ -589,13 +633,13 @@ def process_new_images(new_frames_directory, image_output_origin_directory, logs
 				image.class_the_catalog_in_the_directory()
 				sorting_success = image.class_the_image_in_the_directory()
 				
-			if sorting_success == True:
+				if sorting_success == True:
 
-				os.remove(new_frames_directory+newframe)
+					os.remove(new_frames_directory+newframe)
 
-			else:
+				else:
 
-				pass	
+					pass	
 			
 			
 		log_utilities.end_day_log(logger)
