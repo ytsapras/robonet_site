@@ -131,3 +131,11 @@ def test_get_events_within_radius():
     events_list = query_db.get_events_within_radius(ra, dec, radius)
     assert len(events_list) == 1
     
+def test_get_image_rejection_statistics():
+    
+    stats = query_db.get_image_rejection_statistics()
+    d = {'Accepted': 0}    
+    assert type(stats) == type(d)
+    assert 'Accepted' in stats.keys()
+    assert len(stats) > 1
+    

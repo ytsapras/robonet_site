@@ -1,0 +1,14 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<div>
+      <h3>Summary of Image Quality Control Assessment</h3>
+{% if plot_file == 'None' %}
+    <center><h5>Problem generating image quality control plot</h5></center>
+{% else %}
+    <center><img src="/media/{{plot_file}}"></center>
+{% endif %}
+</div>
+{% endblock %}

@@ -26,6 +26,7 @@ from scripts.utilities import short_to_long_name
 from scripts import config_parser
 from scripts.get_errors import *
 from scripts import update_db_2
+from scripts import db_plotting_utilities
 import requests
 
 # Path to ARTEMiS files
@@ -1617,3 +1618,16 @@ def extract_data_file_post_params(fpost,epost):
               }
     
     return params
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def data_quality_control(request):
+    """Function to display quality control information from reception"""
+        
+    if request.user.is_authenticated():
+        plot_path = db_plotting_utilities.plot_image_rejection_statistics()
+        return render(request, 'events/data_quality_display.html', \
+                                    {'plot_file': plot_path})
+    else:
+        return HttpResponseRedirect('login')
+

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<mediaconfig>
+    <parameter name='media_directory'>
+      	<value>/Users/rstreet/software/robonet_site/media/</value>
+    </parameter>
+</mediaconfig>

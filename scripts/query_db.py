@@ -21,7 +21,7 @@ from rome_fields_dict import field_dict
 from field_check import romecheck
 import utilities
 from events.models import ObsRequest, Tap, Event, SingleModel
-from events.models import EventName
+from events.models import EventName, Image
 from observation_classes import get_request_desc
 
 class TapEvent():
@@ -326,6 +326,36 @@ def combine_event_names(qs_event_names):
     combined_name = utilities.combined_survey_name(name_list)
     return combined_name
     
-
+def get_image_rejection_statistics(date_start=None,date_end=None):
+    """Function to query the DB for the reasons why images were accepted or
+    rejected by reception.
+    All images will be returned unless start and end date ranges are given.
+    """
+    
+    if date_start == None and date_end == None:
+        qs = Image.objects.all()
+    elif date_start !=None and date_end == None:
+        qs = Image.objects.filter(date_obs__gte=date_start)
+    elif date_start == None and date_end !=None:
+        qs = Image.objects.filter(date_obs__lte=date_end)
+    else:
+        qs = Image.objects.filter(date_obs__gte=date_start, 
+                                   date_obs__lte=date_end)
+    
+    stats = {'Accepted': 0, 'Total number of images': len(qs)}
+    for image in qs:
+        if len(image.quality) == 0:
+            stats['Accepted'] = stats['Accepted'] + 1
+        else:
+            keys = image.quality.split(' ; ')
+            for k in keys:
+                if k in stats.keys():
+                    stats[k] = stats[k] + 1
+                else:
+                    stats[k] = 1
+        
+    return stats
+    
 if __name__ == '__main__':
-    get_rea_targets()
+    stats = get_image_rejection_statistics()
+    print stats
