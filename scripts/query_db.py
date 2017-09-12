@@ -330,31 +330,54 @@ def get_image_rejection_statistics(date_start=None,date_end=None):
     """Function to query the DB for the reasons why images were accepted or
     rejected by reception.
     All images will be returned unless start and end date ranges are given.
+    
+    Currently has a workaround for the multiply ingested images.
     """
     
     if date_start == None and date_end == None:
-        qs = Image.objects.all()
+        image_list = Image.objects.all()
     elif date_start !=None and date_end == None:
-        qs = Image.objects.filter(date_obs__gte=date_start)
+        image_list = Image.objects.filter(date_obs__gte=date_start)
     elif date_start == None and date_end !=None:
-        qs = Image.objects.filter(date_obs__lte=date_end)
+        image_list = Image.objects.filter(date_obs__lte=date_end)
     else:
-        qs = Image.objects.filter(date_obs__gte=date_start, 
+        image_list = Image.objects.filter(date_obs__gte=date_start, 
                                    date_obs__lte=date_end)
+    checked_images = []
     
-    stats = {'Accepted': 0, 'Total number of images': len(qs)}
-    for image in qs:
-        if len(image.quality) == 0:
-            stats['Accepted'] = stats['Accepted'] + 1
-        else:
-            keys = image.quality.split(' ; ')
-            for k in keys:
-                if k in stats.keys():
-                    stats[k] = stats[k] + 1
-                else:
-                    stats[k] = 1
-        
+    stats = {'Accepted': 0, 'Total number of images': len(image_list)}
+    for image in image_list:
+        if image.image_name not in checked_images:
+            qs = Image.objects.filter(image_name=image.image_name).order_by('timestamp').reverse()
+            recent_entry = qs[0]
+            if len(recent_entry.quality) == 0:
+                stats['Accepted'] = stats['Accepted'] + 1
+            else:
+                keys = recent_entry.quality.split(' ; ')
+                for k in keys:
+                    if k in stats.keys():
+                        stats[k] = stats[k] + 1
+                    else:
+                        stats[k] = 1
+            checked_images.append(image.image_name)
+    stats['Total number of images'] = len(checked_images)
+    
     return stats
+
+def check_image_in_db(image_name):
+    """Function to check whether an image has been ingested into the database.
+    Input:
+        image_name    str    Name of image file without directory path
+    Outputs:
+        present       Bool   Status flag indicating whether the image is 
+                              recorded in the DB
+    """
+    
+    qs = Image.objects.filter(image_name=image_name)
+    if len(qs) > 0:
+        return True
+    else:
+        return False
     
 if __name__ == '__main__':
     stats = get_image_rejection_statistics()

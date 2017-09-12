@@ -139,3 +139,10 @@ def test_get_image_rejection_statistics():
     assert 'Accepted' in stats.keys()
     assert len(stats) > 1
     
+def test_check_image_in_db():
+    
+    status = query_db.check_image_in_db('cpt1m010-fl16-20170403-0197-e91.fits')
+    assert status == True
+    status = query_db.check_image_in_db('cpt1m010-foo-20170403-bar-e91.fits')
+    assert status == False
+    
