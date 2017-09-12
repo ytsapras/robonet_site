@@ -17,7 +17,7 @@ class Command(BaseCommand):
     def _verify_image_ingestion(self,*args, **options):
         images = Image.objects.all()
         
-        remove = False
+        remove = True
         
         log = open('image_ingestion.txt','w')
         for image in images:
