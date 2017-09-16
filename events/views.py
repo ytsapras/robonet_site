@@ -153,12 +153,14 @@ def dashboard(request):
             except requests.exceptions.HTTPError as exc:
                 print('Request failed: {}'.format(response.content))
                 raise exc
+            # Report the time allocation only for the 1m network
             proposals_dict = response.json()  # api returns a json dictionary containing proposal information
-            time_alloc_dict = proposals_dict['results'][0]['timeallocation_set'][0]
-            time_available = time_alloc_dict['std_allocation']
-            time_used = time_alloc_dict['std_time_used']
-            ipp_time_available = time_alloc_dict['ipp_time_available']
-            ipp_limit = time_alloc_dict['ipp_limit']
+	    for alloc in proposals_dict['results'][0]['timeallocation_set']:
+	        if alloc['telescope_class'] == u'1m0':
+                    time_available = alloc['std_allocation']
+                    time_used = alloc['std_time_used']
+                    ipp_time_available = alloc['ipp_time_available']
+                    ipp_limit = alloc['ipp_limit']
         except:
             raise Http404("Encountered a problem while trying to access the LCO observe api. Please contact the site administrator.")
         errors = read_err()
