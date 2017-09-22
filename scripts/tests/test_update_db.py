@@ -96,5 +96,29 @@ def test_expire_old_obs():
     qs = query_db.get_old_active_obs()
     assert len(qs) == 0
 
+def test_update_image():
+    """Function to test the function to update the parameters of an existing 
+    image"""
+    
+    image_name = 'coj1m011-fl12-20170726-0119-e91.fits'
+    date_obs = datetime.strptime('2017-07-26T13:44:42',"%Y-%m-%dT%H:%M:%S")
+    tel='LCOGT SSO A m'
+    inst='fl12'
+    filt='SDSS-g'
+    grp_id='ROME20170719T22.44993187'
+    track_id='0000460168'
+    req_id='0001232641'
+    quality = 'Bad seeing'
+    status = update_db_2.update_image(image_name, date_obs, tel=tel, 
+                inst=inst,filt=filt, grp_id=grp_id, track_id=track_id, 
+                req_id='', quality=quality)
+    assert status == True
+
+    image_name = 'foo.fits'
+    status = update_db_2.update_image(image_name, date_obs, tel=tel, 
+                inst=inst,filt=filt, grp_id=grp_id, track_id=track_id, 
+                req_id='', quality=quality)
+    assert status == False
+
 if __name__ == '__main__':
     test_add_datafile_via_api()

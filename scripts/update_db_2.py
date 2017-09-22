@@ -1152,6 +1152,109 @@ def add_image(field_name, image_name, date_obs, timestamp=timezone.now(), tel=''
    else:
       successful = False
    return successful
+   
+def update_image(image_name, date_obs, timestamp=timezone.now(), 
+                 tel='', inst='',filt='', grp_id='', track_id='', req_id='',
+                 airmass=None, avg_fwhm=None,avg_sky=None, avg_sigsky=None, 
+                 moon_sep=None, moon_phase=None, moon_up=False, elongation=None, 
+                 nstars=None, ztemp=None, shift_x=None, shift_y=None, quality=''):
+    """
+    Update an existing image entry in the database. 
+    
+    Keyword arguments:
+    field_name -- The field name.
+                (string, required)
+    image_name -- The name of the image.
+                (string, required)
+    date_obs -- The date of observation.
+                (datetime, required)
+                e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
+    timestamp -- The time the image was written/updated in the database.
+                (datetime, optional, default=timezone.now())
+                e.g. datetime(2016, 9, 23, 15, 26, 13, 104683, tzinfo=<UTC>)
+    tel -- Telescope where the image was taken.
+                (string, optional, default='')
+    inst -- Instrument used for the observation.
+                (string, optional, default='')
+    filt -- Filter used for the observation.
+                (string, optional, default='')
+    grp_id -- Group ID.
+                (string, optional, default='')
+    track_id -- Tracking ID.
+                (string, optional, default='')
+    req_id -- Observing Request ID.
+                (string, optional, default='')
+    airmass -- Airmass of observation.
+                (float, optional, default=None)
+    avg_fwhm -- Average FWHM of stars in image.
+                (float, optional, default=None)
+    avg_sky -- Average sky background counts in image.
+                (float, optional, default=None)
+    avg_sigsky -- Error in sky background counts.
+                (float, optional, default=None)
+    moon_sep -- Moon-target separation (in degrees).
+                (float, optional, default=None)
+    moon_phase -- Moon phase (% of Full).
+                (float, optional, default=None)
+    moon_up -- Was the moon above the horizon at the time of this observation?
+                (boolean, optional, default=False)
+    elongation -- Detected object elongation.
+                (float, optional, default=None)
+    nstars -- Number of stars detected.
+                (integer, optional, default=None)
+    ztemp -- ztemp parameter.
+                (float, optional, default=None)
+    shift_x -- x-axis WCS shift from template image in pixels
+                (integer, optional, default=None)
+    shift_y -- y-axis WCS shift from template image in pixels
+                (integer, optional, default=None)
+    quality -- Image quality description.
+                (string, optional, default='')
+    """
+    
+    qs = Image.objects.filter(image_name=image_name)
+    if len(qs) > 0:
+        image = qs[0]
+        image.date_obs = date_obs
+        image.timestamp = timestamp
+        image.tel = tel
+        image.inst = inst
+        image.filt = filt
+        image.grp_id = grp_id
+        image.track_id = track_id
+        image.req_id= req_id
+        if airmass != None:
+            image.airmass = airmas
+        if avg_fwhm != None:
+            image.avg_fwhm = avg_fwhm
+        if avg_sky != None:
+            image.avg_sky = avg_sky
+        if avg_sigsky != None:
+            image.avg_sigsky = avg_sigsky
+        if moon_sep != None:
+            image.moon_sep = moon_sep
+        if moon_phase != None:
+            image.moon_phase = moon_phase
+        if moon_up != None:
+            image.moon_up = moon_up
+        if elongation != None:
+            image.elongation = elongation
+        if nstars != None:
+            image.nstars = nstars
+        if ztemp != None:
+            image.ztemp = ztemp
+        if shift_x != None:
+            image.shift_x = shift_x
+        if shift_y != None:
+            image.shift_y = shift_y
+        if quality != None:
+            image.quality = quality
+        
+        image.save()
+        return True
+    else:
+        return False
+
 
 ###################################################################################
 def expire_old_obs(log=None):
