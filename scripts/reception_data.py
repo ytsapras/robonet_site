@@ -57,7 +57,7 @@ class Image(object):
 				try :	
 				
 					if image.header['EXTNAME'] == 'BPM':
-				self.x_shift
+				
 						self.banzai_bpm = image
 
 					if image.header['EXTNAME'] == 'SCI':
@@ -168,8 +168,7 @@ class Image(object):
 
 		    self.logger.error('WCS header successfully updated')
 
-	def find_wcs_template(self):'1986-04-04T00:00:00.00'
-
+	def find_wcs_template(self):
 
 		field_name = self.field_name.replace('ROME-','')	
 		template_name = 'WCS_template_' + field_name + '.fits'
@@ -515,7 +514,7 @@ class Image(object):
 			moon_status = False
 
 
-		image_exist = query_db.check_image_in_db(image_name)
+		image_exist = query_db.check_image_in_db(self.image_name)
 		if image_exist == True:
 
 			ingest_success = update_db.update_image(self.field_name, self.image_name, observing_date, 
