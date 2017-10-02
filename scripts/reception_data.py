@@ -513,45 +513,49 @@ class Image(object):
 
 			moon_status = False
 
+		try :
+			image_exist = query_db.check_image_in_db(self.image_name)
+			if image_exist == True:
 
-		image_exist = query_db.check_image_in_db(self.image_name)
-		if image_exist == True:
+				ingest_success = update_db.update_image(self.image_name, observing_date, 
+							     timezone.now(), telescope_name, self.camera.name, 
+							     camera_filter, self.header_group_id, self.header_track_id, 
+							     self.header_request_id, self.header_airmass, self.seeing, 
+							     self.sky_level, self.sky_level_std, self.header_moon_distance, 
+		                                             self.header_moon_fraction, moon_status, 
+		                                             self.ellipticity, self.number_of_stars, self.header_ccd_temp, 
+				      			     self.x_shift, self.y_shift, quality_flag) 
 
-			ingest_success = update_db.update_image(self.field_name, self.image_name, observing_date, 
-						     timezone.now(), telescope_name, self.camera.name, 
-						     camera_filter, self.header_group_id, self.header_track_id, 
-						     self.header_request_id, self.header_airmass, self.seeing, 
-						     self.sky_level, self.sky_level_std, self.header_moon_distance, 
-                                                     self.header_moon_fraction, moon_status, 
-                                                     self.ellipticity, self.number_of_stars, self.header_ccd_temp, 
-			      			     self.x_shift, self.y_shift, quality_flag) 
+				if ingest_success == True:
 
-			if ingest_success == True:
+					self.logger.info('Image successfully updated in the DB')
 
-				self.logger.info('Image successfully updated in the DB')
+				else:
 
+					self.logger.warning('Image NOT updated in the DB, something goes wrong')
 			else:
 
-				self.logger.warning('Image NOT updated in the DB, something goes wrong')
-		else:
-
-			ingest_success = update_db.add_image(self.field_name, self.image_name, observing_date, 
-						     timezone.now(), telescope_name, self.camera.name, 
-						     camera_filter, self.header_group_id, self.header_track_id, 
-						     self.header_request_id, self.header_airmass, self.seeing, 
-						     self.sky_level, self.sky_level_std, self.header_moon_distance, 
-                                                     self.header_moon_fraction, moon_status, 
-                                                     self.ellipticity, self.number_of_stars, self.header_ccd_temp, 
-			      			     self.x_shift, self.y_shift, quality_flag)  	
+				ingest_success = update_db.add_image(self.field_name, self.image_name, observing_date, 
+							     timezone.now(), telescope_name, self.camera.name, 
+							     camera_filter, self.header_group_id, self.header_track_id, 
+							     self.header_request_id, self.header_airmass, self.seeing, 
+							     self.sky_level, self.sky_level_std, self.header_moon_distance, 
+		                                             self.header_moon_fraction, moon_status, 
+		                                             self.ellipticity, self.number_of_stars, self.header_ccd_temp, 
+				      			     self.x_shift, self.y_shift, quality_flag)  	
 		
 
-			if ingest_success == True:
+				if ingest_success == True:
 
-				self.logger.info('Image successfully ingest in the DB')
+					self.logger.info('Image successfully ingest in the DB')
 
-			else:
+				else:
 
-				self.logger.warning('Image NOT ingest in the DB, something goes wrong')
+					self.logger.warning('Image NOT ingest in the DB, something goes wrong')
+
+		except:
+			ingest_success = False				
+			self.logger.warning('Image NOT ingest/update in the DB, something goes really wrong!')
 
 		return ingest_success
 
@@ -662,8 +666,12 @@ def process_new_images(new_frames_directory, image_output_origin_directory, logs
 		   			logger.info('Successfully moved the frame in the Processed directory!')
 				else:
 		   			logger.info('NOT successfully moved the frame in the Processed directory!')
-					pass	
-				
+					pass
+	
+			if success == False:
+
+				logger.warning('The image can not be update/ingest in the DB, aboard this frame! ')
+					
 			
 		log_utilities.end_day_log(logger)
 	else :

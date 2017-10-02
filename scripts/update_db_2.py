@@ -1162,8 +1162,7 @@ def update_image(image_name, date_obs, timestamp=timezone.now(),
     Update an existing image entry in the database. 
     
     Keyword arguments:
-    field_name -- The field name.
-                (string, required)
+    
     image_name -- The name of the image.
                 (string, required)
     date_obs -- The date of observation.
