@@ -76,7 +76,7 @@ class Image(object):
 		except:
 			logger.error('I can not load the image!')
 			
-		
+
 
 		self.data = science_image.data
 		self.header = science_image.header
@@ -296,7 +296,7 @@ class Image(object):
            calling it through logging to obtain an astropy
            compliant output with logging...
            '''
-	   
+
 	   try:
 
 		   extractor_parameters=['X_IMAGE','Y_IMAGE','BACKGROUND',
@@ -316,7 +316,7 @@ class Image(object):
 		                  'GAIN':self.camera.gain,
 		                  'SEEING_FWHM':self.header_seeing,
 		                  'BACK_FILTERSIZE':3}
-		   sew = sewpy.SEW(params=extractor_parameters,config=extractor_config)
+		   sew = sewpy.SEW(workdir =self.image_directory+'sewpy/', params=extractor_parameters,config=extractor_config)
 		   sewoutput = sew(os.path.join(self.image_directory,self.image_name))
 		   #APPEND JD, ATTEMPTING TO CALIBRATE MAGNITUDES..
 		   catalog=sewoutput['table']     
@@ -588,7 +588,7 @@ class Image(object):
 
 				new_hdul.append(self.banzai_bpm)
 
-			new_hdul.writeto(self.output_directory+self.image_name, clobber=True)
+			new_hdul.writeto(self.output_directory+self.image_name, overwrite=True)
 			self.logger.info('Image '+self.image_name+' successfully place in the directory '+self.output_directory)
 			sorting_success = True
 
@@ -605,7 +605,7 @@ class Image(object):
 
 		   catname=self.image_name.replace('.fits','.cat')
 
-		   ascii.write(self.catalog,os.path.join(self.catalog_directory,catname))
+		   ascii.write(self.catalog,os.path.join(self.catalog_directory,catname),overwrite=True)
 		   self.logger.info('Catalog successfully moved to the catalog directory')
 
 		except:
