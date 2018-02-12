@@ -40,6 +40,7 @@ def build_rome_obs(script_config,log=None):
             obs.instrument = obs_sequence['instruments'][s]
             obs.instrument_class = '1M0-SCICAM-SINISTRO'
             obs.set_aperture_class()
+            obs.airmass_limit = 1.2
             obs.filters = obs_sequence['filters'][s]
             obs.exposure_times = obs_sequence['exp_times'][s]
             obs.exposure_counts = obs_sequence['exp_counts'][s]
