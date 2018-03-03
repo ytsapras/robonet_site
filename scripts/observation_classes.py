@@ -51,6 +51,7 @@ class ObsRequest:
         self.json_request = None
         self.ts_submit = None
         self.ts_expire = None
+        self.airmass_limit = 2.0
         self.user_id = None
         self.token = None
         self.proposal_id = None
@@ -139,7 +140,7 @@ class ObsRequest:
             log.info('Location dictionary: ' + str( location ))
         
         constraints = { 
-        		  'max_airmass': 2.0,
+        		  'max_airmass': float(self.airmass_limit),
                     'min_lunar_distance': 10
                     }
         if debug == True and log != None:
