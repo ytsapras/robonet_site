@@ -39,19 +39,18 @@ class Command(BaseCommand):
         
         for track_id in id_list:
             
-            if int(track_id) > 573586:
-                obs = unique_obs[track_id]
-                
-                (states, completed_ts) = lco_api_tools.get_subrequests_status(token,track_id)
-                
-                n_success = 0
-                for entry in completed_ts:
-                    if entry != None:
-                        n_success += 1
-                
-                f.write(obs.grp_id+' '+track_id+' '+obs.timestamp.strftime("%Y-%m-%dT%H:%M:%S")+' '+\
-                        obs.which_inst+' '+str(len(states))+' '+str(n_success)+'\n')
-                f.flush()
+            obs = unique_obs[track_id]
+            
+            (states, completed_ts) = lco_api_tools.get_subrequests_status(token,track_id)
+            
+            n_success = 0
+            for entry in completed_ts:
+                if entry != None:
+                    n_success += 1
+            
+            f.write(obs.grp_id+' '+track_id+' '+obs.timestamp.strftime("%Y-%m-%dT%H:%M:%S")+' '+\
+                    obs.which_inst+' '+str(len(states))+' '+str(n_success)+'\n')
+            f.flush()
             
         f.close()
         
