@@ -96,7 +96,7 @@ class ObsRequest:
                 ' ' + str(self.instrument) + ' ' + f_list + ' ' + \
                 exp_list + ' ' + str(self.cadence) + ' ' + self.group_id
         return output
-
+    
     def build_cadence_request(self, log=None, debug=False):
         
         if debug == True and log != None:
@@ -146,8 +146,8 @@ class ObsRequest:
         if debug == True and log != None:
             log.info('Constraints dictionary: ' + str( constraints ))
         
-        self.ts_submit = timezone.now() + timedelta(seconds=(10*60))
-        self.ts_expire = self.ts_submit + timedelta(seconds=(self.ttl*24*60*60))
+        (self.ts_submit,self.ts_expire) = get_obs_dates(self.ttl)
+
         cadence = { 'start': self.ts_submit.strftime("%Y-%m-%d %H:%M:%S"),
                     'end': self.ts_expire.strftime("%Y-%m-%d %H:%M:%S"),
                     'period': float(self.cadence),
@@ -410,3 +410,17 @@ def get_request_desc(request_type):
         raise ValueError('Unknown observation request type, ' + request_type)
     
     return request_desc
+
+def get_obs_dates(ttl):
+    """Function to calculate the submit and expiry dates for an observation
+    group.  
+    
+    The function assumes the request will be submitted and become active
+    immediately, and expire at submission+TTL
+    """
+    
+    ts_submit = timezone.now() + timedelta(seconds=(10*60))
+    ts_expire = ts_submit + timedelta(seconds=(ttl*24*60*60))
+
+    return ts_submit, ts_expire
+    

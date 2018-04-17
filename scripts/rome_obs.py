@@ -8,6 +8,7 @@ Created on Fri Mar 17 16:31:07 2017
 import observation_classes
 from datetime import datetime, timedelta
 from rome_fields_dict import field_dict
+import observing_tools
 
 def build_rome_obs(script_config,log=None):
     """Function to define the observations to be taken during the ROME
@@ -21,7 +22,7 @@ def build_rome_obs(script_config,log=None):
         log.info('Building observation requests for '+\
                             str(len(field_ids))+' fields:')
         log.info(' '.join(field_ids))
-    obs_sequence = rome_obs_sequence()
+
     rome_obs = []
     
     for s in range(0,len(obs_sequence['sites']),1):
@@ -30,6 +31,14 @@ def build_rome_obs(script_config,log=None):
                         obs_sequence['sites'][s] + ':')
         for f in field_ids:
             field = rome_fields[f]
+            
+            obs_sequence = rome_obs_sequence()
+            
+            (ts_submit, ts_expire) = observation_classes.get_obs_dates(obs_sequence['TTL_days'])
+    
+            obs_sequence = observing_tools.review_filters_for_observing_conditions(obs_sequence,field,
+                                                                                   ts_submit, ts_expire)
+            
             obs = observation_classes.ObsRequest()
             obs.name = f
             obs.ra = field[2]
@@ -79,7 +88,7 @@ def get_rome_fields(selected_field=None):
 def rome_obs_sequence():
     """Function to define the observation sequence to be taken for all ROME 
     survey pointings"""
-    
+
     obs_sequence = {
                     'exp_times': [ [300.0, 300.0, 300.0],
                                   [300.0, 300.0, 300.0],
@@ -102,6 +111,8 @@ def rome_obs_sequence():
                     'TTL_days': 6.98,
                     'priority': 1.05
                     }
+    
+            
     return obs_sequence
 
 if __name__ == '__main__':

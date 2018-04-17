@@ -9,6 +9,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz, get_sun, get_moon
 from astropy.time import Time
 import numpy as np
+import observing_classes
 
 def get_site_location(site_code):
     """Function to return an LCO site location as an astropy EarthLocation.
@@ -97,7 +98,108 @@ def get_Moon_separation(target,earth_location,obs_date):
                        location=earth_location)
     
     moon = get_moon(Time(obs_date.jd, format='jd')).transform_to(altazframe)
-    
+        
     separation = target.separation(moon)
     
     return separation
+
+def check_Moon_within_tolerance(pointing, site, obs_date,
+                                separation_threshold=15.0,
+                                phase_threshold=0.90):
+    """Function to check whether the Moon is outside an acceptable threshold
+    in angular separation and of illumination level less than the allowed
+    limit.
+    
+    Inputs:
+        :param SkyCoord target: Target location
+        :param EarthLocation earth_location: Location of observer on Earth
+        :param Time obs_date: Date to calculate separation
+    
+    Output:
+        :param Bool status: Whether or not Moon is within tolerances.
+    """
+
+    target = SkyCoord(ra=17.256*15.0*u.degree, dec=-28.5*u.degree, frame='icrs')
+    
+    separation = get_Moon_separation(target,site,obs_date)
+    phase = get_Moon_phase(target,site,obs_date)
+    
+    status = True
+    
+    if separation.value <= separation_threshold or phase >= phase_threshold:
+        
+        status = False
+    
+    return status
+    
+def get_skycoord(pointing):
+    """Function to return a SkyCoord object for a given RA, Dec pointing"""
+    
+    if type(pointing[0]) == type(1.0):
+        ra_deg = pointing[0]
+        dec_deg = pointing[1]
+    else:
+        (ra_deg, dec_deg) = utilities.sex2decdeg(pointing[0], pointing[1])
+
+    target = SkyCoord(ra=ra_deg*u.degree, dec=dec_deg*u.degree, frame='icrs')
+    
+    return target
+    
+def review_filters_for_observing_conditions(obs_sequence,field,
+                                            ts_submit,ts_expire,
+                                            log=None):
+    """Function to review the default list of filters to be observed, 
+    and ammend the list if the Moon is outside tolerances at any point
+    during the lifetime of the observing request."""
+    
+    target = observing_tools.get_skycoord(field)
+    
+    sites = []
+    site_filters = []
+    
+    for s,site_code in enumerate(obs_sequence['sites']):
+    
+        site = observing_tools.get_site_location(site_code)
+    
+        use_filters = []
+        
+        for f in obs_sequence['filters'][s]:
+
+            sep_thresh = 15.0
+            phase_thresh = 0.98
+            
+            if f == 'SDSS-g':
+                
+                sep_thresh = 40.0
+                phase_thresh = 0.90
+            
+            moon_ok = True
+            
+            t = ts_submit
+            while t <= ts_expire:
+                            
+                ts = Time(ts_submit.strftime("%Y-%m-%dT%H:%M:%S"),
+                     format='isot', scale='utc')
+
+                moon_chk = observing_tools.check_Moon_within_tolerance(target, site, ts,
+                                                        separation_threshold=sep_thresh,
+                                                        phase_threshold=phase_thresh)
+                
+                if not moon_chk:
+                    
+                    moon_ok = moon_chk
+        
+            if moon_ok:
+                
+                use_filters.append(f)
+                
+        if len(use_filters) > 0:
+            
+            site_filters.append( use_filters )
+            sites.append(site_code)
+        
+    obs_sequence['sites'] = sites
+    obs_sequence['filters'] = site_filters
+    
+    return obs_sequence
+    
