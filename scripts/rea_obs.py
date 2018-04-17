@@ -53,10 +53,10 @@ def build_rea_obs(script_config,log=None,tap_list=None):
                 obs.name = str(target.field)               
                 obs.ra = rome_field[2]
                 obs.dec = rome_field[3]
-                obs.site = site_obs_sequence['sites']
-                obs.observatory= site_obs_sequence['domes']
-                obs.tel = site_obs_sequence['tels']
-                obs.instrument = site_obs_sequence['instruments']
+                obs.site = site_obs_sequence['sites'][0]
+                obs.observatory= site_obs_sequence['domes'][0]
+                obs.tel = site_obs_sequence['tels'][0]
+                obs.instrument = site_obs_sequence['instruments'][0]
                 obs.instrument_class = '1M0-SCICAM-SINISTRO'
                 obs.set_aperture_class()
                 obs.filters = [ str(target.passband) ]
