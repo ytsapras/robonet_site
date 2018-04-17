@@ -9,64 +9,94 @@ import query_db
 import observation_classes
 import utilities
 from rome_fields_dict import field_dict
-
-def build_rea_obs(script_config,log=None):
+import observing_tools
+import copy
+        
+def build_rea_obs(script_config,log=None,tap_list=None):
     """Function to define the observations to be taken for the REA
     microlensing program, based on the targets extracted from the database
     as recommended by TAP"""
     
-    tap_list = query_db.get_tap_list(log=log)
-    obs_sequence = rea_obs_sequence()
+    if tap_list == None:
+        
+        tap_list = query_db.get_tap_list(log=log)
+        
+    default_obs_sequence = rea_obs_sequence()
     
     rea_obs = []
-    for s in range(0,len(obs_sequence['sites']),1):
+
+    for s in range(0,len(default_obs_sequence['sites']),1):
+
+        site_code = default_obs_sequence['sites'][s]
+        
+        site_obs_sequence = rea_obs_sequence(site_code)
+    
         if log != None:
-                log.info('Building observation requests for site ' + \
-                        obs_sequence['sites'][s] + ':')
+                log.info('Building observation requests for site '+site_code+ ':')
+
         for target in tap_list:
-            obs = observation_classes.ObsRequest()
-            obs.name = str(target.field)
+            
             rome_field=field_dict[str(target.field)]
-            obs.ra = rome_field[2]
-            obs.dec = rome_field[3]
-            obs.site = obs_sequence['sites'][s]
-            obs.observatory= obs_sequence['domes'][s]
-            obs.tel = obs_sequence['tels'][s]
-            obs.instrument = obs_sequence['instruments'][s]
-            obs.instrument_class = '1M0-SCICAM-SINISTRO'
-            obs.set_aperture_class()
-            obs.filters = [ str(target.passband) ]
-            obs.exposure_times = [ float(target.texp) ]
-            obs.exposure_counts = [ int(target.nexp) ]
-            obs.cadence = float(target.tsamp)
-            obs.jitter = obs_sequence['jitter_hrs']
-            obs.priority = float(target.ipp)
-            obs.ttl = obs_sequence['TTL_'+str(target.priority)+'_days']
-            obs.user_id = script_config['user_id']
-            obs.proposal_id = script_config['proposal_id']
-            obs.token = script_config['token']
-            obs.focus_offset = obs_sequence['defocus']
-            #obs.request_type = str(target.priority)
-            obs.request_type = 'M'
-            obs.req_origin = 'obscontrol'
-            obs.get_group_id()
             
-            rea_obs.append(obs)
+            site_obs_sequence['filters'] = [ str(target.passband) ]
             
-            if log != None:
-                log.info(obs.summary())
+            (ts_submit, ts_expire) = observation_classes.get_obs_dates(site_obs_sequence['TTL_'+str(target.priority)+'_days'])
+            
+            site_obs_sequence = observing_tools.review_filters_for_observing_conditions(site_obs_sequence,rome_field,
+                                                                                   ts_submit, ts_expire,
+                                                                                   log=log)
+
+            if site_obs_sequence['filters'] > 0:
+                
+                obs = observation_classes.ObsRequest()
+                
+                obs.name = str(target.field)               
+                obs.ra = rome_field[2]
+                obs.dec = rome_field[3]
+                obs.site = site_obs_sequence['sites'][0]
+                obs.observatory= site_obs_sequence['domes'][0]
+                obs.tel = site_obs_sequence['tels'][0]
+                obs.instrument = site_obs_sequence['instruments'][0]
+                obs.instrument_class = '1M0-SCICAM-SINISTRO'
+                obs.set_aperture_class()
+                obs.filters = [ str(target.passband) ]
+                obs.exposure_times = [ float(target.texp) ]
+                obs.exposure_counts = [ int(target.nexp) ]
+                obs.cadence = float(target.tsamp)
+                obs.jitter = site_obs_sequence['jitter_hrs']
+                obs.priority = float(target.ipp)
+                obs.ttl = site_obs_sequence['TTL_'+str(target.priority)+'_days']
+                obs.user_id = script_config['user_id']
+                obs.proposal_id = script_config['proposal_id']
+                obs.token = script_config['token']
+                obs.focus_offset = site_obs_sequence['defocus']
+                #obs.request_type = str(target.priority)
+                obs.request_type = 'M'
+                obs.req_origin = 'obscontrol'
+                obs.get_group_id()
+                
+                rea_obs.append(obs)
+                
+                if log != None:
+                    log.info(obs.summary())
+                
+            else:
+                
+                if log != None:
+                    log.info('WARNING: No observations possible')
+                    
         if log != None:
             log.info('\n')
         
     return rea_obs
     
-def rea_obs_sequence():
+def rea_obs_sequence(site_code=None):
     """Function to define the observation sequence to be taken for all ROME 
     survey pointings"""
     
     obs_sequence = {
-                    'filters':   [ 'SDSS-i'],
-                    'defocus':  [ 0.0 ],
+                    'filters':   [ [ 'SDSS-i'],[ 'SDSS-i'],[ 'SDSS-i'] ],
+                    'defocus':  [ 0.0, 0.0, 0.0 ],
                     'sites':        ['lsc', 'cpt', 'coj'],
                     'domes':        ['doma', 'domc', 'doma'],
                     'tels':         [ '1m0', '1m0', '1m0' ],
@@ -77,5 +107,32 @@ def rea_obs_sequence():
                     'TTL_B_days': 2.0,
                     'jitter_hrs': 1.0,
                     }
-    return obs_sequence
-    
+                    
+    if site_code != None:
+        
+        s = obs_sequence['sites'].index(site_code)
+        
+        site_obs_sequence = {}
+        
+        for key, value in obs_sequence.items():
+            
+            if type(value) == type([]):
+                
+                if type(value[s]) == type([]):
+                    
+                    site_obs_sequence[key] = value[s]
+                    
+                else:
+                
+                    site_obs_sequence[key] = [ value[s] ]
+                    
+            else:
+                
+                site_obs_sequence[key] = value
+        
+        return site_obs_sequence
+        
+    else:
+        
+        return obs_sequence
+        
