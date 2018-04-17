@@ -9,7 +9,8 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz, get_sun, get_moon
 from astropy.time import Time
 import numpy as np
-import observing_classes
+import observation_classes
+from datetime import datetime, timedelta
 
 def get_site_location(site_code):
     """Function to return an LCO site location as an astropy EarthLocation.
@@ -105,7 +106,8 @@ def get_Moon_separation(target,earth_location,obs_date):
 
 def check_Moon_within_tolerance(pointing, site, obs_date,
                                 separation_threshold=15.0,
-                                phase_threshold=0.90):
+                                phase_threshold=0.90,
+                                log=None):
     """Function to check whether the Moon is outside an acceptable threshold
     in angular separation and of illumination level less than the allowed
     limit.
@@ -129,7 +131,12 @@ def check_Moon_within_tolerance(pointing, site, obs_date,
     if separation.value <= separation_threshold or phase >= phase_threshold:
         
         status = False
-    
+
+    if log!=None:
+        log.info('-> '+obs_date.value+' Moon separation = '+str(separation))
+        log.info('-> '+obs_date.value+' Moon illumination = '+str(phase))
+        log.info('-> Moon OK? '+repr(status))
+        
     return status
     
 def get_skycoord(pointing):
@@ -145,61 +152,75 @@ def get_skycoord(pointing):
     
     return target
     
-def review_filters_for_observing_conditions(obs_sequence,field,
+def review_filters_for_observing_conditions(site_obs_sequence,field,
                                             ts_submit,ts_expire,
                                             log=None):
     """Function to review the default list of filters to be observed, 
     and ammend the list if the Moon is outside tolerances at any point
     during the lifetime of the observing request."""
     
-    target = observing_tools.get_skycoord(field)
-    
-    sites = []
+    if log!=None:
+        log.info('Reviewing observing sequence in light of current Moon separation and illumination')
+        
+    target = get_skycoord(field)
+            
+    if log!=None:
+        log.info('Reviewing observations for site '+site_obs_sequence['sites'][0])
+        
+    site = get_site_location(site_obs_sequence['sites'][0])
+        
     site_filters = []
     
-    for s,site_code in enumerate(obs_sequence['sites']):
-    
-        site = observing_tools.get_site_location(site_code)
-    
-        use_filters = []
+    for f in site_obs_sequence['filters']:
+
+        sep_thresh = 15.0
+        phase_thresh = 0.98
         
-        for f in obs_sequence['filters'][s]:
+        if f == 'SDSS-g':
+            
+            sep_thresh = 40.0
+            phase_thresh = 0.90
+        
+        if log!=None:
+            log.info('-> Thresholds for filter '+f)
+            log.info('   Moon separation must be >'+str(sep_thresh))
+            log.info('   Moon illumination must be >'+str(phase_thresh))
+            
+        moon_ok = True
+        
+        t = ts_submit
+        while t <= ts_expire:
+                        
+            ts = Time(t.strftime("%Y-%m-%dT%H:%M:%S"),
+                 format='isot', scale='utc')
 
-            sep_thresh = 15.0
-            phase_thresh = 0.98
+            moon_chk = check_Moon_within_tolerance(target, site, ts,
+                                                    separation_threshold=sep_thresh,
+                                                    phase_threshold=phase_thresh,
+                                                    log=log)
             
-            if f == 'SDSS-g':
+            if not moon_chk:
                 
-                sep_thresh = 40.0
-                phase_thresh = 0.90
+                moon_ok = moon_chk
             
-            moon_ok = True
+            t = t + timedelta(seconds=(1.0*24*60*60))
             
-            t = ts_submit
-            while t <= ts_expire:
-                            
-                ts = Time(ts_submit.strftime("%Y-%m-%dT%H:%M:%S"),
-                     format='isot', scale='utc')
-
-                moon_chk = observing_tools.check_Moon_within_tolerance(target, site, ts,
-                                                        separation_threshold=sep_thresh,
-                                                        phase_threshold=phase_thresh)
-                
-                if not moon_chk:
+        if moon_ok:
+            
+            site_filters.append(f)
                     
-                    moon_ok = moon_chk
-        
-            if moon_ok:
-                
-                use_filters.append(f)
-                
-        if len(use_filters) > 0:
-            
-            site_filters.append( use_filters )
-            sites.append(site_code)
-        
-    obs_sequence['sites'] = sites
-    obs_sequence['filters'] = site_filters
+    site_obs_sequence['filters'] = site_filters
     
-    return obs_sequence
+    if log!=None:
+        
+        if len(site_obs_sequence['filters']) == 0:
+
+            log.info('-> No observations possible due to lunar proximity')
+
+        else:
+            
+            log.info('Revised observation sequence:')
+            log.info(site_obs_sequence['sites'][0]+' '+repr(site_obs_sequence['filters']))
+                
+    return site_obs_sequence
     

@@ -25,50 +25,64 @@ def build_rome_obs(script_config,log=None):
 
     rome_obs = []
     
-    for s in range(0,len(obs_sequence['sites']),1):
+    default_obs_sequence = rome_obs_sequence()
+        
+    for s in range(0,len(default_obs_sequence['sites']),1):
+        
+        site_code = default_obs_sequence['sites'][s]
+        
+        site_obs_sequence = rome_obs_sequence(site_code)
+        
         if log != None:
-                log.info('Building observation requests for site ' + \
-                        obs_sequence['sites'][s] + ':')
+                log.info('Building observation requests for site '+site_code+':')
+                        
         for f in field_ids:
+            
             field = rome_fields[f]
-            
-            obs_sequence = rome_obs_sequence()
-            
-            (ts_submit, ts_expire) = observation_classes.get_obs_dates(obs_sequence['TTL_days'])
+                        
+            (ts_submit, ts_expire) = observation_classes.get_obs_dates(site_obs_sequence['TTL_days'])
     
-            obs_sequence = observing_tools.review_filters_for_observing_conditions(obs_sequence,field,
-                                                                                   ts_submit, ts_expire)
+            site_obs_sequence = observing_tools.review_filters_for_observing_conditions(site_obs_sequence,field,
+                                                                                    ts_submit, ts_expire,
+                                                                                   log=log)
+
+            if site_obs_sequence['filters'] > 0:
+                
+                obs = observation_classes.ObsRequest()
+                obs.name = f
+                obs.ra = field[2]
+                obs.dec = field[3]
+                obs.site = site_obs_sequence['sites']
+                obs.observatory= site_obs_sequence['domes']
+                obs.tel = site_obs_sequence['tels']
+                obs.instrument = site_obs_sequence['instruments']
+                obs.instrument_class = '1M0-SCICAM-SINISTRO'
+                obs.set_aperture_class()
+                obs.airmass_limit = 1.2
+                obs.filters = site_obs_sequence['filters']
+                obs.exposure_times = site_obs_sequence['exp_times']
+                obs.exposure_counts = site_obs_sequence['exp_counts']
+                obs.cadence = site_obs_sequence['cadence_hrs']
+                obs.jitter = site_obs_sequence['jitter_hrs']
+                obs.priority = site_obs_sequence['priority']
+                obs.ttl = site_obs_sequence['TTL_days']
+                obs.user_id = script_config['user_id']
+                obs.proposal_id = script_config['proposal_id']
+                obs.token = script_config['token']
+                obs.focus_offset = site_obs_sequence['defocus']
+                obs.request_type = 'L'
+                obs.req_origin = 'obscontrol'
+                obs.get_group_id()
+                
+                rome_obs.append(obs)
+                
+                if log != None:
+                    log.info(obs.summary())
             
-            obs = observation_classes.ObsRequest()
-            obs.name = f
-            obs.ra = field[2]
-            obs.dec = field[3]
-            obs.site = obs_sequence['sites'][s]
-            obs.observatory= obs_sequence['domes'][s]
-            obs.tel = obs_sequence['tels'][s]
-            obs.instrument = obs_sequence['instruments'][s]
-            obs.instrument_class = '1M0-SCICAM-SINISTRO'
-            obs.set_aperture_class()
-            obs.airmass_limit = 1.2
-            obs.filters = obs_sequence['filters'][s]
-            obs.exposure_times = obs_sequence['exp_times'][s]
-            obs.exposure_counts = obs_sequence['exp_counts'][s]
-            obs.cadence = obs_sequence['cadence_hrs']
-            obs.jitter = obs_sequence['jitter_hrs']
-            obs.priority = obs_sequence['priority']
-            obs.ttl = obs_sequence['TTL_days']
-            obs.user_id = script_config['user_id']
-            obs.proposal_id = script_config['proposal_id']
-            obs.token = script_config['token']
-            obs.focus_offset = obs_sequence['defocus'][s]
-            obs.request_type = 'L'
-            obs.req_origin = 'obscontrol'
-            obs.get_group_id()
-            
-            rome_obs.append(obs)
-            
-            if log != None:
-                log.info(obs.summary())
+            else:
+                if log != None:
+                    log.info('WARNING: No observations possible')
+                    
         if log != None:
             log.info('\n')
             
@@ -85,7 +99,7 @@ def get_rome_fields(selected_field=None):
     
     return rome_fields
 
-def rome_obs_sequence():
+def rome_obs_sequence(site_code=None):
     """Function to define the observation sequence to be taken for all ROME 
     survey pointings"""
 
@@ -112,9 +126,34 @@ def rome_obs_sequence():
                     'priority': 1.05
                     }
     
+    if site_code != None:
+        
+        s = obs_sequence['sites'].index(site_code)
+        
+        site_obs_sequence = {}
+        
+        for key, value in obs_sequence.items():
             
-    return obs_sequence
-
+            if type(value) == type([]):
+                
+                if type(value[s]) == type([]):
+                    
+                    site_obs_sequence[key] = value[s]
+                    
+                else:
+                
+                    site_obs_sequence[key] = [ value[s] ]
+                
+            else:
+                
+                site_obs_sequence[key] = value
+                    
+        return site_obs_sequence
+        
+    else:
+        
+        return obs_sequence
+        
 if __name__ == '__main__':
     script_config = {'user_id': 'tester@lco.global', 
                      'proposal_id': 'TEST',

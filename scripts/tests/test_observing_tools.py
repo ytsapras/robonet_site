@@ -14,6 +14,8 @@ cwd = getcwd()
 systempath.append(path.join(cwd,'..'))
 import observing_tools
 from rome_fields_dict import field_dict
+from datetime import datetime, timedelta
+import log_utilities
 
 def test_get_site_location():
     
@@ -85,40 +87,82 @@ def test_check_Moon_within_tolerance():
 
 def test_review_filters_for_observing_conditions():
     
-    obs_sequence = {
-                'exp_times': [ [300.0, 300.0, 300.0],
-                              [300.0, 300.0, 300.0],
-                                [300.0, 300.0, 300.0]],
-                'exp_counts': [ [ 1, 1, 1 ],
-                                [ 1, 1, 1 ],
-                                [ 1, 1, 1 ]],
-                'filters':   [ [ 'SDSS-g', 'SDSS-r', 'SDSS-i'],
-                              [ 'SDSS-g', 'SDSS-r', 'SDSS-i'],
-                                [ 'SDSS-g', 'SDSS-r', 'SDSS-i'] ],
-                'defocus':  [ [ 0.0, 0.0, 0.0 ],
-                               [ 0.0, 0.0, 0.0],
-                                [ 0.0, 0.0, 0.0]],
-                'sites':        ['lsc', 'cpt', 'coj'],
-                'domes':        ['doma', 'domc', 'doma'],
-                'tels':         [ '1m0', '1m0', '1m0' ],
-                'instruments':  ['fl15', 'fl06', 'fl12'],
+    config = { 'log_directory': '.',
+              'log_root_name': 'test_observing_tools'
+             }
+    log = log_utilities.start_day_log( config, 'test_observing_tools' )
+    
+    def get_default_site_obs_sequence(site_code):
+        
+        site_obs_sequence = {
+                'exp_times': [300.0, 300.0, 300.0],
+                'exp_counts': [ 1, 1, 1 ],
+                'filters':   [ 'SDSS-g', 'SDSS-r', 'SDSS-i'],
+                'defocus':  [ 0.0, 0.0, 0.0 ],
+                'sites':        ['lsc'],
+                'domes':        ['doma'],
+                'tels':         [ '1m0' ],
+                'instruments':  ['fl15'],
                 'cadence_hrs': 7.0,
                 'jitter_hrs': 7.0,
                 'TTL_days': 6.98,
                 'priority': 1.05
                 }
                 
-    field = rome_fields['ROME-FIELD-01']
+        return site_obs_sequence
+        
+    field = field_dict['ROME-FIELD-01']
+    
+    site_code = 'lsc'
 
+    site_obs_sequence = get_default_site_obs_sequence(site_code)
+    
     ts_submit = datetime.strptime('2018-05-02T12:00:00',"%Y-%m-%dT%H:%M:%S")
     ts_expire = ts_submit + timedelta(seconds=(6.8*24*60*60))
     
-    obs_sequence = observing_tools.review_filters_for_observing_conditions(obs_sequence,field,
+    log.info('Testing observation sequence review between dates:')
+    log.info(ts_submit.strftime("%Y-%m-%dT%H:%M:%S")+' to '+\
+            ts_expire.strftime("%Y-%m-%dT%H:%M:%S"))
+    
+    site_obs_sequence = observing_tools.review_filters_for_observing_conditions(site_obs_sequence,field,
                                                                            ts_submit,ts_expire,
-                                                                           log=None)
+                                                                           log=log)
 
-    assert len(obs_sequence['sites']) == 0
-    assert len(obs_sequence['filters']) == 0
+    assert len(site_obs_sequence['filters']) == 0
+    
+    log.info('\n')
+    log.info('Testing observation sequence review between dates:')
+    log.info(ts_submit.strftime("%Y-%m-%dT%H:%M:%S")+' to '+\
+            ts_expire.strftime("%Y-%m-%dT%H:%M:%S"))
+    
+    site_obs_sequence = get_default_site_obs_sequence(site_code)
+    
+    ts_submit = datetime.strptime('2018-04-20T12:00:00',"%Y-%m-%dT%H:%M:%S")
+    ts_expire = ts_submit + timedelta(seconds=(6.8*24*60*60))
+    
+    site_obs_sequence = observing_tools.review_filters_for_observing_conditions(site_obs_sequence,field,
+                                                                           ts_submit,ts_expire,
+                                                                           log=log)
+                                                        
+    assert len(site_obs_sequence['sites']) == 1
+    assert len(site_obs_sequence['filters']) == 3
+    
+    log_utilities.end_day_log(log)
+    
+def test_get_skycoord():
+    
+    ra_hrs = 17.256
+    dec_deg = -28.5
+    
+    pointing = [ra_hrs*15.0, dec_deg]
+    
+    test_target = SkyCoord(ra=ra_hrs*15.0*u.degree, dec=dec_deg*u.degree, frame='icrs')
+    
+    target = observing_tools.get_skycoord(pointing)
+    
+    assert type(target) == type(test_target)
+    assert target.ra == test_target.ra
+    assert target.dec == test_target.dec
     
 if __name__ == '__main__':
     
@@ -127,4 +171,5 @@ if __name__ == '__main__':
     test_get_Moon_separation()
     test_check_Moon_within_tolerance()
     test_review_filters_for_observing_conditions()
+    test_get_skycoord()
     
