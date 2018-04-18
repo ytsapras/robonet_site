@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 
 API_ROOT = 'https://observe.lco.global/api/'
-api_token = '8b2502837d211bc1dcdb38d309026c45e6ab5e35'
+api_token = raw_input('Please enter your LCO API token: ')
 headers = {'Authorization': 'Token ' + api_token}
 
 
