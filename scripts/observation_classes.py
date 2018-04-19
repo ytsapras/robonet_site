@@ -141,7 +141,7 @@ class ObsRequest:
         
         constraints = { 
         		  'max_airmass': float(self.airmass_limit),
-                    'min_lunar_distance': 10
+                    'min_lunar_distance': 20.0
                     }
         if debug == True and log != None:
             log.info('Constraints dictionary: ' + str( constraints ))

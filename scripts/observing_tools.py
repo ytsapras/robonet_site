@@ -173,7 +173,7 @@ def review_filters_for_observing_conditions(site_obs_sequence,field,
     
     for f in site_obs_sequence['filters']:
 
-        sep_thresh = 15.0
+        sep_thresh = 20.0
         phase_thresh = 0.98
         
         if f == 'SDSS-g':
