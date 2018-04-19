@@ -10,6 +10,7 @@ import os
 import urllib
 import requests
 import json
+from datetime import datetime
 
 def lco_userrequest_query(token,track_id):
     """Method to query for the status of a specific observation request 
@@ -31,14 +32,18 @@ def get_subrequests_status(token,track_id):
     
     states = []
     completed_ts = []
+    windows = []
     
     if 'requests' in api_response.keys():
         for subrequest in api_response['requests']:
-            
+                        
             states.append(subrequest['state'])
             completed_ts.append(subrequest['completed'])
-    
-    return states, completed_ts
+            tstart = datetime.strptime(subrequest['windows'][0]['start'],"%Y-%m-%dT%H:%M:%SZ")
+            tend = datetime.strptime(subrequest['windows'][0]['end'],"%Y-%m-%dT%H:%M:%SZ")
+            windows.append( (tstart, tend) )
+            
+    return states, completed_ts, windows
         
 if __name__ == '__main__':
     

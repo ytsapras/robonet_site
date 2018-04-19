@@ -41,7 +41,7 @@ class Command(BaseCommand):
             
             obs = unique_obs[track_id]
             
-            (states, completed_ts) = lco_api_tools.get_subrequests_status(token,track_id)
+            (states, completed_ts, windows) = lco_api_tools.get_subrequests_status(token,track_id)
             
             n_success = 0
             for entry in completed_ts:

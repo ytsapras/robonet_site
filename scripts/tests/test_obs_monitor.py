@@ -23,7 +23,25 @@ setup()
 import obs_monitor
 import pytz
 
-def test_get_obs_request_status():
+def run_tests():
+    """Function to run the suite of tests.  Since access to LCO's API 
+    requires a user token, these tests require this token as input and so
+    don't conform to the usual pytest format.
+    """
+    
+    if len(sys.argv) > 1:
+        
+        token = sys.argv[1]
+        
+    else:
+        
+        token = raw_input('Please enter your LCO API token: ')
+   
+    
+    test_get_status_active_obs_subrequests(token)
+ 
+
+def test_get_status_active_obs_subrequests(token):
     """Function to test the return of active observations between a given date 
     range, with the current status of those requests"""
     
@@ -32,10 +50,14 @@ def test_get_obs_request_status():
     end_date = datetime.now() + timedelta(seconds=2.0*24.0*60.0*60.0)
     end_date = end_date.replace(tzinfo=pytz.UTC)
     
-    obs_monitor.get_obs_request_status(start_date,end_date)
+    active_obs = obs_monitor.get_status_active_obs_subrequests(token,start_date,end_date)
     
+    assert type(active_obs) == type({})
+    assert type(active_obs[active_obs.keys()[0]]) == type({})
+    for key in ['obsrequest','sr_states','sr_completed_ts','sr_windows']:
+        assert key in active_obs[active_obs.keys()[0]].keys()
 
 if __name__ == '__main__':
     
-    test_get_obs_request_status()
+    run_tests()
     
