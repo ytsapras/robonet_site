@@ -60,7 +60,7 @@ def plot_req_vs_obs(active_obs):
     ObsRequests and their subrequests, and indicate which ones have been 
     observed."""
 
-    instruments = get_instrument_list(active_obs)
+    fields = get_fields_list(active_obs)
     
     date_range = get_date_range(active_obs)
     deltax = date_range[1] - date_range[0]
@@ -71,11 +71,9 @@ def plot_req_vs_obs(active_obs):
                  title="Requested vs Observed",
                  x_axis_label='Time [UTC]',
                  x_axis_type="datetime",
-                 y_range=instruments)
-    
-    #colours = [ 'navy', 'magenta', 'pink', 'yellow', 'orange', 'green']
-    
-    for c,camera in enumerate(instruments):
+                 y_range=fields)
+        
+    for i,field in enumerate(fields.keys()):
         
         xdata = []
         ydata = []
@@ -83,28 +81,26 @@ def plot_req_vs_obs(active_obs):
         alphas = []
         colours = []
         
-        for grp_id,entry in active_obs.items():
+        for entry in fields[keys]:
             
-            if entry['obsrequest'].which_inst == camera:
+            for i in range(0,len(entry['sr_windows']),1):
                 
-                for i in range(0,len(entry['sr_windows']),1):
-                    
-                    mid_time = entry['sr_windows'][i][0] + \
-                            (entry['sr_windows'][i][1]-entry['sr_windows'][i][0])/2
-                    sr_length = entry['sr_windows'][i][1]-entry['sr_windows'][i][0]
-                    
-                    xdata.append(mid_time)
-                    widths.append(sr_length)
-                    ydata.append(camera)
-                    
-                    if entry['sr_states'][i] == 'COMPLETED':
-                        alphas.append(1.0)
-                        colours.append('green')
-                    else:
-                        alphas.append(0.2)
-                        colours.append('grey')
-                    
-                    print xdata[-1],ydata[-1],widths[-1],alphas[-1],colours[-1]
+                mid_time = entry['sr_windows'][i][0] + \
+                        (entry['sr_windows'][i][1]-entry['sr_windows'][i][0])/2
+                sr_length = entry['sr_windows'][i][1]-entry['sr_windows'][i][0]
+                
+                xdata.append(mid_time)
+                widths.append(sr_length)
+                ydata.append(field)
+                
+                if entry['sr_states'][i] == 'COMPLETED':
+                    alphas.append(1.0)
+                    colours.append('green')
+                else:
+                    alphas.append(0.2)
+                    colours.append('grey')
+                
+                print xdata[-1],ydata[-1],widths[-1],alphas[-1],colours[-1]
                     
         source = ColumnDataSource(data=dict(
                                 xdata=xdata,
@@ -127,7 +123,25 @@ def plot_req_vs_obs(active_obs):
     
     show(fig)
 
-
+def get_fields_list(active_obs):
+    """Function to extract a list of the fields from a list of 
+    active observations"""
+    
+    fields = {}
+    
+    for grp_id,entry in active_obs.items():
+        
+        print entry['obsrequest'].field
+        
+        if entry['obsrequest'].field not in fields.keys():
+            
+            fields[entry['obsrequest'].field] = [ entry ]
+        
+        else:
+            
+            fields[entry['obsrequest'].field].append( entry )
+            
+    return fields
 
 def get_instrument_list(active_obs):
     """Function to extract a list of instruments used from a list of 
