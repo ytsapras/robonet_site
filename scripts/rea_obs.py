@@ -11,6 +11,7 @@ import utilities
 from rome_fields_dict import field_dict
 import observing_tools
 import copy
+import obs_conditions_tolerances
         
 def build_rea_obs(script_config,log=None,tap_list=None):
     """Function to define the observations to be taken for the REA
@@ -21,7 +22,7 @@ def build_rea_obs(script_config,log=None,tap_list=None):
         
         tap_list = query_db.get_tap_list(log=log)
         
-    default_obs_sequence = rea_obs_sequence()
+    (default_obs_sequence, tolerances) = rea_obs_sequence()
     
     rea_obs = []
 
@@ -29,7 +30,7 @@ def build_rea_obs(script_config,log=None,tap_list=None):
 
         site_code = default_obs_sequence['sites'][s]
         
-        site_obs_sequence = rea_obs_sequence(site_code)
+        (site_obs_sequence, tolerances) = rea_obs_sequence(site_code)
     
         if log != None:
                 log.info('Building observation requests for site '+site_code+ ':')
@@ -43,7 +44,7 @@ def build_rea_obs(script_config,log=None,tap_list=None):
             (ts_submit, ts_expire) = observation_classes.get_obs_dates(site_obs_sequence['TTL_'+str(target.priority)+'_days'])
             
             site_obs_sequence = observing_tools.review_filters_for_observing_conditions(site_obs_sequence,rome_field,
-                                                                                   ts_submit, ts_expire,
+                                                                                   ts_submit, ts_expire, tolerances,
                                                                                    log=log)
 
             if site_obs_sequence['filters'] > 0:
@@ -107,6 +108,8 @@ def rea_obs_sequence(site_code=None):
                     'TTL_B_days': 2.0,
                     'jitter_hrs': 1.0,
                     }
+
+    tolerances = obs_conditions_tolerances.get_obs_tolerances()
                     
     if site_code != None:
         
@@ -130,9 +133,9 @@ def rea_obs_sequence(site_code=None):
                 
                 site_obs_sequence[key] = value
         
-        return site_obs_sequence
+        return site_obs_sequence, tolerances
         
     else:
         
-        return obs_sequence
+        return obs_sequence, tolerances
         

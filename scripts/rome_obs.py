@@ -9,6 +9,7 @@ import observation_classes
 from datetime import datetime, timedelta
 from rome_fields_dict import field_dict
 import observing_tools
+import obs_conditions_tolerances
 
 def build_rome_obs(script_config,log=None):
     """Function to define the observations to be taken during the ROME
@@ -25,13 +26,13 @@ def build_rome_obs(script_config,log=None):
 
     rome_obs = []
     
-    default_obs_sequence = rome_obs_sequence()
+    (default_obs_sequence,tolerances) = rome_obs_sequence()
         
     for s in range(0,len(default_obs_sequence['sites']),1):
         
         site_code = default_obs_sequence['sites'][s]
         
-        site_obs_sequence = rome_obs_sequence(site_code)
+        (site_obs_sequence,tolerances) = rome_obs_sequence(site_code)
         
         if log != None:
                 log.info('Building observation requests for site '+site_code+':')
@@ -43,8 +44,8 @@ def build_rome_obs(script_config,log=None):
             (ts_submit, ts_expire) = observation_classes.get_obs_dates(site_obs_sequence['TTL_days'])
     
             site_obs_sequence = observing_tools.review_filters_for_observing_conditions(site_obs_sequence,field,
-                                                                                    ts_submit, ts_expire,
-                                                                                   log=log)
+                                                                                    ts_submit, ts_expire,tolerances,
+                                                                                    log=log)
 
             if site_obs_sequence['filters'] > 0:
                 
@@ -125,7 +126,9 @@ def rome_obs_sequence(site_code=None):
                     'TTL_days': 6.98,
                     'priority': 1.05
                     }
-    
+                    
+    tolerances = obs_conditions_tolerances.get_obs_tolerances()
+
     if site_code != None:
         
         s = obs_sequence['sites'].index(site_code)
@@ -148,11 +151,11 @@ def rome_obs_sequence(site_code=None):
                 
                 site_obs_sequence[key] = value
                     
-        return site_obs_sequence
+        return site_obs_sequence, tolerances
         
     else:
         
-        return obs_sequence
+        return obs_sequence, tolerances
         
 if __name__ == '__main__':
     script_config = {'user_id': 'tester@lco.global', 
