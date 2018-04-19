@@ -11,6 +11,7 @@ import urllib
 import requests
 import json
 from datetime import datetime
+import pytz
 
 def lco_userrequest_query(token,track_id):
     """Method to query for the status of a specific observation request 
@@ -40,7 +41,9 @@ def get_subrequests_status(token,track_id):
             states.append(subrequest['state'])
             completed_ts.append(subrequest['completed'])
             tstart = datetime.strptime(subrequest['windows'][0]['start'],"%Y-%m-%dT%H:%M:%SZ")
+            tstart = tstart.replace(tzinfo=pytz.UTC)
             tend = datetime.strptime(subrequest['windows'][0]['end'],"%Y-%m-%dT%H:%M:%SZ")
+            tend = tend.replace(tzinfo=pytz.UTC)
             windows.append( (tstart, tend) )
             
     return states, completed_ts, windows

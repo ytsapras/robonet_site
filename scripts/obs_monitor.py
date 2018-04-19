@@ -25,10 +25,11 @@ from events.models import ObsRequest
 import lco_api_tools
 import config_parser
 import pytz
+import math
 
 from bokeh.plotting import figure, show, output_file, gridplot,vplot
 from bokeh.models import ColumnDataSource, HoverTool, LinearColorMapper, Legend,CheckboxGroup
-from bokeh.models import FixedTicker,PrintfTickFormatter
+from bokeh.models import FixedTicker,PrintfTickFormatter, ColumnDataSource, DatetimeTickFormatter
 from bokeh.embed import components
 from bokeh.resources import CDN
 
@@ -58,24 +59,29 @@ def plot_req_vs_obs(active_obs):
     """Function to generate a graphical representation of the currently-active
     ObsRequests and their subrequests, and indicate which ones have been 
     observed."""
+
+    instruments = get_instrument_list(active_obs)
+    
+    date_range = get_date_range(active_obs)
+    deltax = date_range[1] - date_range[0]
     
     output_file("test_plot.html")
     
     fig = figure(plot_width=800, plot_height=300, 
                  title="Requested vs Observed",
-                 x_axis_label='Time',
-                 x_axis_type="datetime")
-
-    instruments = get_instrument_list(active_obs)
+                 x_axis_label='Time [UTC]',
+                 x_axis_type="datetime",
+                 y_range=instruments)
     
-    colours = [ 'navy', 'magenta', 'pink', 'yellow', 'orange', 'green']
-    yoff = 1.0
+    #colours = [ 'navy', 'magenta', 'pink', 'yellow', 'orange', 'green']
     
     for c,camera in enumerate(instruments):
         
         xdata = []
         ydata = []
+        widths = []
         alphas = []
+        colours = []
         
         for grp_id,entry in active_obs.items():
             
@@ -83,20 +89,45 @@ def plot_req_vs_obs(active_obs):
                 
                 for i in range(0,len(entry['sr_windows']),1):
                     
-                    xdata.append(entry['sr_windows'][i][0])
-                    ydata.append(yoff)
+                    mid_time = entry['sr_windows'][i][0] + \
+                            (entry['sr_windows'][i][1]-entry['sr_windows'][i][0])/2
+                    sr_length = entry['sr_windows'][i][1]-entry['sr_windows'][i][0]
+                    
+                    xdata.append(mid_time)
+                    widths.append(sr_length)
+                    ydata.append(camera)
                     
                     if entry['sr_states'][i] == 'COMPLETED':
                         alphas.append(1.0)
+                        colours.append('green')
                     else:
                         alphas.append(0.2)
-        
-        yoff += 1.0
-        
-        fig.circle(xdata, ydata, size=10, color=colours[c], 
-                   alpha=alphas, legend=camera)
+                        colours.append('grey')
+                    
+                    print xdata[-1],ydata[-1],widths[-1],alphas[-1],colours[-1]
+                    
+        source = ColumnDataSource(data=dict(
+                                xdata=xdata,
+                                ydata=ydata,
+                                colours=colours,
+                                alphas=alphas,
+                                widths=widths))
+                
+        fig.rect('xdata', 'ydata', width=widths, height=0.6, source=source,
+                     fill_color='colours', line_color='colours',
+                     alpha='alphas')
+    
+    fig.xaxis[0].formatter=DatetimeTickFormatter(formats=dict(
+                        days=["%Y-%m-%d %H:%M"],
+                        months=["%Y-%m-%d %H:%M"],
+                        hours=["%Y-%m-%d %H:%M"],
+                        minutes=["%Y-%m-%d %H:%M"]))
+                        
+    fig.xaxis.major_label_orientation = math.pi/4
     
     show(fig)
+
+
 
 def get_instrument_list(active_obs):
     """Function to extract a list of instruments used from a list of 
@@ -112,6 +143,31 @@ def get_instrument_list(active_obs):
     
     return instruments
 
+def get_date_range(active_obs):
+    """Function to calculate the range of dates spanned by a set of 
+    active observations"""
+    
+    start_date = datetime.now() + timedelta(days=365.0)
+    start_date = start_date.replace(tzinfo=pytz.UTC)
+    end_date = datetime.now() - timedelta(days=365.0)
+    end_date = end_date.replace(tzinfo=pytz.UTC)
+    
+    for grp_id, entries in active_obs.items():
+        
+        windows = entries['sr_windows']
+        
+        for w in windows:
+            
+            if w[0] < start_date:
+                
+                start_date = w[0]
+                
+            if w[1] > end_date:
+                
+                end_date = w[1]
+    
+    return (start_date, end_date)
+    
 def get_monitor_period(monitor_period_days):
     """Function to return the start and end datetimes for the current
     period for observation monitoring"""
@@ -136,8 +192,9 @@ def get_status_active_obs_subrequests(token,start_date,end_date,dbg=False):
     Outputs:
         :param dict active_obs: Dictionary of matching observations of format:
             { obs.grp_id : {'obsrequest': ObsRequest object, 
-                            'subrequest_states': states of ObsRequest cadence subrequests,
-                            'completed_ts': timestamps of subrequest completion, or None}
+                            'sr_states': states of ObsRequest cadence subrequests,
+                            'sr_completed_ts': timestamps of subrequest completion, or None,
+                            'sr_windows': (start, end) subrequest datetimes}
     """
     
     print('Querying LCO for observation status...')
