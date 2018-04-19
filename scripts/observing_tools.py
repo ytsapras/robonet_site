@@ -104,10 +104,8 @@ def get_Moon_separation(target,earth_location,obs_date):
     
     return separation
 
-def check_Moon_within_tolerance(pointing, site, obs_date,
-                                separation_threshold=15.0,
-                                phase_threshold=0.90,
-                                log=None):
+def check_Moon_within_tolerance(pointing, site, obs_date, obs_filter, 
+                                tolerances, log=None):
     """Function to check whether the Moon is outside an acceptable threshold
     in angular separation and of illumination level less than the allowed
     limit.
@@ -126,18 +124,45 @@ def check_Moon_within_tolerance(pointing, site, obs_date,
     separation = get_Moon_separation(target,site,obs_date)
     phase = get_Moon_phase(target,site,obs_date)
     
-    status = True
+    if obs_filter in tolerances.keys():
     
-    if separation.value <= separation_threshold or phase >= phase_threshold:
+        criteria = tolerances[obs_filter]
         
-        status = False
-
+        if log!=None:
+            log.info('Selected observing conditions criteria for filter '+obs_filter)
+            
+    else:
+        
+        if log!=None:
+            log.info('WARNING: No matching observing conditions criteria found for filter '+obs_filter)
+            log.info('Using default criteria')
+        
+        criteria = {'phase_ranges': [ (0.0, 0.98), (0.98, 1.0) ],
+                    'separation_minimums': [ 15.0, 30.0 ] }
+    
     if log!=None:
+        for p,prange in enumerate(criteria['phase_ranges']):
+            log.info('-> phases '+str(prange[0])+' to '+str(prange[1])+\
+                    ', require Moon separation > '+\
+                    str(criteria['separation_minimums'][p]))
+        log.info('Observations disallowed for other conditions')
+        
+    obs_ok = False
+    
+    for p,prange in enumerate(criteria['phase_ranges']):
+        
+        if phase.value >= prange[0] and phase.value <= prange[1] \
+            and separation.value > criteria['separation_minimums'][p]:
+                
+                obs_ok = True
+            
+    if log!=None:
+        log.info('Observation conditions:')
         log.info('-> '+obs_date.value+' Moon separation = '+str(separation))
         log.info('-> '+obs_date.value+' Moon illumination = '+str(phase))
-        log.info('-> Moon OK? '+repr(status))
-        
-    return status
+        log.info('-> OK to observe? '+repr(obs_ok))
+
+    return obs_ok
     
 def get_skycoord(pointing):
     """Function to return a SkyCoord object for a given RA, Dec pointing"""
@@ -153,7 +178,7 @@ def get_skycoord(pointing):
     return target
     
 def review_filters_for_observing_conditions(site_obs_sequence,field,
-                                            ts_submit,ts_expire,
+                                            ts_submit,ts_expire,tolerances,
                                             log=None):
     """Function to review the default list of filters to be observed, 
     and ammend the list if the Moon is outside tolerances at any point
@@ -171,22 +196,9 @@ def review_filters_for_observing_conditions(site_obs_sequence,field,
         
     site_filters = []
     
+    moon_ok = True
+    
     for f in site_obs_sequence['filters']:
-
-        sep_thresh = 20.0
-        phase_thresh = 0.98
-        
-        if f == 'SDSS-g':
-            
-            sep_thresh = 40.0
-            phase_thresh = 0.90
-        
-        if log!=None:
-            log.info('-> Thresholds for filter '+f)
-            log.info('   Moon separation must be >'+str(sep_thresh))
-            log.info('   Moon illumination must be >'+str(phase_thresh))
-            
-        moon_ok = True
         
         t = ts_submit
         while t <= ts_expire:
@@ -194,10 +206,8 @@ def review_filters_for_observing_conditions(site_obs_sequence,field,
             ts = Time(t.strftime("%Y-%m-%dT%H:%M:%S"),
                  format='isot', scale='utc')
 
-            moon_chk = check_Moon_within_tolerance(target, site, ts,
-                                                    separation_threshold=sep_thresh,
-                                                    phase_threshold=phase_thresh,
-                                                    log=log)
+            moon_chk = check_Moon_within_tolerance(target, site, ts, f, 
+                                                   tolerances, log=log)
             
             if not moon_chk:
                 
