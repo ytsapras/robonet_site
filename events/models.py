@@ -694,9 +694,8 @@ class SubObsRequest(models.Model):
     """
     
     def __str__(self):
-        return str(self.request.grp_id)+' '+\
-        str(self.window_start)+' to '+str(self.window_end)+' '+\
-        self.status+' '+repr(self.time_executed)
+        return str(self.sr_id)+' '+str(self.grp_id)+' '+\
+            str(self.track_id)+' '+str(self.status)
     
     status_choice = (
     ('PENDING', 'PENDING'),
@@ -705,11 +704,13 @@ class SubObsRequest(models.Model):
     ('WINDOW_EXPIRED', 'WINDOW_EXPIRED'),
     )
 
-    request = models.ForeignKey(ObsRequest)
+    sr_id = models.CharField(max_length=30,blank=True)
+    grp_id = models.CharField(max_length=30,blank=True)
+    track_id = models.CharField(max_length=30,blank=True)
     window_start = models.DateTimeField('subrequest start time',blank=True)
     window_end = models.DateTimeField('subrequest end time',blank=True)
     status = models.CharField(max_length=40, choices=status_choice, default='PENDING')
-    time_executed = models.DateTimeField('subrequest executed time',blank=True)
+    time_executed = models.DateTimeField('subrequest executed time', null=True, blank=True)
     
 # Event status parameters
 class EventStatus(models.Model):

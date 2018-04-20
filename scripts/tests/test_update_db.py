@@ -120,5 +120,62 @@ def test_update_image():
                 req_id='', quality=quality)
     assert status == False
 
+def test_add_sub_request():
+    
+    sr_id = '1477711'
+    request_grp_id='ROME20180412T16.93534273'
+    request_track_id = '624354'
+    window_start = datetime.strptime('2018-04-20T15:30:00',"%Y-%m-%dT%H:%M:%S")
+    window_start = window_start.replace(tzinfo=pytz.UTC)
+    window_end = datetime.strptime('2018-04-20T16:00:00',"%Y-%m-%dT%H:%M:%S")
+    window_end = window_end.replace(tzinfo=pytz.UTC)
+    status = 'PENDING'
+    time_executed = None
+    
+    (submit_ok, message) = update_db_2.add_sub_request(sr_id,
+                                            request_grp_id, request_track_id,
+                                            window_start, window_end, 
+                                            status, time_executed)
+    print message
+    assert submit_ok == True
+    
+    (submit_ok, message) = update_db_2.add_sub_request(sr_id,
+                                            request_grp_id, request_track_id,
+                                            window_start, window_end, 
+                                            status, time_executed)
+    print message
+    assert submit_ok == False
+    assert message == 'Subrequest already exists'
+
+def test_update_sub_request():
+    
+    sr_id = '1477711'
+    request_grp_id='ROME20180412T16.93534273'
+    request_track_id = '624354'
+    window_start = datetime.strptime('2018-04-20T15:30:00',"%Y-%m-%dT%H:%M:%S")
+    window_start = window_start.replace(tzinfo=pytz.UTC)
+    window_end = datetime.strptime('2018-04-20T16:00:00',"%Y-%m-%dT%H:%M:%S")
+    window_end = window_end.replace(tzinfo=pytz.UTC)
+    status = 'PENDING'
+    time_executed = None
+    
+    (submit_ok, message) = update_db_2.add_sub_request(sr_id,
+                                            request_grp_id, request_track_id,
+                                            window_start, window_end, 
+                                            status, time_executed)
+    assert submit_ok == True
+    
+    time_executed = datetime.strptime('2018-04-20T15:15:00',"%Y-%m-%dT%H:%M:%S")
+    time_executed = time_executed.replace(tzinfo=pytz.UTC)
+    
+    (submit_ok, message) = update_db_2.update_sub_request(sr_id,
+                                            request_grp_id, request_track_id,
+                                            window_start, window_end, 
+                                            status, time_executed)
+    print message
+    assert submit_ok == True
+    assert message == 'Subrequest updated'
+    
+
 if __name__ == '__main__':
-    test_add_datafile_via_api()
+   test_update_sub_request()

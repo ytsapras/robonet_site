@@ -88,6 +88,14 @@ class RecordObsRequestForm(forms.ModelForm):
     timestamp = forms.DateTimeField(label='timestamp',input_formats=["%Y-%m-%dT%H:%M:%S"])
     time_expire = forms.DateTimeField(label='time_expire',input_formats=["%Y-%m-%dT%H:%M:%S"])
     
+class RecordSubObsRequestForm(forms.ModelForm):
+    class Meta:
+        model = SubObsRequest
+        fields = ('sr_id', 'grp_id', 'track_id', 'window_start', 'window_end', 'status', 'time_executed')
+    window_start = forms.DateTimeField(label='window_start',input_formats=["%Y-%m-%dT%H:%M:%S"])
+    window_end = forms.DateTimeField(label='window_end',input_formats=["%Y-%m-%dT%H:%M:%S"])
+    time_executed = forms.DateTimeField(label='time_executed',input_formats=["%Y-%m-%dT%H:%M:%S"],required=False)
+    
 class RecordDataFileForm(forms.ModelForm):
     class Meta:
         model = DataFile

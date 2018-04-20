@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, TelescopeForm, EventForm, EventNameForm, SingleModelForm
 from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, ImageForm, RecordDataFileForm, TapLimaForm
+from .forms import RecordSubObsRequestForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from itertools import chain
@@ -1102,6 +1103,69 @@ def record_obs_request(request):
                                     'message': 'none'})
     else:
         return HttpResponseRedirect('login')
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def record_sub_obs_request(request):
+    """Function to allow new sub-requests to be added to the database"""
+    
+    if request.user.is_authenticated():
+        
+        if request.method == "POST":
+            
+            form = RecordSubObsRequestForm(request.POST)
+            
+            if form.is_valid():
+                
+                post = form.save(commit=False)
+
+                (update_ok,message) = update_db_2.add_sub_request(post.sr_id,
+                                                           post.grp_id,
+                                                           post.track_id,
+                                                           post.window_start,
+                                                           post.window_end, 
+                                                           post.status, 
+                                                           post.time_executed)
+                
+                if update_ok:
+                    
+                    message = 'Subrequest successfully updated in database'
+                    
+                else:
+
+                    if message == 'Subrequest already exists':
+                        
+                        (update_ok,message) = update_db_2.update_sub_request(post.sr_id,
+                                                           post.grp_id,
+                                                           post.track_id,
+                                                           post.window_start,
+                                                           post.window_end, 
+                                                           post.status, 
+                                                           post.time_executed)
+
+                return render(request, 'events/record_sub_obs_request.html', \
+                                    {'form': form, 'message': message})
+            else:
+                
+                form = RecordSubObsRequestForm()
+
+                return render(request, 'events/record_sub_obs_request.html', \
+                                    {'form': form, \
+                                    'message':'Form entry was invalid.<br> Reason: <br>'+\
+                                    repr(form.errors)+'<br>Please try again.'})
+                                    
+        else:
+
+            form = RecordSubObsRequestForm()
+
+            return render(request, 'events/record_sub_obs_request.html', \
+                                    {'form': form, 
+                                    'message': 'none'})
+
+    else:
+
+        return HttpResponseRedirect('login')
+
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')

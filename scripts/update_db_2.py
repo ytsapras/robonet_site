@@ -22,7 +22,7 @@ from decimal import InvalidOperation
 setup()
 
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
-from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, TapLima, Image
+from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, TapLima, Image, SubObsRequest
 from scripts import api_tools, query_db
 import pytz
 
@@ -757,6 +757,133 @@ def add_request(field_name, t_sample, exptime, timestamp=timezone.now(),
    else:
       successful = False
    return successful
+
+################################################################################################################
+def add_sub_request(sr_id,request_grp_id, request_track_id, 
+                    window_start, window_end, status, time_executed):
+    """
+    Add observing sub-request to the database.
+    
+    Keyword arguments:
+    sr_id -- The ID of the subrequest assigned by the LCO scheduler
+                (string, required)
+    request_grp_id -- The originating ObsRequest group_id. 
+                 (string, required)
+    request_track_id -- The originating ObsRequest track_id. 
+                 (string, required)
+    window_start -- First timestamp when the subrequest can be executed
+                 (object, DateTime)
+    window_end -- Last timestamp, after which the subrequest expires
+                 (object, DateTime)
+    status -- The last known state of the request in the LCO scheduler
+                 (string, choice field)
+                 ('PENDING', 'COMPLETED', 'CANCELED', 'WINDOW_EXPIRED')
+    time_executed -- The timestamp of when the subrequest was executed
+                 (object, optional, DateTime)
+    """
+    if ObsRequest.objects.filter(grp_id=request_grp_id).exists()==True:
+        
+        if SubObsRequest.objects.filter(sr_id=sr_id).exists() == False:
+            
+            try:
+                if time_executed == None:
+                    
+                    sr = SubObsRequest(sr_id=sr_id,
+                                       grp_id=request_grp_id,
+                                       track_id=request_track_id,
+                                       window_start=window_start, 
+                                       window_end=window_end,
+                                       status=status,
+                                       time_executed=time_executed)
+                else:
+                                
+                    sr = SubObsRequest(sr_id=sr_id,
+                                       grp_id=request_grp_id,
+                                       track_id=request_track_id,
+                                       window_start=window_start, 
+                                       window_end=window_end,
+                                       status=status)
+        
+                sr.save()
+                
+                successful = True
+                message = 'Subrequest added'
+                
+            except:
+                
+                successful = False
+                message = 'Error during ingestion of subrequest'
+            
+        else:
+            
+            successful = False
+            message = 'Subrequest already exists'
+            
+    else:
+        
+        successful = False
+        message = 'Unrecognised Obsrequest group ID'
+        
+    return successful, message
+
+def update_sub_request(sr_id,request_grp_id, request_track_id, 
+                    window_start, window_end, status, time_executed):
+    """
+    Update an existsing observing sub-request in the database.
+    
+    Keyword arguments:
+    sr_id -- The ID of the subrequest assigned by the LCO scheduler
+                (string, required)
+    request_grp_id -- The originating ObsRequest group_id. 
+                 (string, required)
+    request_track_id -- The originating ObsRequest track_id. 
+                 (string, required)
+    window_start -- First timestamp when the subrequest can be executed
+                 (object, DateTime)
+    window_end -- Last timestamp, after which the subrequest expires
+                 (object, DateTime)
+    status -- The last known state of the request in the LCO scheduler
+                 (string, choice field)
+                 ('PENDING', 'COMPLETED', 'CANCELED', 'WINDOW_EXPIRED')
+    time_executed -- The timestamp of when the subrequest was executed
+                 (object, optional, DateTime)
+    """
+    if ObsRequest.objects.filter(grp_id=request_grp_id).exists()==True:
+        
+        if SubObsRequest.objects.filter(sr_id=sr_id).exists() == True:
+            
+#            try:
+                qs = SubObsRequest.objects.filter(sr_id=sr_id)
+                sr = qs[0]
+
+                sr.window_start = window_start
+                sr.window_end = window_end
+                sr.state = status
+                
+                if time_executed != None:
+                    
+                    sr.time_executed = time_executed
+                
+                sr.save()
+                successful = True
+                message = 'Subrequest updated'
+            
+#            except:
+                
+#                successful = False
+#                message = 'Error during update of subrequest'
+            
+        else:
+            
+            successful = False
+            message = 'Subrequest is unknown to the database'
+            
+    else:
+        
+        successful = False
+        message = 'Unrecognised Obsrequest group ID'
+        
+    return successful, message
 
 ################################################################################################################
 def add_status(event_name, timestamp=timezone.now(), status='NF', comment='', 

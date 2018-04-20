@@ -26,6 +26,7 @@ import requests
 import json
 from datetime import datetime
 import pytz
+import observation_classes
 
 def lco_userrequest_query(token,track_id):
     """Method to query for the status of a specific observation request 
@@ -45,22 +46,35 @@ def get_subrequests_status(token,track_id):
     
     api_response = lco_userrequest_query(token,track_id)
     
-    states = []
-    completed_ts = []
-    windows = []
+    subrequests = []
     
     if 'requests' in api_response.keys():
+        
         for subrequest in api_response['requests']:
+            
+            sr = observation_classes.SubObsRequest()
+            
+            sr.sr_id = subrequest['id']
+            sr.request_grp_id = api_response['group_id']
+            sr.request_track_id = api_response['id']
+            sr.state = subrequest['state']
                         
-            states.append(subrequest['state'])
-            completed_ts.append(subrequest['completed'])
+            if 'None' in str(subrequest['completed']):
+                sr.time_executed = None
+            else:
+                sr.time_executed = datetime.strptime(subrequest['completed'],"%Y-%m-%dT%H:%M:%S.%fZ")
+
             tstart = datetime.strptime(subrequest['windows'][0]['start'],"%Y-%m-%dT%H:%M:%SZ")
             tstart = tstart.replace(tzinfo=pytz.UTC)
+            sr.window_start = tstart            
+
             tend = datetime.strptime(subrequest['windows'][0]['end'],"%Y-%m-%dT%H:%M:%SZ")
             tend = tend.replace(tzinfo=pytz.UTC)
-            windows.append( (tstart, tend) )
+            sr.window_end = tend
             
-    return states, completed_ts, windows
+            subrequests.append(sr)
+            
+    return subrequests
 
 def get_status_active_obs_subrequests(token,start_date,end_date,dbg=False):
     """Function to determine the status of all observation requests within
@@ -89,19 +103,16 @@ def get_status_active_obs_subrequests(token,start_date,end_date,dbg=False):
                 obs.timestamp.strftime("%Y-%m-%dT%H:%M:%S")+' - '+\
                 obs.time_expire.strftime("%Y-%m-%dT%H:%M:%S"))
                 
-        (states, completed_ts, windows) = get_subrequests_status(token,obs.track_id)
+        subrequests = get_subrequests_status(token,obs.track_id)
         
         if dbg:
-            for i in range(0,len(states),1):
-                try:
-                    print '-> '+states[i], completed_ts[i].strftime("%Y-%m-%dT%H:%M:%S")
-                except AttributeError:
-                    print '-> '+states[i], repr(completed_ts[i])
+            for sr in subrequests:
+                
+                print sr.summary()
         
         active_obs[str(obs.grp_id)] = {'obsrequest': obs,
-                                  'sr_states': states,
-                                  'sr_completed_ts': completed_ts,
-                                  'sr_windows': windows}
+                                       'subrequests': subrequests}
+                                  
     return active_obs
     
 

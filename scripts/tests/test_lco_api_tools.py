@@ -12,6 +12,7 @@ sys.path.append(os.path.join(cwd,'..'))
 import lco_api_tools
 from datetime import datetime, timedelta
 import pytz
+import observation_classes
 
 def run_tests():
     """Function to run the suite of tests.  Since access to LCO's API 
@@ -33,19 +34,20 @@ def run_tests():
 def test_get_subrequests_status(token):
     
     track_id = 624354
+
+    test_sr = observation_classes.SubObsRequest()
     
-    (states, completed_ts, windows) = lco_api_tools.get_subrequests_status(token,track_id)
+    subrequests = lco_api_tools.get_subrequests_status(token,track_id)
 
-    for i in range(0,len(states),1):
-        print states[i], completed_ts[i], windows[i]
-
-    assert type(states) == type([])
-    assert type(completed_ts) == type([])
-    assert len(states) > 0
+    assert type(subrequests) == type([])
+    for item in subrequests:
+        assert type(item) == type(test_sr)
 
 def test_get_status_active_obs_subrequests(token):
     """Function to test the return of active observations between a given date 
     range, with the current status of those requests"""
+    
+    test_sr = observation_classes.SubObsRequest()
     
     start_date = datetime.now() - timedelta(seconds=2.0*24.0*60.0*60.0)
     start_date = start_date.replace(tzinfo=pytz.UTC)
@@ -54,13 +56,15 @@ def test_get_status_active_obs_subrequests(token):
     
     active_obs = lco_api_tools.get_status_active_obs_subrequests(token,start_date,end_date)
     
-    print active_obs
     assert type(active_obs) == type({})
-    assert type(active_obs[active_obs.keys()[0]]) == type({})
-    for key in ['obsrequest','sr_states','sr_completed_ts','sr_windows']:
-        assert key in active_obs[active_obs.keys()[0]].keys()
-    for key in active_obs.keys():
-        assert type(key) == type('foo')
+    for grp_id, item in active_obs.items():
+        assert type(grp_id) == type('foo')
+        assert type(item) == type({})
+        assert 'obsrequest' in item.keys()
+        assert 'subrequests' in item.keys()
+        
+        for sr in item['subrequests']:
+            assert type(sr) == type(test_sr)
 
 
 if __name__ == '__main__':
