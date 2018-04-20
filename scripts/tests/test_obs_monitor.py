@@ -40,9 +40,9 @@ def run_tests():
    
     #test_get_fields_list()
     
-    test_get_status_active_obs_subrequests(token)
+    #test_get_status_active_obs_subrequests(token)
  
-    #test_plot_req_vs_obs()
+    test_plot_req_vs_obs()
 
 def generate_camera_data(camera,grp_id,field,date):
     
@@ -168,7 +168,9 @@ def test_plot_req_vs_obs():
     
     active_obs = generate_test_dataset()
     
-    obs_monitor.plot_req_vs_obs(active_obs)
+    (script, div) = obs_monitor.plot_req_vs_obs(active_obs,dbg=False)
+    
+    print script
     
 if __name__ == '__main__':
     

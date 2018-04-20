@@ -55,7 +55,7 @@ def analyze_requested_vs_observed(monitor_period_days=5.0):
     
     plot_req_vs_obs(active_obs)
     
-def plot_req_vs_obs(active_obs):
+def plot_req_vs_obs(active_obs, dbg=False):
     """Function to generate a graphical representation of the currently-active
     ObsRequests and their subrequests, and indicate which ones have been 
     observed."""
@@ -73,7 +73,8 @@ def plot_req_vs_obs(active_obs):
                      'fl15': ['#7119c4', '#b09bc4'], # Magenta
                      'fl03': ['#cc8616', '#cec0a9']} # Orange
     
-    output_file("test_plot.html")
+    if dbg:
+        output_file("test_plot.html")
     
     fig = figure(plot_width=800, plot_height=600, 
                  title="Requested vs Observed",
@@ -132,8 +133,15 @@ def plot_req_vs_obs(active_obs):
     
     fig.xaxis.major_label_orientation = math.pi/4
     
-    show(fig)
-
+    if dbg:
+        show(fig)
+        return None, None
+        
+    else:
+        (script, div) = components(fig)
+        
+        return script, div
+    
 def get_fields_list(active_obs):
     """Function to extract a list of the fields from a list of 
     active observations"""
@@ -219,9 +227,7 @@ def get_status_active_obs_subrequests(token,start_date,end_date,dbg=False):
                             'sr_completed_ts': timestamps of subrequest completion, or None,
                             'sr_windows': (start, end) subrequest datetimes}
     """
-    
-    print('Querying LCO for observation status...')
-    
+     
     qs = ObsRequest.objects.all().exclude(request_status = 'CN').\
             filter(timestamp__lte=end_date).filter(time_expire__gt=start_date)
     

@@ -27,6 +27,7 @@ from scripts import config_parser
 from scripts.get_errors import *
 from scripts import update_db_2
 from scripts import db_plotting_utilities
+from scripts import obs_monitor
 import requests
 
 # Path to ARTEMiS files
@@ -824,7 +825,38 @@ def show_event(request, event_name):
       return render(request, 'events/show_event.html', context)
    else:
       return HttpResponseRedirect('login')
-   
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def display_obs_monitor(request):
+    """Display of functions which monitor the observing system, observations
+    requested and data taken."""
+    
+    if request.user.is_authenticated():
+        
+        response = obs_monitor.analyze_requested_vs_observed(monitor_period_days=1.0)
+                
+        if response == None:
+            
+            script = ''
+            div = 'Timeout: response too slow'
+        
+        else:
+            
+            (script,div) = response
+            
+#        except:
+            
+#            (script, div) = '', 'Error producing the requested vs observed plot'
+
+        context = {'req_vs_obs_plot_script': script, 'req_vs_obs_plot_div': div}
+
+        return render(request, 'events/obs_monitor_display.html', context)
+      
+    else:
+
+        return HttpResponseRedirect('login')
+
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def event_obs_details(request, event_name):
