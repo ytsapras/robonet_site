@@ -40,9 +40,9 @@ def run_tests():
    
     #test_get_fields_list()
     
-    #test_get_status_active_obs_subrequests(token)
+    test_get_status_active_obs_subrequests(token)
  
-    test_plot_req_vs_obs()
+    #test_plot_req_vs_obs()
 
 def generate_camera_data(camera,grp_id,field,date):
     
@@ -156,6 +156,7 @@ def test_get_status_active_obs_subrequests(token):
     
     active_obs = obs_monitor.get_status_active_obs_subrequests(token,start_date,end_date)
     
+    print active_obs
     assert type(active_obs) == type({})
     assert type(active_obs[active_obs.keys()[0]]) == type({})
     for key in ['obsrequest','sr_states','sr_completed_ts','sr_windows']:

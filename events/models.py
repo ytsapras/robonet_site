@@ -674,7 +674,8 @@ class ObsRequest(models.Model):
    # Number of exposures requested
    n_exp = models.IntegerField(default=1)
    request_status = models.CharField(max_length=40, choices=status_choice, default='AC')
-
+   
+    
 # Event status parameters
 class EventStatus(models.Model):
    """
