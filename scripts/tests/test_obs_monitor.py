@@ -38,11 +38,9 @@ def run_tests():
         
         token = raw_input('Please enter your LCO API token: ')
    
-    #test_get_fields_list()
-    
-    test_get_status_active_obs_subrequests(token)
- 
-    #test_plot_req_vs_obs()
+    test_get_fields_list()
+     
+    test_plot_req_vs_obs()
 
 def generate_camera_data(camera,grp_id,field,date):
     
@@ -144,25 +142,6 @@ def test_get_fields_list():
     fields_returned.sort()
     
     assert field_list == fields_returned
-
-def test_get_status_active_obs_subrequests(token):
-    """Function to test the return of active observations between a given date 
-    range, with the current status of those requests"""
-    
-    start_date = datetime.now() - timedelta(seconds=2.0*24.0*60.0*60.0)
-    start_date = start_date.replace(tzinfo=pytz.UTC)
-    end_date = datetime.now() + timedelta(seconds=2.0*24.0*60.0*60.0)
-    end_date = end_date.replace(tzinfo=pytz.UTC)
-    
-    active_obs = obs_monitor.get_status_active_obs_subrequests(token,start_date,end_date)
-    
-    print active_obs
-    assert type(active_obs) == type({})
-    assert type(active_obs[active_obs.keys()[0]]) == type({})
-    for key in ['obsrequest','sr_states','sr_completed_ts','sr_windows']:
-        assert key in active_obs[active_obs.keys()[0]].keys()
-    for key in active_obs.keys():
-        assert type(key) == type('foo')
 
 def test_plot_req_vs_obs():
     """Function to test the generated plot for requested vs observed"""

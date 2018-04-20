@@ -378,7 +378,7 @@ def check_image_in_db(image_name):
         return True
     else:
         return False
-    
+
 if __name__ == '__main__':
     stats = get_image_rejection_statistics()
     print stats
