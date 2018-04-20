@@ -38,29 +38,38 @@ def run_tests():
         
         token = raw_input('Please enter your LCO API token: ')
    
-    test_get_fields_list()
+    #test_get_fields_list()
     
-    #test_get_status_active_obs_subrequests(token)
+    test_get_status_active_obs_subrequests(token)
  
-    test_plot_req_vs_obs()
+    #test_plot_req_vs_obs()
 
-def generate_camera_data(camera,grp_id,field):
+def generate_camera_data(camera,grp_id,field,date):
     
     obs = observation_classes.ObsRequest()
     obs.grp_id = grp_id
     obs.which_inst = camera
     obs.field = field
+
+    req_duration_secs = 0.5 * 60.0 * 60.0
+    cadence_secs = 1.0 * 60.0 * 60.0
     
-    start_date = datetime.now() - timedelta(seconds=2.0*24.0*60.0*60.0)
+    if camera == 'fl12':
+        start_date = date
+    elif camera == 'fl06':
+        start_date = date + timedelta(hours=8.0)
+    elif camera == 'fl03':
+        start_date = date + timedelta(hours=14.0)
     start_date = start_date.replace(tzinfo=pytz.UTC)
-    end_date = datetime.now() + timedelta(seconds=2.0*24.0*60.0*60.0)
+
+    end_date = start_date + timedelta(seconds=req_duration_secs)
     end_date = end_date.replace(tzinfo=pytz.UTC)
    
     states = []
     completed_times = []
     windows = []
     for i in range(0,6,1):
-        
+    
         if i <= 3:
             states.append('COMPLETED')
             ts = datetime.now()
@@ -70,13 +79,11 @@ def generate_camera_data(camera,grp_id,field):
             states.append('PENDING')
             completed_times.append('None')
             
-        start_date = datetime.now() - timedelta(seconds=i*60.0*60.0)
-        start_date = start_date.replace(tzinfo=pytz.UTC)
-        end_date = start_date + timedelta(seconds=0.5*60.0*60.0)
-        end_date = end_date.replace(tzinfo=pytz.UTC)
-        
         windows.append( (start_date, end_date) )
-    
+            
+        start_date = end_date + timedelta(seconds=cadence_secs)
+        end_date = start_date + timedelta(seconds=req_duration_secs)
+        
     return obs, states, completed_times, windows
 
 def get_field_names():
@@ -98,17 +105,29 @@ def generate_test_dataset():
     
     field_list = get_field_names()
     
-    for field in field_list:
+    window_start = datetime.strptime('2018-04-20T00:00:00', "%Y-%m-%dT%H:%M:%S")
+    window_start = window_start.replace(tzinfo=pytz.UTC)
+    
+    n_days= 5
+    
+    for day in range(0,n_days,1):
         
-        for camera in ['fl12', 'fl06', 'fl03']:
+        date = window_start + timedelta(days=day)
+        
+        for field in field_list:
             
-            (obs, states, completed_times, windows) = generate_camera_data(camera,'test_'+camera, field)
-            
-            active_obs[obs.grp_id]  = {'obsrequest': obs, 
-                                     'sr_states': states,
-                                     'sr_completed_ts': completed_times,
-                                     'sr_windows': windows}
-                                     
+            for camera in ['fl12', 'fl06', 'fl03']:
+                
+                
+                (obs, states, completed_times, windows) = generate_camera_data(camera,
+                                                            'test_'+camera+'_'+field+'_'+str(day), 
+                                                            field,date)
+                
+                active_obs[obs.grp_id]  = {'obsrequest': obs, 
+                                         'sr_states': states,
+                                         'sr_completed_ts': completed_times,
+                                         'sr_windows': windows}
+        
     return active_obs
     
 def test_get_fields_list():
@@ -120,8 +139,11 @@ def test_get_fields_list():
     active_obs = generate_test_dataset()
     
     fields = obs_monitor.get_fields_list(active_obs)
+        
+    fields_returned = fields.keys()
+    fields_returned.sort()
     
-    assert field_list == fields.keys()
+    assert field_list == fields_returned
 
 def test_get_status_active_obs_subrequests(token):
     """Function to test the return of active observations between a given date 
@@ -138,13 +160,14 @@ def test_get_status_active_obs_subrequests(token):
     assert type(active_obs[active_obs.keys()[0]]) == type({})
     for key in ['obsrequest','sr_states','sr_completed_ts','sr_windows']:
         assert key in active_obs[active_obs.keys()[0]].keys()
-
+    for key in active_obs.keys():
+        assert type(key) == type('foo')
 
 def test_plot_req_vs_obs():
     """Function to test the generated plot for requested vs observed"""
     
     active_obs = generate_test_dataset()
-        
+    
     obs_monitor.plot_req_vs_obs(active_obs)
     
 if __name__ == '__main__':
