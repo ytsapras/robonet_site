@@ -38,8 +38,7 @@ def update_subrequest_status(look_back_days=1.0):
                                      to select observations to be updated.
     """
 
-    config = config_parser.read_config_for_code('obs_control')    
-    config['log_root_name'] = 'update_subrequests'
+    config = config_parser.read_config_for_code('update_subrequests')    
     
     log = log_utilities.start_day_log( config, 'update_subrequests' )
 

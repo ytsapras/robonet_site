@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<update_subrequests_config>
+    <parameter name='log_directory'>
+      	<value>/Users/rstreet/ROMEREA/Logs/2018</value>
+    </parameter>
+    <parameter name='log_root_name'>
+      	<value>update_subrequests</value>
+    </parameter>
+    <parameter name='testing'>
+      	<value>True</value>
+    </parameter>
+    <parameter name='token'>
+        <value>572255bbc8a7596819eb6523a7c4d7231066b398</value>
+    </parameter>
+    <parameter name='db_user_id'>
+        <value>xxx</value>
+    </parameter>
+    <parameter name='db_pswd'>
+        <value>xxx</value>
+    </parameter>
+</update_subrequests_config>
