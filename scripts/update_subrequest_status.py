@@ -26,6 +26,8 @@ import pytz
 import obs_monitor
 import lco_api_tools
 import config_parser
+import api_tools
+import log_utilities
 
 def update_subrequest_status(look_back_days=1.0):
     """Function to update the status of all sub-observing requests that 
@@ -36,17 +38,58 @@ def update_subrequest_status(look_back_days=1.0):
                                      to select observations to be updated.
     """
 
-    config = config_parser.read_config_for_code('setup')    
+    config = config_parser.read_config_for_code('obs_control')    
+    config['log_root_name'] = 'update_subrequests'
+    
+    log = log_utilities.start_day_log( config, 'update_subrequests' )
 
     start_date = datetime.now() - timedelta(days=look_back_days)
     start_date = start_date.replace(tzinfo=pytz.UTC)
     end_date = datetime.now()
     end_date = end_date.replace(tzinfo=pytz.UTC)
+
+    log.info('Updating the status of observations between '+\
+                start_date.strftime("%Y-%m-%dT%H:%M:%S")+' and '+\
+                end_date.strftime("%Y-%m-%dT%H:%M:%S"))
+    
+    log.info('Querying LCO API for observation sub-request status...')
     
     active_obs = lco_api_tools.get_status_active_obs_subrequests(config['token'],
-                                                   start_date,end_date)
+                                                   start_date,end_date,log=log)
     
+    log.info('Returned data for '+str(len(active_obs))+' observation(s)')
     
-    # Submit the updated status information to the DB
+    for grp_id, obs_dict in active_obs.items():
+        
+        obs = obs_dict['obsrequest']
+        subrequests = obs_dict['subrequests']
+        
+        log.info(' -> '+obs.grp_id+' has '+str(len(subrequests))+' subrequests:')
+        
+        for sr in subrequests:
+            
+            params = {'sr_id': sr.sr_id,
+                      'grp_id': obs.grp_id,
+                      'track_id': obs.track_id,
+                      'window_start': sr.window_start.strftime("%Y-%m-%dT%H:%M:%S"),
+                      'window_end': sr.window_end.strftime("%Y-%m-%dT%H:%M:%S"),
+                      'status': sr.state}
+                        
+            if sr.time_executed != None:
+                
+                params['time_executed'] = sr.time_executed.strftime("%Y-%m-%dT%H:%M:%S")
+            
+            log.info(repr(params))
+            
+            message = api_tools.submit_sub_obs_request_record(config,params,
+                                                              testing=bool(config['testing']))
+                
+            log.info(' --> Subrequest '+str(sr.sr_id)+': '+message)
+            
+    log_utilities.end_day_log( log )
+  
+
+if __name__ == '__main__':
     
+    update_subrequest_status(look_back_days=1.0)
     

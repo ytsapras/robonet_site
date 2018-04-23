@@ -786,7 +786,7 @@ def add_sub_request(sr_id,request_grp_id, request_track_id,
         if SubObsRequest.objects.filter(sr_id=sr_id).exists() == False:
             
             try:
-                if time_executed == None:
+                if time_executed != None:
                     
                     sr = SubObsRequest(sr_id=sr_id,
                                        grp_id=request_grp_id,
@@ -852,7 +852,7 @@ def update_sub_request(sr_id,request_grp_id, request_track_id,
         
         if SubObsRequest.objects.filter(sr_id=sr_id).exists() == True:
             
-#            try:
+            try:
                 qs = SubObsRequest.objects.filter(sr_id=sr_id)
                 sr = qs[0]
 
@@ -866,22 +866,22 @@ def update_sub_request(sr_id,request_grp_id, request_track_id,
                 
                 sr.save()
                 successful = True
-                message = 'Subrequest updated'
+                message = 'DBREPLY: Subrequest updated'
             
-#            except:
+            except:
                 
-#                successful = False
-#                message = 'Error during update of subrequest'
+                successful = False
+                message = 'DBREPLY: Error during update of subrequest'
             
         else:
             
             successful = False
-            message = 'Subrequest is unknown to the database'
+            message = 'DBREPLY: Subrequest is unknown to the database'
             
     else:
         
         successful = False
-        message = 'Unrecognised Obsrequest group ID'
+        message = 'DBREPLY: Unrecognised Obsrequest group ID'
         
     return successful, message
 

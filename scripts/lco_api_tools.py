@@ -76,7 +76,7 @@ def get_subrequests_status(token,track_id):
             
     return subrequests
 
-def get_status_active_obs_subrequests(token,start_date,end_date,dbg=False):
+def get_status_active_obs_subrequests(token,start_date,end_date,dbg=False,log=None):
     """Function to determine the status of all observation requests within
     a specified time period. 
     
@@ -94,24 +94,46 @@ def get_status_active_obs_subrequests(token,start_date,end_date,dbg=False):
     qs = ObsRequest.objects.all().exclude(request_status = 'CN').\
             filter(timestamp__lte=end_date).filter(time_expire__gt=start_date)
     
+    if log!=None:
+        
+        log.info('Identified '+str(len(qs))+\
+        ' database entries, including duplicates for multi-filter observations, within date range '+\
+        start_date.strftime("%Y-%m-%dT%H:%M:%S")+' to '+end_date.strftime("%Y-%m-%dT%H:%M:%S"))
+        
     active_obs = {}
     
     for obs in qs:
         
-        if dbg:
-            print(obs.grp_id+' '+obs.track_id+' '+\
-                obs.timestamp.strftime("%Y-%m-%dT%H:%M:%S")+' - '+\
-                obs.time_expire.strftime("%Y-%m-%dT%H:%M:%S"))
+        if obs.grp_id not in active_obs.keys():
+            
+            if dbg:
+                print(obs.grp_id+' '+obs.track_id+' '+\
+                    obs.timestamp.strftime("%Y-%m-%dT%H:%M:%S")+' - '+\
+                    obs.time_expire.strftime("%Y-%m-%dT%H:%M:%S"))
+            
+            if log!=None:
                 
-        subrequests = get_subrequests_status(token,obs.track_id)
-        
-        if dbg:
-            for sr in subrequests:
+                log.info('-> '+obs.grp_id+' '+obs.track_id+' '+\
+                    obs.timestamp.strftime("%Y-%m-%dT%H:%M:%S")+' - '+\
+                    obs.time_expire.strftime("%Y-%m-%dT%H:%M:%S"))
+                    
+            subrequests = get_subrequests_status(token,obs.track_id)
+            
+            if dbg:
                 
-                print sr.summary()
-        
-        active_obs[str(obs.grp_id)] = {'obsrequest': obs,
-                                       'subrequests': subrequests}
+                for sr in subrequests:
+                    
+                    print sr.summary()
+            
+            if log!=None:
+                
+                for sr in subrequests:
+                    
+                    log.info('-> '+sr.summary())
+            
+                
+            active_obs[str(obs.grp_id)] = {'obsrequest': obs,
+                                           'subrequests': subrequests}
                                   
     return active_obs
     

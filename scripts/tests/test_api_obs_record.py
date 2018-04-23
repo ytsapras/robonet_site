@@ -21,6 +21,7 @@ from django import setup
 setup()
 from events.models import Field
 from datetime import datetime, timedelta
+import pytz
 import api_tools
 
 def test_api_obs_record():
@@ -38,6 +39,35 @@ def test_api_obs_record():
     config['db_user_id'] = raw_input('Please enter DB user ID: ')
     config['db_pswd'] = raw_input('Please enter DB password: ')
     response = api_tools.submit_obs_request_record(config,params)
+
+def test_api_sub_obs_record():
+    """Function to test the API to add a new SubObsRequest record to the DB"""
+    
+    window_start = datetime.strptime('2018-04-20T15:30:00',"%Y-%m-%dT%H:%M:%S")
+    window_start = window_start.replace(tzinfo=pytz.UTC)
+    window_end = datetime.strptime('2018-04-20T16:00:00',"%Y-%m-%dT%H:%M:%S")
+    window_end = window_end.replace(tzinfo=pytz.UTC)
+    time_executed = datetime.strptime('2018-04-20T15:45:00',"%Y-%m-%dT%H:%M:%S")
+    time_executed = time_executed.replace(tzinfo=pytz.UTC)
+    
+    params = {'sr_id': '1477711',
+              'grp_id': 'ROME20180412T16.93534273',
+              'track_id': '624354',
+              'window_start': window_start.strftime("%Y-%m-%dT%H:%M:%S"),
+              'window_end': window_end.strftime("%Y-%m-%dT%H:%M:%S"),
+              'status': 'PENDING',
+              'time_executed': time_executed.strftime("%Y-%m-%dT%H:%M:%S")}
+
+    config = {}
+    config['db_user_id'] = raw_input('Please enter DB user ID: ')
+    config['db_pswd'] = raw_input('Please enter DB password: ')
+
+    response = api_tools.submit_sub_obs_request_record(config,params,testing=True)
+    
+    assert 'Subrequest successfully added to database' in response
     
 if __name__ == '__main__':
-    test_api_obs_record()
+    
+    #test_api_obs_record()
+    test_api_sub_obs_record()
+    

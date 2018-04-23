@@ -1126,10 +1126,10 @@ def record_sub_obs_request(request):
                                                            post.window_end, 
                                                            post.status, 
                                                            post.time_executed)
-                
+                                
                 if update_ok:
                     
-                    message = 'Subrequest successfully updated in database'
+                    message = 'DBREPLY: Subrequest successfully added to database'
                     
                 else:
 

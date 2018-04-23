@@ -32,6 +32,29 @@ def submit_obs_request_record(config,params):
                             testing=True)
 
 ################################################################################
+def submit_sub_obs_request_record(config,params,testing=False,verbose=False):
+    """Function to submit a record of a new observation to the database 
+    using the API record_obs_request endpoint
+    Required parameters:
+        config    dict    script configuration parameters
+        params    dict    observation request parameters, including
+                    sr_id,
+                    grp_id,
+                    track_id,
+                    window_start,
+                    window_end, 
+                    status, 
+                    time_executed
+    """
+    
+    end_point = 'record_sub_obs_request'
+        
+    message = talk_to_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=testing,verbose=verbose)
+    return message
+    
+################################################################################
 def submit_event_record(config,params):
     """Function to submit a record of a new event to the database 
     using the API add_event endpoint

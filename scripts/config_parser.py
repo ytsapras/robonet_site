@@ -66,7 +66,7 @@ def read_config(config_file_path):
 
 def read_config_for_code(code_name):
     """Function to read XML configuration files
-    code_name = { 'obscontrol', 'artemis_subscriber', 'setup' }    
+    code_name = { 'obs_control', 'artemis_subscriber', 'setup' }    
     """
     
     configs = { 'obs_control': 'obscontrol_config.xml',
