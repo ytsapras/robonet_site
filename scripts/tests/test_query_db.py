@@ -19,6 +19,7 @@ from django.conf import settings
 from django.utils import timezone
 from django import setup
 from datetime import datetime, timedelta
+import pytz
 setup()
 from events.models import Event, EventName, SingleModel
 import query_db
@@ -31,7 +32,25 @@ def test_get_active_obs():
     assert qs.count > 0
     if len(qs) > 0:
         assert hasattr(qs[0],'field') and hasattr(qs[0],'request_type')
+
+def test_select_obs_by_date():
+    
+    tstart = datetime.strptime('2018-04-16T00:00:00','%Y-%m-%dT%H:%M:%S')
+    tstart = tstart.replace(tzinfo=pytz.UTC)
+    tend = datetime.strptime('2018-04-24T00:00:00','%Y-%m-%dT%H:%M:%S')
+    tend = tend.replace(tzinfo=pytz.UTC)
+    
+    criteria = { 'timestamp': tstart,
+                 'time_expire': tend,
+                 'request_status': 'AC'}
+
+    qs = query_db.select_obs_by_date(criteria)
+    
+    assert qs.count > 0
+    if len(qs) > 0:
+        assert hasattr(qs[0],'field') and hasattr(qs[0],'request_type')
         
+     
 def test_get_old_active_obs():
 
     qs = query_db.get_old_active_obs()
@@ -145,4 +164,9 @@ def test_check_image_in_db():
     assert status == True
     status = query_db.check_image_in_db('cpt1m010-foo-20170403-bar-e91.fits')
     assert status == False
+
+
+if __name__ == '__main__':
+    
+    test_select_obs_by_date()
     

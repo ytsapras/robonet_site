@@ -26,6 +26,7 @@ import lco_api_tools
 import config_parser
 import pytz
 import math
+import query_db
 
 from bokeh.plotting import figure, show, output_file, gridplot,vplot
 from bokeh.models import ColumnDataSource, HoverTool, LinearColorMapper, Legend,CheckboxGroup
@@ -50,10 +51,40 @@ def analyze_requested_vs_observed(monitor_period_days=5.0):
     
     (start_date, end_date) = get_monitor_period(monitor_period_days)
     
-    active_obs = lco_api_tools.get_status_active_obs_subrequests(config['token'],
-                                                   start_date,end_date)
+    obs_list = fetch_obs_list(start_date, end_date)
+    
+    active_obs = lco_api_tools.get_status_active_obs_subrequests(obs_list,
+                                                                 config['token'],
+                                                                 start_date,
+                                                                 end_date)
     
     plot_req_vs_obs(active_obs)
+
+def fetch_obs_list(start_date, end_date):
+    """Function to query the DB for a list of observations within the dates
+    given, and return it in the form of an observation list"""
+    
+    criteria = {'timestamp': start_date,
+                'time_expire': end_date,
+                'request_status': 'AC'}
+                
+    qs = query_db.select_obs_by_date(criteria)
+    
+    obs_list = []
+    
+    for obs in qs:
+        
+        obs_info = {}
+        obs_info['pk'] = obs.pk
+        obs_info['grp_id'] = obs.grp_id
+        obs_info['track_id'] = obs.track_id
+        obs_info['timestamp'] = obs.timestamp
+        obs_info['time_expire'] = obs.time_expire
+        obs_info['status'] = obs.request_status
+        
+        obs_list.append( obs_info )
+
+    return obs_list
     
 def plot_req_vs_obs(active_obs, dbg=False):
     """Function to generate a graphical representation of the currently-active

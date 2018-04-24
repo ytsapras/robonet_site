@@ -8,19 +8,6 @@ import os
 import sys
 cwd = os.getcwd()
 sys.path.append(os.path.join(cwd,'..'))
-from local_conf import get_conf
-robonet_site = get_conf('robonet_site')
-sys.path.append(robonet_site)
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'robonet_site.settings')
-from django.core import management
-from django.conf import settings
-from django.utils import timezone
-from django import setup
-from datetime import datetime, timedelta
-setup()
-
-from events.models import ObsRequest
-
 from datetime import datetime, timedelta
 import pytz
 import obs_monitor

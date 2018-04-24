@@ -38,10 +38,12 @@ def run_tests():
         
         token = raw_input('Please enter your LCO API token: ')
    
-    test_get_fields_list()
+    #test_get_fields_list()
      
-    test_plot_req_vs_obs()
-
+    #test_plot_req_vs_obs()
+    
+    test_fetch_obs_list()
+    
 def generate_camera_data(camera,grp_id,field,date):
     
     obs = observation_classes.ObsRequest()
@@ -151,6 +153,22 @@ def test_plot_req_vs_obs():
     (script, div) = obs_monitor.plot_req_vs_obs(active_obs,dbg=False)
     
     print script
+
+def test_fetch_obs_list():
+    """Function to test the retrieval of a list of observations in the 
+    format required to query for subrequest status"""
+    
+    start_date = datetime.strptime('2018-04-16T00:00:00','%Y-%m-%dT%H:%M:%S')
+    start_date = start_date.replace(tzinfo=pytz.UTC)
+    end_date = datetime.strptime('2018-04-24T00:00:00','%Y-%m-%dT%H:%M:%S')
+    end_date = end_date.replace(tzinfo=pytz.UTC)
+    
+    obs_list = obs_monitor.fetch_obs_list(start_date, end_date)
+    
+    assert type(obs_list) == type([])
+    assert len(obs_list) > 0
+    for item in obs_list:
+        assert type(item) == type({})
     
 if __name__ == '__main__':
     
