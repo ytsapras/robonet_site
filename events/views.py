@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, TelescopeForm, EventForm, EventNameForm, SingleModelForm
 from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, ImageForm, RecordDataFileForm, TapLimaForm
-from .forms import RecordSubObsRequestForm
+from .forms import RecordSubObsRequestForm, QueryObsRequestDateForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from itertools import chain
@@ -1070,6 +1070,62 @@ def query_obs_requests(request):
                                     'message': 'OK'})
     else:
         return HttpResponseRedirect('login')
+
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def query_obs_by_date(request):
+    """Function to provide an endpoint for users to query what observation
+    requests have been made within a specified date range"""
+    
+    if request.user.is_authenticated():
+        
+        if request.method == "POST":
+
+            form = QueryObsRequestDateForm(request.POST)
+
+            if form.is_valid():
+
+                post = form.save(commit=False)
+
+                qs = ObsRequest.objects.filter(
+                        timestamp__gt = post.timestamp,
+                        time_expire__lte = post.time_expire)
+                    
+                obs_list = []
+                
+                for q in qs:
+                    obs = { 'pk': q.pk, 'grp_id':q.grp_id, 'track_id': q.track_id,
+                            'submit_date':q.timestamp.strftime("%Y-%m-%dT%H:%M:%S"),\
+                            'expire_date':q.time_expire.strftime("%Y-%m-%dT%H:%M:%S")
+                            }
+                            
+                    obs_list.append(obs)
+                    
+                return render(request, 'events/query_obs_by_date.html', \
+                                    {'form': form, 'observations': obs_list,
+                                     'message': 'OK: got query set'})
+                                     
+            else:
+
+                form = QueryObsRequestDateForm()
+
+                return render(request, 'events/query_obs_by_date.html', \
+                                    {'form': form, 'qs': [],\
+                                    'message':'Form entry was invalid.  Please try again.'})
+
+        else:
+
+            form = QueryObsRequestDateForm()
+
+            return render(request, 'events/query_obs_by_date.html', \
+                                    {'form': form, 'qs': [],
+                                    'message': 'OK'})
+
+    else:
+
+        return HttpResponseRedirect('login')
+
 
 
 ##############################################################################################################

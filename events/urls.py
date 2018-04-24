@@ -21,6 +21,7 @@ urlpatterns = [
     url(r'^obs_monitor/$', views.display_obs_monitor, name='obs_monitor'),
     url(r'^obs_details/(?P<event_name>[\w-]+)', views.event_obs_details, name='event_obs_details'),
     url(r'^query_obs_requests/$', views.query_obs_requests, name='query_obs_requests'),
+    url(r'^query_obs_by_date/$', views.query_obs_by_date, name='query_obs_by_date'),
     url(r'^record_obs_request/$', views.record_obs_request, name='record_obs_requests'),
     url(r'^record_sub_obs_request/$', views.record_sub_obs_request, name='record_sub_obs_request'),
     url(r'^record_data_file/$', views.record_data_file, name='record_data_file'),
