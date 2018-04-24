@@ -10,6 +10,7 @@ import urllib
 import json
 import requests
 from os import path
+from datetime import datetime
 
 ################################################################################
 def submit_obs_request_record(config,params):
@@ -432,6 +433,61 @@ def submit_image_record(config,params):
                             testing=True)
 
 ################################################################################
+def get_obs_list(config,params):
+    """Function to retrieve from the database a list of observations
+    matching the parameters given.
+    
+    Inputs:
+        :param dict config: script configuration parameters
+        :param dict params: observation parameters, where key, values match
+                            the keywords and data types in the ObsRequest.
+    """
+    
+    end_point = 'query_obs_by_date'
+    
+    response = ask_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'],
+                            testing=True)
+                            
+    table_data = extract_table_data(response)
+    
+    return table_data
+
+def extract_table_data(html_text):
+    """Function to extract table data from HTML-format text"""
+    
+    lines = html_text.split('\n')
+    
+    istart = None
+    iend = None
+    for i,l in enumerate(lines):
+        if '<table>' in l:
+            istart = i
+        elif '</table>' in l:
+            iend = i
+    
+    data = []
+    
+    for l in lines[istart+1:iend]:
+        
+        if l.lstrip()[0:4] == '<tr>' and '<th>' not in l:
+            
+            ldata = l.lstrip().replace('<tr>','').replace('</tr>\n','')
+            ldata = ldata.replace('<td>','::').replace('</td>','::').split('::')
+                        
+            entry = {}
+            entry['pk'] = int(ldata[1])
+            entry['grp_id'] = ldata[3]
+            entry['track_id'] = ldata[5]
+            entry['timestamp'] = datetime.strptime(ldata[7],"%Y-%m-%dT%H:%M:%S")
+            entry['time_expire'] = datetime.strptime(ldata[9],"%Y-%m-%dT%H:%M:%S")
+            entry['status'] = ldata[11]
+            
+            data.append( entry )
+    
+    return data
+    
+################################################################################
 def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
     """Method to communicate with various APIs of the ROME/REA database. 
     Required arguments are:
@@ -491,3 +547,57 @@ def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
             message = message.replace('DBREPLY: ','')
     
     return message
+
+def ask_db(data,end_point,user_id,pswd,testing=False,verbose=False):
+    """Method to communicate with various APIs of the ROME/REA database. 
+    Required arguments are:
+        data       dict     parameters of the submission
+        end_point  string   URL suffix of the form to submit to
+        user_id    string   User ID login for database
+        pswd       string   User password login for database
+    
+    E.g. if submitting to URL:
+        http://robonet.lco.global/db/record_obs_request/
+    end_point = 'record_obs_request
+    
+    Optional arguments:
+        testing    boolean            Switch to localhost URL for testing
+                                        Def=False for operations
+        verbose    boolean            Switch for additional debugging output
+    """
+    if testing == True:
+        host_url = 'http://127.0.0.1:8000/db'
+        login_url = 'http://127.0.0.1:8000/db/login/'
+    else:
+        host_url = 'http://robonet.lco.global/db'
+        login_url = 'http://robonet.lco.global/db/login/'
+        
+    url = path.join(host_url,end_point)
+    if url[-1:] != '/':
+        url = url + '/'
+    
+    if verbose==True:
+        print 'End point URL:',url
+    
+    
+    client = requests.session()
+    response = client.get(login_url)
+    if verbose == True:
+        print 'Started session with response: ',response.text
+    
+    auth_details = {'username': user_id, 'password': pswd}
+    headers = { 'Referer': url, 'X-CSRFToken': client.cookies['csrftoken'],}
+    
+    response = client.post(login_url, headers=headers, data=auth_details)
+    if verbose==True:
+        print response.text
+        print 'Completed login'
+    
+    response = client.get(url)
+    headers = { 'Referer': url, 'X-CSRFToken': client.cookies['csrftoken'],}
+    response = client.post(url, headers=headers, data=data)
+    if verbose==True:
+        print response.text
+        print 'Completed successfully'
+    
+    return response.text

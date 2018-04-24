@@ -1090,14 +1090,16 @@ def query_obs_by_date(request):
 
                 qs = ObsRequest.objects.filter(
                         timestamp__gt = post.timestamp,
-                        time_expire__lte = post.time_expire)
+                        time_expire__lte = post.time_expire,
+                        request_status = post.request_status)
                     
                 obs_list = []
                 
                 for q in qs:
                     obs = { 'pk': q.pk, 'grp_id':q.grp_id, 'track_id': q.track_id,
-                            'submit_date':q.timestamp.strftime("%Y-%m-%dT%H:%M:%S"),\
-                            'expire_date':q.time_expire.strftime("%Y-%m-%dT%H:%M:%S")
+                            'submit_date':q.timestamp.strftime("%Y-%m-%dT%H:%M:%S"),
+                            'expire_date':q.time_expire.strftime("%Y-%m-%dT%H:%M:%S"),
+                            'request_status': q.request_status
                             }
                             
                     obs_list.append(obs)

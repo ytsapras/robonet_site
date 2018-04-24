@@ -8,23 +8,10 @@ import os
 import sys
 cwd = os.getcwd()
 sys.path.append(os.path.join(cwd,'..'))
-from local_conf import get_conf
-robonet_site = get_conf('robonet_site')
-sys.path.append(robonet_site)
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'robonet_site.settings')
-from django.core import management
-from django.conf import settings
-from django.utils import timezone
-from django import setup
-from datetime import datetime, timedelta
-setup()
-
-from events.models import ObsRequest
-
 import urllib
 import requests
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 import observation_classes
 
@@ -76,11 +63,16 @@ def get_subrequests_status(token,track_id):
             
     return subrequests
 
-def get_status_active_obs_subrequests(token,start_date,end_date,dbg=False,log=None):
+def get_status_active_obs_subrequests(obs_list,token,
+                                      start_date,end_date,dbg=False,log=None):
     """Function to determine the status of all observation requests within
     a specified time period. 
     
     Inputs:
+        :param list obs_list: List of observations to be queried, each entry is a
+                dictionary with the keys:
+                {obs_pk, obs_grp_id, obs_track_id, timestamp, time_expire, status}
+        :param str token: LCO API token
         :param datetime start_date: Start of observing period
         :param datetime end_date: End of observing period
     Outputs:
@@ -91,33 +83,32 @@ def get_status_active_obs_subrequests(token,start_date,end_date,dbg=False,log=No
                             'sr_windows': (start, end) subrequest datetimes}
     """
      
-    qs = ObsRequest.objects.all().exclude(request_status = 'CN').\
-            filter(timestamp__lte=end_date).filter(time_expire__gt=start_date)
-    
     if log!=None:
         
-        log.info('Identified '+str(len(qs))+\
+        log.info('Identified '+str(len(obs_list))+\
         ' database entries, including duplicates for multi-filter observations, within date range '+\
         start_date.strftime("%Y-%m-%dT%H:%M:%S")+' to '+end_date.strftime("%Y-%m-%dT%H:%M:%S"))
         
     active_obs = {}
     
-    for obs in qs:
+    for obs in obs_list:
         
-        if obs.grp_id not in active_obs.keys():
+        if obs['grp_id'] not in active_obs.keys():
             
             if dbg:
-                print(obs.grp_id+' '+obs.track_id+' '+\
-                    obs.timestamp.strftime("%Y-%m-%dT%H:%M:%S")+' - '+\
-                    obs.time_expire.strftime("%Y-%m-%dT%H:%M:%S"))
+                print(obs['grp_id']+' '+obs['track_id']+' '+\
+                    obs['timestamp'].strftime("%Y-%m-%dT%H:%M:%S")+' - '+\
+                    obs['time_expire'].strftime("%Y-%m-%dT%H:%M:%S")+' '+\
+                    obs['status'])
             
             if log!=None:
                 
-                log.info('-> '+obs.grp_id+' '+obs.track_id+' '+\
-                    obs.timestamp.strftime("%Y-%m-%dT%H:%M:%S")+' - '+\
-                    obs.time_expire.strftime("%Y-%m-%dT%H:%M:%S"))
+                log.info('-> '+obs['grp_id']+' '+obs['track_id']+' '+\
+                    obs['timestamp'].strftime("%Y-%m-%dT%H:%M:%S")+' - '+\
+                    obs['time_expire'].strftime("%Y-%m-%dT%H:%M:%S")+' '+\
+                    obs['status'])
                     
-            subrequests = get_subrequests_status(token,obs.track_id)
+            subrequests = get_subrequests_status(token,obs['track_id'])
             
             if dbg:
                 
@@ -132,9 +123,9 @@ def get_status_active_obs_subrequests(token,start_date,end_date,dbg=False,log=No
                     log.info('-> '+sr.summary())
             
                 
-            active_obs[str(obs.grp_id)] = {'obsrequest': obs,
+            active_obs[str(obs['grp_id'])] = {'obsrequest': obs,
                                            'subrequests': subrequests}
-                                  
+    
     return active_obs
     
 

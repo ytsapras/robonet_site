@@ -50,11 +50,20 @@ def update_subrequest_status(look_back_days=1.0):
     log.info('Updating the status of observations between '+\
                 start_date.strftime("%Y-%m-%dT%H:%M:%S")+' and '+\
                 end_date.strftime("%Y-%m-%dT%H:%M:%S"))
+        
+    params = {'timestamp': start_date.strftime("%Y-%m-%dT%H:%M:%S"),
+              'time_expire': end_date.strftime("%Y-%m-%dT%H:%M:%S"),
+              'request_status': 'AC'}
+              
+    obs_list = api_tools.get_obs_list(config,params)
     
-    log.info('Querying LCO API for observation sub-request status...')
+    log.info('Database reports '+str(len(obs_list))+' observation(s) within this timeframe')
     
-    active_obs = lco_api_tools.get_status_active_obs_subrequests(config['token'],
-                                                   start_date,end_date,log=log)
+    active_obs = lco_api_tools.get_status_active_obs_subrequests(obs_list,
+                                                                 config['token'],
+                                                                 start_date,
+                                                                 end_date,
+                                                                 log=log)
     
     log.info('Returned data for '+str(len(active_obs))+' observation(s)')
     
@@ -63,13 +72,13 @@ def update_subrequest_status(look_back_days=1.0):
         obs = obs_dict['obsrequest']
         subrequests = obs_dict['subrequests']
         
-        log.info(' -> '+obs.grp_id+' has '+str(len(subrequests))+' subrequests:')
+        log.info(' -> '+obs['grp_id']+' has '+str(len(subrequests))+' subrequests:')
         
         for sr in subrequests:
             
             params = {'sr_id': sr.sr_id,
-                      'grp_id': obs.grp_id,
-                      'track_id': obs.track_id,
+                      'grp_id': obs['grp_id'],
+                      'track_id': obs['track_id'],
                       'window_start': sr.window_start.strftime("%Y-%m-%dT%H:%M:%S"),
                       'window_end': sr.window_end.strftime("%Y-%m-%dT%H:%M:%S"),
                       'status': sr.state}
@@ -90,5 +99,5 @@ def update_subrequest_status(look_back_days=1.0):
 
 if __name__ == '__main__':
     
-    update_subrequest_status(look_back_days=1.0)
+    update_subrequest_status(look_back_days=5.0)
     

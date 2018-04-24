@@ -1,0 +1,55 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<h3>Search for observation requests within a specified date range</h3>
+{% if message != 'OK' and message != 'OK: got query set' %}
+    <div>
+        <center><h5>{{ message }}</h5></center>
+    </div>
+{% endif %}
+<div>
+      <form method="POST" class="post-form">{% csrf_token %}
+        <center>
+            <table><tr>
+                <td><div class="fieldWrapper">
+                    {{ form.timestamp.errors }}
+                    <label for="{{ form.timestamp.id_for_label }}">Start date:</label>
+                    {{ form.timestamp }}
+                </div></td>
+                <td><div class="fieldWrapper">
+                    {{ form.time_expire.errors }}
+                    <label for="{{ form.time_expire.id_for_label }}">End date:</label>
+                    {{ form.time_expire }}
+                </div></td>
+                <td><div class="fieldWrapper">
+                    {{ form.request_status.errors }}
+                    <label for="{{ form.request_status.id_for_label }}">Request status:</label>
+                    {{ form.request_status }}
+                </div></td>
+                <td><div class="fieldWrapper">
+                    <button type="submit" class="save btn btn-default">Submit</button>
+                </div></td>
+            </tr></table>
+        </center>
+    </form>
+</div>  
+
+{% if observations|length > 0 and message == 'OK: got query set' %}
+<div>
+    <center>
+        <table>
+            <tr><th>PK</th><th>Group ID</th><th>Tracking ID</th><th>Submit date</th><th>Expiry date</th><th>Request status</th></tr>
+            {% for obs in observations %}
+            <tr><td>{{obs.pk}}</td><td>{{obs.grp_id}}</td><td>{{obs.track_id}}</td><td>{{obs.submit_date}}</td><td>{{obs.expire_date}}</td><td>{{obs.request_status}}</td></tr>
+            {% endfor %}
+        </table>
+    </center>
+</div>
+{% elif observations|length == 0 and message == 'OK: got query set' %}
+<div>
+    <center><h5>No observations listed in the database within this date-range.</h5></center>
+</div>
+{% endif %}
+{% endblock %}

@@ -54,8 +54,19 @@ def test_get_status_active_obs_subrequests(token):
     end_date = datetime.now() + timedelta(seconds=2.0*24.0*60.0*60.0)
     end_date = end_date.replace(tzinfo=pytz.UTC)
     
-    active_obs = lco_api_tools.get_status_active_obs_subrequests(token,start_date,end_date)
-    
+    obs_list = [
+                {'pk':16880, 'grp_id': 'REALO20180422T20.59162096', 'track_id': '633617', 
+                 'timestamp': datetime(2018, 4, 22, 20, 45, 29), 
+                 'time_expire': datetime(2018, 4, 23, 20, 45, 29), 
+                 'status': 'AC'}, 
+                 {'pk': 16881, 'grp_id': 'REALO20180422T20.59207874', 'track_id': '633618', 
+                  'timestamp': datetime(2018, 4, 22, 20, 45, 31), 
+                  'time_expire': datetime(2018, 4, 23, 20, 45, 31), 
+                  'status': 'AC'}             
+                ]
+                
+    active_obs = lco_api_tools.get_status_active_obs_subrequests(obs_list,token,start_date,end_date)
+        
     assert type(active_obs) == type({})
     for grp_id, item in active_obs.items():
         assert type(grp_id) == type('foo')
