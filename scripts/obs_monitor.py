@@ -36,7 +36,7 @@ from bokeh.models import BoxSelectTool
 from bokeh.embed import components
 from bokeh.resources import CDN
 
-def analyze_requested_vs_observed(monitor_period_days=5.0,dbg=False):
+def analyze_requested_vs_observed(monitor_period_days=2.5,dbg=False):
     """Function to analyze the observations requested within a given period, 
     checked whether or not observations were actually obtained, 
     and generating diagnostic plots.
@@ -53,7 +53,7 @@ def analyze_requested_vs_observed(monitor_period_days=5.0,dbg=False):
     (start_date, end_date) = get_monitor_period(monitor_period_days)
     
     obs_list = fetch_obs_list(start_date, end_date)
-    
+        
     if len(obs_list) > 0:
     
         active_obs = fetch_subrequest_status(obs_list)
@@ -66,7 +66,7 @@ def analyze_requested_vs_observed(monitor_period_days=5.0,dbg=False):
         div = '<br><h4>No observations in the DB within the period '+\
                 start_date.strftime("%Y-%m-%d")+' to '+end_date.strftime("%Y-%m-%d")
                 
-    return script, div
+    return script, div, start_date, end_date
     
 def fetch_obs_list(start_date, end_date):
     """Function to query the DB for a list of observations within the dates
@@ -116,8 +116,8 @@ def plot_req_vs_obs(active_obs, dbg=False):
     if dbg:
         output_file("test_plot.html")
     
-    title = 'Requested vs Observed for '+date_range[0].strftime("%Y-%m-%d")+' to '+\
-                                        date_range[1].strftime("%Y-%m-%d")
+    title = 'Subrequests available between '+date_range[0].strftime("%Y-%m-%dT%H:%M:%S")+' to '+\
+                                        date_range[1].strftime("%Y-%m-%dT%H:%M:%S")
                                         
     fig = figure(plot_width=800, plot_height=600, 
                  title=title,
@@ -255,5 +255,5 @@ def get_monitor_period(monitor_period_days):
 
 if __name__ == '__main__':
     
-    (script, div) = analyze_requested_vs_observed(monitor_period_days=5.0,dbg=True)
+    (script, div, start_date, end_date) = analyze_requested_vs_observed(monitor_period_days=5.0,dbg=True)
     

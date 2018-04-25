@@ -835,23 +835,20 @@ def display_obs_monitor(request):
     
     if request.user.is_authenticated():
         
-        response = obs_monitor.analyze_requested_vs_observed(monitor_period_days=5.0)
+        (script,div,start_date,end_date) = obs_monitor.analyze_requested_vs_observed(monitor_period_days=5.0)
                 
-        if response[0] == None and response[1] == None:
+        if script == None and div == None:
             
             script = ''
             div = 'Timeout: response too slow'
             
-        elif response[0] == None and response[1] != None:
+        elif script == None and div != None:
             
             script = ''
-            div = response[1]
-            
-        else:
-            
-            (script,div) = response
         
-        context = {'req_vs_obs_plot_script': script, 'req_vs_obs_plot_div': div}
+        context = {'req_vs_obs_plot_script': script, 'req_vs_obs_plot_div': div,
+                   'start_date': start_date.strftime('%Y-%m-%dT%H:%M:%S'), 
+                   'end_date':end_date.strftime('%Y-%m-%dT%H:%M:%S')}
 
         return render(request, 'events/obs_monitor_display.html', context)
       
