@@ -42,7 +42,9 @@ def run_tests():
      
     #test_plot_req_vs_obs()
     
-    test_fetch_obs_list()
+    #test_fetch_obs_list()
+    
+    test_fetch_subrequest_status()
     
 def generate_camera_data(camera,grp_id,field,date):
     
@@ -169,7 +171,28 @@ def test_fetch_obs_list():
     assert len(obs_list) > 0
     for item in obs_list:
         assert type(item) == type({})
+
+def test_fetch_subrequest_status():
     
+    obs = {}
+    obs['pk'] = 1
+    obs['grp_id'] = 'REALO20180422T20.59241671'
+    obs['track_id'] = '633619'
+    obs['timestamp'] = datetime.strptime('2018-04-23T19:15:32',"%Y-%m-%dT%H:%M:%S")
+    obs['time_expire'] = datetime.strptime('2018-04-23T20:15:32',"%Y-%m-%dT%H:%M:%S")
+    obs['status'] = 'AC'
+    
+    obs_list = [ obs ]
+    
+    active_obs = obs_monitor.fetch_subrequest_status(obs_list)
+    
+    assert type(active_obs) == type({})
+    for obs_id, data in active_obs.items():
+        assert type(data) == type({})
+        assert 'obsrequest' in data.keys()
+        assert 'subrequests' in data.keys()
+        assert len(data['subrequests']) > 0
+       
 if __name__ == '__main__':
     
     run_tests()

@@ -20,7 +20,7 @@ setup()
 from rome_fields_dict import field_dict
 from field_check import romecheck
 import utilities
-from events.models import ObsRequest, Tap, Event, SingleModel
+from events.models import ObsRequest, Tap, Event, SingleModel, SubObsRequest
 from events.models import EventName, Image
 from observation_classes import get_request_desc
 
@@ -416,6 +416,14 @@ def check_image_in_db(image_name):
         return True
     else:
         return False
+
+def get_subrequests_for_obsrequest(obs_grp_id):
+    """Function to extract a list of SubObsRequests for an ObsRequest, 
+    given the Group ID of the ObsRequest."""
+    
+    qs = SubObsRequest.objects.filter(grp_id = obs_grp_id)
+    
+    return qs
 
 if __name__ == '__main__':
     stats = get_image_rejection_statistics()

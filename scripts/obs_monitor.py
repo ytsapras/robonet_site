@@ -32,10 +32,11 @@ from bokeh.plotting import figure, show, output_file, gridplot,vplot
 from bokeh.models import ColumnDataSource, HoverTool, LinearColorMapper, Legend,CheckboxGroup
 from bokeh.models import FixedTicker,PrintfTickFormatter, ColumnDataSource, DatetimeTickFormatter
 from bokeh.models import DEFAULT_DATETIME_FORMATS
+from bokeh.models import BoxSelectTool
 from bokeh.embed import components
 from bokeh.resources import CDN
 
-def analyze_requested_vs_observed(monitor_period_days=5.0):
+def analyze_requested_vs_observed(monitor_period_days=5.0,dbg=False):
     """Function to analyze the observations requested within a given period, 
     checked whether or not observations were actually obtained, 
     and generating diagnostic plots.
@@ -53,13 +54,20 @@ def analyze_requested_vs_observed(monitor_period_days=5.0):
     
     obs_list = fetch_obs_list(start_date, end_date)
     
-    active_obs = lco_api_tools.get_status_active_obs_subrequests(obs_list,
-                                                                 config['token'],
-                                                                 start_date,
-                                                                 end_date)
+    if len(obs_list) > 0:
     
-    plot_req_vs_obs(active_obs)
-
+        active_obs = fetch_subrequest_status(obs_list)
+    
+        (script, div) = plot_req_vs_obs(active_obs,dbg=dbg)
+        
+    else:
+        
+        script = ''
+        div = '<br><h4>No observations in the DB within the period '+\
+                start_date.strftime("%Y-%m-%d")+' to '+end_date.strftime("%Y-%m-%d")
+                
+    return script, div
+    
 def fetch_obs_list(start_date, end_date):
     """Function to query the DB for a list of observations within the dates
     given, and return it in the form of an observation list"""
@@ -68,23 +76,24 @@ def fetch_obs_list(start_date, end_date):
                 'time_expire': end_date,
                 'request_status': 'AC'}
                 
-    qs = query_db.select_obs_by_date(criteria)
-    
-    obs_list = []
-    
-    for obs in qs:
-        
-        obs_info = {}
-        obs_info['pk'] = obs.pk
-        obs_info['grp_id'] = obs.grp_id
-        obs_info['track_id'] = obs.track_id
-        obs_info['timestamp'] = obs.timestamp
-        obs_info['time_expire'] = obs.time_expire
-        obs_info['status'] = obs.request_status
-        
-        obs_list.append( obs_info )
+    obs_list = query_db.select_obs_by_date(criteria)
 
     return obs_list
+
+def fetch_subrequest_status(obs_list):
+    """Function to query the DB for the current status of all subrequests
+    of the list of observations given"""
+    
+    active_obs = {}
+    
+    for obs in obs_list:
+        
+        qs = query_db.get_subrequests_for_obsrequest(obs.grp_id)
+        
+        active_obs[obs.grp_id] = { 'obsrequest': obs,
+                                    'subrequests': qs }
+    
+    return active_obs
     
 def plot_req_vs_obs(active_obs, dbg=False):
     """Function to generate a graphical representation of the currently-active
@@ -107,12 +116,15 @@ def plot_req_vs_obs(active_obs, dbg=False):
     if dbg:
         output_file("test_plot.html")
     
+    title = 'Requested vs Observed for '+date_range[0].strftime("%Y-%m-%d")+' to '+\
+                                        date_range[1].strftime("%Y-%m-%d")
+                                        
     fig = figure(plot_width=800, plot_height=600, 
-                 title="Requested vs Observed",
+                 title=title,
                  x_axis_label='Time [UTC]',
                  x_axis_type="datetime",
                  y_range=fields_sorted)
-    
+                     
     for f,field_id in enumerate(fields_sorted):
         
         xdata = []
@@ -128,17 +140,16 @@ def plot_req_vs_obs(active_obs, dbg=False):
             
             camera = entry['obsrequest'].which_inst
 
-            for i in range(0,len(entry['sr_windows']),1):
+            for sr in entry['subrequests']:
                                 
-                mid_time = entry['sr_windows'][i][0] + \
-                        (entry['sr_windows'][i][1]-entry['sr_windows'][i][0])/2
-                sr_length = entry['sr_windows'][i][1]-entry['sr_windows'][i][0]
+                mid_time = sr.window_start + (sr.window_end-sr.window_start)/2
+                sr_length = sr.window_end - sr.window_start
                 
                 xdata.append(mid_time)
                 widths.append(sr_length)
                 ydata.append(field_id)
                 
-                if entry['sr_states'][i] == 'COMPLETED':
+                if sr.status == 'COMPLETED':
                     alphas.append(1.0)
                     colours.append(camera_colors[camera][0])
                     line_colours.append(camera_colors[camera][0])
@@ -214,19 +225,17 @@ def get_date_range(active_obs):
     end_date = datetime.now() - timedelta(days=365.0)
     end_date = end_date.replace(tzinfo=pytz.UTC)
     
-    for grp_id, entries in active_obs.items():
+    for grp_id, obs_dict in active_obs.items():
         
-        windows = entries['sr_windows']
-        
-        for w in windows:
+        for sr in obs_dict['subrequests']:
             
-            if w[0] < start_date:
+            if sr.window_start < start_date:
                 
-                start_date = w[0]
+                start_date = sr.window_start
                 
-            if w[1] > end_date:
+            if sr.window_end > end_date:
                 
-                end_date = w[1]
+                end_date = sr.window_end
     
     return (start_date, end_date)
     
@@ -246,5 +255,5 @@ def get_monitor_period(monitor_period_days):
 
 if __name__ == '__main__':
     
-    analyze_requested_vs_observed(monitor_period_days=1.0)
+    (script, div) = analyze_requested_vs_observed(monitor_period_days=5.0,dbg=True)
     

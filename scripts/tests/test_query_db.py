@@ -165,8 +165,16 @@ def test_check_image_in_db():
     status = query_db.check_image_in_db('cpt1m010-foo-20170403-bar-e91.fits')
     assert status == False
 
+def test_get_subrequests_for_obsrequest():
 
+    obs_grp_id = 'REALO20180422T20.59241671'
+    
+    qs = query_db.get_subrequests_for_obsrequest(obs_grp_id)
+    
+    assert len(qs) > 0
+
+        
 if __name__ == '__main__':
     
-    test_select_obs_by_date()
+    test_get_subrequests_for_obsrequest()
     
