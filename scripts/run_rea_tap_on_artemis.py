@@ -221,7 +221,10 @@ def run_tap_prioritization(logger):
     t_current = gcal2jd(ut_current[0], ut_current[1], ut_current[2])[
         1] - 49999.5 + ut_current[3] / 24.0 + ut_current[4] / (1440.)
     full_visibility = romerea_visibility_3sites_40deg(t_current)
-    daily_visibility = 2.8 * full_visibility * 300. / 3198.
+    #adjust the allocation factor to 1 (if REA has an anomaly mode)
+    #to 2 (if REA is the only follow-up mode)
+    #to 2.8 (if REA is operated before and season start)
+    daily_visibility = 2. * full_visibility * 300. / 3198.
 
     list_evnt = Event.objects.filter(status__in=['AC', 'MO'])
     output = []
