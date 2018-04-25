@@ -1,4 +1,6 @@
 import numpy as np
+from sys import argv
+import utilities
 
 def romecheck(radeg, decdeg):
     lhalf = 0.220833333333  # 26.5/(120.)
@@ -32,3 +34,18 @@ def romecheck(radeg, decdeg):
             return idx, fields[idx][2]
 
     return field, rate
+
+if __name__ == '__main__':
+    
+    if len(argv) == 1:
+        print('Useage:')
+        print('>python field_check.py target_ra target_dec [sexigesimal format]')
+        exit()
+    
+    ra = argv[1]
+    dec = argv[2]
+    
+    (radeg, decdeg) = utilities.sex2decdeg(ra,dec)
+    
+    (field, rate) = romecheck(radeg, decdeg)
+    print field
