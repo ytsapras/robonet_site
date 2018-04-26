@@ -38,11 +38,11 @@ def run_tests():
         
         token = raw_input('Please enter your LCO API token: ')
    
-    #test_get_fields_list()
+    test_get_fields_list()
      
-    #test_plot_req_vs_obs()
+    test_plot_req_vs_obs()
     
-    #test_fetch_obs_list()
+    test_fetch_obs_list()
     
     test_fetch_subrequest_status()
     
@@ -67,26 +67,31 @@ def generate_camera_data(camera,grp_id,field,date):
     end_date = start_date + timedelta(seconds=req_duration_secs)
     end_date = end_date.replace(tzinfo=pytz.UTC)
    
-    states = []
-    completed_times = []
-    windows = []
-    for i in range(0,6,1):
+    subrequests = []
     
+    for i in range(0,6,1):
+        
+        sr = observation_classes.SubObsRequest()
+        
         if i <= 3:
-            states.append('COMPLETED')
+            sr.status = 'COMPLETED'
             ts = datetime.now()
             ts.replace(tzinfo=pytz.UTC)
-            completed_times.append(ts.strftime("%Y-%m-%dT%H:%M:%S"))
+            sr.time_executed = ts
+            
         else:
-            states.append('PENDING')
-            completed_times.append('None')
+            sr.status = 'PENDING'
+            sr.time_executed = None
             
-        windows.append( (start_date, end_date) )
-            
+        sr.window_start = start_date
+        sr.window_end = end_date
+
+        subrequests.append( sr )
+        
         start_date = end_date + timedelta(seconds=cadence_secs)
         end_date = start_date + timedelta(seconds=req_duration_secs)
         
-    return obs, states, completed_times, windows
+    return obs, subrequests
 
 def get_field_names():
     """Function to generate the list of ROME field IDs"""
@@ -121,14 +126,12 @@ def generate_test_dataset():
             for camera in ['fl12', 'fl06', 'fl03']:
                 
                 
-                (obs, states, completed_times, windows) = generate_camera_data(camera,
+                (obs, subrequests) = generate_camera_data(camera,
                                                             'test_'+camera+'_'+field+'_'+str(day), 
                                                             field,date)
                 
                 active_obs[obs.grp_id]  = {'obsrequest': obs, 
-                                         'sr_states': states,
-                                         'sr_completed_ts': completed_times,
-                                         'sr_windows': windows}
+                                         'subrequests': subrequests}
         
     return active_obs
     
@@ -167,20 +170,17 @@ def test_fetch_obs_list():
     
     obs_list = obs_monitor.fetch_obs_list(start_date, end_date)
     
-    assert type(obs_list) == type([])
     assert len(obs_list) > 0
-    for item in obs_list:
-        assert type(item) == type({})
 
 def test_fetch_subrequest_status():
     
-    obs = {}
-    obs['pk'] = 1
-    obs['grp_id'] = 'REALO20180422T20.59241671'
-    obs['track_id'] = '633619'
-    obs['timestamp'] = datetime.strptime('2018-04-23T19:15:32',"%Y-%m-%dT%H:%M:%S")
-    obs['time_expire'] = datetime.strptime('2018-04-23T20:15:32',"%Y-%m-%dT%H:%M:%S")
-    obs['status'] = 'AC'
+    obs = observation_classes.ObsRequest()
+    obs.pk = 1
+    obs.grp_id = 'REALO20180422T20.59241671'
+    obs.track_id = '633619'
+    obs.timestamp = datetime.strptime('2018-04-23T19:15:32',"%Y-%m-%dT%H:%M:%S")
+    obs.time_expire = datetime.strptime('2018-04-23T20:15:32',"%Y-%m-%dT%H:%M:%S")
+    obs.status = 'AC'
     
     obs_list = [ obs ]
     
