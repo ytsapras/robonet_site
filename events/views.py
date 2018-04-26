@@ -30,6 +30,7 @@ from scripts import update_db_2
 from scripts import db_plotting_utilities
 from scripts import obs_monitor
 import requests
+import pytz
 
 # Path to ARTEMiS files
 artemis_col = get_conf('artemis_cols')
@@ -833,22 +834,41 @@ def display_obs_monitor(request):
     """Display of functions which monitor the observing system, observations
     requested and data taken."""
     
+    rome_start = datetime.strptime('2017-04-01','%Y-%m-%d')
+    rome_start = rome_start.replace(tzinfo=pytz.UTC)
+    now = datetime.utcnow()
+    now = now.replace(tzinfo=pytz.UTC)
+    
     if request.user.is_authenticated():
         
-        (script,div,start_date,end_date) = obs_monitor.analyze_requested_vs_observed(monitor_period_days=5.0)
+        (script1,div1,start_date1,end_date1) = obs_monitor.analyze_requested_vs_observed(monitor_period_days=5.0)
+        (script2,div2,start_date2,end_date2) = obs_monitor.analyze_percentage_completed(start_date=rome_start,
+                                                                                        end_date=now)
                 
-        if script == None and div == None:
+        if script1 == None and div1 == None:
             
-            script = ''
-            div = 'Timeout: response too slow'
+            script1 = ''
+            div1 = 'Timeout: response too slow'
             
-        elif script == None and div != None:
+        elif script1 == None and div1 != None:
             
-            script = ''
+            script1 = ''
         
-        context = {'req_vs_obs_plot_script': script, 'req_vs_obs_plot_div': div,
-                   'start_date': start_date.strftime('%Y-%m-%dT%H:%M:%S'), 
-                   'end_date':end_date.strftime('%Y-%m-%dT%H:%M:%S')}
+        if script2 == None and div2 == None:
+            
+            script2 = ''
+            div2 = 'Timeout: response too slow'
+            
+        elif script2 == None and div2 != None:
+            
+            script2 = ''
+        
+        context = {'req_vs_obs_plot_script': script1, 'req_vs_obs_plot_div': div1,
+                   'completion_plot_script': script2, 'completion_plot_div': div2,
+                   'req_vs_obs_start_date': start_date1.strftime('%Y-%m-%dT%H:%M:%S'), 
+                   'req_vs_obs_end_date':end_date1.strftime('%Y-%m-%dT%H:%M:%S'),
+                   'completion_start_date': start_date2.strftime('%Y-%m-%dT%H:%M:%S'), 
+                   'completion_end_date':end_date2.strftime('%Y-%m-%dT%H:%M:%S')}
 
         return render(request, 'events/obs_monitor_display.html', context)
       

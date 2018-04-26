@@ -9,9 +9,17 @@
 	{% endblock %}    
 
 {% block content %}
-   <center>
-       <h3>Observations Requested vs Observed between {{start_date}} to {{end_date}}</h3>
+   <table><tr>
+       <td>
+       <h4>Observations Requested vs Observed between <br>{{req_vs_obs_start_date}} to {{req_vs_obs_end_date}}</h4>
       {{ req_vs_obs_plot_div|safe }}
       {{ req_vs_obs_plot_script|safe }}
-   </center>
+       </td>
+       <td>
+        <h4>Observation completion percentages between <br>{{completion_start_date}} to {{completion_end_date}}</h4>
+      {{ completion_plot_div|safe }}
+      {{ completion_plot_script|safe }}
+        </td>
+       </tr>
+   </table>
 {% endblock %}

@@ -67,15 +67,40 @@ def analyze_requested_vs_observed(monitor_period_days=2.5,dbg=False):
                 start_date.strftime("%Y-%m-%d")+' to '+end_date.strftime("%Y-%m-%d")
                 
     return script, div, start_date, end_date
+
+def analyze_percentage_completed(start_date=None, end_date=None, dbg=False):
+    """Function to analyze the number of subobsrequests which are completed
+    as a percentage of the total submitted, broken down by date and instrument"""
     
-def fetch_obs_list(start_date, end_date):
+    (start_date, end_date) = get_completion_date_period(start_date=start_date,
+                                                        end_date=end_date)
+
+    obs_list = fetch_obs_list(start_date, end_date, status='ALL')
+    
+    if len(obs_list) > 0:
+    
+        active_obs = fetch_subrequest_status(obs_list)
+   
+        (script, div) = plot_percent_complete(active_obs,dbg=dbg)
+        
+    else:
+        
+        script = ''
+        div = '<br><h4>No observations in the DB within the period '+\
+                start_date.strftime("%Y-%m-%d")+' to '+end_date.strftime("%Y-%m-%d")
+                
+    return script, div, start_date, end_date
+
+def fetch_obs_list(start_date, end_date, status='AC'):
     """Function to query the DB for a list of observations within the dates
     given, and return it in the form of an observation list"""
     
     criteria = {'timestamp': start_date,
-                'time_expire': end_date,
-                'request_status': 'AC'}
-                
+                'time_expire': end_date}
+    
+    if status != 'ALL':
+        criteria['request_status'] = status
+    
     obs_list = query_db.select_obs_by_date(criteria)
 
     return obs_list
@@ -94,7 +119,106 @@ def fetch_subrequest_status(obs_list):
                                     'subrequests': qs }
     
     return active_obs
+
+def calc_percent_complete(active_obs,camera,date_range):
+    """Function to calculate the percentage completion, binned per day, 
+    for a given instrument"""
     
+    camera_subrequests = []
+    
+    for grp_id, obs_dict in active_obs.items():
+        
+        if obs_dict['obsrequest'].which_inst == camera:
+            
+            for sr in obs_dict['subrequests']:
+                
+                camera_subrequests.append(sr)
+
+    tstart = date_range[0]
+    dt = timedelta(days=1.0)
+    tend = tstart + dt
+    
+    xdata = []
+    ydata = []
+    
+    while tend < date_range[1]:
+        
+        nreq = 0.0
+        ncomp = 0.0
+        
+        for sr in camera_subrequests:
+            
+            if sr.window_start >= tstart and sr.window_end <= tend:
+                
+                nreq += 1.0
+                
+                if sr.status == 'COMPLETED':
+                    
+                    ncomp += 1.0
+        
+        xdata.append( (tstart + ((tend-tstart)/2)) )
+        
+        if ncomp > 0.0:
+            ydata.append( (ncomp/nreq)*100.0 )
+        else:
+            ydata.append( 0.0 )
+    
+        tstart = tstart + dt
+        tend = tstart + dt
+    
+    return xdata, ydata
+    
+def plot_percent_complete(active_obs, dbg=False):
+    """Function to generate a graph showing the percentage of subobsrequest
+    completed as a function of time for the different cameras used for 
+    observations."""
+    
+    instruments = get_instrument_list(active_obs)
+    
+    date_range = get_date_range(active_obs)    
+    deltax = date_range[1] - date_range[0]
+
+    camera_colors = {'fl12': ['#12c0ce', '#98cace'], # Turquoise
+                     'fl06': ['#134dd6', '#a5b0cc'], # Blue
+                     'fl15': ['#7119c4', '#b09bc4'], # Magenta
+                     'fl03': ['#cc8616', '#cec0a9'], # Orange
+                     'fl16': ['#4c722a', '#667559'], # Army green
+                     'fl11': ['#137c6d', '#54706c'], # Teal
+                     'fl14': ['#d8d511', '#e2e2a7']} # Yellow
+        
+    if dbg:
+        output_file("test_plot.html")
+    
+    title = 'Subrequests available between '+date_range[0].strftime("%Y-%m-%dT%H:%M:%S")+' to '+\
+                                        date_range[1].strftime("%Y-%m-%dT%H:%M:%S")
+                                        
+    fig = figure(plot_width=600, plot_height=400, 
+                 title=title,
+                 x_axis_label='Time [UTC]',
+                 x_axis_type="datetime",
+                 y_axis_label='Percentage completed')
+    
+    for camera in instruments:
+        
+        (xdata, ydata) = calc_percent_complete(active_obs,camera,date_range)
+        
+        fig.scatter(xdata, ydata, color=camera_colors[camera][0])
+        fig.line(xdata, ydata, color=camera_colors[camera][0], line_width=2, 
+                 legend=camera)
+
+    fig.xaxis.formatter = DatetimeTickFormatter(days=["%Y-%m-%d %H:%M"])
+    
+    fig.xaxis.major_label_orientation = math.pi/4
+    
+    if dbg:
+        show(fig)
+        return None, None
+        
+    else:
+        (script, div) = components(fig)
+        
+        return script, div
+        
 def plot_req_vs_obs(active_obs, dbg=False):
     """Function to generate a graphical representation of the currently-active
     ObsRequests and their subrequests, and indicate which ones have been 
@@ -119,7 +243,7 @@ def plot_req_vs_obs(active_obs, dbg=False):
     title = 'Subrequests available between '+date_range[0].strftime("%Y-%m-%dT%H:%M:%S")+' to '+\
                                         date_range[1].strftime("%Y-%m-%dT%H:%M:%S")
                                         
-    fig = figure(plot_width=800, plot_height=600, 
+    fig = figure(plot_width=600, plot_height=400, 
                  title=title,
                  x_axis_label='Time [UTC]',
                  x_axis_type="datetime",
@@ -253,6 +377,25 @@ def get_monitor_period(monitor_period_days):
     
     return start_date, end_date
 
+def get_completion_date_period(start_date=None,end_date=None):
+    """Function to return an appropriate range of dates for which to calculate
+    the percentage completion of observation requests."""
+    
+    
+    year = datetime.utcnow().strftime("%Y")
+    if start_date == None:
+                
+        start_date = datetime.strptime(year+'-01-01T00:00:00',"%Y-%m-%dT%H:%M:%S")
+    
+    if end_date == None:
+        
+        end_date = datetime.utcnow()
+    
+    start_date = start_date.replace(tzinfo=pytz.UTC)
+    end_date = end_date.replace(tzinfo=pytz.UTC)
+    
+    return start_date, end_date
+    
 if __name__ == '__main__':
     
     (script, div, start_date, end_date) = analyze_requested_vs_observed(monitor_period_days=5.0,dbg=True)

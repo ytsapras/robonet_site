@@ -117,24 +117,38 @@ def select_obs_by_date(criteria,log=None):
         :param QuerySet qs: QuerySet of matching ObsRequests
     """
     
-    qs = ObsRequest.objects.filter(
-                    timestamp__gte = criteria['timestamp'],
-                    time_expire__lte = criteria['time_expire'],
-                    request_status= criteria['request_status']
-                    )
-    
+    if 'request_status' in criteria.keys():
+        
+        qs = ObsRequest.objects.filter(
+                        timestamp__gte = criteria['timestamp'],
+                        time_expire__lte = criteria['time_expire'],
+                        request_status= criteria['request_status'])
+                        
+    else:
+
+        qs = ObsRequest.objects.filter(
+                        timestamp__gte = criteria['timestamp'],
+                        time_expire__lte = criteria['time_expire'])
+                        
     if log != None:
+
         log.info('\n')
         log.info('Queried DB for list of active observations:')
+
         if qs.count() == 0:
+
             log.info('DB returned no currently-active observation requests')
+
         else:
+
             for q in qs:
+
                 log.info(' '.join([q.grp_id, q.field.name,\
                             get_request_desc(q.request_type), \
                             'submitted=',q.timestamp.strftime('%Y-%m-%dT%H:%M:%S'), \
                             'expires=',q.time_expire.strftime('%Y-%m-%dT%H:%M:%S'),\
                             'status=',q.request_status]))
+
         log.info('\n')
 
     return qs

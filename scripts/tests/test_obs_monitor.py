@@ -23,6 +23,7 @@ setup()
 import obs_monitor
 import pytz
 import observation_classes
+from numpy import random
 
 def run_tests():
     """Function to run the suite of tests.  Since access to LCO's API 
@@ -38,13 +39,17 @@ def run_tests():
         
         token = raw_input('Please enter your LCO API token: ')
    
-    test_get_fields_list()
+    #test_get_fields_list()
      
-    test_plot_req_vs_obs()
+    #test_plot_req_vs_obs()
     
-    test_fetch_obs_list()
+    #test_fetch_obs_list()
     
-    test_fetch_subrequest_status()
+    #test_fetch_subrequest_status()
+    
+    #test_calc_percent_complete()
+    
+    test_plot_percent_complete()
     
 def generate_camera_data(camera,grp_id,field,date):
     
@@ -73,7 +78,9 @@ def generate_camera_data(camera,grp_id,field,date):
         
         sr = observation_classes.SubObsRequest()
         
-        if i <= 3:
+        tint = random.randint(0,10)
+        
+        if tint <= 5:
             sr.status = 'COMPLETED'
             ts = datetime.now()
             ts.replace(tzinfo=pytz.UTC)
@@ -157,8 +164,6 @@ def test_plot_req_vs_obs():
     
     (script, div) = obs_monitor.plot_req_vs_obs(active_obs,dbg=False)
     
-    print script
-
 def test_fetch_obs_list():
     """Function to test the retrieval of a list of observations in the 
     format required to query for subrequest status"""
@@ -192,7 +197,26 @@ def test_fetch_subrequest_status():
         assert 'obsrequest' in data.keys()
         assert 'subrequests' in data.keys()
         assert len(data['subrequests']) > 0
-       
+
+def test_plot_percent_complete():
+    """Function to test the generated plot for requested vs observed"""
+    
+    active_obs = generate_test_dataset()
+    
+    (script, div) = obs_monitor.plot_percent_complete(active_obs,dbg=True)
+    
+def test_calc_percent_complete():
+    
+    active_obs = generate_test_dataset()
+    camera = 'fl12'
+    date_range = obs_monitor.get_date_range(active_obs)
+    
+    (xdata, ydata) = obs_monitor.calc_percent_complete(active_obs,camera,date_range)
+    
+    assert type(xdata) == type([])
+    assert type(ydata) == type([])
+    assert len(ydata) == len(xdata)
+    
 if __name__ == '__main__':
     
     run_tests()
