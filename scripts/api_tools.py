@@ -433,7 +433,7 @@ def submit_image_record(config,params):
                             testing=True)
 
 ################################################################################
-def get_obs_list(config,params):
+def get_obs_list(config,params,testing=False):
     """Function to retrieve from the database a list of observations
     matching the parameters given.
     
@@ -447,7 +447,7 @@ def get_obs_list(config,params):
     
     response = ask_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
-                            testing=True)
+                            testing=testing)
                             
     table_data = extract_table_data(response)
     
