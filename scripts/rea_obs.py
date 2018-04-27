@@ -43,7 +43,7 @@ def build_rea_obs(script_config,log=None,tap_list=None):
             
             (ts_submit, ts_expire) = observation_classes.get_obs_dates(site_obs_sequence['TTL_'+str(target.priority)+'_days'])
             
-            site_obs_sequence = observing_tools.review_filters_for_observing_conditions(site_obs_sequence,rome_field,
+            target_obs_sequence = observing_tools.review_filters_for_observing_conditions(site_obs_sequence,rome_field,
                                                                                    ts_submit, ts_expire, tolerances,
                                                                                    log=log)
 
@@ -54,23 +54,23 @@ def build_rea_obs(script_config,log=None,tap_list=None):
                 obs.name = str(target.field)               
                 obs.ra = rome_field[2]
                 obs.dec = rome_field[3]
-                obs.site = site_obs_sequence['sites'][0]
-                obs.observatory= site_obs_sequence['domes'][0]
-                obs.tel = site_obs_sequence['tels'][0]
-                obs.instrument = site_obs_sequence['instruments'][0]
+                obs.site = target_obs_sequence['sites'][0]
+                obs.observatory= target_obs_sequence['domes'][0]
+                obs.tel = target_obs_sequence['tels'][0]
+                obs.instrument = target_obs_sequence['instruments'][0]
                 obs.instrument_class = '1M0-SCICAM-SINISTRO'
                 obs.set_aperture_class()
                 obs.filters = [ str(target.passband) ]
                 obs.exposure_times = [ float(target.texp) ]
                 obs.exposure_counts = [ int(target.nexp) ]
                 obs.cadence = float(target.tsamp)
-                obs.jitter = site_obs_sequence['jitter_hrs']
+                obs.jitter = target_obs_sequence['jitter_hrs']
                 obs.priority = float(target.ipp)
-                obs.ttl = site_obs_sequence['TTL_'+str(target.priority)+'_days']
+                obs.ttl = target_obs_sequence['TTL_'+str(target.priority)+'_days']
                 obs.user_id = script_config['user_id']
                 obs.proposal_id = script_config['proposal_id']
                 obs.token = script_config['token']
-                obs.focus_offset = site_obs_sequence['defocus']
+                obs.focus_offset = target_obs_sequence['defocus']
                 #obs.request_type = str(target.priority)
                 obs.request_type = 'M'
                 obs.req_origin = 'obscontrol'

@@ -43,7 +43,7 @@ def build_rome_obs(script_config,log=None):
                         
             (ts_submit, ts_expire) = observation_classes.get_obs_dates(site_obs_sequence['TTL_days'])
     
-            site_obs_sequence = observing_tools.review_filters_for_observing_conditions(site_obs_sequence,field,
+            field_obs_sequence = observing_tools.review_filters_for_observing_conditions(site_obs_sequence,field,
                                                                                     ts_submit, ts_expire,tolerances,
                                                                                     log=log)
 
@@ -53,24 +53,24 @@ def build_rome_obs(script_config,log=None):
                 obs.name = f
                 obs.ra = field[2]
                 obs.dec = field[3]
-                obs.site = site_obs_sequence['sites'][0]
-                obs.observatory= site_obs_sequence['domes'][0]
-                obs.tel = site_obs_sequence['tels'][0]
-                obs.instrument = site_obs_sequence['instruments'][0]
+                obs.site = field_obs_sequence['sites'][0]
+                obs.observatory= field_obs_sequence['domes'][0]
+                obs.tel = field_obs_sequence['tels'][0]
+                obs.instrument = field_obs_sequence['instruments'][0]
                 obs.instrument_class = '1M0-SCICAM-SINISTRO'
                 obs.set_aperture_class()
                 obs.airmass_limit = 1.2
-                obs.filters = site_obs_sequence['filters']
-                obs.exposure_times = site_obs_sequence['exp_times']
-                obs.exposure_counts = site_obs_sequence['exp_counts']
-                obs.cadence = site_obs_sequence['cadence_hrs']
-                obs.jitter = site_obs_sequence['jitter_hrs']
-                obs.priority = site_obs_sequence['priority']
-                obs.ttl = site_obs_sequence['TTL_days']
+                obs.filters = field_obs_sequence['filters']
+                obs.exposure_times = field_obs_sequence['exp_times']
+                obs.exposure_counts = field_obs_sequence['exp_counts']
+                obs.cadence = field_obs_sequence['cadence_hrs']
+                obs.jitter = field_obs_sequence['jitter_hrs']
+                obs.priority = field_obs_sequence['priority']
+                obs.ttl = field_obs_sequence['TTL_days']
                 obs.user_id = script_config['user_id']
                 obs.proposal_id = script_config['proposal_id']
                 obs.token = script_config['token']
-                obs.focus_offset = site_obs_sequence['defocus']
+                obs.focus_offset = field_obs_sequence['defocus']
                 obs.request_type = 'L'
                 obs.req_origin = 'obscontrol'
                 obs.get_group_id()

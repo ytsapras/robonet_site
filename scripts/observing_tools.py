@@ -220,16 +220,18 @@ def review_filters_for_observing_conditions(site_obs_sequence,field,
             t = t + timedelta(seconds=(1.0*24*60*60))
             
         if moon_ok:
-            
+                        
             site_filters.append(f)
-            site_nexp.append(site_obs_sequence['exp_counts'][i])
-            site_exptime.append(site_obs_sequence['exp_times'][i])
-            site_defocus.append(site_obs_sequence['defocus'][i])
+            if 'exp_times' in site_obs_sequence.keys():
+                site_nexp.append(site_obs_sequence['exp_counts'][i])
+                site_exptime.append(site_obs_sequence['exp_times'][i])
+                site_defocus.append(site_obs_sequence['defocus'][i])
             
     site_obs_sequence['filters'] = site_filters
-    site_obs_sequence['exp_counts'] = site_nexp
-    site_obs_sequence['exp_times'] = site_exptime
-    site_obs_sequence['defocus'] = site_filters
+    if 'exp_times' in site_obs_sequence.keys():
+        site_obs_sequence['exp_counts'] = site_nexp
+        site_obs_sequence['exp_times'] = site_exptime
+        site_obs_sequence['defocus'] = site_defocus
     
     if log!=None:
         

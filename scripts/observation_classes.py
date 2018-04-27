@@ -268,7 +268,7 @@ class ObsRequest:
                 log.info('ERROR getting cadence request: '+ur['error_msg'])
             else:
                 log.info('Received response from LCO cadence API')
-            
+                
         return ur
     
     def submit_request(self, ur, config, log=None):
