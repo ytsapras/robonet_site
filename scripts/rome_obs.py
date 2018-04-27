@@ -123,7 +123,8 @@ def rome_obs_sequence(site_code=None):
                     'instruments':  ['fl15', 'fl06', 'fl12'],
                     'cadence_hrs': 7.0,
                     'jitter_hrs': 7.0,
-                    'TTL_days': 6.98,
+#                    'TTL_days': 6.98,
+                    'TTL_days': 3.98,
                     'priority': 1.05
                     }
                     
