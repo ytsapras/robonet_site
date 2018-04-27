@@ -80,7 +80,7 @@ def check_obs_request(params):
         return status, msgmsg
     if debug == True: print 'Verified filter with status ',status
     
-    inst_list = ['fl16', 'fl15', 'fl12', 'fl03', 'fl14', 'fl11' ]
+    inst_list = ['fl16', 'fl15', 'fl12', 'fl03', 'fl14', 'fl11', 'fl06' ]
     if params['which_inst'] not in inst_list:
         status = False
         msg = 'Request which_inst must be one of ' + ' '.join(inst_list)
