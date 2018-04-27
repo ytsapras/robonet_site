@@ -161,6 +161,7 @@ def check_Moon_within_tolerance(pointing, site, obs_date, obs_filter,
         log.info('-> '+obs_date.value+' Moon separation = '+str(separation))
         log.info('-> '+obs_date.value+' Moon illumination = '+str(phase))
         log.info('-> OK to observe? '+repr(obs_ok))
+        log.info('\n')
 
     return obs_ok
     
@@ -198,11 +199,11 @@ def review_filters_for_observing_conditions(site_obs_sequence,field,
     site_nexp = []
     site_exptime = []
     site_defocus = []
-    
-    moon_ok = True
-    
+        
     for i,f in enumerate(site_obs_sequence['filters']):
         
+        moon_ok = True
+    
         t = ts_submit
         while t <= ts_expire:
                         
@@ -240,6 +241,8 @@ def review_filters_for_observing_conditions(site_obs_sequence,field,
             
             log.info('Revised observation sequence:')
             log.info(site_obs_sequence['sites'][0]+' '+repr(site_obs_sequence['filters']))
-                
+        
+        log.info('\n')
+        
     return site_obs_sequence
     
