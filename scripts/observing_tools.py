@@ -195,10 +195,13 @@ def review_filters_for_observing_conditions(site_obs_sequence,field,
     site = get_site_location(site_obs_sequence['sites'][0])
         
     site_filters = []
+    site_nexp = []
+    site_exptime = []
+    site_defocus = []
     
     moon_ok = True
     
-    for f in site_obs_sequence['filters']:
+    for i,f in enumerate(site_obs_sequence['filters']):
         
         t = ts_submit
         while t <= ts_expire:
@@ -218,8 +221,14 @@ def review_filters_for_observing_conditions(site_obs_sequence,field,
         if moon_ok:
             
             site_filters.append(f)
-                    
+            site_nexp.append(site_obs_sequence['exp_counts'][i])
+            site_exptime.append(site_obs_sequence['exp_times'][i])
+            site_defocus.append(site_obs_sequence['defocus'][i])
+            
     site_obs_sequence['filters'] = site_filters
+    site_obs_sequence['exp_counts'] = site_nexp
+    site_obs_sequence['exp_times'] = site_exptime
+    site_obs_sequence['defocus'] = site_filters
     
     if log!=None:
         
