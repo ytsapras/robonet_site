@@ -452,7 +452,7 @@ def get_obs_list(config,params):
     else:
         response = ask_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'])
-                            
+    
     table_data = extract_table_data(response)
     
     return table_data

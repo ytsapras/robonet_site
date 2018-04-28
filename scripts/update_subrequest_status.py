@@ -31,7 +31,7 @@ def update_subrequest_status(look_back_days=1.0):
 
     start_date = datetime.now() - timedelta(days=look_back_days)
     start_date = start_date.replace(tzinfo=pytz.UTC)
-    end_date = datetime.now()
+    end_date = datetime.now() + timedelta(days=look_back_days)
     end_date = end_date.replace(tzinfo=pytz.UTC)
 
     log.info('Updating the status of observations between '+\
@@ -86,5 +86,5 @@ def update_subrequest_status(look_back_days=1.0):
 
 if __name__ == '__main__':
     
-    update_subrequest_status(look_back_days=5.0)
+    update_subrequest_status(look_back_days=10.0)
     

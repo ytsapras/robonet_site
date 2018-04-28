@@ -17,8 +17,8 @@ def test_get_obs_list():
     """Function to test the retrieval of observation sets from the DB
     that match specific parameter sets given."""
     
-    tstart = datetime.utcnow() - timedelta(days=4.0)
-    tend = datetime.utcnow()
+    tstart = datetime.utcnow() - timedelta(days=10.0)
+    tend = datetime.utcnow() + timedelta(days=10.0)
     
     params = {'timestamp': tstart.strftime("%Y-%m-%dT%H:%M:%S"),
               'time_expire': tend.strftime("%Y-%m-%dT%H:%M:%S"),
@@ -27,10 +27,10 @@ def test_get_obs_list():
     config = {}
     config['db_user_id'] = raw_input('Please enter DB user ID: ')
     config['db_pswd'] = raw_input('Please enter DB password: ')
-    config['testing'] = 'False'
+    config['testing'] = 'True'
     
     obs_list = api_tools.get_obs_list(config,params)
-
+    
     assert type(obs_list) == type([])
     for line in obs_list:
         assert type(line) == type({})

@@ -1105,12 +1105,14 @@ def query_obs_by_date(request):
             if form.is_valid():
 
                 post = form.save(commit=False)
-
+                
+                print post.timestamp, post.time_expire,post.request_status
                 qs = ObsRequest.objects.filter(
                         timestamp__gt = post.timestamp,
                         time_expire__lte = post.time_expire,
                         request_status = post.request_status)
-                    
+                print qs
+                
                 obs_list = []
                 
                 for q in qs:
