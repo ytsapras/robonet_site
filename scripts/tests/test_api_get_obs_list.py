@@ -27,6 +27,7 @@ def test_get_obs_list():
     config = {}
     config['db_user_id'] = raw_input('Please enter DB user ID: ')
     config['db_pswd'] = raw_input('Please enter DB password: ')
+    config['testing'] = 'False'
     
     obs_list = api_tools.get_obs_list(config,params)
 

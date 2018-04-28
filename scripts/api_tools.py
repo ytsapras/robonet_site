@@ -433,7 +433,7 @@ def submit_image_record(config,params):
                             testing=True)
 
 ################################################################################
-def get_obs_list(config,params,testing=False):
+def get_obs_list(config,params):
     """Function to retrieve from the database a list of observations
     matching the parameters given.
     
@@ -445,9 +445,13 @@ def get_obs_list(config,params,testing=False):
     
     end_point = 'query_obs_by_date'
     
-    response = ask_db(params,end_point,\
+    if 'True' in config['testing']:
+        response = ask_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
-                            testing=testing)
+                            testing=True)
+    else:
+        response = ask_db(params,end_point,\
+                            config['db_user_id'],config['db_pswd'])
                             
     table_data = extract_table_data(response)
     
@@ -569,9 +573,9 @@ def ask_db(data,end_point,user_id,pswd,testing=False,verbose=False):
         host_url = 'http://127.0.0.1:8000/db'
         login_url = 'http://127.0.0.1:8000/db/login/'
     else:
-        host_url = 'http://robonet.lco.global/db'
-        login_url = 'http://robonet.lco.global/db/login/'
-        
+        host_url = 'https://robonet.lco.global/db'
+        login_url = 'https://robonet.lco.global/db/login/'
+    
     url = path.join(host_url,end_point)
     if url[-1:] != '/':
         url = url + '/'
