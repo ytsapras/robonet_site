@@ -74,13 +74,13 @@ def analyze_percentage_completed(start_date=None, end_date=None, dbg=False):
     
     (start_date, end_date) = get_completion_date_period(start_date=start_date,
                                                         end_date=end_date)
-
+    
     obs_list = fetch_obs_list(start_date, end_date, status='ALL')
     
     if len(obs_list) > 0:
     
         active_obs = fetch_subrequest_status(obs_list)
-   
+
         (script, div) = plot_percent_complete(active_obs,dbg=dbg)
         
     else:
@@ -125,6 +125,7 @@ def calc_percent_complete(active_obs,camera,date_range):
     for a given instrument"""
     
     camera_subrequests = []
+    sr_ids = []
     
     for grp_id, obs_dict in active_obs.items():
         
@@ -132,8 +133,10 @@ def calc_percent_complete(active_obs,camera,date_range):
             
             for sr in obs_dict['subrequests']:
                 
-                camera_subrequests.append(sr)
-
+                if sr.sr_id not in sr_ids:
+                    sr_ids.append(sr.sr_id)
+                    camera_subrequests.append(sr)
+    
     tstart = date_range[0]
     dt = timedelta(days=1.0)
     tend = tstart + dt
@@ -201,7 +204,7 @@ def plot_percent_complete(active_obs, dbg=False):
     for camera in instruments:
         
         (xdata, ydata) = calc_percent_complete(active_obs,camera,date_range)
-        
+
         fig.scatter(xdata, ydata, color=camera_colors[camera][0])
         fig.line(xdata, ydata, color=camera_colors[camera][0], line_width=2, 
                  legend=camera)
@@ -360,6 +363,9 @@ def get_date_range(active_obs):
             if sr.window_end > end_date:
                 
                 end_date = sr.window_end
+    
+    start_date = start_date - timedelta(days=1.0)
+    end_date = end_date + timedelta(days=1.0)
     
     return (start_date, end_date)
     
