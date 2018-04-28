@@ -49,7 +49,7 @@ def submit_sub_obs_request_record(config,params,testing=False,verbose=False):
     """
     
     end_point = 'record_sub_obs_request'
-        
+    
     message = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=testing,verbose=verbose)
@@ -452,7 +452,7 @@ def get_obs_list(config,params):
     else:
         response = ask_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'])
-    
+        
     table_data = extract_table_data(response)
     
     return table_data
@@ -509,13 +509,14 @@ def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
                                         Def=False for operations
         verbose    boolean            Switch for additional debugging output
     """
+    
     if testing == True:
         host_url = 'http://127.0.0.1:8000/db'
         login_url = 'http://127.0.0.1:8000/db/login/'
     else:
         host_url = 'http://robonet.lco.global/db'
         login_url = 'http://robonet.lco.global/db/login/'
-        
+    
     url = path.join(host_url,end_point)
     if url[-1:] != '/':
         url = url + '/'
@@ -593,6 +594,7 @@ def ask_db(data,end_point,user_id,pswd,testing=False,verbose=False):
     headers = { 'Referer': url, 'X-CSRFToken': client.cookies['csrftoken'],}
     
     response = client.post(login_url, headers=headers, data=auth_details)
+    
     if verbose==True:
         print response.text
         print 'Completed login'
@@ -600,6 +602,7 @@ def ask_db(data,end_point,user_id,pswd,testing=False,verbose=False):
     response = client.get(url)
     headers = { 'Referer': url, 'X-CSRFToken': client.cookies['csrftoken'],}
     response = client.post(url, headers=headers, data=data)
+    
     if verbose==True:
         print response.text
         print 'Completed successfully'

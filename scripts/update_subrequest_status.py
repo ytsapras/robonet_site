@@ -81,9 +81,9 @@ def update_subrequest_status(look_back_days=1.0):
                                                               testing=True)
             else:
                 message = api_tools.submit_sub_obs_request_record(config,params)
-                                                              
-            log.info(' --> Subrequest '+str(sr.sr_id)+': '+message)
             
+            log.info(' --> Subrequest '+str(sr.sr_id)+': '+message)
+
     log_utilities.end_day_log( log )
   
 

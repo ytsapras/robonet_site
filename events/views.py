@@ -844,7 +844,6 @@ def display_obs_monitor(request):
         (script1,div1,start_date1,end_date1) = obs_monitor.analyze_requested_vs_observed(monitor_period_days=5.0)
         (script2,div2,start_date2,end_date2) = obs_monitor.analyze_percentage_completed(start_date=rome_start,
                                                                                         end_date=now)
-                
         if script1 == None and div1 == None:
             
             script1 = ''
@@ -1106,12 +1105,10 @@ def query_obs_by_date(request):
 
                 post = form.save(commit=False)
                 
-                print post.timestamp, post.time_expire,post.request_status
                 qs = ObsRequest.objects.filter(
                         timestamp__gt = post.timestamp,
                         time_expire__lte = post.time_expire,
                         request_status = post.request_status)
-                print qs
                 
                 obs_list = []
                 
@@ -1211,7 +1208,7 @@ def record_sub_obs_request(request):
                     
                 else:
 
-                    if message == 'Subrequest already exists':
+                    if 'Subrequest already exists' in message:
                         
                         (update_ok,message) = update_db_2.update_sub_request(post.sr_id,
                                                            post.grp_id,

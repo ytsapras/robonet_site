@@ -41,7 +41,7 @@ def run_tests():
    
     #test_get_fields_list()
      
-    #test_plot_req_vs_obs()
+    test_plot_req_vs_obs()
     
     #test_fetch_obs_list()
     
@@ -49,7 +49,7 @@ def run_tests():
     
     #test_calc_percent_complete()
     
-    test_plot_percent_complete()
+    #test_plot_percent_complete()
     
 def generate_camera_data(camera,grp_id,field,date):
     
@@ -162,7 +162,7 @@ def test_plot_req_vs_obs():
     
     active_obs = generate_test_dataset()
     
-    (script, div) = obs_monitor.plot_req_vs_obs(active_obs,dbg=False)
+    (script, div) = obs_monitor.plot_req_vs_obs(active_obs,dbg=True)
     
 def test_fetch_obs_list():
     """Function to test the retrieval of a list of observations in the 

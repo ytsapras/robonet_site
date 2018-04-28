@@ -53,7 +53,7 @@ def analyze_requested_vs_observed(monitor_period_days=2.5,dbg=False):
     (start_date, end_date) = get_monitor_period(monitor_period_days)
     
     obs_list = fetch_obs_list(start_date, end_date)
-        
+    
     if len(obs_list) > 0:
     
         active_obs = fetch_subrequest_status(obs_list)
@@ -281,7 +281,7 @@ def plot_req_vs_obs(active_obs, dbg=False):
                     alphas.append(0.6)
                     colours.append(camera_colors[camera][1])
                     line_colours.append('black')
-                
+        
         source = ColumnDataSource(data={
                                 'xdata':xdata,
                                 'ydata':ydata,

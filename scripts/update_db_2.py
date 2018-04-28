@@ -807,22 +807,22 @@ def add_sub_request(sr_id,request_grp_id, request_track_id,
                 sr.save()
                 
                 successful = True
-                message = 'Subrequest added'
+                message = 'DBREPLY: Subrequest added'
                 
             except:
                 
                 successful = False
-                message = 'Error during ingestion of subrequest'
+                message = 'DBREPLY: Error during ingestion of subrequest'
             
         else:
             
             successful = False
-            message = 'Subrequest already exists'
+            message = 'DBREPLY: Subrequest already exists'
             
     else:
         
         successful = False
-        message = 'Unrecognised Obsrequest group ID'
+        message = 'DBREPLY: Unrecognised Obsrequest group ID'
         
     return successful, message
 

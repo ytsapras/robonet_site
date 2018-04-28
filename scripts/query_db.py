@@ -159,7 +159,7 @@ def get_rea_targets(log=None):
     observation under the REA strategy."""
     
     qs = Tap.objects.filter(omega__gte=6.0).order_by('timestamp').reverse()
-    print qs
+    
     for q in qs:
         print q.event.ev_ra, q.tsamp,q.priority
     
