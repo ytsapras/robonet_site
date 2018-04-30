@@ -537,6 +537,7 @@ def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
     if verbose==True:
         print response.text
         print 'Completed login'
+        print headers
     
     response = client.get(url)
     headers = { 'Referer': url, 'X-CSRFToken': client.cookies['csrftoken'],}
@@ -544,12 +545,15 @@ def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
     if verbose==True:
         print response.text
         print 'Completed successfully'
+        print client.cookies['csrftoken']
     
     message = 'OK'
     for line in response.text.split('\n'):
         if 'DBREPLY' in line:
             message = line.lstrip().replace('<h5>','').replace('</h5>','')
             message = message.replace('DBREPLY: ','')
+    if message == 'OK':
+        message = response.text
     
     return message
 

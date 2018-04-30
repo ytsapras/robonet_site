@@ -1194,7 +1194,7 @@ def record_sub_obs_request(request):
                 
                 post = form.save(commit=False)
 
-                (update_ok,message) = update_db_2.add_sub_request(post.sr_id,
+                (update_ok,message1) = update_db_2.add_sub_request(post.sr_id,
                                                            post.grp_id,
                                                            post.track_id,
                                                            post.window_start,
@@ -1204,20 +1204,21 @@ def record_sub_obs_request(request):
                                 
                 if update_ok:
                     
-                    message = 'DBREPLY: Subrequest successfully added to database'
+                    message = 'DBREPLY: Subrequest successfully added to database: '+message1
                     
                 else:
 
                     if 'Subrequest already exists' in message:
                         
-                        (update_ok,message) = update_db_2.update_sub_request(post.sr_id,
+                        (update_ok,message2) = update_db_2.update_sub_request(post.sr_id,
                                                            post.grp_id,
                                                            post.track_id,
                                                            post.window_start,
                                                            post.window_end, 
                                                            post.status, 
                                                            post.time_executed)
-
+                    message = message+' '+message2
+                    
                 return render(request, 'events/record_sub_obs_request.html', \
                                     {'form': form, 'message': message})
             else:
