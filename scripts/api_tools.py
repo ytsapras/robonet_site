@@ -50,9 +50,22 @@ def submit_sub_obs_request_record(config,params,testing=False,verbose=False):
     
     end_point = 'record_sub_obs_request'
     
-    message = talk_to_db(params,end_point,\
-                            config['db_user_id'],config['db_pswd'],
+    key_order = [ 'sr_id', 'grp_id', 'track_id', 'window_start', 'window_end',
+                 'status', 'time_executed' ]
+    key_order = [ 'sr_id', 'grp_id', 'track_id', 'window_start', 'window_end', ]
+
+    for i,key in enumerate(key_order):
+        
+        value = data[key]
+        
+        if i < len(key_order)-1:
+            url = url + key + '=' + str(value) + '&'
+        else:
+            url = url + key + '=' + str(value) + '/'
+            
+    message = talk_to_db(params,end_point,config['db_token'],
                             testing=testing,verbose=verbose)
+                            
     return message
     
 ################################################################################
@@ -492,10 +505,11 @@ def extract_table_data(html_text):
     return data
     
 ################################################################################
-def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
+def talk_to_db(data,key_order,end_point,token,testing=False,verbose=False):
     """Method to communicate with various APIs of the ROME/REA database. 
     Required arguments are:
         data       dict     parameters of the submission
+        key_order  list     parameters in the order they occur in the URL
         end_point  string   URL suffix of the form to submit to
         user_id    string   User ID login for database
         pswd       string   User password login for database
@@ -512,10 +526,8 @@ def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
     
     if testing == True:
         host_url = 'http://127.0.0.1:8000/db'
-        login_url = 'http://127.0.0.1:8000/db/login/'
     else:
         host_url = 'http://robonet.lco.global/db'
-        login_url = 'http://robonet.lco.global/db/login/'
     
     url = path.join(host_url,end_point)
     if url[-1:] != '/':
@@ -524,42 +536,37 @@ def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
     if verbose==True:
         print 'End point URL:',url
     
-    
-    client = requests.session()
-
-    #response = client.get(login_url)
-    response = client.get(url)
-
-    if verbose == True:
-        print 'Started session with response: ',response.text
-    
-    auth_details = {'username': user_id, 'password': pswd, 
-                    'csrfmiddlewaretoken': client.cookies['csrftoken']}
+    for i,key in enumerate(key_order):
         
-    #headers = { 'Referer': url, 'X-CSRFToken': client.cookies['csrftoken'],}
+        value = data[key]
+        
+        if i < len(key_order)-1:
+            url = url + key + '=' + str(value) + '&'
+        else:
+            url = url + key + '=' + str(value) + '/'
+            
+    headers = {'Authorization': 'Token ' + token}
     
-    #response = client.post(login_url, headers=headers, data=auth_details)
-#    response = client.post(url, headers=headers, data=auth_details)
-#    if verbose==True:
-#        print response.text
-#        print 'Completed login'
-    
-    #response = client.get(url)
-    #headers = { 'Referer': login_url, 'X-CSRFToken': client.cookies['csrftoken'],}
-    headers = { 'Referer': url, 'X-CSRFToken': client.cookies['csrftoken'],}
-    response = client.post(url, headers=headers, data=data)
+    response = requests.post(url, headers=headers)
+
     if verbose==True:
-        print response.text
+
         print 'Completed successfully'
-    
+        
     message = 'OK'
+
     for line in response.text.split('\n'):
+
         if 'DBREPLY' in line:
+
             message = line.lstrip().replace('<h5>','').replace('</h5>','')
             message = message.replace('DBREPLY: ','')
+
     if message == 'OK':
+
         message = response.text
-    exit()
+    
+    print message
     
     return message
 

@@ -23,7 +23,9 @@ urlpatterns = [
     url(r'^query_obs_requests/$', views.query_obs_requests, name='query_obs_requests'),
     url(r'^query_obs_by_date/$', views.query_obs_by_date, name='query_obs_by_date'),
     url(r'^record_obs_request/$', views.record_obs_request, name='record_obs_requests'),
-    url(r'^record_sub_obs_request/$', views.record_sub_obs_request, name='record_sub_obs_request'),
+    #url(r'^record_sub_obs_request/sr_id=(?P<sr_id>[0-9]+)&grp_id=(?P<grp_id>[A-Za-z0-9]+)&track_id=(?P<track_id>[0-9]+)&window_start=(?P<window_start>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})&window_end=(?P<window_end>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})&status=(?P<status>[A-Z]+)&time_executed=(P<time_executed>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/$', views.record_sub_obs_request, name='record_sub_obs_request'),
+    url(r'^record_sub_obs_request/sr_id=(?P<sr_id>[0-9]+)&grp_id=(?P<grp_id>[A-Za-z0-9]+.[0-9]+)&track_id=(?P<track_id>[0-9]+)&window_start=(?P<window_start>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})&window_end=(?P<window_end>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/$', views.record_sub_obs_request, name='record_sub_obs_request'),
+    #url(r'^record_sub_obs_request/$', views.record_sub_obs_request, name='record_sub_obs_request'),
     url(r'^record_data_file/$', views.record_data_file, name='record_data_file'),
     url(r'^add_operator/$', views.add_operator, name='add_operator'),
     url(r'^add_telescope/$', views.add_telescope, name='add_telescope'),
@@ -41,4 +43,5 @@ urlpatterns = [
     url(r'^list_all/', views.list_all, name='list_all'),
     url(r'^$', views.dashboard, name='dashboard'),
     url(r'^quality_control/$', views.data_quality_control, name='data_quality_control'),
+    url(r'^test_token/$',views.test_token, name='test_token'),
 ]

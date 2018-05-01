@@ -13,6 +13,11 @@ from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, I
 from .forms import RecordSubObsRequestForm, QueryObsRequestDateForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
+from rest_framework.authentication import TokenAuthentication, BasicAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.decorators import api_view,authentication_classes,permission_classes
 from itertools import chain
 from astropy.time import Time
 from datetime import datetime, timedelta
@@ -1181,8 +1186,9 @@ def record_obs_request(request):
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')
-def record_sub_obs_request(request):
-    """Function to allow new sub-requests to be added to the database"""
+def record_sub_obs_request_form(request):
+    """Function to provide a web form to allow new sub-requests to be 
+    added to the database"""
     
     if request.user.is_authenticated():
         
@@ -1219,13 +1225,13 @@ def record_sub_obs_request(request):
                                                            post.time_executed)
                     message = message+' '+message2
                     
-                return render(request, 'events/record_sub_obs_request.html', \
+                return render(request, 'events/record_sub_obs_request_form.html', \
                                     {'form': form, 'message': message})
             else:
                 
                 form = RecordSubObsRequestForm()
 
-                return render(request, 'events/record_sub_obs_request.html', \
+                return render(request, 'events/record_sub_obs_request_form.html', \
                                     {'form': form, \
                                     'message':'Form entry was invalid.<br> Reason: <br>'+\
                                     repr(form.errors)+'<br>Please try again.'})
@@ -1234,15 +1240,77 @@ def record_sub_obs_request(request):
 
             form = RecordSubObsRequestForm()
 
-            return render(request, 'events/record_sub_obs_request.html', \
+            return render(request, 'events/record_sub_obs_request_form.html', \
                                     {'form': form, 
                                     'message': 'none'})
 
     else:
 
         return HttpResponseRedirect('login')
+        
+@api_view(['POST'])
+@authentication_classes((TokenAuthentication, BasicAuthentication))
+@permission_classes((IsAuthenticated,))
+def record_sub_obs_request(request, sr_id, grp_id, track_id, 
+                           window_start,window_end):
+    """Function to provide an API endpoint to allow new sub-requests to be 
+    added to the database"""
+    
+    dev = True
+    
+    if request.user.is_authenticated():
+        
+        
+        if not dev:
+            (update_ok,message1) = update_db_2.add_sub_request(sr_id,
+                                                               grp_id,
+                                                               track_id,
+                                                               window_start,
+                                                               window_end, 
+                                                               status, 
+                                                               time_executed)
+            
+            if update_ok:
+                    
+                message = 'DBREPLY: Subrequest successfully added to database: '+message1
+                    
+            else:
+    
+                if 'Subrequest already exists' in message:
+                    
+                    (update_ok,message2) = update_db_2.update_sub_request(sr_id,
+                                                       grp_id,
+                                                       track_id,
+                                                       window_start,
+                                                       window_end, 
+                                                       status, 
+                                                       time_executed)
+                message = message+' '+message2
+            
+        else:
+            
+            message = 'DBREPLY: Received parameters: '
+            message = message + 'SR_ID = '+str(sr_id)+' GRP_ID = '+str(grp_id)+\
+                    'TRACK_ID = '+str(track_id)+' WINDOW_START = '+window_start+\
+                    ' WINDOW_END = '+window_end
+            
+        return render(request, 'events/record_sub_obs_request.html', \
+                            {'message': message})
+                                
+    else:
 
+        return HttpResponseRedirect('login')
 
+@api_view(['POST'])
+@authentication_classes((TokenAuthentication, BasicAuthentication))
+@permission_classes((IsAuthenticated,))
+def test_token(request):
+    content = {
+        'user': unicode(request.user),  # `django.contrib.auth.User` instance.
+        'auth': unicode(request.auth),  # None
+    }
+    return Response(content)
+    
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def add_operator(request):

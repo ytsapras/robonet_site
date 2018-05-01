@@ -4,64 +4,6 @@
 
 {% block content %}
 <h3>Record submitted observation sub-request</h3>
-<div>
-      <form method="POST" class="post-form">{% csrf_token %}
-        <center>
-            <table>
-                <tr>
-                    <td><div class="fieldWrapper">
-                        {{ form.sr_id.errors }}
-                        <label for="{{ form.sr_id.id_for_label }}">Sub-request ID:</label>
-                        {{ form.sr_id }}
-                    </div></td>
-                    <td><div class="fieldWrapper">
-                        {{ form.grp_id.errors }}
-                        <label for="{{ form.grp_id.id_for_label }}">Obsrequest group ID:</label>
-                        {{ form.grp_id }}
-                    </div></td>
-                    <td><div class="fieldWrapper">
-                        {{ form.track_id.errors }}
-                        <label for="{{ form.track_id.id_for_label }}">Obsrequest track ID:</label>
-                        {{ form.track_id }}
-                    </div></td>
-                </tr>
-                <tr>
-                    <td><div class="fieldWrapper">
-                        {{ form.window_start.errors }}
-                        <label for="{{ form.window_start.id_for_label }}">Window start date/time:</label>
-                        {{ form.window_start }}
-                    </div></td>
-                    <td><div class="fieldWrapper">
-                        {{ form.window_end.errors }}
-                        <label for="{{ form.window_end.id_for_label }}">Window end date/time:</label>
-                        {{ form.window_end }}
-                    </div></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td><div class="fieldWrapper">
-                        {{ form.status.errors }}
-                        <label for="{{ form.status.id_for_label }}">Subrequest status:</label>
-                        {{ form.status }}
-                    </div></td>
-                    <td><div class="fieldWrapper">
-                        {{ form.time_executed.errors }}
-                        <label for="{{ form.time_executed.id_for_label }}">Time executed, if any:</label>
-                        {{ form.time_executed }}
-                    </div></td><td></td>
-                </tr>
-                <tr>
-                    <td><div class="fieldWrapper">
-                    <button type="sumbit" class="save btn btn-default">Submit</button>
-                    </div></td>
-		    <td></td>
-		    <td></td>
-                </tr>
-            </table>
-        </center>
-    </form>
-</div>  
-
 {% if message != 'none' %}
 <div>
     <center>

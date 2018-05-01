@@ -10,7 +10,10 @@
     <parameter name='testing'>
       	<value>True</value>
     </parameter>
-    <parameter name='token'>
+    <parameter name='lco_token'>
+        <value>xxx</value>
+    </parameter>
+    <parameter name='db_token'>
         <value>xxx</value>
     </parameter>
     <parameter name='db_user_id'>
