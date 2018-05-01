@@ -452,7 +452,7 @@ def get_obs_list(config,params):
     else:
         response = ask_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'])
-        
+    
     table_data = extract_table_data(response)
     
     return table_data
@@ -526,26 +526,31 @@ def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
     
     
     client = requests.session()
-    response = client.get(login_url)
+
+    #response = client.get(login_url)
+    response = client.get(url)
+
     if verbose == True:
         print 'Started session with response: ',response.text
     
-    auth_details = {'username': user_id, 'password': pswd}
-    headers = { 'Referer': url, 'X-CSRFToken': client.cookies['csrftoken'],}
+    auth_details = {'username': user_id, 'password': pswd, 
+                    'csrfmiddlewaretoken': client.cookies['csrftoken']}
+        
+    #headers = { 'Referer': url, 'X-CSRFToken': client.cookies['csrftoken'],}
     
-    response = client.post(login_url, headers=headers, data=auth_details)
-    if verbose==True:
-        print response.text
-        print 'Completed login'
-        print headers
+    #response = client.post(login_url, headers=headers, data=auth_details)
+#    response = client.post(url, headers=headers, data=auth_details)
+#    if verbose==True:
+#        print response.text
+#        print 'Completed login'
     
-    response = client.get(url)
+    #response = client.get(url)
+    #headers = { 'Referer': login_url, 'X-CSRFToken': client.cookies['csrftoken'],}
     headers = { 'Referer': url, 'X-CSRFToken': client.cookies['csrftoken'],}
     response = client.post(url, headers=headers, data=data)
     if verbose==True:
         print response.text
         print 'Completed successfully'
-        print client.cookies['csrftoken']
     
     message = 'OK'
     for line in response.text.split('\n'):
@@ -554,6 +559,7 @@ def talk_to_db(data,end_point,user_id,pswd,testing=False,verbose=False):
             message = message.replace('DBREPLY: ','')
     if message == 'OK':
         message = response.text
+    exit()
     
     return message
 
