@@ -634,5 +634,8 @@ def parse_db_message(response):
             message = message.replace('<center>','').replace('</center>','')
             message = message.replace('DBREPLY: ','')
     
+    if message == None:
+        message = response.text
+        
     return message
     
