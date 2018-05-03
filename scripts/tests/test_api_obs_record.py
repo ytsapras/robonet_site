@@ -55,22 +55,29 @@ def test_api_sub_obs_record():
               'track_id': '624354',
               'window_start': window_start.strftime("%Y-%m-%dT%H:%M:%S"),
               'window_end': window_end.strftime("%Y-%m-%dT%H:%M:%S"),
-              'status': 'PENDING',
-              'time_executed': time_executed.strftime("%Y-%m-%dT%H:%M:%S")}
+              'status': 'PENDING'}
 
-    params = {'sr_id': '1477711',
-              'grp_id': 'ROME20180412T16.93534273',
-              'track_id': '624354',
-              'window_start': window_start.strftime("%Y-%m-%dT%H:%M:%S"),
-              'window_end': window_end.strftime("%Y-%m-%dT%H:%M:%S")}
-    
     config = {}
     config['db_token'] = raw_input('Please give DB token: ')
 
     response = api_tools.submit_sub_obs_request_record(config,params,testing=True,
-                                                       verbose=True)
+                                                       verbose=False)
         
     assert 'Subrequest successfully added to database' in response
+    
+    params = {'sr_id': '1477711',
+              'grp_id': 'ROME20180412T16.93534273',
+              'track_id': '624354',
+              'window_start': window_start.strftime("%Y-%m-%dT%H:%M:%S"),
+              'window_end': window_end.strftime("%Y-%m-%dT%H:%M:%S"),
+              'status': 'PENDING',
+              'time_executed': time_executed.strftime("%Y-%m-%dT%H:%M:%S")}
+
+    response = api_tools.submit_sub_obs_request_record(config,params,testing=True,
+                                                       verbose=False)
+        
+    assert 'Subrequest updated' in response
+   
     
 if __name__ == '__main__':
     

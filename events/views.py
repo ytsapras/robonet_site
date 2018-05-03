@@ -1252,48 +1252,37 @@ def record_sub_obs_request_form(request):
 @authentication_classes((TokenAuthentication, BasicAuthentication))
 @permission_classes((IsAuthenticated,))
 def record_sub_obs_request(request, sr_id, grp_id, track_id, 
-                           window_start,window_end):
+                           window_start,window_end,status,time_executed=None):
     """Function to provide an API endpoint to allow new sub-requests to be 
     added to the database"""
-    
-    dev = True
     
     if request.user.is_authenticated():
         
         
-        if not dev:
-            (update_ok,message1) = update_db_2.add_sub_request(sr_id,
-                                                               grp_id,
-                                                               track_id,
-                                                               window_start,
-                                                               window_end, 
-                                                               status, 
-                                                               time_executed)
-            
-            if update_ok:
-                    
-                message = 'DBREPLY: Subrequest successfully added to database: '+message1
-                    
-            else:
-    
-                if 'Subrequest already exists' in message:
-                    
-                    (update_ok,message2) = update_db_2.update_sub_request(sr_id,
-                                                       grp_id,
-                                                       track_id,
-                                                       window_start,
-                                                       window_end, 
-                                                       status, 
-                                                       time_executed)
-                message = message+' '+message2
-            
+        (update_ok,message) = update_db_2.add_sub_request(sr_id,
+                                                           grp_id,
+                                                           track_id,
+                                                           window_start,
+                                                           window_end, 
+                                                           status, 
+                                                           time_executed)
+        
+        if update_ok:
+                
+            message = 'DBREPLY: Subrequest successfully added to database'
+                
         else:
-            
-            message = 'DBREPLY: Received parameters: '
-            message = message + 'SR_ID = '+str(sr_id)+' GRP_ID = '+str(grp_id)+\
-                    'TRACK_ID = '+str(track_id)+' WINDOW_START = '+window_start+\
-                    ' WINDOW_END = '+window_end
-            
+
+            if 'Subrequest already exists' in message:
+                
+                (update_ok,message) = update_db_2.update_sub_request(sr_id,
+                                                   grp_id,
+                                                   track_id,
+                                                   window_start,
+                                                   window_end, 
+                                                   status, 
+                                                   time_executed)
+        
         return render(request, 'events/record_sub_obs_request.html', \
                             {'message': message})
                                 

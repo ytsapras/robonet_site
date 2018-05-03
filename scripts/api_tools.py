@@ -50,20 +50,22 @@ def submit_sub_obs_request_record(config,params,testing=False,verbose=False):
     
     end_point = 'record_sub_obs_request'
     
-    key_order = [ 'sr_id', 'grp_id', 'track_id', 'window_start', 'window_end',
-                 'status', 'time_executed' ]
-    key_order = [ 'sr_id', 'grp_id', 'track_id', 'window_start', 'window_end', ]
-
+    key_order = [ 'sr_id', 'grp_id', 'track_id', 'window_start', 'window_end', 
+                 'status' ]
+    if 'time_executed' in params.keys():
+        key_order.append('time_executed')
+        
+    query = end_point + '/'
     for i,key in enumerate(key_order):
         
-        value = data[key]
+        value = params[key]
         
         if i < len(key_order)-1:
-            url = url + key + '=' + str(value) + '&'
+            query = query + key + '=' + str(value) + '&'
         else:
-            url = url + key + '=' + str(value) + '/'
+            query = query + key + '=' + str(value)
             
-    message = talk_to_db(params,end_point,config['db_token'],
+    message = talk_to_db(query,config['db_token'],
                             testing=testing,verbose=verbose)
                             
     return message
@@ -505,7 +507,7 @@ def extract_table_data(html_text):
     return data
     
 ################################################################################
-def talk_to_db(data,key_order,end_point,token,testing=False,verbose=False):
+def talk_to_db(query,token,testing=False,verbose=False):
     """Method to communicate with various APIs of the ROME/REA database. 
     Required arguments are:
         data       dict     parameters of the submission
@@ -525,26 +527,19 @@ def talk_to_db(data,key_order,end_point,token,testing=False,verbose=False):
     """
     
     if testing == True:
-        host_url = 'http://127.0.0.1:8000/db'
+        host_url = 'http://127.0.0.1:8000/db/'
     else:
-        host_url = 'http://robonet.lco.global/db'
+        host_url = 'http://robonet.lco.global/db/'
+    if host_url[-1:] != '/':
+        host_url = host_url + '/'
     
-    url = path.join(host_url,end_point)
+    url = path.join(host_url,query)
     if url[-1:] != '/':
         url = url + '/'
     
     if verbose==True:
         print 'End point URL:',url
     
-    for i,key in enumerate(key_order):
-        
-        value = data[key]
-        
-        if i < len(key_order)-1:
-            url = url + key + '=' + str(value) + '&'
-        else:
-            url = url + key + '=' + str(value) + '/'
-            
     headers = {'Authorization': 'Token ' + token}
     
     response = requests.post(url, headers=headers)
@@ -565,9 +560,7 @@ def talk_to_db(data,key_order,end_point,token,testing=False,verbose=False):
     if message == 'OK':
 
         message = response.text
-    
-    print message
-    
+        
     return message
 
 def ask_db(data,end_point,user_id,pswd,testing=False,verbose=False):
