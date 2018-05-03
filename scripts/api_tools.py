@@ -559,7 +559,7 @@ def talk_to_db(query,token,testing=False,verbose=False):
     if testing == True:
         host_url = 'http://127.0.0.1:8000/db/'
     else:
-        host_url = 'http://robonet.lco.global/db/'
+        host_url = 'https://robonet.lco.global/db/'
     if host_url[-1:] != '/':
         host_url = host_url + '/'
     
@@ -572,7 +572,7 @@ def talk_to_db(query,token,testing=False,verbose=False):
     
     headers = {'Authorization': 'Token ' + token}
     
-    response = requests.post(url, headers=headers)
+    response = requests.post(url, headers=headers, verify=True)
     
     if verbose==True:
 

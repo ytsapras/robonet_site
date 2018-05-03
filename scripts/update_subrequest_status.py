@@ -45,7 +45,7 @@ def update_subrequest_status(look_back_days=1.0):
     (message, obs_list) = api_tools.get_obs_list(config,params,
                                       testing=config['testing'])
     
-    log.info('Database replied '+message)
+    log.info('Database replied: '+message)
     log.info('Database reports '+str(len(obs_list))+' observation(s) within this timeframe')
     
     active_obs = lco_api_tools.get_status_active_obs_subrequests(obs_list,
