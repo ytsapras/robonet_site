@@ -47,7 +47,7 @@ def build_rome_obs(script_config,log=None):
                                                                                     ts_submit, ts_expire,tolerances,
                                                                                     log=log)
 
-            if site_obs_sequence['filters'] > 0:
+            if len(field_obs_sequence['filters']) > 0:
                 
                 obs = observation_classes.ObsRequest()
                 obs.name = f
@@ -60,6 +60,7 @@ def build_rome_obs(script_config,log=None):
                 obs.instrument_class = '1M0-SCICAM-SINISTRO'
                 obs.set_aperture_class()
                 obs.airmass_limit = 1.2
+                obs.moon_sep_min = field_obs_sequence['moon_sep_min']
                 obs.filters = field_obs_sequence['filters']
                 obs.exposure_times = field_obs_sequence['exp_times']
                 obs.exposure_counts = field_obs_sequence['exp_counts']
@@ -117,6 +118,7 @@ def rome_obs_sequence(site_code=None):
                     'defocus':  [ [ 0.0, 0.0, 0.0 ],
                                    [ 0.0, 0.0, 0.0],
                                     [ 0.0, 0.0, 0.0]],
+                    'moon_sep_min': [ 30.0, 30.0, 30.0 ],
                     'sites':        ['lsc', 'cpt', 'coj'],
                     'domes':        ['doma', 'domc', 'doma'],
                     'tels':         [ '1m0', '1m0', '1m0' ],

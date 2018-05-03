@@ -46,8 +46,8 @@ def build_rea_obs(script_config,log=None,tap_list=None):
             target_obs_sequence = observing_tools.review_filters_for_observing_conditions(site_obs_sequence,rome_field,
                                                                                    ts_submit, ts_expire, tolerances,
                                                                                    log=log)
-
-            if site_obs_sequence['filters'] > 0:
+            
+            if len(target_obs_sequence['filters']) > 0:
                 
                 obs = observation_classes.ObsRequest()
                 
@@ -60,6 +60,7 @@ def build_rea_obs(script_config,log=None,tap_list=None):
                 obs.instrument = target_obs_sequence['instruments'][0]
                 obs.instrument_class = '1M0-SCICAM-SINISTRO'
                 obs.set_aperture_class()
+                obs.moon_sep_min = target_obs_sequence['moon_sep_min']
                 obs.filters = [ str(target.passband) ]
                 obs.exposure_times = [ float(target.texp) ]
                 obs.exposure_counts = [ int(target.nexp) ]
@@ -102,6 +103,7 @@ def rea_obs_sequence(site_code=None):
                     'domes':        ['doma', 'domc', 'doma'],
                     'tels':         [ '1m0', '1m0', '1m0' ],
                     'instruments':  ['fl15', 'fl06', 'fl12'],
+                    'moon_sep_min': [ 30.0, 30.0, 30.0 ],
                     'TTL_N_days':  1.0,
                     'TTL_A_days': 0.5,
                     'TTL_L_days': 1.0,

@@ -148,6 +148,7 @@ def check_Moon_within_tolerance(pointing, site, obs_date, obs_filter,
         log.info('Observations disallowed for other conditions')
         
     obs_ok = False
+    moon_sep_min = 30.0
     
     for p,prange in enumerate(criteria['phase_ranges']):
         
@@ -155,15 +156,17 @@ def check_Moon_within_tolerance(pointing, site, obs_date, obs_filter,
             and separation.value > criteria['separation_minimums'][p]:
                 
                 obs_ok = True
-            
+                moon_sep_min = criteria['separation_minimums'][p]
+                
     if log!=None:
         log.info('Observation conditions:')
         log.info('-> '+obs_date.value+' Moon separation = '+str(separation))
         log.info('-> '+obs_date.value+' Moon illumination = '+str(phase))
+        log.info('-> '+obs_date.value+' Moon separation minimum = '+str(moon_sep_min))
         log.info('-> OK to observe? '+repr(obs_ok))
         log.info('\n')
 
-    return obs_ok
+    return obs_ok, moon_sep_min
     
 def get_skycoord(pointing):
     """Function to return a SkyCoord object for a given RA, Dec pointing"""
@@ -199,6 +202,7 @@ def review_filters_for_observing_conditions(site_obs_sequence,field,
     site_nexp = []
     site_exptime = []
     site_defocus = []
+    site_moon_sep = []
         
     for i,f in enumerate(site_obs_sequence['filters']):
         
@@ -210,7 +214,7 @@ def review_filters_for_observing_conditions(site_obs_sequence,field,
             ts = Time(t.strftime("%Y-%m-%dT%H:%M:%S"),
                  format='isot', scale='utc')
 
-            moon_chk = check_Moon_within_tolerance(target, site, ts, f, 
+            (moon_chk,moon_sep_min) = check_Moon_within_tolerance(target, site, ts, f, 
                                                    tolerances, log=log)
             
             if not moon_chk:
@@ -220,19 +224,26 @@ def review_filters_for_observing_conditions(site_obs_sequence,field,
             t = t + timedelta(seconds=(1.0*24*60*60))
             
         if moon_ok:
-                        
+            
             site_filters.append(f)
             if 'exp_times' in site_obs_sequence.keys():
                 site_nexp.append(site_obs_sequence['exp_counts'][i])
                 site_exptime.append(site_obs_sequence['exp_times'][i])
                 site_defocus.append(site_obs_sequence['defocus'][i])
-            
+                site_moon_sep.append(moon_sep_min)
+                
     site_obs_sequence['filters'] = site_filters
-    if 'exp_times' in site_obs_sequence.keys():
+    if 'exp_times' in site_obs_sequence.keys() and len(site_exptime) > 0:
         site_obs_sequence['exp_counts'] = site_nexp
         site_obs_sequence['exp_times'] = site_exptime
         site_obs_sequence['defocus'] = site_defocus
-    
+        site_obs_sequence['moon_sep_min'] = (np.array(site_moon_sep)).min()
+    else:
+        site_obs_sequence['exp_counts'] = []
+        site_obs_sequence['exp_times'] = []
+        site_obs_sequence['defocus'] = []
+        site_obs_sequence['moon_sep_min'] = 30.0
+        
     if log!=None:
         
         if len(site_obs_sequence['filters']) == 0:

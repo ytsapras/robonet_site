@@ -82,16 +82,18 @@ def test_check_Moon_within_tolerance():
     
     f = 'SDSS-g'
     
-    status = observing_tools.check_Moon_within_tolerance(target, site, t, f,
+    (status,moon_sep_min) = observing_tools.check_Moon_within_tolerance(target, site, t, f,
                                                          tolerances)
     
     assert status == True
+    assert type(moon_sep_min) == type(1.0)
     
     t = Time('2018-05-02T12:00:00', format='isot', scale='utc')
      
-    status = observing_tools.check_Moon_within_tolerance(target, site, t, f,
+    (status,moon_sep_min) = observing_tools.check_Moon_within_tolerance(target, site, t, f,
                                                         tolerances)
     assert status == False
+    assert type(moon_sep_min) == type(1.0)
 
 def test_review_filters_for_observing_conditions():
     

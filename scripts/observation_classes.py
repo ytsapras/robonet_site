@@ -52,6 +52,7 @@ class ObsRequest:
         self.ts_submit = None
         self.ts_expire = None
         self.airmass_limit = 2.0
+        self.moon_sep_min = 30.0
         self.user_id = None
         self.token = None
         self.proposal_id = None
@@ -141,7 +142,7 @@ class ObsRequest:
         
         constraints = { 
         		  'max_airmass': float(self.airmass_limit),
-                    'min_lunar_distance': 20.0
+                    'min_lunar_distance': float(self.moon_sep_min)
                     }
         if debug == True and log != None:
             log.info('Constraints dictionary: ' + str( constraints ))
@@ -228,6 +229,8 @@ class ObsRequest:
             log.info('Instrument overheads ' + overheads.summary() )        
         
         molecule_list = []
+        
+        print self.focus_offset
         
         for i,exptime in enumerate(self.exposure_times):
             nexp = self.exposure_counts[i]
