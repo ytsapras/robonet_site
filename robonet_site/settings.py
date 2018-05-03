@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'xbi=oe(mqlar6)n#yf@v=&m9he$vym35bpfm80r&$-kl7w#3$$'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -95,9 +95,9 @@ WSGI_APPLICATION = 'robonet_site.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        #'NAME': '/var/www/robonetsite/db.sqlite3',
+        'NAME': '/var/www/robonetsite/db.sqlite3',
         # FOR LOCAL TESTING ONLY:
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        #'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
 

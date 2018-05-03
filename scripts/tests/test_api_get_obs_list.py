@@ -7,6 +7,7 @@ Created on Tue Apr 24 12:46:36 2018
 
 from os import getcwd, path
 from sys import path as systempath
+from sys import argv
 cwd = getcwd()
 systempath.append(path.join(cwd,'../..'))
 systempath.append(path.join(cwd,'..'))
@@ -25,12 +26,18 @@ def test_get_obs_list():
               'request_status': 'AC'}
               
     config = {}
-    config['db_user_id'] = raw_input('Please enter DB user ID: ')
-    config['db_pswd'] = raw_input('Please enter DB password: ')
-    config['testing'] = 'True'
     
-    obs_list = api_tools.get_obs_list(config,params)
+    if len(argv) == 1:
+        config['db_token'] = raw_input('Please enter DB token: ')
+    else:
+        config['db_token'] = argv[1]
+        
+    config['testing'] = True
     
+    (message, obs_list) = api_tools.get_obs_list(config,params,
+                                      testing=config['testing'],
+                                        verbose=True)
+        
     assert type(obs_list) == type([])
     for line in obs_list:
         assert type(line) == type({})

@@ -1095,57 +1095,45 @@ def query_obs_requests(request):
 
 
 ##############################################################################################################
-@login_required(login_url='/db/login/')
-def query_obs_by_date(request):
+@api_view(['GET'])
+@authentication_classes((TokenAuthentication, BasicAuthentication))
+@permission_classes((IsAuthenticated,))
+def query_obs_by_date(request, timestamp, time_expire, request_status):
     """Function to provide an endpoint for users to query what observation
     requests have been made within a specified date range"""
     
     if request.user.is_authenticated():
         
-        if request.method == "POST":
+        if request.method == "GET":
 
-            form = QueryObsRequestDateForm(request.POST)
-
-            if form.is_valid():
-
-                post = form.save(commit=False)
+            qs = ObsRequest.objects.filter(
+                        timestamp__gt = timestamp,
+                        time_expire__lte = time_expire,
+                        request_status = request_status)
                 
-                qs = ObsRequest.objects.filter(
-                        timestamp__gt = post.timestamp,
-                        time_expire__lte = post.time_expire,
-                        request_status = post.request_status)
+            obs_list = []
                 
-                obs_list = []
+            for q in qs:
+                obs = { 'pk': q.pk, 'grp_id':q.grp_id, 'track_id': q.track_id,
+                        'submit_date':q.timestamp.strftime("%Y-%m-%dT%H:%M:%S"),
+                        'expire_date':q.time_expire.strftime("%Y-%m-%dT%H:%M:%S"),
+                        'request_status': q.request_status
+                        }
+                        
+                obs_list.append(obs)
+            
+            if len(obs_list) == 0:
                 
-                for q in qs:
-                    obs = { 'pk': q.pk, 'grp_id':q.grp_id, 'track_id': q.track_id,
-                            'submit_date':q.timestamp.strftime("%Y-%m-%dT%H:%M:%S"),
-                            'expire_date':q.time_expire.strftime("%Y-%m-%dT%H:%M:%S"),
-                            'request_status': q.request_status
-                            }
-                            
-                    obs_list.append(obs)
-                    
-                return render(request, 'events/query_obs_by_date.html', \
-                                    {'form': form, 'observations': obs_list,
-                                     'message': 'OK: got query set'})
-                                     
+                message = 'DBREPLY: No matching observations'
+                
             else:
-
-                form = QueryObsRequestDateForm()
-
-                return render(request, 'events/query_obs_by_date.html', \
-                                    {'form': form, 'qs': [],\
-                                    'message':'Form entry was invalid.  Please try again.'})
-
-        else:
-
-            form = QueryObsRequestDateForm()
-
+                
+                message = 'DBREPLY: Got observations list'
+            
             return render(request, 'events/query_obs_by_date.html', \
-                                    {'form': form, 'qs': [],
-                                    'message': 'OK'})
-
+                                    {'observations': obs_list,
+                                     'message': message})
+                                     
     else:
 
         return HttpResponseRedirect('login')

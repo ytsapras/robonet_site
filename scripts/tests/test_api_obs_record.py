@@ -7,6 +7,7 @@ Created on Mon Apr 24 14:03:37 2017
 
 from os import getcwd, path, remove, environ
 from sys import path as systempath
+from sys import argv
 cwd = getcwd()
 systempath.append(path.join(cwd,'../..'))
 systempath.append(path.join(cwd,'..'))
@@ -58,7 +59,10 @@ def test_api_sub_obs_record():
               'status': 'PENDING'}
 
     config = {}
-    config['db_token'] = raw_input('Please give DB token: ')
+    if len(argv) == 1:
+        config['db_token'] = raw_input('Please enter DB token: ')
+    else:
+        config['db_token'] = argv[1]
 
     response = api_tools.submit_sub_obs_request_record(config,params,testing=True,
                                                        verbose=False)

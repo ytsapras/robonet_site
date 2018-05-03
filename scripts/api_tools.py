@@ -54,17 +54,9 @@ def submit_sub_obs_request_record(config,params,testing=False,verbose=False):
                  'status' ]
     if 'time_executed' in params.keys():
         key_order.append('time_executed')
-        
-    query = end_point + '/'
-    for i,key in enumerate(key_order):
-        
-        value = params[key]
-        
-        if i < len(key_order)-1:
-            query = query + key + '=' + str(value) + '&'
-        else:
-            query = query + key + '=' + str(value)
-            
+    
+    query = build_url_query(end_point,key_order,params)
+    
     message = talk_to_db(query,config['db_token'],
                             testing=testing,verbose=verbose)
                             
@@ -448,9 +440,9 @@ def submit_image_record(config,params):
                             testing=True)
 
 ################################################################################
-def get_obs_list(config,params):
-    """Function to retrieve from the database a list of observations
-    matching the parameters given.
+def get_obs_list(config,params,testing=False,verbose=False):
+    """Function to retrieve from the database API endpoint a list of 
+    observations matching the parameters given.
     
     Inputs:
         :param dict config: script configuration parameters
@@ -460,17 +452,22 @@ def get_obs_list(config,params):
     
     end_point = 'query_obs_by_date'
     
-    if 'True' in config['testing']:
-        response = ask_db(params,end_point,\
-                            config['db_user_id'],config['db_pswd'],
-                            testing=True)
+    key_order = [ 'timestamp', 'time_expire', 'request_status' ]
+    
+    query = build_url_query(end_point,key_order,params)
+    
+    (message, response) = ask_db(query,config['db_token'],
+                            testing=testing,verbose=verbose)
+        
+    if 'Got observations list' in message:
+        
+        table_data = extract_table_data(response)
+        
     else:
-        response = ask_db(params,end_point,\
-                            config['db_user_id'],config['db_pswd'])
-    
-    table_data = extract_table_data(response)
-    
-    return table_data
+        
+        table_data = []
+        
+    return message, table_data
 
 def extract_table_data(html_text):
     """Function to extract table data from HTML-format text"""
@@ -505,16 +502,33 @@ def extract_table_data(html_text):
             data.append( entry )
     
     return data
+
+def build_url_query(end_point,key_order,params):
+    """Function to build an URL query string in the format necessary for
+    an API"""
+    
+    query = end_point + '/'
+    
+    for i,key in enumerate(key_order):
+        
+        value = params[key]
+        
+        if i < len(key_order)-1:
+            query = query + key + '=' + str(value) + '&'
+        else:
+            query = query + key + '=' + str(value)
+    
+    return query
     
 ################################################################################
 def talk_to_db(query,token,testing=False,verbose=False):
-    """Method to communicate with various APIs of the ROME/REA database. 
+    """Method to communicate with various APIs of the ROME/REA database to
+    submit information (i.e. POST)
+    
     Required arguments are:
-        data       dict     parameters of the submission
-        key_order  list     parameters in the order they occur in the URL
-        end_point  string   URL suffix of the form to submit to
-        user_id    string   User ID login for database
-        pswd       string   User password login for database
+        query        string  API endpoint address and query parameters 
+                            concatenated in URL format
+        token       string   User token login for database
     
     E.g. if submitting to URL:
         http://robonet.lco.global/db/record_obs_request/
@@ -543,33 +557,23 @@ def talk_to_db(query,token,testing=False,verbose=False):
     headers = {'Authorization': 'Token ' + token}
     
     response = requests.post(url, headers=headers)
-
+    
     if verbose==True:
 
         print 'Completed successfully'
-        
-    message = 'OK'
-
-    for line in response.text.split('\n'):
-
-        if 'DBREPLY' in line:
-
-            message = line.lstrip().replace('<h5>','').replace('</h5>','')
-            message = message.replace('DBREPLY: ','')
-
-    if message == 'OK':
-
-        message = response.text
-        
+    
+    message = parse_db_message(response)
+    
     return message
 
-def ask_db(data,end_point,user_id,pswd,testing=False,verbose=False):
-    """Method to communicate with various APIs of the ROME/REA database. 
+def ask_db(query,token,testing=False,verbose=False):
+    """Method to communicate with various APIs of the ROME/REA database to 
+    extract information (i.e. GET)
+    
     Required arguments are:
-        data       dict     parameters of the submission
-        end_point  string   URL suffix of the form to submit to
-        user_id    string   User ID login for database
-        pswd       string   User password login for database
+        query        string  API endpoint address and query parameters 
+                            concatenated in URL format
+        token       string   User token login for database
     
     E.g. if submitting to URL:
         http://robonet.lco.global/db/record_obs_request/
@@ -580,41 +584,39 @@ def ask_db(data,end_point,user_id,pswd,testing=False,verbose=False):
                                         Def=False for operations
         verbose    boolean            Switch for additional debugging output
     """
+    
     if testing == True:
         host_url = 'http://127.0.0.1:8000/db'
-        login_url = 'http://127.0.0.1:8000/db/login/'
     else:
         host_url = 'https://robonet.lco.global/db'
-        login_url = 'https://robonet.lco.global/db/login/'
     
-    url = path.join(host_url,end_point)
+    url = path.join(host_url,query)
     if url[-1:] != '/':
         url = url + '/'
     
     if verbose==True:
         print 'End point URL:',url
     
+    headers = {'Authorization': 'Token ' + token}
     
-    client = requests.session()
-    response = client.get(login_url)
-    if verbose == True:
-        print 'Started session with response: ',response.text
+    response = requests.get(url, headers=headers)
     
-    auth_details = {'username': user_id, 'password': pswd}
-    headers = { 'Referer': url, 'X-CSRFToken': client.cookies['csrftoken'],}
+    message = parse_db_message(response)
     
-    response = client.post(login_url, headers=headers, data=auth_details)
+    return message, response.text
+
+def parse_db_message(response):
+    """Function to parse the database response message"""
     
-    if verbose==True:
-        print response.text
-        print 'Completed login'
+    message = None
+
+    for line in response.text.split('\n'):
+
+        if 'DBREPLY' in line:
+
+            message = line.lstrip().replace('<h5>','').replace('</h5>','')
+            message = message.replace('<center>','').replace('</center>','')
+            message = message.replace('DBREPLY: ','')
     
-    response = client.get(url)
-    headers = { 'Referer': url, 'X-CSRFToken': client.cookies['csrftoken'],}
-    response = client.post(url, headers=headers, data=data)
+    return message
     
-    if verbose==True:
-        print response.text
-        print 'Completed successfully'
-    
-    return response.text

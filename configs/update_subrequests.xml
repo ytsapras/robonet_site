@@ -8,18 +8,12 @@
       	<value>update_subrequests</value>
     </parameter>
     <parameter name='testing'>
-      	<value>True</value>
+      	<value>False</value>
     </parameter>
     <parameter name='lco_token'>
         <value>xxx</value>
     </parameter>
     <parameter name='db_token'>
-        <value>xxx</value>
-    </parameter>
-    <parameter name='db_user_id'>
-        <value>xxx</value>
-    </parameter>
-    <parameter name='db_pswd'>
         <value>xxx</value>
     </parameter>
 </update_subrequests_config>

@@ -42,12 +42,14 @@ def update_subrequest_status(look_back_days=1.0):
               'time_expire': end_date.strftime("%Y-%m-%dT%H:%M:%S"),
               'request_status': 'AC'}
               
-    obs_list = api_tools.get_obs_list(config,params)
+    (message, obs_list) = api_tools.get_obs_list(config,params,
+                                      testing=config['testing'])
     
+    log.info('Database replied '+message)
     log.info('Database reports '+str(len(obs_list))+' observation(s) within this timeframe')
     
     active_obs = lco_api_tools.get_status_active_obs_subrequests(obs_list,
-                                                                 config['token'],
+                                                                 config['lco_token'],
                                                                  start_date,
                                                                  end_date,
                                                                  log=log)
@@ -76,12 +78,8 @@ def update_subrequest_status(look_back_days=1.0):
             
             log.info(repr(params))
             
-            if 'True' in config['testing']:
-                message = api_tools.submit_sub_obs_request_record(config,params,
-                                                              testing=True)
-            else:
-                message = api_tools.submit_sub_obs_request_record(config,params,
-                                                                  verbose=True)
+            message = api_tools.submit_sub_obs_request_record(config,params,
+                                                              testing=config['testing'])
             
             log.info(' --> Subrequest '+str(sr.sr_id)+': '+message)
 

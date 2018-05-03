@@ -92,6 +92,14 @@ def read_config_for_code(code_name):
         raise IOError('Cannot find configuration file, looking for:'+config_file_path)
     script_config = read_config(config_file_path)
     
+    if code_name in ['update_subrequests']:
+        for key, value in script_config.items():
+            if value == 'True':
+                value = True
+            elif value == 'False':
+                value = False
+            script_config[key] = value
+            
     return script_config
 
 #################################

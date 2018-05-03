@@ -9,34 +9,8 @@
         <center><h5>{{ message }}</h5></center>
     </div>
 {% endif %}
-<div>
-      <form method="POST" class="post-form">{% csrf_token %}
-        <center>
-            <table><tr>
-                <td><div class="fieldWrapper">
-                    {{ form.timestamp.errors }}
-                    <label for="{{ form.timestamp.id_for_label }}">Start date:</label>
-                    {{ form.timestamp }}
-                </div></td>
-                <td><div class="fieldWrapper">
-                    {{ form.time_expire.errors }}
-                    <label for="{{ form.time_expire.id_for_label }}">End date:</label>
-                    {{ form.time_expire }}
-                </div></td>
-                <td><div class="fieldWrapper">
-                    {{ form.request_status.errors }}
-                    <label for="{{ form.request_status.id_for_label }}">Request status:</label>
-                    {{ form.request_status }}
-                </div></td>
-                <td><div class="fieldWrapper">
-                    <button type="submit" class="save btn btn-default">Submit</button>
-                </div></td>
-            </tr></table>
-        </center>
-    </form>
-</div>  
 
-{% if observations|length > 0 and message == 'OK: got query set' %}
+{% if observations|length > 0 %}
 <div>
     <center>
         <table>
