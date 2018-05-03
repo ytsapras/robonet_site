@@ -453,21 +453,37 @@ def get_obs_list(config,params,testing=False,verbose=False):
     end_point = 'query_obs_by_date'
     
     key_order = [ 'timestamp', 'time_expire', 'request_status' ]
+
+    status_options = [ 'AC', 'EX', 'CN' ]    
     
-    query = build_url_query(end_point,key_order,params)
+    if params['request_status'] != 'ALL':
+        
+        status_options = [ params['request_status'] ]
     
-    (message, response) = ask_db(query,config['db_token'],
-                            testing=testing,verbose=verbose)
+    obs_list = []
+    
+    for status in status_options:
         
-    if 'Got observations list' in message:
+        qparams = {}
         
-        table_data = extract_table_data(response)
+        for key in key_order:
+            
+            qparams[key] = params[key]
         
-    else:
+        qparams['request_status'] = status
         
-        table_data = []
+        query = build_url_query(end_point,key_order,qparams)
         
-    return message, table_data
+        (message, response) = ask_db(query,config['db_token'],
+                                testing=testing,verbose=verbose)
+        
+        if 'Got observations list' in message:
+            
+            table_data = extract_table_data(response)
+            
+            obs_list = obs_list + table_data
+            
+    return message, obs_list
 
 def extract_table_data(html_text):
     """Function to extract table data from HTML-format text"""

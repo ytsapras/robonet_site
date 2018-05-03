@@ -42,6 +42,18 @@ def test_get_obs_list():
     for line in obs_list:
         assert type(line) == type({})
 
+    params = {'timestamp': tstart.strftime("%Y-%m-%dT%H:%M:%S"),
+              'time_expire': tend.strftime("%Y-%m-%dT%H:%M:%S"),
+              'request_status': 'ALL'}
+              
+    (message, obs_list) = api_tools.get_obs_list(config,params,
+                                      testing=config['testing'],
+                                        verbose=True)
+        
+    assert type(obs_list) == type([])
+    for line in obs_list:
+        assert type(line) == type({})
+    
 if __name__ == '__main__':
     
     test_get_obs_list()
