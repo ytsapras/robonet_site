@@ -9,3 +9,4 @@ lxml>=3.7,<3.8
 ephem==3.7.6
 jdcal
 pytest
+djangorestframework==3.8.2
