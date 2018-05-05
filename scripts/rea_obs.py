@@ -31,7 +31,7 @@ def build_rea_obs(script_config,log=None,tap_list=None):
         site_code = default_obs_sequence['sites'][s]
         
         (site_obs_sequence, tolerances) = rea_obs_sequence(site_code)
-    
+            
         if log != None:
                 log.info('Building observation requests for site '+site_code+ ':')
 
@@ -39,13 +39,15 @@ def build_rea_obs(script_config,log=None,tap_list=None):
             
             rome_field=field_dict[str(target.field)]
             
+            (site_obs_sequence, tolerances) = rea_obs_sequence(site_code)
+            
             site_obs_sequence['filters'] = [ str(target.passband) ]
             
             (ts_submit, ts_expire) = observation_classes.get_obs_dates(site_obs_sequence['TTL_'+str(target.priority)+'_days'])
 
             if log!=None:
                 log.info('Site observing sequence: '+repr(site_obs_sequence))
-                
+            
             target_obs_sequence = observing_tools.review_filters_for_observing_conditions(site_obs_sequence,rome_field,
                                                                                    ts_submit, ts_expire, tolerances,
                                                                                    log=log)
@@ -77,7 +79,7 @@ def build_rea_obs(script_config,log=None,tap_list=None):
                 obs.user_id = script_config['user_id']
                 obs.proposal_id = script_config['proposal_id']
                 obs.token = script_config['token']
-                obs.focus_offset = target_obs_sequence['defocus']
+                obs.focus_offset = [ target_obs_sequence['defocus'] ]
                 #obs.request_type = str(target.priority)
                 obs.request_type = 'M'
                 obs.req_origin = 'obscontrol'
