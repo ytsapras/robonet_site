@@ -229,9 +229,7 @@ class ObsRequest:
             log.info('Instrument overheads ' + overheads.summary() )        
         
         molecule_list = []
-        
-        print self.focus_offset
-        
+                
         for i,exptime in enumerate(self.exposure_times):
             nexp = self.exposure_counts[i]
             f = self.filters[i]
