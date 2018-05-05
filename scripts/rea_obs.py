@@ -42,11 +42,17 @@ def build_rea_obs(script_config,log=None,tap_list=None):
             site_obs_sequence['filters'] = [ str(target.passband) ]
             
             (ts_submit, ts_expire) = observation_classes.get_obs_dates(site_obs_sequence['TTL_'+str(target.priority)+'_days'])
-            
+
+            if log!=None:
+                log.info('Site observing sequence: '+repr(site_obs_sequence))
+                
             target_obs_sequence = observing_tools.review_filters_for_observing_conditions(site_obs_sequence,rome_field,
                                                                                    ts_submit, ts_expire, tolerances,
                                                                                    log=log)
             
+            if log!=None:
+                log.info('Target observing sequence: '+repr(target_obs_sequence))
+                
             if len(target_obs_sequence['filters']) > 0:
                 
                 obs = observation_classes.ObsRequest()

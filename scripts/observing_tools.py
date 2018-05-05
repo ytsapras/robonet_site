@@ -195,6 +195,7 @@ def review_filters_for_observing_conditions(site_obs_sequence,field,
             
     if log!=None:
         log.info('Reviewing observations for site '+site_obs_sequence['sites'][0])
+        print site_obs_sequence
         
     site = get_site_location(site_obs_sequence['sites'][0])
         
