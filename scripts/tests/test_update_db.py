@@ -42,10 +42,11 @@ def test_add_request():
     group_id = 'TEST1'
     track_id = '0000012345'
     request_id = '000000123456'
+    site = 'cpt'
     status = update_db_2.add_request(field.name, t_sample, \
                 exptime, timestamp=timezone.now(), time_expire=ts_expire, \
                 pfrm_on = pfrm, onem_on=onem, twom_on=twom, request_type=request_type, \
-                which_filter=f,which_inst=i, grp_id=group_id, \
+                which_site=site, which_filter=f,which_inst=i, grp_id=group_id, \
                 track_id=track_id, req_id=request_id,n_exp=n_exp)
     assert status == True
 
@@ -137,7 +138,7 @@ def test_add_sub_request():
                                             window_start, window_end, 
                                             status, time_executed)
     print message
-    assert submit_ok == True
+    assert submit_ok == False
     
     (submit_ok, message) = update_db_2.add_sub_request(sr_id,
                                             request_grp_id, request_track_id,
@@ -145,7 +146,7 @@ def test_add_sub_request():
                                             status, time_executed)
     print message
     assert submit_ok == False
-    assert message == 'Subrequest already exists'
+    assert 'Subrequest already exists' in message
 
 def test_update_sub_request():
     
@@ -163,7 +164,7 @@ def test_update_sub_request():
                                             request_grp_id, request_track_id,
                                             window_start, window_end, 
                                             status, time_executed)
-    assert submit_ok == True
+    assert submit_ok == False
     
     time_executed = datetime.strptime('2018-04-20T15:15:00',"%Y-%m-%dT%H:%M:%S")
     time_executed = time_executed.replace(tzinfo=pytz.UTC)
@@ -174,8 +175,8 @@ def test_update_sub_request():
                                             status, time_executed)
     print message
     assert submit_ok == True
-    assert message == 'Subrequest updated'
+    assert 'Subrequest updated' in message
     
 
 if __name__ == '__main__':
-   test_update_sub_request()
+   test_add_request()

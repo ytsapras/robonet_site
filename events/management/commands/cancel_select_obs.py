@@ -34,6 +34,7 @@ class Command(BaseCommand):
         
         for obs in obs_list:
             if obs.grp_id in obs_id_list:
+                print 'Canceling '+obs.grp_id
                 obs.request_status = 'CN'
                 obs.save()
             

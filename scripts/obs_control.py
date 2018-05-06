@@ -123,14 +123,14 @@ def rm_duplicate_obs(obs_request_list, active_obs,log=None,debug=False):
                 if active_req.field.name == obs.name and \
                     active_req.which_filter in obs.filters and \
                     active_req.request_type == obs.request_type and\
-                    active_req.which_site == obs.site:
+                    active_req.which_inst == obs.instrument:
                     matching_request = True
                     
                     if log != None:
                         log.info(obs.group_id + ': Found existing active ' + \
                                 get_request_desc(active_req.request_type) + \
                                 ' observation for ' + active_req.field.name + \
-                                ' at site ' + active_req.which_site + \
+                                ' with instrument ' + active_req.which_inst + \
                                 ' with filter ' + active_req.which_filter + 
                                 ', not submitting duplicate')
             if matching_request == False:
@@ -138,14 +138,14 @@ def rm_duplicate_obs(obs_request_list, active_obs,log=None,debug=False):
                 if log != None:
                     log.info(obs.group_id + ': No existing active ' + \
                         get_request_desc(obs.request_type) + ' request for ' + obs.name + \
-                        ' at site ' + obs.site + \
+                        ' with instrument ' + obs.instrument + \
                         ' with filter in ' + ' '.join(obs.filters) +  \
                         '; observation will be queued')
         else:
             if log != None:
                 log.info(obs.group_id + ': No existing active ' + \
                     get_request_desc(obs.request_type) + ' request for ' + obs.name + \
-                    ' at site ' + obs.site + \
+                    ' with instrument ' + obs.instrument + \
                     ' with filter in ' + ' '.join(obs.filters) + \
                     '; observation will be queued')
             obs_requests_final.append(obs)
@@ -187,6 +187,7 @@ def submit_obs_requests(script_config,obs_requests,log=None):
                         'timestamp': obs.ts_submit, 'time_expire': obs.ts_expire, \
                         'pfrm_on': obs.pfrm,'onem_on': obs.onem, 'twom_on': obs.twom, \
                         'request_type': obs.request_type, 'which_filter':obs.filters[i],\
+                        'which_site':obs.site,\
                         'which_inst':obs.instrument, 'grp_id':obs.group_id, \
                         'track_id':obs.track_id, 'req_id':obs.req_id, \
                         'n_exp':obs.exposure_counts[i]}
@@ -205,7 +206,7 @@ def submit_obs_requests(script_config,obs_requests,log=None):
                     int(obs.exposure_times[i]), timestamp=obs.ts_submit, \
                     time_expire=obs.ts_expire, \
                     pfrm_on=obs.pfrm, onem_on=obs.onem, twom_on=obs.twom, \
-                    request_type=obs.request_type, \
+                    request_type=obs.request_type, which_site=obs.site,\
                     which_filter=obs.filters[i],which_inst=obs.instrument, \
                     grp_id=obs.group_id, track_id=obs.track_id, req_id=obs.req_id,\
                     n_exp=obs.exposure_counts[i],\
