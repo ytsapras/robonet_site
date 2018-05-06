@@ -122,13 +122,15 @@ def rm_duplicate_obs(obs_request_list, active_obs,log=None,debug=False):
                         active_req.request_type
                 if active_req.field.name == obs.name and \
                     active_req.which_filter in obs.filters and \
-                    active_req.request_type == obs.request_type:
+                    active_req.request_type == obs.request_type and\
+                    active_req.which_site == obs.site:
                     matching_request = True
                     
                     if log != None:
                         log.info(obs.group_id + ': Found existing active ' + \
                                 get_request_desc(active_req.request_type) + \
                                 ' observation for ' + active_req.field.name + \
+                                ' at site ' + active_req.which_site + \
                                 ' with filter ' + active_req.which_filter + 
                                 ', not submitting duplicate')
             if matching_request == False:
@@ -136,12 +138,14 @@ def rm_duplicate_obs(obs_request_list, active_obs,log=None,debug=False):
                 if log != None:
                     log.info(obs.group_id + ': No existing active ' + \
                         get_request_desc(obs.request_type) + ' request for ' + obs.name + \
+                        ' at site ' + obs.site + \
                         ' with filter in ' + ' '.join(obs.filters) +  \
                         '; observation will be queued')
         else:
             if log != None:
                 log.info(obs.group_id + ': No existing active ' + \
                     get_request_desc(obs.request_type) + ' request for ' + obs.name + \
+                    ' at site ' + obs.site + \
                     ' with filter in ' + ' '.join(obs.filters) + \
                     '; observation will be queued')
             obs_requests_final.append(obs)
