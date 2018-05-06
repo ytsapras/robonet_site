@@ -261,6 +261,9 @@ class ObsRequest:
         end_point = "userrequests/cadence"
         ur = self.talk_to_lco(ur,end_point,'POST')
         
+        if log !=None:
+            log.info('Generated cadences, userrequest now: '+repr(ur))
+            
         if 'error_type' in ur.keys():
             self.submit_response = 'ERROR: '+ur['error_msg']
         

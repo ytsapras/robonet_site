@@ -79,7 +79,7 @@ def build_rea_obs(script_config,log=None,tap_list=None):
                 obs.user_id = script_config['user_id']
                 obs.proposal_id = script_config['proposal_id']
                 obs.token = script_config['token']
-                obs.focus_offset = [ target_obs_sequence['defocus'] ]
+                obs.focus_offset = [ 0.0 ]
                 #obs.request_type = str(target.priority)
                 obs.request_type = 'M'
                 obs.req_origin = 'obscontrol'
