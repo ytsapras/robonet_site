@@ -233,7 +233,11 @@ def review_filters_for_observing_conditions(site_obs_sequence,field,
                 site_defocus.append(site_obs_sequence['defocus'][i])
                 
     site_obs_sequence['filters'] = site_filters
-    site_obs_sequence['moon_sep_min'] = (np.array(site_moon_sep)).min()
+    try:
+        site_obs_sequence['moon_sep_min'] = (np.array(site_moon_sep)).min()
+    except ValueError:
+        site_obs_sequence['moon_sep_min'] = 15.0
+        
     if 'exp_times' in site_obs_sequence.keys() and len(site_exptime) > 0:
         site_obs_sequence['exp_counts'] = site_nexp
         site_obs_sequence['exp_times'] = site_exptime
