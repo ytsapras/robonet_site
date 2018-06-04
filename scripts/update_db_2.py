@@ -949,6 +949,57 @@ def update_tap_status(event, priority):
         
     return successful, message
 
+def update_event_status(event, state):
+    """
+    Update an existsing observing sub-request in the database.
+    
+    Keyword arguments:
+    event -- Event object
+                (string, required)
+    state -- The priority to set, one of:
+                (string, optional, default='NF')
+                'NF', 'Not in footprint'
+                'AC', 'active'
+                'MO', 'monitor'
+                'AN', 'anomaly'
+                'EX', 'expired'
+    """
+    
+    if Event.objects.filter(pk=event.pk).exists()==True:
+        
+        if state in [ 'NF', 'AC', 'MO', 'AN', 'EX' ]:
+                
+            try:
+                
+                qs = Event.objects.filter(pk=event.pk)
+                
+                e = qs[0]
+                
+                e.status = state
+                
+                e.save()
+                
+                successful = True
+                message = 'DBREPLY: event status updated'
+            
+            except:
+                
+                successful = False
+                message = 'DBREPLY: Error during update of event status'
+                
+        else:
+            
+            successful = False
+            message = 'DBREPLY: Unrecognised event status setting'
+            
+    else:
+        
+        successful = False
+        message = 'DBREPLY: Unrecognised event'
+        
+    return successful, message
+
+
 ################################################################################################################
 def add_status(event_name, timestamp=timezone.now(), status='NF', comment='', 
                updated_by='', rec_cad=0, rec_texp=0, rec_nexp=0, rec_telclass=''):

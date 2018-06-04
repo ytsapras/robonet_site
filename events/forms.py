@@ -31,6 +31,11 @@ class EventNameForm(forms.ModelForm):
       model = EventName
       fields = ('name',)
 
+class EventAnomalyStatusForm(forms.ModelForm):
+   class Meta:
+      model = Event
+      fields = ('status',)
+      
 class SingleModelForm(forms.ModelForm):
    class Meta:
       model = SingleModel

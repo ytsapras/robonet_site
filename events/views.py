@@ -11,7 +11,7 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect
 from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, TelescopeForm, EventForm, EventNameForm, SingleModelForm
 from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, ImageForm, RecordDataFileForm, TapLimaForm
 from .forms import RecordSubObsRequestForm, QueryObsRequestDateForm
-from .forms import TapStatusForm
+from .forms import TapStatusForm, EventAnomalyStatusForm, EventNameForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from rest_framework.authentication import TokenAuthentication, BasicAuthentication
@@ -589,7 +589,80 @@ def set_tap_status(request):
         
         return HttpResponseRedirect('login')
 
-     
+@login_required(login_url='/db/login/')
+def set_event_status(request):
+    """View to enable users to manually set the REA status of an event in the
+    TAP list"""
+    
+    if request.user.is_authenticated():
+        
+        qs = Event.objects.all().order_by('year').reverse()
+        
+        events = []
+        
+        for q in qs:
+        
+            names = query_db.get_event_names(q.pk)
+            name = query_db.combine_event_names(names)
+            
+            events.append( ( q, name+'(PK='+str(q.pk)+')', q.status) )
+        
+        events = tuple(events)
+        
+        states = (
+                      ('NF', 'Not in footprint'),
+                      ('AC', 'active'),
+                      ('MO', 'monitor'),
+                      ('AN', 'anomaly'),
+                      ('EX', 'expired')
+                   )
+        
+        
+        if request.method == "POST":
+        
+            eform = EventAnomalyStatusForm(request.POST)
+            nform = EventNameForm(request.POST)
+                        
+            if eform.is_valid() and nform.is_valid():
+                
+                epost = eform.save(commit=False)
+                npost = nform.save(commit=False)
+                
+                event = Event.objects.get(pk=npost.name)
+                
+                (status, message) = update_db_2.update_event_status(event, 
+                                                                    epost.status)
+                
+                return render(request, 'events/set_event_anomaly_status.html', \
+                                    {'eform': eform, 'nform': nform,
+                                    'events': events, 'states': states,
+                                     'message': message})
+            
+            else:
+                
+                eform = EventAnomalyStatusForm()
+                nform = EventNameForm()
+                
+                return render(request, 'events/set_event_anomaly_status.html', \
+                                    {'eform': eform, 'nform': nform,
+                                    'events': events, 'states': states,
+                                    'message':'Form entry was invalid.  Please try again.'})
+            
+        else:
+
+            eform = EventAnomalyStatusForm()
+            nform = EventNameForm()
+                
+            return render(request, 'events/set_event_anomaly_status.html', \
+                                    {'eform': eform, 'nform': nform,
+                                    'events': events, 'states': states,
+                                    'message':'OK'})
+                                        
+    else:
+        
+        return HttpResponseRedirect('login')
+
+ 
 def get_events_from_tap_list():
     """Function to return a list of all current events"""
     

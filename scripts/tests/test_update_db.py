@@ -189,6 +189,20 @@ def test_update_tap_status():
     print submit_ok, message
     assert submit_ok == True
     assert 'TAP status updated' in message
+
+
+def test_update_event_status():
+    
+    event_pk = '3372'
+    qs = Event.objects.filter(pk=event_pk)
+    event = qs[0]
+    status = 'AN'
+    
+    (submit_ok, message) = update_db_2.update_event_status(event, status)
+
+    print submit_ok, message
+    assert submit_ok == True
+    assert 'event status updated' in message
     
 if __name__ == '__main__':
-   test_update_tap_status()
+   test_update_event_status()
