@@ -38,6 +38,7 @@ urlpatterns = [
     url(r'^add_datafile/$', views.add_datafile, name='add_datafile'),
     url(r'^add_image/$', views.add_image, name='add_image'),
     url(r'^tap/', views.tap, name='tap'),
+    url(r'^set_tap_status/', views.set_tap_status, name='set_tap_status'),
     url(r'^list_year/(?P<year>[0-9]+)', views.list_year, name='list_year'),
     url(r'^list_all/', views.list_all, name='list_all'),
     url(r'^$', views.dashboard, name='dashboard'),

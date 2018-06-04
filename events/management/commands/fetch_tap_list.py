@@ -18,6 +18,6 @@ class Command(BaseCommand):
         tap_list = query_db.get_tap_list()
         for target in tap_list:
             print target.summary()
-                        
+            
     def handle(self,*args, **options):
         self._fetch_tap_list()

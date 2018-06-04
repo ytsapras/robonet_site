@@ -11,6 +11,7 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect
 from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, TelescopeForm, EventForm, EventNameForm, SingleModelForm
 from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, ImageForm, RecordDataFileForm, TapLimaForm
 from .forms import RecordSubObsRequestForm, QueryObsRequestDateForm
+from .forms import TapStatusForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from rest_framework.authentication import TokenAuthentication, BasicAuthentication
@@ -32,6 +33,7 @@ from scripts.utilities import short_to_long_name
 from scripts import config_parser
 from scripts.get_errors import *
 from scripts import update_db_2
+from scripts import query_db
 from scripts import db_plotting_utilities
 from scripts import obs_monitor
 import requests
@@ -540,6 +542,81 @@ def tap(request):
    else:
       return HttpResponseRedirect('login')
 
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def set_tap_status(request):
+    """View to enable users to manually set the REA status of an event in the
+    TAP list"""
+    
+    if request.user.is_authenticated():
+        
+        (tap_targets,priorities) = get_events_from_tap_list()
+                
+        if request.method == "POST":
+        
+            form = TapStatusForm(request.POST)
+            
+            if form.is_valid():
+                
+                post = form.save(commit=False)
+                
+                (status, message) = update_db_2.update_tap_status(post.event, 
+                                                                  post.priority)
+                
+                return render(request, 'events/set_tap_status.html', \
+                                    {'form': form, 'tap_targets': tap_targets,
+                                     'priorities': priorities,
+                                     'message': message})
+            
+            else:
+                
+                form = TapStatusForm()
+                
+                return render(request, 'events/set_tap_status.html', \
+                                    {'form': form, 'tap_targets': tap_targets,\
+                                     'priorities': priorities,\
+                                    'message':'Form entry was invalid.  Please try again.'})
+            
+        else:
+            form = TapStatusForm()
+                
+            return render(request, 'events/set_tap_status.html', \
+                                    {'form': form, 'tap_targets': tap_targets,\
+                                     'priorities': priorities,\
+                                    'message':'OK'})
+                                        
+    else:
+        
+        return HttpResponseRedirect('login')
+
+     
+def get_events_from_tap_list():
+    """Function to return a list of all current events"""
+    
+    
+    priority_settings = {'A':'REA High',
+                         'L':'REA Low',
+                         'B':'REA Post-High',
+                         'N':'None'}
+    
+    priorities = []
+    
+    for key, value in priority_settings.items():
+        
+        priorities.append( (key, value) )
+    
+    priorities = tuple(priorities)
+    
+    tap_list = query_db.get_tap_list()
+    
+    tap_targets = []
+    
+    for target in tap_list:
+        
+        tap_targets.append( (target.event, target.names+'(PK='+str(target.pk)+'): '+priority_settings[target.priority]) )
+    
+    return tap_targets, priorities
+    
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def list_year(request, year):

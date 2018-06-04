@@ -23,7 +23,7 @@ setup()
 
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, TapLima, Image, SubObsRequest
-from scripts import api_tools, query_db
+from scripts import api_tools, query_db, rea_obs
 import pytz
 
 ##################################################################################
@@ -882,6 +882,70 @@ def update_sub_request(sr_id,request_grp_id, request_track_id,
         
         successful = False
         message = 'DBREPLY: Unrecognised Obsrequest group ID'
+        
+    return successful, message
+
+################################################################################################################
+def update_tap_status(event, priority):
+    """
+    Update an existsing observing sub-request in the database.
+    
+    Keyword arguments:
+    event -- Event object
+                (string, required)
+    event_id -- The event to be updated
+                 (string, required)
+    priority -- The priority to set, one of:
+                (string, optional, default='N')
+                    'A':'REA High',
+                    'L':'REA Low',
+                    'B':'REA Post-High'
+                    'N':'None'
+    """
+    
+    if Tap.objects.filter(event=event).exists()==True:
+        
+        if priority in [ 'A', 'L', 'B', 'N' ]:
+
+            tsamp = rea_obs.get_rea_tsamp(priority)
+            
+            if priority != 'N' and tsamp == 0.0:
+                
+                successful = False
+                message = 'DBREPLY: No valid sampling rate available for priority '+\
+                        priority+' observations'
+                
+            else:
+                
+                try:
+                    
+                    qs = Tap.objects.filter(event=event).order_by('timestamp').reverse()
+                    
+                    tap_target = qs[0]
+                    
+                    tap_target.priority = priority
+                    
+                    tap_target.tsamp = tsamp
+                    
+                    tap_target.save()
+                    
+                    successful = True
+                    message = 'DBREPLY: TAP status updated'
+                
+                except:
+                    
+                    successful = False
+                    message = 'DBREPLY: Error during update of TAP status'
+                    
+        else:
+            
+            successful = False
+            message = 'DBREPLY: Unrecognised TAP status setting'
+            
+    else:
+        
+        successful = False
+        message = 'DBREPLY: Unrecognised TAP event'
         
     return successful, message
 

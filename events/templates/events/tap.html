@@ -27,8 +27,12 @@ a:active {
 
 {% block content %}
 <center><br>
-<b>Current Time:</b> {{ time_now }} UT
-[HJD: {{ time_now_jd }}]
+<table style="border: 0px" width="90%">
+    <tr>
+        <td align="left" width="50%"><b>Current Time:</b> {{ time_now }} UT [HJD: {{ time_now_jd }}]</td>
+        <td align="center" bgcolor="#609ab6" width="20%"><a href="{% url 'set_tap_status' %}"><b style="color: #FFFFFF ">Change TAP priorities</b></a></td>
+    </tr>
+</table>
 <h2> Target Priority: LCO 1m network</h2>
 {% if rows %}
 {% load staticfiles %}

@@ -148,4 +148,23 @@ def rea_obs_sequence(site_code=None):
     else:
         
         return obs_sequence, tolerances
+
+def get_rea_tsamp(priority):
+    """Function to return the sampling rate in decimal hours defined by 
+    the REA strategy, for a given priority.
+    """
+    
+    tsamp_strategy = {  'A': 0.25,           # REA High
+                        'L': 1.0,            # REA Low
+                        'B': 1.0,            # REA Post-High
+                        'N': 0.0,            # None
+                    }
+    
+    if priority in tsamp_strategy.keys():
+        
+        return tsamp_strategy[priority]
+        
+    else:
+        
+        return 0.0
         

@@ -1,0 +1,50 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<div style="margin-top: 20px;">
+<center>
+<table style="border: 0px" width="90%">
+    <tr>
+        <td align="left" width="50%"><h3>Set TAP Status</h3><font style="color: red">Sampling rate will be adjusted automatically to match REA strategy</font></td>
+        <td align="center" bgcolor="#609ab6" width="20%"><a href="{% url 'tap' %}"><b style="color: #FFFFFF ">Return to TAP list</b></a></td>
+    </tr>
+</table>
+</center>
+</div>
+<div style="margin-top: 20px;">
+      <form method="POST" class="post-form">{% csrf_token %}
+        {{ formset.management_form }}
+        {{ formset.errors }}
+        <center>
+            <table><tr><td><label for="{{form.event.id_for_label}}">
+                <select name="event">
+                {% for e, target_id in tap_targets %}
+                    <option value="{{e.pk}}">{{target_id}}</option>
+                {% endfor %}
+                </select></label></td>
+                <td><label for="{{form.priority.id_for_label}}">
+                <select name="priority">
+                {% for code,priority in priorities %}
+                    <option value="{{code}}">{{priority}}</option>
+                {% endfor %}
+                </select></label>
+                </td>
+                </tr>
+                <tr><td></td><td>
+                <div class="fieldWrapper">
+                    <button type="submit" class="save btn btn-default">Submit</button>
+                </div>
+            </td></tr></table>
+        </center>
+    </form>
+</div>
+<div>
+{% if message != 'OK' %}
+    <div>
+        <center><h5>{{ message }}</h5></center>
+    </div>
+{% endif %}
+</div>
+{% endblock %}

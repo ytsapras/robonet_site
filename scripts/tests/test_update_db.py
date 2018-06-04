@@ -20,7 +20,7 @@ from django import setup
 from datetime import datetime, timedelta
 setup()
 import update_db_2, query_db
-from events.models import Field
+from events.models import Field, Event, Tap
 import api_tools
 import pytz
 
@@ -176,7 +176,19 @@ def test_update_sub_request():
     print message
     assert submit_ok == True
     assert 'Subrequest updated' in message
-    
 
+def test_update_tap_status():
+    
+    event_pk = '3344'
+    qs = Event.objects.filter(pk=event_pk)
+    event = qs[0]
+    priority = 'A'
+    
+    (submit_ok, message) = update_db_2.update_tap_status(event, priority)
+
+    print submit_ok, message
+    assert submit_ok == True
+    assert 'TAP status updated' in message
+    
 if __name__ == '__main__':
-   test_add_request()
+   test_update_tap_status()

@@ -29,6 +29,8 @@ class TapEvent():
     observations by TAP"""
     
     def __init__(self):
+        self.pk = None
+        self.event = None
         self.event_id = None
         self.names = None
         self.field = None
@@ -45,8 +47,9 @@ class TapEvent():
         self.ipp = None
     
     def summary(self):
-        return self.names + ' ' + str(self.event_id) + ' ' + self.field.name + ' ' +\
-            str(self.priority) + ' ' + str(self.tsamp) + ' ' + str(self.texp) + ' ' +\
+        return str(self.pk)+' '+self.names + ' ' + str(self.event_id) + ' ' + \
+            self.field.name + ' ' + str(self.priority) + ' ' + \
+            str(self.tsamp) + ' ' + str(self.texp) + ' ' +\
             str(self.nexp) + ' ' + str(self.ipp)
 
 def get_active_obs(log=None):
@@ -198,6 +201,8 @@ def get_tap_list(log=None):
         target.tap_status = q.status
         
         tap_entry = Tap.objects.filter(event=q.pk).order_by('timestamp').reverse()[0]
+        target.pk = tap_entry.pk
+        target.event = q
         target.priority = tap_entry.priority
         target.tsamp = float(tap_entry.tsamp)
         target.texp = float(tap_entry.texp)

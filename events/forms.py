@@ -63,6 +63,11 @@ class TapForm(forms.ModelForm):
       fields = '__all__'
    timestamp = forms.DateTimeField(label='timestamp',input_formats=["%Y-%m-%dT%H:%M:%S"])
 
+class TapStatusForm(forms.ModelForm):
+   class Meta:
+      model = Tap
+      fields = ('event', 'priority',)
+   
 class TapLimaForm(forms.ModelForm):
    class Meta:
       model = TapLima
