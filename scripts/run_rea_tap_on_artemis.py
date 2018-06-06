@@ -131,7 +131,7 @@ def assign_tap_priorities(logger):
 
     # FILTER FOR ACTIVE EVENTS (BY DEFINITION WITHIN ROME FOOTPRINT0
     active_events_list = Event.objects.select_related().filter(status__in=[
-        'AC', 'MO'])
+        'AC', 'MO','AN'])
     logger.info('RoboTAP: Processing ' +
                 str(len(active_events_list)) + ' active events.')
 
@@ -204,6 +204,81 @@ def assign_tap_priorities(logger):
             #    Event.objects.filter(event_id=event_id).update(status="EX")
         else:
             nmissing += 1
+    # FILTER FOR ACTIVE EVENTS (BY DEFINITION WITHIN ROME FOOTPRINT0
+    active_events_list = Event.objects.select_related().filter(status__in=[
+        'AN'])
+    logger.info('RoboTAP: Processing ' +
+                str(len(active_events_list)) + ' anomalous events.')
+
+    for event in active_events_list:
+        event_id = event.pk
+        event_name = EventName.objects.select_related().filter(event=event)[
+            0].name
+        timestamp = timezone.now()
+
+        modelpath = '/var/www/robonetsite/data/artemis/model/'
+        #modelpath = '/Users/rstreet/ROMEREA/sandbox/models/'
+        if 'MOA' in event_name:
+            eventname_short = 'KB' + event_name[6:8] + event_name[13:17]
+        else:
+            eventname_short = 'OB' + event_name[7:9] + event_name[14:18]
+
+        if os.path.exists(os.path.join(modelpath, eventname_short + '.align')):
+            filein = open(os.path.join(modelpath, eventname_short + '.align'))
+            for fentry in filein:
+                if 'OI' in fentry and 'O' in eventname_short:
+                    alignpars = str.split(fentry)
+                if 'KI' in fentry and 'K' in eventname_short:
+                    alignpars = str.split(fentry)
+            filein.close()
+
+        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')):
+            filein = open(os.path.join(modelpath, eventname_short + '.model'))
+            psplpars = str.split(filein.readline())
+            filein.close()
+            gfac = abs(float(alignpars[2]))
+            ibase_pspl = float(alignpars[1])
+            ftot_pspl = 10.0**(-0.4 * ibase_pspl)
+            fs_pspl = ftot_pspl / (1.0 + gfac)
+            fb_pspl = gfac * fs_pspl
+            t0_pspl = float(psplpars[3])
+            te_pspl = float(psplpars[5])
+            u0_pspl = float(psplpars[7])
+            g_pspl = gfac
+            omega_now, amp_now = omegarea(
+                t_current, u0_pspl, te_pspl, t0_pspl, fs_pspl, fb_pspl)
+            err_omega = 0.
+            #anomalous events have the highest priority
+            omega_now, omega_peak = 999., 999.
+            # 1.4 is a fudge factor trying to compensate bad weather
+            # 300./3185. is the time-allocation fraction which can and should
+            # be updated based on the requested amount of time -> tb moved config.
+            # SAMPLING TIME FOR REA IS 1h
+            tsamp = 0.25
+            imag = -2.5 * np.log10(fs_pspl * amp_now + fb_pspl)
+            texp = min(calculate_exptime_romerea(imag), 300.)
+            cost1m = daily_visibility / tsamp * ((60. + texp) / 60.)
+
+            err_omega = 0.
+
+            # CRITERIA FOR PERMITTING A NON-ZERO PRIORITY
+            if ibase_pspl > 0. and g_pspl < 210. and omega_now > 0.02:
+                add_tap(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
+                        texp=texp, nexp=1., imag=imag, omega=omega_now,
+                        err_omega=err_omega, peak_omega=omega_peak,
+                        visibility=full_visibility, cost1m=cost1m)
+            else:
+                add_tap(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
+                        texp=texp, nexp=1., imag=imag, omega=0.0,
+                        err_omega=err_omega, peak_omega=omega_peak,
+                        visibility=full_visibility, cost1m=cost1m)
+
+            # expire events -> deactivated
+            # if t_current > te_pspl+t0_pspl:
+            #    Event.objects.filter(event_id=event_id).update(status="EX")
+        else:
+            nmissing += 1
+
     if nmissing > 0:
         update_err('run_rea_tap', 'Missing DataFile: ' +
                    str(nmissing) + ' events')
@@ -244,6 +319,24 @@ def run_tap_prioritization(logger):
                         str(EventName.objects.select_related().filter(event=ev.id)[0].name))
             logger.info(serrmsg)
             nmissing = nmissing + 1
+
+    list_evnt = Event.objects.filter(status__in=['AN'])
+    for ev in list_evnt:
+        try:
+            latest_ev_tap_val = Tap.objects.filter(
+                event=ev).values().latest('timestamp')
+            #all anomalous events will be appended
+            output.append(latest_ev_tap_val)
+            logger.info('anomaly adding to be sorted (not queued!) ' + str(ev.id) + ' ' + str(
+                ev.status) + ' ' + str(EventName.objects.select_related().filter(event=ev.id)[0].name))
+        except Exception as errmsg:
+            serrmsg = str(errmsg)
+            logger.info('skipping anomaly ' + str(ev.id) + ' ' + str(ev.status) + ' ' +
+                        str(EventName.objects.select_related().filter(event=ev.id)[0].name))
+            logger.info(serrmsg)
+            nmissing = nmissing + 1
+
+
     sorted_list = sorted(output, key=lambda k: k['omega'], reverse=True)
 
     # FIRST RESET ALL MONITORING EVENTS TO ACTIVE
