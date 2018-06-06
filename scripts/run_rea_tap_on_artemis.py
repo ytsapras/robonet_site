@@ -131,7 +131,7 @@ def assign_tap_priorities(logger):
 
     # FILTER FOR ACTIVE EVENTS (BY DEFINITION WITHIN ROME FOOTPRINT0
     active_events_list = Event.objects.select_related().filter(status__in=[
-        'AC', 'MO','AN'])
+        'AC', 'MO'])
     logger.info('RoboTAP: Processing ' +
                 str(len(active_events_list)) + ' active events.')
 
@@ -254,7 +254,7 @@ def assign_tap_priorities(logger):
             # 300./3185. is the time-allocation fraction which can and should
             # be updated based on the requested amount of time -> tb moved config.
             # SAMPLING TIME FOR REA IS 1h
-            tsamp = 0.25
+            tsamp = 1./3.
             imag = -2.5 * np.log10(fs_pspl * amp_now + fb_pspl)
             texp = min(calculate_exptime_romerea(imag), 300.)
             cost1m = daily_visibility / tsamp * ((60. + texp) / 60.)
