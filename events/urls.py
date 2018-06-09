@@ -42,6 +42,7 @@ urlpatterns = [
     url(r'^set_event_status/', views.set_event_status, name='set_event_status'),
     url(r'^list_year/(?P<year>[0-9]+)', views.list_year, name='list_year'),
     url(r'^list_all/', views.list_all, name='list_all'),
+    url(r'^display_fields/', views.display_fields, name='display_fields'),
     url(r'^$', views.dashboard, name='dashboard'),
     url(r'^quality_control/$', views.data_quality_control, name='data_quality_control'),
     url(r'^test_token/$',views.test_token, name='test_token'),

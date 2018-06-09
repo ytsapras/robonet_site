@@ -1,0 +1,17 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<div style="margin-top: 20px;">
+<center>
+    <h3>ROME Survey Footprint</h3>
+    <table border="0">
+        <tr><th>Field ID</th><th>RA centre</th><th>Dec centre</th></tr>
+        {% for f_id, f_ra, f_dec in fields %}
+            <tr><td>{{f_id}}</td><td>{{f_ra}}</td><td>{{f_dec}}</td></tr>
+        {% endfor %}
+    </table>
+</center>
+</div>
+{% endblock %}

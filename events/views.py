@@ -36,6 +36,7 @@ from scripts import update_db_2
 from scripts import query_db
 from scripts import db_plotting_utilities
 from scripts import obs_monitor
+from scripts import rome_fields_dict
 import requests
 import pytz
 
@@ -689,7 +690,32 @@ def get_events_from_tap_list():
         tap_targets.append( (target.event, target.names+'(PK='+str(target.pk)+'): '+priority_settings[target.priority]) )
     
     return tap_targets, priorities
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def display_fields(request):
+    """Function to display the list of fields"""
     
+    if request.user.is_authenticated():
+        
+        sort_fields = rome_fields_dict.field_dict.keys()
+        sort_fields.sort()
+        
+        fields = []
+        
+        for f_id in sort_fields:
+            
+            f_details = rome_fields_dict.field_dict[f_id]
+            
+            fields.append( (f_id, f_details[2], f_details[3]) )
+        
+        return render(request, 'events/display_fields.html', \
+                                    {'fields': fields})
+                                     
+    else:
+        
+        return HttpResponseRedirect('login')
+
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def list_year(request, year):
