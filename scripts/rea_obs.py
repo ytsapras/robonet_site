@@ -167,4 +167,59 @@ def get_rea_tsamp(priority):
     else:
         
         return 0.0
+
+def build_rea_hi_request(script_config, field, exptime, t_sample):
+    """Function to compose a triggered observation in REA-HI mode for a 
+    specific field"""
+    
+    (default_obs_sequence, tolerances) = rea_obs_sequence()
+    
+    rea_obs = []
+
+    for s in range(0,len(default_obs_sequence['sites']),1):
+
+        site_code = default_obs_sequence['sites'][s]
         
+        (site_obs_sequence, tolerances) = rea_obs_sequence(site_code)
+
+        site_obs_sequence['filters'] = [ 'SDSS-i' ]
+            
+        (ts_submit, ts_expire) = observation_classes.get_obs_dates(1.0)
+        
+        rome_field=field_dict[field.name]
+        
+        target_obs_sequence = observing_tools.review_filters_for_observing_conditions(site_obs_sequence,rome_field,
+                                                                               ts_submit, ts_expire, tolerances,
+                                                                               log=None)
+        
+        obs = observation_classes.ObsRequest()
+        
+        obs.name = str(field.name)               
+        obs.ra = field.field_ra
+        obs.dec = field.field_dec
+        obs.site = target_obs_sequence['sites'][0]
+        obs.observatory= target_obs_sequence['domes'][0]
+        obs.tel = target_obs_sequence['tels'][0]
+        obs.instrument = target_obs_sequence['instruments'][0]
+        obs.instrument_class = '1M0-SCICAM-SINISTRO'
+        obs.set_aperture_class()
+        obs.moon_sep_min = target_obs_sequence['moon_sep_min']
+        obs.filters = [ 'SDSS-i' ]
+        obs.exposure_times = [ exptime ]
+        obs.exposure_counts = [ 1 ]
+        obs.cadence = float(t_sample)
+        obs.jitter = target_obs_sequence['jitter_hrs']
+        obs.priority = 1.1
+        obs.ttl = 1.0
+        obs.user_id = script_config['user_id']
+        obs.proposal_id = script_config['proposal_id']
+        obs.token = script_config['token']
+        obs.focus_offset = [ 0.0 ]
+        #obs.request_type = str(target.priority)
+        obs.request_type = 'M'
+        obs.req_origin = 'www'
+        obs.get_group_id()
+        
+        rea_obs.append(obs)
+    
+    return rea_obs

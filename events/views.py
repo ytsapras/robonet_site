@@ -12,6 +12,7 @@ from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, Tele
 from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, ImageForm, RecordDataFileForm, TapLimaForm
 from .forms import RecordSubObsRequestForm, QueryObsRequestDateForm
 from .forms import TapStatusForm, EventAnomalyStatusForm, EventNameForm
+from .forms import ObsExposureForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from rest_framework.authentication import TokenAuthentication, BasicAuthentication
@@ -37,6 +38,7 @@ from scripts import query_db
 from scripts import db_plotting_utilities
 from scripts import obs_monitor
 from scripts import rome_fields_dict
+from scripts import rea_obs
 import requests
 import pytz
 
@@ -715,6 +717,72 @@ def display_fields(request):
     else:
         
         return HttpResponseRedirect('login')
+
+
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def trigger_rea_hi_obs(request):
+    """Function to trigger REA-HI mode observations for a selected field"""
+    
+    if request.user.is_authenticated():
+        
+        qs = Field.objects.all().order_by('name')
+        
+        fields = []
+        for f in qs:
+            if f.name != 'Outside ROMEREA footprint':
+                fields.append(f)
+        
+        config = config_parser.read_config_for_code('obs_control')
+        
+        if request.method == "POST":
+            
+            form = ObsExposureForm()
+            
+            print form.fields, form.has_errors
+            
+            if form.is_valid():
+                
+                post = form.save(commit=False)
+                
+                field = Field.objects.get(name=post.field.name)
+                
+                rea_obs = rea_obs.build_rea_hi_request(config,field, 
+                                                       post.exptime, 
+                                                       (post.t_sample/60.0))
+                
+                submit_status = obs_control.submit_obs_requests(config,rea_obs)
+                
+                message = 'Returned status of observation requests at 3 sites: '
+                for status in submit_status:
+                    message += status + ' '
+                    
+                return render(request, 'events/trigger_rea_hi.html', \
+                                    {'form': form, 'fields': fields,
+                                    'message':message})
+                
+            else:
+                
+                form = ObsExposureForm()
+                
+                message = 'ERROR validating submission'
+                
+                return render(request, 'events/trigger_rea_hi.html', \
+                                    {'form': form, 'fields': fields,
+                                    'message':message})
+                                    
+        else:
+
+            form = ObsExposureForm()
+            
+            return render(request, 'events/trigger_rea_hi.html', \
+                                    {'form': form, 'fields': fields,
+                                    'message':'OK'})
+                                    
+    else:
+        
+        return HttpResponseRedirect('login')
+     
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')

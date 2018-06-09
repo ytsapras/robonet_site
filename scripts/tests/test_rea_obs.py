@@ -21,6 +21,7 @@ setup()
 from events.models import Event, SingleModel
 import rea_obs
 import log_utilities
+import observation_classes
 
 class TestField():
     """Class describing a field object used for code testing only"""
@@ -37,6 +38,14 @@ class TestField():
         self.tsamp = kwargs['tsamp']
         self.ipp = kwargs['ipp']
 
+class TestDBField():
+    """Class describing a field object as produced by the DB Field table"""
+    
+    def __init__(self,**kwargs):
+        self.name = kwargs['name']
+        self.field_ra = kwargs['field_ra']
+        self.field_dec = kwargs['field_dec']
+        
 def test_build_rea_obs():
     
     config = {'user_id': 'tester@lco.global',
@@ -62,8 +71,39 @@ def test_build_rea_obs():
     assert len(obs_requests) > 0
     
     log_utilities.end_day_log(log)
+
+def test_build_rea_hi_request():
+    """Function to test the construction of REA-HI mode observation
+    requests triggered from the online interface"""
     
+    exptime = 30.0
+    tsample = 0.25
+
+    config = {'user_id': 'tester@lco.global',
+              'token': 'XXXX', 
+              'proposal_id': 'TEST',
+              'log_directory': '.',
+              'log_root_name': 'test_rea_obs'}
+              
+    test_target = { 'name':'ROME-FIELD-01', 
+                    'field_ra':267.835895375 , 'field_dec':-30.0608178195}
+
+    field = TestDBField(**test_target)
+    
+    obs_requests = rea_obs.build_rea_hi_request(config, field, exptime, tsample)
+    
+    for obs in obs_requests:
+        print obs.summary()
+    
+    assert type(obs_requests) == type([])
+    assert len(obs_requests) == 3
+    for obs in obs_requests:
+        assert type(obs) == type(observation_classes.ObsRequest())
+        assert obs.exposure_times[0] == exptime
+        assert obs.name == test_target['name']
+        assert obs.cadence == tsample
 
 if __name__ == '__main__':
     
     test_build_rea_obs()
+    test_build_rea_hi_request()

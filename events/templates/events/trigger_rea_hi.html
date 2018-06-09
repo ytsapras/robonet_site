@@ -1,0 +1,53 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<div style="margin-top: 20px;">
+<center>
+<table style="border: 0px" width="90%">
+    <tr>
+        <td align="left" width="50%"><h3>Trigger REA-HI mode observations</h3>
+            <font style="color: red">This form will submit observations of the requested field to the REA instruments for the next 24-hrs</font></td>
+        <td align="center" bgcolor="#609ab6" width="20%"><a href="{% url 'tap' %}"><b style="color: #FFFFFF ">Return to TAP list</b></a></td>
+    </tr>
+</table>
+</center>
+</div>
+<div style="margin-top: 20px;">
+      <form method="POST" class="post-form">{% csrf_token %}
+        {{ formset.management_form }}
+        {{ formset.errors }}
+        <center>
+            <table><tr><td><label for="{{form.field.id_for_label}}">
+                <select name="field">
+                {% for f in fields %}
+                    <option value="{{f.pk}}">{{f.name}}</option>
+                {% endfor %}
+                </select></label></td>
+                <td>{{ form.exptime.errors }}
+                <label for="{{ form.exptime.id_for_label }}">Exposure time (secs):</label>
+                {{ form.t_sample }}
+                </td>
+                
+                <td>{{ form.t_sample.errors }}
+                <label for="{{ form.t_sample.id_for_label }}">Cadence (mins):</label>
+                {{ form.t_sample }}
+                </td>
+                </tr>
+                <tr><td></td><td></td><td>
+                <div class="fieldWrapper">
+                    <button type="submit" class="save btn btn-default">Submit</button>
+                </div>
+            </td></tr></table>
+        </center>
+    </form>
+</div>
+<div>
+{% if message != 'OK' %}
+    <div>
+        <center><h5>{{ message }}</h5></center>
+    </div>
+{% endif %}
+</div>
+{% endblock %}
