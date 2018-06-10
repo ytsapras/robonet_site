@@ -89,10 +89,16 @@ class ImageForm(forms.ModelForm):
 class ObsExposureForm(forms.ModelForm):
     class Meta:
         model = ObsRequest
-        fields = ('field', 'exptime', 't_sample')
-    exptime = forms.IntegerField(max_value=300)
-    t_sample = forms.DecimalField()
-        
+        fields = ('exptime', 't_sample')
+    exptime = forms.IntegerField()
+    t_sample = forms.DecimalField(max_digits=6,decimal_places=2)
+
+class FieldNameForm(forms.ModelForm):
+    class Meta:
+        model = Field
+        fields = ('name',)
+    name = forms.CharField(max_length=50)
+    
 class QueryObsRequestForm(forms.ModelForm):
     class Meta:
         model = ObsRequest

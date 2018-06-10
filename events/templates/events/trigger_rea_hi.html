@@ -17,22 +17,23 @@
 <div style="margin-top: 20px;">
       <form method="POST" class="post-form">{% csrf_token %}
         {{ formset.management_form }}
-        {{ formset.errors }}
+
         <center>
-            <table><tr><td><label for="{{form.field.id_for_label}}">
-                <select name="field">
+            <table><tr><td>{{ nform.name.errors }}<label for="nform.name.id_for_label">
+                <select name="name">
                 {% for f in fields %}
-                    <option value="{{f.pk}}">{{f.name}}</option>
+                    <option value="{{f}}">{{f}}</option>
                 {% endfor %}
                 </select></label></td>
-                <td>{{ form.exptime.errors }}
-                <label for="{{ form.exptime.id_for_label }}">Exposure time (secs):</label>
-                {{ form.t_sample }}
+                
+                <td>{{ eform.exptime.errors }}
+                <label for="{{ eform.exptime.id_for_label }}">Exposure time (secs):</label>
+                {{ eform.exptime }}
                 </td>
                 
-                <td>{{ form.t_sample.errors }}
-                <label for="{{ form.t_sample.id_for_label }}">Cadence (mins):</label>
-                {{ form.t_sample }}
+                <td>{{ eform.t_sample.errors }}
+                <label for="{{ eform.t_sample.id_for_label }}">Cadence (mins):</label>
+                {{ eform.t_sample }}
                 </td>
                 </tr>
                 <tr><td></td><td></td><td>

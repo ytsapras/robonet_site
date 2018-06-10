@@ -12,7 +12,7 @@ from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, Tele
 from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, ImageForm, RecordDataFileForm, TapLimaForm
 from .forms import RecordSubObsRequestForm, QueryObsRequestDateForm
 from .forms import TapStatusForm, EventAnomalyStatusForm, EventNameForm
-from .forms import ObsExposureForm
+from .forms import ObsExposureForm, FieldNameForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from rest_framework.authentication import TokenAuthentication, BasicAuthentication
@@ -39,6 +39,7 @@ from scripts import db_plotting_utilities
 from scripts import obs_monitor
 from scripts import rome_fields_dict
 from scripts import rea_obs
+from scripts import obs_control
 import requests
 import pytz
 
@@ -737,46 +738,52 @@ def trigger_rea_hi_obs(request):
         
         if request.method == "POST":
             
-            form = ObsExposureForm()
+            eform = ObsExposureForm(request.POST)
+            nform = FieldNameForm(request.POST)
             
-            print form.fields, form.has_errors
-            
-            if form.is_valid():
+            if nform.is_valid() and eform.is_valid():
                 
-                post = form.save(commit=False)
+                epost = eform.save(commit=False)
+                npost = nform.save(commit=False)
+                                
+                field = Field.objects.get(name=npost.name)
                 
-                field = Field.objects.get(name=post.field.name)
+                obs_requests = rea_obs.build_rea_hi_request(config,field, 
+                                                       epost.exptime, 
+                                                       (float(epost.t_sample)/60.0))
                 
-                rea_obs = rea_obs.build_rea_hi_request(config,field, 
-                                                       post.exptime, 
-                                                       (post.t_sample/60.0))
-                
-                submit_status = obs_control.submit_obs_requests(config,rea_obs)
+                submit_status = obs_control.submit_obs_requests(config,
+                                                                obs_requests)
                 
                 message = 'Returned status of observation requests at 3 sites: '
                 for status in submit_status:
                     message += status + ' '
                     
                 return render(request, 'events/trigger_rea_hi.html', \
-                                    {'form': form, 'fields': fields,
+                                    {'nform': nform, 'eform':eform,
+                                    'fields': fields,
                                     'message':message})
                 
             else:
                 
-                form = ObsExposureForm()
+                eform = ObsExposureForm()
+                nform = FieldNameForm()
                 
                 message = 'ERROR validating submission'
                 
                 return render(request, 'events/trigger_rea_hi.html', \
-                                    {'form': form, 'fields': fields,
+                                    {'nform': nform, 'eform':eform,
+                                    'fields': fields,
                                     'message':message})
                                     
         else:
 
-            form = ObsExposureForm()
+            eform = ObsExposureForm()
+            nform = FieldNameForm()
             
             return render(request, 'events/trigger_rea_hi.html', \
-                                    {'form': form, 'fields': fields,
+                                    {'nform': nform, 'eform':eform,
+                                    'fields': fields,
                                     'message':'OK'})
                                     
     else:
