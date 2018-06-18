@@ -281,7 +281,7 @@ def run_tap_prioritization(logger):
 
 if __name__ == '__main__':
     # DIRECTORY TO BE OBTAINED FROM XML...
-    logs_directory = '/var/www/robonetsite/data/logs/2017/'
+    logs_directory = '/var/www/robonetsite/data/logs/2018/'
     # logs_directory='/Users/rstreet/ROMEREA/sandbox/'
     # logs_directory='/home/Tux/ytsapras/Data/ROMEREA/logs/2017'
     script_config = {'log_directory': logs_directory,
