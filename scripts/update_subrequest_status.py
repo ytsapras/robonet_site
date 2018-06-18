@@ -29,10 +29,7 @@ def update_subrequest_status(look_back_days=1.0):
     
     log = log_utilities.start_day_log( config, 'update_subrequests' )
 
-    start_date = datetime.now() - timedelta(days=look_back_days)
-    start_date = start_date.replace(tzinfo=pytz.UTC)
-    end_date = datetime.now() + timedelta(days=look_back_days)
-    end_date = end_date.replace(tzinfo=pytz.UTC)
+    (start_date, end_date) = get_date_range()
 
     log.info('Updating the status of observations between '+\
                 start_date.strftime("%Y-%m-%dT%H:%M:%S")+' and '+\
@@ -85,8 +82,27 @@ def update_subrequest_status(look_back_days=1.0):
 
     log_utilities.end_day_log( log )
   
-
+def get_date_range():
+    """Function to extract a date range over which to harvest subrequest status"""
+    
+    if len(sys.argv) > 1:
+        
+        start_date = datetime.strptime(sys.argv[1], "%Y-%m-%dT%H:%M:%S")
+        end_date = datetime.strptime(sys.argv[2], "%Y-%m-%dT%H:%M:%S")
+    
+    else:
+        
+        look_back_days=10.0
+        
+        start_date = datetime.now() - timedelta(days=look_back_days)
+        end_date = datetime.now() + timedelta(days=look_back_days)
+        
+    start_date = start_date.replace(tzinfo=pytz.UTC)
+    end_date = end_date.replace(tzinfo=pytz.UTC)
+    
+    return start_date, end_date
+    
 if __name__ == '__main__':
     
-    update_subrequest_status(look_back_days=10.0)
+    update_subrequest_status()
     
