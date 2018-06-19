@@ -238,7 +238,10 @@ def plot_req_vs_obs(active_obs, dbg=False):
     camera_colors = {'fl12': ['#12c0ce', '#98cace'], # Turquoise
                      'fl06': ['#134dd6', '#a5b0cc'], # Blue
                      'fl15': ['#7119c4', '#b09bc4'], # Magenta
-                     'fl03': ['#cc8616', '#cec0a9']} # Orange
+                     'fl03': ['#cc8616', '#cec0a9'], # Orange
+                     'fl16': ['#4c722a', '#667559'], # Army green
+                     'fl11': ['#137c6d', '#54706c'], # Teal
+                     'fl14': ['#d8d511', '#e2e2a7']} # Yellow
     
     if dbg:
         output_file("test_plot.html")
