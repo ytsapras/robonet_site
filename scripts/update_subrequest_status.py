@@ -38,7 +38,7 @@ def update_subrequest_status(look_back_days=1.0):
     params = {'timestamp': start_date.strftime("%Y-%m-%dT%H:%M:%S"),
               'time_expire': end_date.strftime("%Y-%m-%dT%H:%M:%S"),
               'request_status': 'ALL'}
-              
+    
     (message, obs_list) = api_tools.get_obs_list(config,params,
                                       testing=config['testing'])
     
@@ -47,6 +47,7 @@ def update_subrequest_status(look_back_days=1.0):
     
     active_obs = lco_api_tools.get_status_active_obs_subrequests(obs_list,
                                                                  config['lco_token'],
+                                                                 config['lco_user_id'],
                                                                  start_date,
                                                                  end_date,
                                                                  log=log)

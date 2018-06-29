@@ -409,3 +409,10 @@ if __name__ == '__main__':
     
     (script, div, start_date, end_date) = analyze_requested_vs_observed(monitor_period_days=5.0,dbg=True)
     
+    rome_start = datetime.strptime('2017-04-01','%Y-%m-%d')
+    rome_start = rome_start.replace(tzinfo=pytz.UTC)
+    now = datetime.utcnow()
+    now = now.replace(tzinfo=pytz.UTC)
+    
+    (script2,div2,start_date2,end_date2) = obs_monitor.analyze_percentage_completed(start_date=rome_start,
+                                                                                    end_date=now)

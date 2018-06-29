@@ -13,6 +13,9 @@
     <parameter name='lco_token'>
         <value>xxx</value>
     </parameter>
+    <parameter name='lco_user_id'>
+        <value>xxx</value>
+    </parameter>
     <parameter name='db_token'>
         <value>xxx</value>
     </parameter>

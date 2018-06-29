@@ -41,9 +41,9 @@ def run_tests():
    
     #test_get_fields_list()
      
-    test_plot_req_vs_obs()
+    #test_plot_req_vs_obs()
     
-    #test_fetch_obs_list()
+    test_fetch_obs_list()
     
     #test_fetch_subrequest_status()
     
@@ -168,13 +168,13 @@ def test_fetch_obs_list():
     """Function to test the retrieval of a list of observations in the 
     format required to query for subrequest status"""
     
-    start_date = datetime.strptime('2018-04-16T00:00:00','%Y-%m-%dT%H:%M:%S')
+    start_date = datetime.strptime('2018-06-14T00:00:00','%Y-%m-%dT%H:%M:%S')
     start_date = start_date.replace(tzinfo=pytz.UTC)
-    end_date = datetime.strptime('2018-04-24T00:00:00','%Y-%m-%dT%H:%M:%S')
+    end_date = datetime.strptime('2018-06-20T00:00:00','%Y-%m-%dT%H:%M:%S')
     end_date = end_date.replace(tzinfo=pytz.UTC)
     
     obs_list = obs_monitor.fetch_obs_list(start_date, end_date)
-    
+
     assert len(obs_list) > 0
 
 def test_fetch_subrequest_status():

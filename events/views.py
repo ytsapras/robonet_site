@@ -1090,7 +1090,7 @@ def display_obs_monitor(request):
     """Display of functions which monitor the observing system, observations
     requested and data taken."""
     
-    rome_start = datetime.strptime('2017-04-01','%Y-%m-%d')
+    rome_start = datetime.strptime('2018-04-01','%Y-%m-%d')
     rome_start = rome_start.replace(tzinfo=pytz.UTC)
     now = datetime.utcnow()
     now = now.replace(tzinfo=pytz.UTC)

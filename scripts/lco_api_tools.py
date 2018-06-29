@@ -15,55 +15,67 @@ from datetime import datetime, timedelta
 import pytz
 import observation_classes
 
-def lco_userrequest_query(token,track_id):
+def lco_userrequest_query(token,user_id,created_before=None,created_after=None):
     """Method to query for the status of a specific observation request 
     via its tracking ID number.   
     """
 
     headers = {'Authorization': 'Token ' + token}
     
-    url = os.path.join('https://observe.lco.global/api/userrequests/',str(track_id))
+    if created_before == None and created_after == None:
+        
+        url = os.path.join('https://observe.lco.global/api/userrequests/?state=PENDING&user='+user_id)
     
-    response = requests.post(url, headers=headers, timeout=20).json()
+    else:
+        
+        url = os.path.join('https://observe.lco.global/api/userrequests/?user='+user_id+\
+                            '&created_before='+created_before.strftime("%Y-%m-%d")+\
+                            '&created_after='+created_after.strftime("%Y-%m-%d"))
+        
+    response = requests.get(url, headers=headers, timeout=20).json()
         
     return response
 
-def get_subrequests_status(token,track_id):
+def get_subrequests_status(token,user_id,created_before=None,created_after=None):
     """Function to query the LCO API for the status of a specific request"""
     
-    api_response = lco_userrequest_query(token,track_id)
+    api_response = lco_userrequest_query(token,user_id,
+                                         created_before=created_before,
+                                         created_after=created_after)
     
     subrequests = []
     
-    if 'requests' in api_response.keys():
+    if 'results' in api_response.keys():
         
-        for subrequest in api_response['requests']:
+        for request in api_response['results']:
             
-            sr = observation_classes.SubObsRequest()
-            
-            sr.sr_id = subrequest['id']
-            sr.request_grp_id = api_response['group_id']
-            sr.request_track_id = api_response['id']
-            sr.state = subrequest['state']
-                        
-            if 'None' in str(subrequest['completed']):
-                sr.time_executed = None
-            else:
-                sr.time_executed = datetime.strptime(subrequest['completed'],"%Y-%m-%dT%H:%M:%S.%fZ")
-
-            tstart = datetime.strptime(subrequest['windows'][0]['start'],"%Y-%m-%dT%H:%M:%SZ")
-            tstart = tstart.replace(tzinfo=pytz.UTC)
-            sr.window_start = tstart            
-
-            tend = datetime.strptime(subrequest['windows'][0]['end'],"%Y-%m-%dT%H:%M:%SZ")
-            tend = tend.replace(tzinfo=pytz.UTC)
-            sr.window_end = tend
-            
-            subrequests.append(sr)
+            for subrequest in request['requests']:
+                
+                sr = observation_classes.SubObsRequest()
+                
+                sr.sr_id = subrequest['id']
+                sr.request_grp_id = request['group_id']
+                sr.request_track_id = request['id']
+                sr.state = subrequest['state']
+                
+                if 'None' in str(subrequest['completed']):
+                    sr.time_executed = None
+                else:
+                    sr.time_executed = datetime.strptime(subrequest['completed'],"%Y-%m-%dT%H:%M:%S.%fZ")
+    
+                tstart = datetime.strptime(subrequest['windows'][0]['start'],"%Y-%m-%dT%H:%M:%SZ")
+                tstart = tstart.replace(tzinfo=pytz.UTC)
+                sr.window_start = tstart            
+    
+                tend = datetime.strptime(subrequest['windows'][0]['end'],"%Y-%m-%dT%H:%M:%SZ")
+                tend = tend.replace(tzinfo=pytz.UTC)
+                sr.window_end = tend
+                
+                subrequests.append(sr)
             
     return subrequests
 
-def get_status_active_obs_subrequests(obs_list,token,
+def get_status_active_obs_subrequests(obs_list,token,user_id,
                                       start_date,end_date,dbg=False,log=None):
     """Function to determine the status of all observation requests within
     a specified time period. 
@@ -91,6 +103,10 @@ def get_status_active_obs_subrequests(obs_list,token,
         
     active_obs = {}
     
+    subrequests = get_subrequests_status(token,user_id,
+                                         created_before=end_date,
+                                         created_after=start_date)
+    
     for obs in obs_list:
         
         if obs['grp_id'] not in active_obs.keys():
@@ -107,24 +123,30 @@ def get_status_active_obs_subrequests(obs_list,token,
                     obs['timestamp'].strftime("%Y-%m-%dT%H:%M:%S")+' - '+\
                     obs['time_expire'].strftime("%Y-%m-%dT%H:%M:%S")+' '+\
                     obs['status'])
-                    
-            subrequests = get_subrequests_status(token,obs['track_id'])
+                                
+            obs_sr_list = []
             
+            for sr in subrequests:
+                
+                if sr.request_grp_id == obs['grp_id']:
+                    
+                    obs_sr_list.append(sr)
+                    
             if dbg:
                 
-                for sr in subrequests:
+                for sr in obs_sr_list:
                     
                     print sr.summary()
             
             if log!=None:
                 
-                for sr in subrequests:
+                for sr in obs_sr_list:
                     
                     log.info('-> '+sr.summary())
             
                 
             active_obs[str(obs['grp_id'])] = {'obsrequest': obs,
-                                           'subrequests': subrequests}
+                                           'subrequests': obs_sr_list}
     
     return active_obs
     
@@ -139,12 +161,17 @@ if __name__ == '__main__':
         
     else:
         
-        track_id = raw_input('Please enter the tracking ID of the request: ')
+        user_id = raw_input('Please enter your LCO user ID: ')
         token = raw_input('Please enter your LCO token: ')
     
-    response = lco_userrequest_query(token,track_id)
+    response = lco_userrequest_query(token,user_id)
     
-    for subrequest in response['requests']:
-    
-        print subrequest['state'], subrequest['completed']
+    for item in response['results']:
+        
+        print item['group_id'], item['id']
+        
+        for sr in item['requests']:
+            
+            print '--> ',sr['id'],sr['state']
+
     

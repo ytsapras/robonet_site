@@ -20,30 +20,33 @@ def run_tests():
     don't conform to the usual pytest format.
     """
     
-    if len(sys.argv) > 1:
+    if len(sys.argv) == 3:
         
         token = sys.argv[1]
+        user_id = sys.argv[2]
         
     else:
         
         token = raw_input('Please enter your LCO API token: ')
+        user_id = raw_input('Please enter your LCO user ID: ')
    
-    test_get_subrequests_status(token)
-    test_get_status_active_obs_subrequests(token)
- 
-def test_get_subrequests_status(token):
+    #test_get_subrequests_status(token,user_id)
+    #test_get_status_active_obs_subrequests(token,user_id)
+    test_lco_userrequest_query(token,user_id)
+    
+def test_get_subrequests_status(token,user_id):
     
     track_id = 624354
 
     test_sr = observation_classes.SubObsRequest()
     
-    subrequests = lco_api_tools.get_subrequests_status(token,track_id)
+    subrequests = lco_api_tools.get_subrequests_status(token,user_id)
 
     assert type(subrequests) == type([])
     for item in subrequests:
         assert type(item) == type(test_sr)
 
-def test_get_status_active_obs_subrequests(token):
+def test_get_status_active_obs_subrequests(token,user_id):
     """Function to test the return of active observations between a given date 
     range, with the current status of those requests"""
     
@@ -65,8 +68,12 @@ def test_get_status_active_obs_subrequests(token):
                   'status': 'AC'}             
                 ]
                 
-    active_obs = lco_api_tools.get_status_active_obs_subrequests(obs_list,token,start_date,end_date)
-        
+    active_obs = lco_api_tools.get_status_active_obs_subrequests(obs_list,
+                                                                 token,
+                                                                 user_id,
+                                                                 start_date,
+                                                                 end_date)
+    
     assert type(active_obs) == type({})
     for grp_id, item in active_obs.items():
         assert type(grp_id) == type('foo')
@@ -77,7 +84,45 @@ def test_get_status_active_obs_subrequests(token):
         for sr in item['subrequests']:
             assert type(sr) == type(test_sr)
 
-
+def test_lco_userrequest_query(token,user_id):
+    """Function to test the function to query Valhalla for userrequests status"""
+    
+    response = lco_api_tools.lco_userrequest_query(token,user_id)
+    
+    assert 'results' in response.keys()
+    
+    print 'Query on user ID:'
+    for item in response['results']:
+        
+        print item['group_id'], item['id']
+        
+        for sr in item['requests']:
+            
+            print '--> ',sr['id'],sr['state']
+    
+    
+    start_date = datetime.now() - timedelta(days=5.0)
+    end_date = datetime.now() + timedelta(days=5.0)
+    
+    start_date = datetime.strptime('2018-05-01T00:00:00',"%Y-%m-%dT%H:%M:%S")
+    end_date = datetime.strptime('2018-05-30T00:00:00',"%Y-%m-%dT%H:%M:%S")
+    
+    response = lco_api_tools.lco_userrequest_query(token,user_id,
+                                                   created_after=start_date,
+                                                   created_before=end_date)
+    
+    assert 'results' in response.keys()
+    
+    print '\nQuery within date range:'
+    for item in response['results']:
+        
+        print item['group_id'], item['id']
+        
+        for sr in item['requests']:
+            
+            print '--> ',sr['id'],sr['state']
+    
+    
 if __name__ == '__main__':
     
     run_tests()
