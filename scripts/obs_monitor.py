@@ -33,6 +33,7 @@ from bokeh.models import ColumnDataSource, HoverTool, LinearColorMapper, Legend,
 from bokeh.models import FixedTicker,PrintfTickFormatter, ColumnDataSource, DatetimeTickFormatter
 from bokeh.models import DEFAULT_DATETIME_FORMATS
 from bokeh.models import BoxSelectTool
+from bokeh.models import Legend
 from bokeh.embed import components
 from bokeh.resources import CDN
 
@@ -50,13 +51,13 @@ def analyze_requested_vs_observed(monitor_period_days=2.5,dbg=False):
     
     config = config_parser.read_config_for_code('setup')
     
-    (start_date, end_date) = get_monitor_period(monitor_period_days)
+    (start_date, end_date) = get_monitor_period(monitor_period_days,dbg=dbg)
     
-    obs_list = fetch_obs_list(start_date, end_date)
+    obs_list = fetch_obs_list(start_date, end_date, status='ALL', dbg=dbg)
     
     if len(obs_list) > 0:
     
-        active_obs = fetch_subrequest_status(obs_list)
+        active_obs = fetch_subrequest_status(obs_list, dbg=dbg)
     
         (script, div) = plot_req_vs_obs(active_obs,dbg=dbg)
         
@@ -91,7 +92,7 @@ def analyze_percentage_completed(start_date=None, end_date=None, dbg=False):
                 
     return script, div, start_date, end_date
 
-def fetch_obs_list(start_date, end_date, status='AC'):
+def fetch_obs_list(start_date, end_date, status='AC',dbg=False):
     """Function to query the DB for a list of observations within the dates
     given, and return it in the form of an observation list"""
     
@@ -102,10 +103,19 @@ def fetch_obs_list(start_date, end_date, status='AC'):
         criteria['request_status'] = status
     
     obs_list = query_db.select_obs_by_date(criteria)
+    
+    if dbg:
+        
+        print('Observation requests matching critera: ')
+        print(repr(criteria))
+        
+        for obs in obs_list:
 
+            print obs.grp_id
+            
     return obs_list
 
-def fetch_subrequest_status(obs_list):
+def fetch_subrequest_status(obs_list,dbg=False):
     """Function to query the DB for the current status of all subrequests
     of the list of observations given"""
     
@@ -117,7 +127,15 @@ def fetch_subrequest_status(obs_list):
         
         active_obs[obs.grp_id] = { 'obsrequest': obs,
                                     'subrequests': qs }
-    
+        
+        if dbg:
+            
+            print('Subrequests for '+str(obs.grp_id)+', field='+obs.field.name+':')
+            
+            for sr in qs:
+                
+                print('--> '+str(sr.id)+' '+repr(sr.status))
+            
     return active_obs
 
 def calc_percent_complete(active_obs,camera,date_range):
@@ -180,15 +198,15 @@ def plot_percent_complete(active_obs, dbg=False):
     
     date_range = get_date_range(active_obs)    
     deltax = date_range[1] - date_range[0]
-
-    camera_colors = {'fl12': ['#12c0ce', '#98cace'], # Turquoise
+        
+    camera_colors = {'fl12': ['#23E6E9', '#98cace'], # Turquoise
                      'fl06': ['#134dd6', '#a5b0cc'], # Blue
-                     'fl15': ['#7119c4', '#b09bc4'], # Magenta
+                     'fl15': ['#BD44F5', '#b09bc4'], # Magenta
                      'fl03': ['#cc8616', '#cec0a9'], # Orange
-                     'fl16': ['#4c722a', '#667559'], # Army green
+                     'fl16': ['#22D11F', '#667559'], # Army green
                      'fl11': ['#137c6d', '#54706c'], # Teal
                      'fl14': ['#d8d511', '#e2e2a7']} # Yellow
-        
+                     
     if dbg:
         output_file("test_plot.html")
     
@@ -199,20 +217,31 @@ def plot_percent_complete(active_obs, dbg=False):
                  title=title,
                  x_axis_label='Time [UTC]',
                  x_axis_type="datetime",
-                 y_axis_label='Percentage completed')
+                 y_axis_label='Percentage completed',
+                 toolbar_location="below",
+                 toolbar_sticky=False)
     
+    legend_items = []
     for camera in instruments:
         
         (xdata, ydata) = calc_percent_complete(active_obs,camera,date_range)
 
-        fig.scatter(xdata, ydata, color=camera_colors[camera][0])
-        fig.line(xdata, ydata, color=camera_colors[camera][0], line_width=2, 
-                 legend=camera)
-
+#        fig.patch(xdata, ydata, color=camera_colors[camera][0], alpha=0.6, 
+#                line_color="black",legend=camera)
+        
+        p = fig.scatter(xdata, ydata, color=camera_colors[camera][0])
+        r = fig.line(xdata, ydata, color=camera_colors[camera][0], line_width=2)
+        
+        legend_items.append( (camera, [r]) )
+        
     fig.xaxis.formatter = DatetimeTickFormatter(days=["%Y-%m-%d %H:%M"])
     
     fig.xaxis.major_label_orientation = math.pi/4
-    
+
+    legend = Legend(items=legend_items, location=(0, -30))
+
+    fig.add_layout(legend, 'right')
+
     if dbg:
         show(fig)
         return None, None
@@ -235,11 +264,11 @@ def plot_req_vs_obs(active_obs, dbg=False):
     date_range = get_date_range(active_obs)
     deltax = date_range[1] - date_range[0]
     
-    camera_colors = {'fl12': ['#12c0ce', '#98cace'], # Turquoise
+    camera_colors = {'fl12': ['#23E6E9', '#98cace'], # Turquoise
                      'fl06': ['#134dd6', '#a5b0cc'], # Blue
-                     'fl15': ['#7119c4', '#b09bc4'], # Magenta
+                     'fl15': ['#BD44F5', '#b09bc4'], # Magenta
                      'fl03': ['#cc8616', '#cec0a9'], # Orange
-                     'fl16': ['#4c722a', '#667559'], # Army green
+                     'fl16': ['#22D11F', '#667559'], # Army green
                      'fl11': ['#137c6d', '#54706c'], # Teal
                      'fl14': ['#d8d511', '#e2e2a7']} # Yellow
     
@@ -253,8 +282,10 @@ def plot_req_vs_obs(active_obs, dbg=False):
                  title=title,
                  x_axis_label='Time [UTC]',
                  x_axis_type="datetime",
-                 y_range=fields_sorted)
-                     
+                 y_range=fields_sorted,
+                 toolbar_location="below",
+                 toolbar_sticky=False)
+                
     for f,field_id in enumerate(fields_sorted):
         
         xdata = []
@@ -271,7 +302,7 @@ def plot_req_vs_obs(active_obs, dbg=False):
             camera = entry['obsrequest'].which_inst
 
             for sr in entry['subrequests']:
-                                
+                
                 mid_time = sr.window_start + (sr.window_end-sr.window_start)/2
                 sr_length = sr.window_end - sr.window_start
                 
@@ -283,6 +314,12 @@ def plot_req_vs_obs(active_obs, dbg=False):
                     alphas.append(1.0)
                     colours.append(camera_colors[camera][0])
                     line_colours.append(camera_colors[camera][0])
+                    
+                elif sr.status == 'CANCELED':
+                    alphas.append(0.6)
+                    colours.append(camera_colors[camera][1])
+                    line_colours.append('red')
+                    
                 else:
                     alphas.append(0.6)
                     colours.append(camera_colors[camera][1])
@@ -321,15 +358,15 @@ def get_fields_list(active_obs):
     fields = {}
     
     for grp_id,entry in active_obs.items():
-                
-        if entry['obsrequest'].field not in fields.keys():
             
-            fields[str(entry['obsrequest'].field)] = [ entry ]
+        if entry['obsrequest'].field.name not in fields.keys():
+            
+            fields[str(entry['obsrequest'].field.name)] = [ entry ]
         
         else:
             
-            fields[str(entry['obsrequest'].field)].append( entry )
-            
+            fields[str(entry['obsrequest'].field.name)].append( entry )
+    
     return fields
 
 def get_instrument_list(active_obs):
@@ -372,18 +409,24 @@ def get_date_range(active_obs):
     
     return (start_date, end_date)
     
-def get_monitor_period(monitor_period_days):
+def get_monitor_period(monitor_period_days, dbg=False):
     """Function to return the start and end datetimes for the current
     period for observation monitoring"""
     
     monitor_period_secs = monitor_period_days*24.0*60.0*60.0
     
     start_date = datetime.now() - timedelta(seconds=monitor_period_secs)
+    #start_date = datetime.strptime('2018-05-05T00:00:00',"%Y-%m-%dT%H:%M:%S")
     start_date = start_date.replace(tzinfo=pytz.UTC)
 
     end_date = datetime.now() + timedelta(seconds=monitor_period_secs)
+    #end_date = datetime.strptime('2018-05-10T00:00:00',"%Y-%m-%dT%H:%M:%S")
     end_date = end_date.replace(tzinfo=pytz.UTC)
     
+    if dbg:
+        print('Monitor period: '+start_date.strftime("%Y-%m-%d")+' to '+\
+                                end_date.strftime("%Y-%m-%d"))
+                                
     return start_date, end_date
 
 def get_completion_date_period(start_date=None,end_date=None):
@@ -407,12 +450,13 @@ def get_completion_date_period(start_date=None,end_date=None):
     
 if __name__ == '__main__':
     
-    (script, div, start_date, end_date) = analyze_requested_vs_observed(monitor_period_days=5.0,dbg=True)
+#    (script, div, start_date, end_date) = analyze_requested_vs_observed(monitor_period_days=5.0,dbg=True)
     
     rome_start = datetime.strptime('2017-04-01','%Y-%m-%d')
     rome_start = rome_start.replace(tzinfo=pytz.UTC)
     now = datetime.utcnow()
     now = now.replace(tzinfo=pytz.UTC)
     
-    (script2,div2,start_date2,end_date2) = obs_monitor.analyze_percentage_completed(start_date=rome_start,
-                                                                                    end_date=now)
+    (script2,div2,start_date2,end_date2) = analyze_percentage_completed(start_date=rome_start,
+                                                                        end_date=now,
+                                                                        dbg=True)
