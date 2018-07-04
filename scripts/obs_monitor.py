@@ -319,7 +319,7 @@ def plot_req_vs_obs(active_obs, dbg=False):
                  y_range=fields_sorted,
                  toolbar_location="below",
                  toolbar_sticky=False)
-                
+        
     for f,field_id in enumerate(fields_sorted):
         
         xdata = []
@@ -353,14 +353,14 @@ def plot_req_vs_obs(active_obs, dbg=False):
                     line_colours.append(camera_colors[camera][0])
                     if dbg:
                         print('--> Executed')
-                    
+                        
                 elif sr_status == 'Canceled':
                     alphas.append(0.6)
                     colours.append(camera_colors[camera][1])
                     line_colours.append('red')
                     if dbg:
                         print('--> Canceled')
-                
+                    
                 elif sr_status == 'Not executed':
                     alphas.append(0.6)
                     colours.append(camera_colors[camera][1])
@@ -374,7 +374,7 @@ def plot_req_vs_obs(active_obs, dbg=False):
                     line_colours.append(camera_colors[camera][1])
                     if dbg:
                         print('--> Pending')
-        
+                                
         source = ColumnDataSource(data={
                                 'xdata':xdata,
                                 'ydata':ydata,
