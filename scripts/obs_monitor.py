@@ -27,6 +27,7 @@ import config_parser
 import pytz
 import math
 import query_db
+import observation_classes
 
 from bokeh.plotting import figure, show, output_file, gridplot,vplot
 from bokeh.models import ColumnDataSource, HoverTool, LinearColorMapper, Legend,CheckboxGroup
@@ -94,7 +95,9 @@ def analyze_percentage_completed(start_date=None, end_date=None, dbg=False):
 
 def fetch_obs_list(start_date, end_date, status='AC',dbg=False):
     """Function to query the DB for a list of observations within the dates
-    given, and return it in the form of an observation list"""
+    given, and return it in the form of an observation list, where the 
+    duplicate DB entries (for observations in different filters) have been
+    filtered out."""
     
     criteria = {'timestamp': start_date,
                 'time_expire': end_date}
@@ -102,8 +105,24 @@ def fetch_obs_list(start_date, end_date, status='AC',dbg=False):
     if status != 'ALL':
         criteria['request_status'] = status
     
-    obs_list = query_db.select_obs_by_date(criteria)
+    qs = query_db.select_obs_by_date(criteria)
     
+    obs = {}
+    obs_list = []
+    
+    for q in qs:
+        
+        if q.grp_id not in obs.keys():
+            
+            obs[q.field.name+'_'+q.grp_id] = q
+    
+    keys = obs.keys()
+    keys.sort()
+    
+    for k in keys:
+        
+        obs_list.append(obs[k])
+        
     if dbg:
         
         print('Observation requests matching critera: ')
@@ -111,8 +130,8 @@ def fetch_obs_list(start_date, end_date, status='AC',dbg=False):
         
         for obs in obs_list:
 
-            print obs.grp_id
-            
+            print obs.grp_id, obs.which_inst, obs.field, obs.time_expire
+    
     return obs_list
 
 def fetch_subrequest_status(obs_list,dbg=False):
@@ -125,17 +144,32 @@ def fetch_subrequest_status(obs_list,dbg=False):
         
         qs = query_db.get_subrequests_for_obsrequest(obs.grp_id)
         
-        active_obs[obs.grp_id] = { 'obsrequest': obs,
-                                    'subrequests': qs }
+        sr_list = []
         
         if dbg:
             
             print('Subrequests for '+str(obs.grp_id)+', field='+obs.field.name+':')
             
-            for sr in qs:
-                
-                print('--> '+str(sr.id)+' '+repr(sr.status))
+        for q in qs:
             
+            sr = observation_classes.SubObsRequest()
+            sr.sr_id = q.id
+            sr.state = q.status
+            sr.window_start = q.window_start
+            sr.window_end = q.window_end
+            sr.time_executed = q.time_executed
+            sr.request_grp_id = q.grp_id
+            sr.request_track_id = q.track_id
+            
+            sr_list.append(sr)
+            
+            if dbg:
+                
+                print('--> '+str(sr.sr_id)+' '+repr(sr.state))
+        
+        active_obs[obs.grp_id] = { 'obsrequest': obs,
+                                    'subrequests': sr_list }
+                                    
     return active_obs
 
 def calc_percent_complete(active_obs,camera,date_range):
@@ -173,7 +207,7 @@ def calc_percent_complete(active_obs,camera,date_range):
                 
                 nreq += 1.0
                 
-                if sr.status == 'COMPLETED':
+                if sr.get_status() == 'Executed':
                     
                     ncomp += 1.0
         
@@ -256,7 +290,7 @@ def plot_req_vs_obs(active_obs, dbg=False):
     ObsRequests and their subrequests, and indicate which ones have been 
     observed."""
 
-    fields = get_fields_list(active_obs)
+    fields = get_fields_dict(active_obs)
     
     fields_sorted = fields.keys()
     fields_sorted.sort(reverse=True)
@@ -277,7 +311,7 @@ def plot_req_vs_obs(active_obs, dbg=False):
     
     title = 'Subrequests available between '+date_range[0].strftime("%Y-%m-%dT%H:%M:%S")+' to '+\
                                         date_range[1].strftime("%Y-%m-%dT%H:%M:%S")
-                                        
+                         
     fig = figure(plot_width=600, plot_height=400, 
                  title=title,
                  x_axis_label='Time [UTC]',
@@ -295,13 +329,14 @@ def plot_req_vs_obs(active_obs, dbg=False):
         colours = []
         line_colours = []
         
-        obs_list = fields[field_id]
+        field = fields[field_id]
         
-        for entry in obs_list:
+        for k,camera in enumerate(field.instruments):
             
-            camera = entry['obsrequest'].which_inst
-
-            for sr in entry['subrequests']:
+            for sr in field.subrequests[k]:
+                
+                if dbg:
+                    print(sr.summary())
                 
                 mid_time = sr.window_start + (sr.window_end-sr.window_start)/2
                 sr_length = sr.window_end - sr.window_start
@@ -310,20 +345,35 @@ def plot_req_vs_obs(active_obs, dbg=False):
                 widths.append(sr_length)
                 ydata.append(field_id)
                 
-                if sr.status == 'COMPLETED':
+                sr_status = sr.get_status()
+                
+                if sr_status == 'Executed':
                     alphas.append(1.0)
                     colours.append(camera_colors[camera][0])
                     line_colours.append(camera_colors[camera][0])
+                    if dbg:
+                        print('--> Executed')
                     
-                elif sr.status == 'CANCELED':
+                elif sr_status == 'Canceled':
                     alphas.append(0.6)
                     colours.append(camera_colors[camera][1])
                     line_colours.append('red')
+                    if dbg:
+                        print('--> Canceled')
+                
+                elif sr_status == 'Not executed':
+                    alphas.append(0.6)
+                    colours.append(camera_colors[camera][1])
+                    line_colours.append('black')
+                    if dbg:
+                        print('--> Not executed')
                     
                 else:
                     alphas.append(0.6)
                     colours.append(camera_colors[camera][1])
-                    line_colours.append('black')
+                    line_colours.append(camera_colors[camera][1])
+                    if dbg:
+                        print('--> Pending')
         
         source = ColumnDataSource(data={
                                 'xdata':xdata,
@@ -351,22 +401,46 @@ def plot_req_vs_obs(active_obs, dbg=False):
         
         return script, div
     
-def get_fields_list(active_obs):
+def get_fields_dict(active_obs,dbg=False):
     """Function to extract a list of the fields from a list of 
     active observations"""
     
     fields = {}
-    
-    for grp_id,entry in active_obs.items():
+        
+    for grp_id in active_obs.keys():
+        
+        entry = active_obs[grp_id]
+        
+        try:
+            field_id = str(entry['obsrequest'].field.name)
+        except:
+            field_id = str(entry['obsrequest'].field)
+        
+        if field_id not in fields.keys():
             
-        if entry['obsrequest'].field.name not in fields.keys():
+            f = observation_classes.SurveyField()
+            f.field_id = field_id
+            f.instruments.append( entry['obsrequest'].which_inst )
+            f.obsrequests.append( entry['obsrequest'] )
+            f.subrequests.append( entry['subrequests'] )
             
-            fields[str(entry['obsrequest'].field.name)] = [ entry ]
+            fields[f.field_id] = f
         
         else:
             
-            fields[str(entry['obsrequest'].field.name)].append( entry )
+            f = fields[field_id]
+            f.instruments.append( entry['obsrequest'].which_inst )
+            f.obsrequests.append( entry['obsrequest'] )
+            f.subrequests.append( entry['subrequests'] )
+            
+            fields[field_id] = f
     
+    if dbg:    
+
+        for field_id, f in fields.items():
+
+            print f.summary()
+
     return fields
 
 def get_instrument_list(active_obs):
@@ -418,15 +492,18 @@ def get_monitor_period(monitor_period_days, dbg=False):
     start_date = datetime.now() - timedelta(seconds=monitor_period_secs)
     #start_date = datetime.strptime('2018-05-05T00:00:00',"%Y-%m-%dT%H:%M:%S")
     start_date = start_date.replace(tzinfo=pytz.UTC)
-
+    
     end_date = datetime.now() + timedelta(seconds=monitor_period_secs)
     #end_date = datetime.strptime('2018-05-10T00:00:00',"%Y-%m-%dT%H:%M:%S")
     end_date = end_date.replace(tzinfo=pytz.UTC)
-    
+
     if dbg:
-        print('Monitor period: '+start_date.strftime("%Y-%m-%d")+' to '+\
-                                end_date.strftime("%Y-%m-%d"))
-                                
+        print('Monitor period='+str(monitor_period_days)+' from '+\
+                                datetime.now().strftime("%Y-%m-%dT%H:%M:%S")+\
+                                ' -> '+\
+                                start_date.strftime("%Y-%m-%dT%H:%M:%S")+' to '+\
+                                end_date.strftime("%Y-%m-%dT%H:%M:%S"))
+    
     return start_date, end_date
 
 def get_completion_date_period(start_date=None,end_date=None):
@@ -449,14 +526,22 @@ def get_completion_date_period(start_date=None,end_date=None):
     return start_date, end_date
     
 if __name__ == '__main__':
-    
-#    (script, div, start_date, end_date) = analyze_requested_vs_observed(monitor_period_days=5.0,dbg=True)
-    
+        
     rome_start = datetime.strptime('2017-04-01','%Y-%m-%d')
     rome_start = rome_start.replace(tzinfo=pytz.UTC)
     now = datetime.utcnow()
     now = now.replace(tzinfo=pytz.UTC)
     
-    (script2,div2,start_date2,end_date2) = analyze_percentage_completed(start_date=rome_start,
+    if len(sys.argv) > 1:
+        
+        opt = sys.argv[1]
+    
+    if opt == '-p':
+        
+        (script2,div2,start_date2,end_date2) = analyze_percentage_completed(start_date=rome_start,
                                                                         end_date=now,
                                                                         dbg=True)
+        
+    elif opt == '-r':
+                                                     
+        (script, div, start_date, end_date) = analyze_requested_vs_observed(monitor_period_days=5.0,dbg=True)

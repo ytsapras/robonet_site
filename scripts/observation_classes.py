@@ -16,6 +16,7 @@ from django.conf import settings
 from django.utils import timezone
 from django import setup
 from datetime import datetime, timedelta
+import pytz
 setup()
 
 import urllib
@@ -457,3 +458,57 @@ class SubObsRequest:
             text = text + ' Not observed'
             
         return text
+    
+    def get_status(self):
+        
+        utcnow = datetime.utcnow()
+        utcnow = utcnow.replace(tzinfo=pytz.UTC)
+        
+        if self.state == 'COMPLETED' or self.time_executed != None:
+            
+            status = 'Executed'
+                    
+        elif self.state == 'CANCELED':
+            
+            status = 'Canceled'
+                
+        elif self.window_end < utcnow and self.time_executed == None:
+                            
+            status = 'Not executed'
+                        
+        elif self.state == 'WINDOW_EXPIRED' and self.time_executed == None:
+            
+            status = 'Not executed'
+            
+        else:
+            
+            status = 'Pending'
+
+        return status
+
+class SurveyField:
+    """Class describing observations for a given survey field pointing"""
+    
+    def __init__(self):
+        
+        self.field_id = None
+        self.instruments = []
+        self.subrequests = []
+        self.obsrequests = []
+    
+    def summary(self):
+        
+        grpids = ''
+        for obs in self.obsrequests:
+            grpids += ' '+obs.grp_id
+    
+        subreqs = ''
+        for k,camera in enumerate(self.instruments):
+            grpids += ' '+camera+': '+repr(self.obsrequests[k])
+            subreqs += ' '+camera+': '+repr(self.subrequests[k])
+            
+        output = str(self.field_id)+' '+'\n'+\
+                '                  -> obsrequests: '+grpids+'\n'+\
+                '                  -> sub-obsrequests: '+subreqs
+        
+        return output

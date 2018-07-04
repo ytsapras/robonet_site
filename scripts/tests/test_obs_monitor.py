@@ -41,11 +41,11 @@ def run_tests():
    
     #test_get_fields_list()
      
-    #test_plot_req_vs_obs()
+    test_plot_req_vs_obs()
     
     #test_fetch_obs_list()
     
-    test_fetch_subrequest_status()
+    #test_fetch_subrequest_status()
     
     #test_calc_percent_complete()
     

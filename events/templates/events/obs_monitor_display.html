@@ -10,7 +10,8 @@
 
 {% block content %}
 <center>
-   <table style="background-color:white"><tr>
+   <table style="background-color:white">
+       <tr>
        <td>
        <h4>Observations Requested vs Observed between <br>{{req_vs_obs_start_date}} to {{req_vs_obs_end_date}}</h4>
       {{ req_vs_obs_plot_div|safe }}
@@ -20,6 +21,16 @@
         <h4>Observation completion percentages between <br>{{completion_start_date}} to {{completion_end_date}}</h4>
       {{ completion_plot_div|safe }}
       {{ completion_plot_script|safe }}
+        </td>
+       </tr>
+       <tr>
+       <td>
+       Full-colour boxes indicate some observations taken.<br>
+       Greyed-out boxes with black outline indicate missed observation requests.<br>
+       Greyed-out boxes with no outline indicate future observations submitted.<br>
+       Script to check status of observation requests runs once daily at 01:00 UTC.
+        </td>
+        <td>
         </td>
        </tr>
    </table>

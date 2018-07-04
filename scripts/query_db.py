@@ -145,7 +145,7 @@ def select_obs_by_date(criteria,log=None):
         else:
 
             for q in qs:
-
+                                
                 log.info(' '.join([q.grp_id, q.field.name,\
                             get_request_desc(q.request_type), \
                             'submitted=',q.timestamp.strftime('%Y-%m-%dT%H:%M:%S'), \
@@ -153,7 +153,7 @@ def select_obs_by_date(criteria,log=None):
                             'status=',q.request_status]))
 
         log.info('\n')
-
+    
     return qs
 
     
