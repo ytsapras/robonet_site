@@ -5,8 +5,8 @@ site                lsc
 observatory         doma
 tel                 1m0
 instrument          fl16
-instrument_class    sinistro
-filters             [ SDSS-g, SDSS-r, SDSS-i ]        # Must be a list of strings
+instrument_class    1M0-SCICAM-SINISTRO                     # One of: 2M0-FLOYDS-SCICAM, 1M0-NRES-SCICAM, 1M0-NRES-COMMISSIONING, 0M4-SCICAM-SBIG, 0M8-NRES-SCICAM, 1M0-SCICAM-SINISTRO, 0M8-SCICAM-SBIG, 2M0-SCICAM-SPECTRAL
+filters             [ SDSS-g, SDSS-r, SDSS-i ]              # Must be a list of strings
 group_type          single
 exposure_times      [ 300.0, 300.0, 300.0 ]                 # Must be a list of floats with the same number of entries as filters
 exposure_counts     [1, 1, 1]                               # Must be a list of integers with the same number of entries as filters

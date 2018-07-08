@@ -120,8 +120,6 @@ def build_and_submit_obs_requests(config,obs_requests,simulate):
             
             ur = obs.build_cadence_request( )
         
-        print ur
-        
         if simulate == False:
                         
             response = obs.submit_request(ur, config)
@@ -130,7 +128,8 @@ def build_and_submit_obs_requests(config,obs_requests,simulate):
                 
             response = 'SIM_add_OK'
         
-        print 'Obs request '+obs.group_id+' submitted to LCO with response: '+obs.submit_response+' '+obs.submit_status
+        print 'Obs request '+obs.group_id+' submitted to LCO with response: '+\
+                obs.submit_response+' '+obs.submit_status
 
 def parse_config(simulate):
     """Function to read the user's configuration file for obs_control and parse

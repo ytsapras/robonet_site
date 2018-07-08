@@ -162,6 +162,7 @@ class ObsRequest:
         
         if len(molecule_list) > 0:
             req = { 
+                    'acceptability_threshold': 90,
                     'target': target,
                     'molecules': molecule_list,
                     'cadence': cadence,
@@ -281,6 +282,7 @@ class ObsRequest:
         
         if len(molecule_list) > 0:
             req = { 
+                    'acceptability_threshold': 90,
                     'target': target,
                     'molecules': molecule_list,
                     'windows': windows,
