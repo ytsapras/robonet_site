@@ -1,0 +1,21 @@
+name                ROME-FIELD-01
+ra                  17:24:24.5
+dec                 -27:19:19.5
+site                lsc
+observatory         doma
+tel                 1m0
+instrument          fl16
+instrument_class    sinistro
+filters             [ SDSS-g, SDSS-r, SDSS-i ]        # Must be a list of strings
+group_type          single
+exposure_times      [ 300.0, 300.0, 300.0 ]                 # Must be a list of floats with the same number of entries as filters
+exposure_counts     [1, 1, 1]                               # Must be a list of integers with the same number of entries as filters
+cadence             24.0                                    # Can be zero for a single, non-cadence request
+jitter              1.0                                     # Can be zero for a single, non-cadence request
+priority            1.0
+ttl                 24.0                                    # Units: hours
+focus_offset        [0.0, 0.0, 0.0]                         # Must be a list of floats with the same number of entries as filters
+request_type        L                                       # One of 'A':REA High,'M':REA Low, 'L':ROME Standard (default)
+pfrm                False
+onem                True
+twom                False

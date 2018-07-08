@@ -217,6 +217,86 @@ class ObsRequest:
             
         return ur
         
+    def build_single_request(self, log=None, debug=False):
+        
+        if debug == True and log != None:
+            log.info('Building Valhalla observation request')
+            
+        self.get_group_id()
+        ur = {
+            'group_id': self.group_id, 
+            'proposal': self.proposal_id,
+            'ipp_value': self.priority,
+            'operator': 'SINGLE',
+            'observation_type': 'NORMAL', 
+              }
+        if debug == True and log != None:
+            log.info('User request parameters: ' + str( ur ))
+        
+        if type(self.ra) == type(1.0):
+            ra_deg = self.ra
+            dec_deg = self.dec
+        else:
+            (ra_deg, dec_deg) = utilities.sex2decdeg(self.ra, self.dec)
+        target =   {
+                    'name': str(self.name),
+                    'type': 'SIDEREAL',
+                    'ra'	: ra_deg,
+                    'dec': dec_deg,
+                    'proper_motion_ra': 0, 
+                    'proper_motion_dec': 0,
+                    'parallax': 0, 
+                    'epoch': 2000,	  
+                    }
+        if debug == True and log != None:
+            log.info('Target dictionary: ' + str( target ))
+            
+        location = {
+                    'telescope_class' : str(self.tel).replace('a',''),
+                    'site':             str(self.site),
+                    'observatory':      str(self.observatory)
+                    }
+        if debug == True and log != None:
+            log.info('Location dictionary: ' + str( location ))
+        
+        constraints = { 
+        		  'max_airmass': float(self.airmass_limit),
+                    'min_lunar_distance': float(self.moon_sep_min)
+                    }
+        if debug == True and log != None:
+            log.info('Constraints dictionary: ' + str( constraints ))
+        
+        (self.ts_submit,self.ts_expire) = get_obs_dates(self.ttl)
+
+        windows = [ 
+                    { 'start': self.ts_submit.strftime("%Y-%m-%d %H:%M:%S"),
+                      'end': self.ts_expire.strftime("%Y-%m-%d %H:%M:%S") }
+                    ]
+                    
+        if debug == True and log != None:
+            log.info('Cadence dictionary: '+str(cadence))
+            
+        ur['requests'] = []
+        molecule_list = self.build_molecule_list(debug=debug,log=log)
+        
+        if len(molecule_list) > 0:
+            req = { 
+                    'target': target,
+                    'molecules': molecule_list,
+                    'windows': windows,
+                    'location': location,
+                    'constraints': constraints
+                   }
+            ur['requests'].append(req)
+            if debug == True and log != None:
+                log.info('Request dictionary: ' + str(req))
+                            
+        if debug == True and log != None:
+            log.info(' -> Completed build of observation request ' + self.group_id)
+            log.info(' -> Submit response: '+str(self.submit_response))
+            
+        return ur
+        
     def build_molecule_list(self,debug=False,log=None):
         def parse_filter(f):
             filters = { 'SDSS-g': 'gp', 'SDSS-r': 'rp', 'SDSS-i': 'ip' }
