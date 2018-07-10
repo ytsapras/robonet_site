@@ -402,7 +402,7 @@ def submit_datafile_record(config,params):
                             testing=True)
 
 ################################################################################
-def submit_image_record(config,params):
+def submit_image_record(config,params,testing=False,verbose=False):
     """Function to submit a record of a new image to the database 
     using the API add_image endpoint
     Required parameters:
@@ -432,13 +432,24 @@ def submit_image_record(config,params):
 	shift_y   	int
 	quality   	str
      """
-    
-    end_point = 'add_image'
-    
-    response = talk_to_db(params,end_point,\
-                            config['db_user_id'],config['db_pswd'],
-                            testing=True)
 
+    end_point = 'record_image'
+    
+    key_order = [ 
+                'field_name', 'image_name', 'date_obs', 'timestamp', 
+                'tel', 'inst', 'filt', 'grp_id', 'track_id', 'req_id',
+                'airmass', 'avg_fwhm', 'avg_sky', 'avg_sigsky',
+                'moon_sep', 'moon_phase', 'moon_up', 'elongation', 'nstars',
+                'ztemp', 'shift_x', 'shift_y', 'quality'
+                  ]
+    
+    query = build_url_query(end_point,key_order,params)
+    
+    message = talk_to_db(query,config['db_token'],
+                            testing=testing,verbose=verbose)
+    
+    return message
+    
 ################################################################################
 def get_obs_list(config,params,testing=False,verbose=False):
     """Function to retrieve from the database API endpoint a list of 

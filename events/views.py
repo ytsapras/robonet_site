@@ -2058,6 +2058,67 @@ def add_image(request):
     else:
         return HttpResponseRedirect('login')
 
+
+@api_view(['POST'])
+@authentication_classes((TokenAuthentication, BasicAuthentication))
+@permission_classes((IsAuthenticated,))
+def record_image(request, field_name, image_name, date_obs, timestamp, tel,
+                 inst, filt, grp_id, track_id, req_id, airmass, avg_fwhm,
+                 avg_sky, avg_sigsky, moon_sep, moon_phase, moon_up, 
+                 elongation, nstars, ztemp, shift_x, shift_y, quality):
+    """Function to provide an API endpoint to allow new images to be 
+    added to the database"""
+    
+    if request.user.is_authenticated():
+        
+#        message = field_name+', '+image_name+', '+date_obs+', '+timestamp+\
+#                ', '+tel+', '+inst+', '+filt+', '+grp_id+', '+track_id+\
+#                ', '+req_id+', '+str(airmass)+', '+str(avg_fwhm)+\
+#                ', '+str(avg_sky)+', '+str(avg_sigsky)+\
+#                ', '+str(moon_sep)+', '+str(moon_phase)+', '+moon_up+\
+#                ', '+str(elongation)+', '+str(nstars)+', '+str(ztemp)+\
+#                ', '+str(shift_x)+', '+str(shift_y)+', '+str(quality)
+        
+
+        update_ok = update_db_2.add_image(field_name = field_name,
+        				       image_name = image_name,
+					       date_obs = date_obs,
+					       timestamp = timestamp,
+					       tel = tel,
+					       inst = inst,
+					       filt = filt,
+					       grp_id = grp_id,
+					       track_id = track_id,
+					       req_id = req_id,
+					       airmass = airmass,
+					       avg_fwhm = avg_fwhm,
+					       avg_sky = avg_sky,
+					       avg_sigsky = avg_sigsky,
+					       moon_sep = moon_sep,
+					       moon_phase = moon_phase,
+					       moon_up = moon_up,
+					       elongation = elongation,
+					       nstars = nstars,
+					       ztemp = ztemp,
+					       shift_x = shift_x,
+					       shift_y = shift_y,
+					       quality = quality)
+        
+        if update_ok:
+                
+            message = 'DBREPLY: Successfully added image to database'
+                
+        else:
+
+            message = 'DBREPLY: ERROR adding image to the database'
+        
+        return render(request, 'events/add_image.html', \
+                            {'message': message})
+                                
+    else:
+
+        return HttpResponseRedirect('login')
+
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def record_data_file(request):

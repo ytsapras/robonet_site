@@ -7,6 +7,7 @@ Created on Thu Jun 15 10:51:37 2017
 
 from os import getcwd, path, remove, environ
 from sys import path as systempath
+from sys import argv
 cwd = getcwd()
 systempath.append(path.join(cwd,'../..'))
 systempath.append(path.join(cwd,'..'))
@@ -27,35 +28,44 @@ def test_api_image_record():
     """Function to test the recording of a new image 
     request (submitted to the LCO network) by submitting it to the ROME/REA
     database via API. """
-    
-    params = {'field': '1',\
-              'image_name': 'test_image.fits',\
-              'date_obs': datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),\
-	      'timestamp':datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),\
-	      'tel':'LCOGT SAAO A 1m',\
-	      'inst':'SAAO 1.0m CCD camera',\
-	      'filt':'SDSS-i',\
-	      'grp_id':'SOMEGRPID',\
-	      'track_id':'SOMETRACKID',\
-	      'req_id':'SOMEREQID',\
-	      'airmass':1.2,\
-	      'avg_fwhm': 3.4,\
-	      'avg_sky': 2300.0,\
-	      'avg_sigsky': 340.0,\
-	      'moon_sep': 22.0,\
-	      'moon_phase': 10,\
-	      'moon_up': False,\
-	      'elongation': 0.6,\
-	      'nstars': 1043,\
-	      'ztemp': 15.0,\
-	      'shift_x': 32,\
-	      'shift_y': 24,\
-	      'quality': 'Image OK'
+
+    config = {}
+    if len(argv) == 1:
+        config['db_token'] = raw_input('Please enter DB token: ')
+    else:
+        config['db_token'] = argv[1]
+
+    params = {'field_name': 'ROME-FIELD-01',
+              'image_name': 'cpt1m005-fl03-20180701-9999_e91.fits',
+              'date_obs': datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),
+	      'timestamp':datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),
+	      'tel':'LCOGT SAAO A 1m',
+	      'inst':'fl16',
+	      'filt':'SDSS-i',
+	      'grp_id':'ROME20170813T4.1535179',
+	      'track_id':'0000471120',
+	      'req_id':'0001253913',
+	      'airmass':1.2,
+	      'avg_fwhm': 3.4,
+	      'avg_sky': 2300.0,
+	      'avg_sigsky': 340.0,
+	      'moon_sep': 22.0,
+	      'moon_phase': 10,
+	      'moon_up': False,
+	      'elongation': 0.6,
+	      'nstars': 1043,
+	      'ztemp': 15.0,
+	      'shift_x': 32,
+	      'shift_y': 24,
+	      'quality': 'No sky level variations measured! ; No maximum sky level measured! ; Bad seeing'
              }
-    config = {'db_user_id': 'ytsapras', \
-                'db_pswd': 'xxxx'
-                }
-    response = api_tools.submit_image_record(config,params)
+    
+    response = api_tools.submit_image_record(config,params,
+                                             testing=True,
+                                             verbose=True)
+    
+    assert 'Successfully added image' in response
+    
     
 if __name__ == '__main__':
     test_api_image_record()
