@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<obscontrolconfig>
+    <parameter name='log_directory'>
+      	<value>/logs/2017</value>
+    </parameter>
+    <parameter name='log_root_name'>
+      	<value>reception_data</value>
+    </parameter>
+    <parameter name='new_frames_directory'>
+	<value>/path/to/directory</value>
+    </parameter>
+    <parameter name='image_output_origin_directory'>
+	<value>/path/to/directory</value>
+    </parameter>
+    <parameter name='simulate'>
+      	<value>False</value>
+    </parameter>
+    <parameter name='testing'>
+      	<value>False</value>
+    </parameter>
+    <parameter name='verbose'>
+      	<value>True</value>
+    </parameter>
+    <parameter name='token'>
+        <value>XXXX</value>
+    </parameter>
+</obscontrolconfig>

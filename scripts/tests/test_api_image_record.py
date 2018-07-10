@@ -67,5 +67,11 @@ def test_api_image_record():
     assert 'Successfully added image' in response
     
     
+    response = api_tools.submit_image_record(config,params,
+                                             testing=True,
+                                             verbose=True)
+    
+    assert 'Successfully updated image' in response
+    
 if __name__ == '__main__':
     test_api_image_record()

@@ -2079,8 +2079,36 @@ def record_image(request, field_name, image_name, date_obs, timestamp, tel,
 #                ', '+str(elongation)+', '+str(nstars)+', '+str(ztemp)+\
 #                ', '+str(shift_x)+', '+str(shift_y)+', '+str(quality)
         
-
-        update_ok = update_db_2.add_image(field_name = field_name,
+        image_known = query_db.check_image_in_db(image_name)
+        
+        if image_known:
+            
+            update_ok = update_db_2.update_image(image_name, date_obs, 
+                                               timestamp=timezone.now(), 
+                                               tel=tel, inst=inst, filt=filt, 
+                                               grp_id=grp_id, track_id=track_id, 
+                                               req_id=req_id, airmass=airmass, 
+                                               avg_fwhm=avg_fwhm, avg_sky=avg_sky, 
+                                               avg_sigsky=avg_sigsky, 
+                                               moon_sep=moon_sep, 
+                                               moon_phase=moon_phase, 
+                                               moon_up=moon_up, 
+                                               elongation=elongation, 
+                                               nstars=nstars, ztemp=ztemp, 
+                                               shift_x=shift_x, shift_y=shift_y, 
+                                               quality=quality)
+                                               
+            if update_ok:
+                
+                message = 'DBREPLY: Successfully updated image information in database'
+                
+            else:
+    
+                message = 'DBREPLY: ERROR updating image information in database'
+        
+        else:
+            
+            update_ok = update_db_2.add_image(field_name = field_name,
         				       image_name = image_name,
 					       date_obs = date_obs,
 					       timestamp = timestamp,
@@ -2104,14 +2132,14 @@ def record_image(request, field_name, image_name, date_obs, timestamp, tel,
 					       shift_y = shift_y,
 					       quality = quality)
         
-        if update_ok:
-                
-            message = 'DBREPLY: Successfully added image to database'
-                
-        else:
-
-            message = 'DBREPLY: ERROR adding image to the database'
-        
+            if update_ok:
+                    
+                message = 'DBREPLY: Successfully added image to database'
+                    
+            else:
+    
+                message = 'DBREPLY: ERROR adding image to the database'
+            
         return render(request, 'events/add_image.html', \
                             {'message': message})
                                 

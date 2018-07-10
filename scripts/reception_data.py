@@ -18,6 +18,9 @@ import rome_filters_dict
 import shutil
 import update_db_2 as update_db
 import query_db
+import api_tools
+import socket
+import config_parser
 
 from django.utils import timezone
 
@@ -482,7 +485,7 @@ class Image(object):
                 
                 return None
 
-	def ingest_the_image_in_the_database(self):
+	def ingest_the_image_in_the_database(self,config):
 
 		quality_flag = ' ; '.join(self.quality_flags)
 
@@ -513,49 +516,86 @@ class Image(object):
 
 			moon_status = False
 
+            params = {'field_name': self.field_name,
+                      'image_name': self.image_name,
+                      'date_obs': observing_date,
+                      'timestamp': timezone.now(),
+                	    'tel': telescope_name,
+                      'inst': self.camera_name,
+                      'filt': camera_filter,
+                      'grp_id': self.header_group_id,
+                      'track_id': self.header_track_id,
+                      'req_id': self.header_request_id,
+                      'airmass': self.header_airmass,
+                      'avg_fwhm': self.seeing,
+                      'avg_sky': self.sky_level,
+                      'avg_sigsky': self.sky_level_std,
+                      'moon_sep': self.header_moon_distance,
+                      'moon_phase': self.header_moon_fraction,
+                      'moon_up': moon_status,
+                      'elongation': self.ellipticity,
+                      'nstars': self.number_of_stars,
+                      'ztemp': self.header_ccd_temp,
+                      'shift_x': self.x_shift,
+                      'shift_y': self.y_shift,
+                      'quality': quality_flag}
+
 		try :
-			image_exist = query_db.check_image_in_db(self.image_name)
+			#image_exist = query_db.check_image_in_db(self.image_name)
+                  image_exist = api_tools.check_image_in_db(config,params,
+                                          testing=bool(config['testing']),
+                                          verbose=bool(config['verbose']))
+                  self.logger.info('Image known to the DB? '+repr(image_exist))
+                  
 			if image_exist == True:
+                        
+                        response = api_tools.submit_image_record(config,params,
+                                             testing=bool(config['testing']),
+                                             verbose=bool(config['verbose']))
 
-				ingest_success = update_db.update_image(self.image_name, observing_date, 
-							     timezone.now(), telescope_name, self.camera.name, 
-							     camera_filter, self.header_group_id, self.header_track_id, 
-							     self.header_request_id, self.header_airmass, self.seeing, 
-							     self.sky_level, self.sky_level_std, self.header_moon_distance, 
-		                                             self.header_moon_fraction, moon_status, 
-		                                             self.ellipticity, self.number_of_stars, self.header_ccd_temp, 
-				      			     self.x_shift, self.y_shift, quality_flag) 
-
+#				ingest_success = update_db.update_image(self.image_name, observing_date, 
+#							     timezone.now(), telescope_name, self.camera.name, 
+#							     camera_filter, self.header_group_id, self.header_track_id, 
+#							     self.header_request_id, self.header_airmass, self.seeing, 
+#							     self.sky_level, self.sky_level_std, self.header_moon_distance, 
+#		                                             self.header_moon_fraction, moon_status, 
+#		                                             self.ellipticity, self.number_of_stars, self.header_ccd_temp, 
+#				      			     self.x_shift, self.y_shift, quality_flag) 
+                        
 				if ingest_success == True:
 
 					self.logger.info('Image successfully updated in the DB')
 
 				else:
 
-					self.logger.warning('Image NOT updated in the DB, something goes wrong')
+					self.logger.warning('ERROR during update of image data in the DB')
 			else:
-
-				ingest_success = update_db.add_image(self.field_name, self.image_name, observing_date, 
-							     timezone.now(), telescope_name, self.camera.name, 
-							     camera_filter, self.header_group_id, self.header_track_id, 
-							     self.header_request_id, self.header_airmass, self.seeing, 
-							     self.sky_level, self.sky_level_std, self.header_moon_distance, 
-		                                             self.header_moon_fraction, moon_status, 
-		                                             self.ellipticity, self.number_of_stars, self.header_ccd_temp, 
-				      			     self.x_shift, self.y_shift, quality_flag)  	
+ 
+                        response = api_tools.submit_image_record(config,params,
+                                             testing=bool(config['testing']),
+                                             verbose=bool(config['verbose']))
+                                             
+#				ingest_success = update_db.add_image(self.field_name, self.image_name, observing_date, 
+#							     timezone.now(), telescope_name, self.camera.name, 
+#							     camera_filter, self.header_group_id, self.header_track_id, 
+#							     self.header_request_id, self.header_airmass, self.seeing, 
+#							     self.sky_level, self.sky_level_std, self.header_moon_distance, 
+#		                                             self.header_moon_fraction, moon_status, 
+#		                                             self.ellipticity, self.number_of_stars, self.header_ccd_temp, 
+#				      			     self.x_shift, self.y_shift, quality_flag)  	
 		
 
 				if ingest_success == True:
 
-					self.logger.info('Image successfully ingest in the DB')
+					self.logger.info('Image successfully ingested into the DB')
 
 				else:
 
-					self.logger.warning('Image NOT ingest in the DB, something goes wrong')
+					self.logger.warning('ERROR while ingesting a new image into the DB')
 
 		except:
 			ingest_success = False				
-			self.logger.warning('Image NOT ingest/update in the DB, something goes really wrong!')
+			self.logger.warning('Image NOT ingested or updated in the DB, something went really wrong!')
 
 		return ingest_success
 
@@ -626,15 +666,29 @@ def find_frames_to_process(new_frames_directory, logger):
 		return IncomingList
 
 
+def read_config():
+    """Function to read the XML configuration file for Obs_Control"""
+    
+    host_name = socket.gethostname()
+    if 'rachel' in str(host_name).lower():
+        config_file_path = os.path.join('/Users/rstreet/.robonet_site/reception_config.xml')
+    else:
+        config_file_path = '/var/www/robonetsite/configs/reception_config.xml'
+    if os.path.isfile(config_file_path) == False:
+        raise IOError('Cannot find configuration file, looking for:'+config_file_path)
+    config = config_parser.read_config(config_file_path)
+    
+    return config
 
 
-def process_new_images(new_frames_directory, image_output_origin_directory, logs_directory):
+
+def process_new_images():
 	
+      config = read_config()
 
-
-	config = {'log_directory':logs_directory, 'log_root_name':'reception_data'}
 	logger = log_utilities. start_day_log( config, 'reception', console=False )
-	NewFrames = find_frames_to_process(new_frames_directory, logger)
+ 
+	NewFrames = find_frames_to_process(config['new_frames_directory'], logger)
 	
 	if NewFrames :
 
@@ -644,7 +698,9 @@ def process_new_images(new_frames_directory, image_output_origin_directory, logs
 			newframe = newframe.replace(new_frames_directory, '')
 			logger.info('')
 			logger.info('Start to work on frame: '+newframe)
-			image = Image(new_frames_directory, image_output_origin_directory, newframe, logger)
+			image = Image(config['new_frames_directory'], 
+                                config['image_output_origin_directory'], 
+                                newframe, logger)
 			image.extract_header_statistics()
 			image.find_wcs_template()
 			image.create_image_control_region()
@@ -653,7 +709,7 @@ def process_new_images(new_frames_directory, image_output_origin_directory, logs
 			image.assess_image_quality()
 			image.determine_the_output_directory()
 			image.find_or_construct_the_output_directory()
-			success = image.ingest_the_image_in_the_database()
+			success = image.ingest_the_image_in_the_database(config)
 
 			if success == True:
 
@@ -828,7 +884,9 @@ def xycorr(pathref, image, edgefraction):
 
 
 
-
+if __name__ == '__main__':
+    
+    process_new_images()
 
 
 
