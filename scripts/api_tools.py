@@ -485,6 +485,25 @@ def get_obs_list(config,params,testing=False,verbose=False):
             
     return message, obs_list
 
+def check_image_in_db(config,params,testing=False,verbose=False):
+    """Function to check the database to see if an image is present
+    
+    Inputs:
+        :params dict config: script configuration parameters
+        :param dict params: containing image_name as a parameter.
+    """
+    
+    end_point = 'image_search'
+    
+    key_order = [ 'image_name' ]
+    
+    query = build_url_query(end_point,key_order,params)
+    
+    (message, response) = ask_db(query,config['db_token'],
+                                testing=testing,verbose=verbose)
+    
+    return message
+    
 def extract_table_data(html_text):
     """Function to extract table data from HTML-format text"""
     

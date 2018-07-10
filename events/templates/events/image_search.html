@@ -1,0 +1,14 @@
+{% extends "base_page.html" %}
+
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<h3>Image Search</h3>
+{% if message != 'none' %}
+<div>
+    <center>
+        <h5>{{ message }}</h5>
+    </center>
+</div>
+{% endif %}
+{% endblock %}

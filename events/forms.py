@@ -86,6 +86,11 @@ class ImageForm(forms.ModelForm):
    timestamp = forms.DateTimeField(label='timestamp',input_formats=["%Y-%m-%dT%H:%M:%S"])
    date_obs = forms.DateTimeField(label='date_obs',input_formats=["%Y-%m-%dT%H:%M:%S"])
 
+class ImageNameForm(forms.ModelForm):
+   class Meta:
+      model = Image
+      fields = ('image_name',)
+
 class ObsExposureForm(forms.ModelForm):
     class Meta:
         model = ObsRequest

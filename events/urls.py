@@ -20,6 +20,7 @@ urlpatterns = [
     url(r'^active_obs_requests/$', views.active_obs_requests, name='active_obs_requests'),
     url(r'^obs_monitor/$', views.display_obs_monitor, name='obs_monitor'),
     url(r'^obs_details/(?P<event_name>[\w-]+)', views.event_obs_details, name='event_obs_details'),
+    url(r'^image_search/image_name=(?P<image_name>[a-z0-9-_]+.[a-z]+)/$', views.image_search, name='image_search'),
     url(r'^query_obs_requests/$', views.query_obs_requests, name='query_obs_requests'),
     url(r'^query_obs_by_date/timestamp=(?P<timestamp>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})&time_expire=(?P<time_expire>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})&request_status=(?P<request_status>[A-Z][A-Z])/$', views.query_obs_by_date, name='query_obs_by_date'),
     url(r'^record_obs_request/$', views.record_obs_request, name='record_obs_requests'),

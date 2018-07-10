@@ -12,7 +12,7 @@ from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, Tele
 from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, ImageForm, RecordDataFileForm, TapLimaForm
 from .forms import RecordSubObsRequestForm, QueryObsRequestDateForm
 from .forms import TapStatusForm, EventAnomalyStatusForm, EventNameForm
-from .forms import ObsExposureForm, FieldNameForm
+from .forms import ObsExposureForm, FieldNameForm, ImageNameForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from rest_framework.authentication import TokenAuthentication, BasicAuthentication
@@ -720,6 +720,27 @@ def display_fields(request):
         return HttpResponseRedirect('login')
 
 
+##############################################################################################################
+@api_view(['GET'])
+@authentication_classes((TokenAuthentication, BasicAuthentication))
+@permission_classes((IsAuthenticated,))
+def image_search(request, image_name):
+    """Function to provide an API endpoint to check whether an image is known 
+    to the DB or not"""
+    
+    if request.user.is_authenticated():
+        
+        image_in_db = query_db.check_image_in_db(image_name)
+        
+        message = 'DBREPLY: '+repr(image_in_db)
+        
+        return render(request, 'events/image_search.html', \
+                            {'message': message})
+        
+    else:
+
+        return HttpResponseRedirect('login')
+    
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def trigger_rea_hi_obs(request):
