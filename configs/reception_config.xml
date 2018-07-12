@@ -25,7 +25,7 @@
     <parameter name='verbose'>
       	<value>True</value>
     </parameter>
-    <parameter name='token'>
+    <parameter name='db_token'>
         <value>XXXX</value>
     </parameter>
 </obscontrolconfig>
