@@ -21,6 +21,7 @@ import query_db
 import api_tools
 import socket
 import config_parser
+import pwd
 
 from django.utils import timezone
 
@@ -100,8 +101,8 @@ class Image(object):
         self.quality_flags = []
         self.thumbnail_box_size = 60
         self.field_name = None
-        self.x_shift = None
-        self.y_shift = None
+        self.x_shift = 0
+        self.y_shift = 0
 
 
         self.header_date_obs = '1986-04-04T00:00:00.00' #dummy value
@@ -200,14 +201,14 @@ class Image(object):
     def find_camera(self):
 
         try:
-            camera_name = self.image_name[9:13]
-            self.camera = operational_instruments.define_instrument(camera_name)
+            self.camera_name = self.image_name[9:13]
+            self.camera = operational_instruments.define_instrument(self.camera_name)
             self.filter = self.header[self.camera.header_dictionnary['filter']]
-            self.logger.info('Successfully find the associated camera')
+            self.logger.info('Successfully identified the associated camera, '+str(self.camera_name))
         
         except:
         
-            self.logger.error('I do not know this camera!')
+            self.logger.error('I do not recognise camera '+str(self.camera_name))
     
     def find_object_and_field_name(self):
 
@@ -253,16 +254,23 @@ class Image(object):
             field_directory = self.field_name +'/'
             
             
-            output_directory = origin_directory + quality_directory + \
-                                mode_directory + site_directory + \
-                                camera_directory + filter_directory + \
-                                field_directory
+            output_directory = os.path.join(origin_directory,quality_directory,
+                                            mode_directory,site_directory,
+                                            camera_directory, filter_directory,
+                                            field_directory)
             
             
             self.output_directory = output_directory
             self.catalog_directory = origin_directory.replace('images','catalog0')
-            self.logger.info('Successfully construct the output directory : '+self.output_directory)
-            self.logger.info('Successfully construct the catalog directory : '+self.catalog_directory)
+
+            if os.path.isdir(self.output_directory) == False:
+                os.makedirs(self.output_directory)
+
+            if os.path.isdir(self.catalog_directory) == False:
+                os.makedirs(self.catalog_directory)
+
+            self.logger.info('Successfully built the output directory : '+self.output_directory)
+            self.logger.info('Successfully built the catalog directory : '+self.catalog_directory)
         
         except:
         
@@ -277,31 +285,33 @@ class Image(object):
         
             if flag == True:
             
-                self.logger.info('Successfully find the output directory : '+self.output_directory)
+                self.logger.info('Successfully found the output directory : '+self.output_directory)
             
             else :
             
                 os.makedirs(self.output_directory)
                 self.logger.info('Successfully mkdir the output directory : '+self.output_directory)
-        
+
         except:
         
-            self.logger.error('I can not find or mkdir the output directory!')
+            self.logger.error('I cannot find or mkdir the output directory!')
     
     def find_WCS_offset(self):
 
         try:
-        
-           self.x_new_center,self.y_new_center,self.x_shift,self.y_shift = xycorr(os.path.join(self.template_directory,self.template_name), self.data, 0.4)
-           self.update_image_wcs()
-           self.logger.info('Successfully found the WCS correction')
+            self.x_new_center,self.y_new_center,self.x_shift,self.y_shift = xycorr(os.path.join(self.template_directory,self.template_name), self.data, 0.4)
+            self.update_image_wcs()
+            self.x_shift = int(self.x_shift)
+            self.y_shift = int(self.y_shift)
+            self.logger.info('Successfully found the WCS correction')
         
         except:
-        
-           self.logger.error('I failed to find a WCS correction')
+            self.x_shift = 0
+            self.y_shift = 0
+            self.logger.error('I failed to find a WCS correction')
          
         
-    def generate_sextractor_catalog(self):
+    def generate_sextractor_catalog(self, config):
         """
         extracting a catalog from a WCS-recalibrated (!) image
         calling it through logging to obtain an astropy
@@ -327,7 +337,10 @@ class Image(object):
                               'GAIN':self.camera.gain,
                               'SEEING_FWHM':self.header_seeing,
                               'BACK_FILTERSIZE':3}
-            sew = sewpy.SEW(workdir =self.image_directory+'sewpy/', params=extractor_parameters,config=extractor_config)
+            sew = sewpy.SEW(workdir=os.path.join(self.image_directory,'sewpy'),
+                            sexpath=config['sextractor_path'],
+                            params=extractor_parameters,
+                            config=extractor_config)
             sewoutput = sew(os.path.join(self.image_directory,self.image_name))
             #APPEND JD, ATTEMPTING TO CALIBRATE MAGNITUDES..
             catalog=sewoutput['table']     
@@ -502,7 +515,8 @@ class Image(object):
         
         observing_date  = datetime.datetime.strptime(self.header_date_obs,'%Y-%m-%dT%H:%M:%S.%f')
         observing_date = observing_date.replace(tzinfo=pytz.UTC)
-        
+        observing_date = observing_date.strftime("%Y-%m-%dT%H:%M:%S")
+
         try:
             telescope = self.header_telescope_site + self.header_dome_id
             telescope_name = rome_telescopes_dict.telescope_dict[telescope]
@@ -529,7 +543,7 @@ class Image(object):
         params = {'field_name': self.field_name,
                   'image_name': self.image_name,
                   'date_obs': observing_date,
-                  'timestamp': timezone.now(),
+                  'timestamp': timezone.now().strftime("%Y-%m-%dT%H:%M:%S"),
                   'tel': telescope_name,
                   'inst': self.camera_name,
                   'filt': camera_filter,
@@ -546,66 +560,53 @@ class Image(object):
                   'elongation': self.ellipticity,
                   'nstars': self.number_of_stars,
                   'ztemp': self.header_ccd_temp,
-                  'shift_x': self.x_shift,
-                  'shift_y': self.y_shift,
+                  'shift_x': int(self.x_shift),
+                  'shift_y': int(self.y_shift),
                   'quality': quality_flag}
 
         try :
-            #image_exist = query_db.check_image_in_db(self.image_name)
-            image_exist = api_tools.check_image_in_db(config,params,
+            message = api_tools.check_image_in_db(config,params,
                                                       testing=bool(config['testing']),
                                                       verbose=bool(config['verbose']))
-            self.logger.info('Image known to the DB? '+repr(image_exist))
-                  
-            if image_exist == True:
-                
+            self.logger.info('Image known to the DB? '+str(message))
+
+            if 'true' in str(message).lower():
+
                 response = api_tools.submit_image_record(config,params,
                                              testing=bool(config['testing']),
                                              verbose=bool(config['verbose']))
 
-#ingest_success = update_db.update_image(self.image_name, observing_date, 
-#     timezone.now(), telescope_name, self.camera.name, 
-#     camera_filter, self.header_group_id, self.header_track_id, 
-#     self.header_request_id, self.header_airmass, self.seeing, 
-#     self.sky_level, self.sky_level_std, self.header_moon_distance, 
-#                                             self.header_moon_fraction, moon_status, 
-#                                             self.ellipticity, self.number_of_stars, self.header_ccd_temp, 
-#           self.x_shift, self.y_shift, quality_flag) 
-                        
-                if ingest_success == True:
-                
+
+                if 'success' in str(response).lower():
+
+                    ingest_success = True
                     self.logger.info('Image successfully updated in the DB')
-                
+
                 else:
-                
-                    self.logger.warning('ERROR during update of image data in the DB')
-            
+
+                    ingest_success = False
+                    self.logger.warning('ERROR during update of image data in the DB:')
+                    self.logger.warning(str(response))
+
             else:
-                
+
                 response = api_tools.submit_image_record(config,params,
                                                          testing=bool(config['testing']),
                                                          verbose=bool(config['verbose']))
-                                             
-#ingest_success = update_db.add_image(self.field_name, self.image_name, observing_date, 
-#     timezone.now(), telescope_name, self.camera.name, 
-#     camera_filter, self.header_group_id, self.header_track_id, 
-#     self.header_request_id, self.header_airmass, self.seeing, 
-#     self.sky_level, self.sky_level_std, self.header_moon_distance, 
-#                                             self.header_moon_fraction, moon_status, 
-#                                             self.ellipticity, self.number_of_stars, self.header_ccd_temp, 
-#           self.x_shift, self.y_shift, quality_flag)  
 
+                if 'success' in str(response).lower():
 
-                if ingest_success == True:
-                    
+                    ingest_success = True
                     self.logger.info('Image successfully ingested into the DB')
-                
+
                 else:
-                    
-                    self.logger.warning('ERROR while ingesting a new image into the DB')
-        
+
+                    ingest_success = False
+                    self.logger.warning('ERROR while ingesting a new image into the DB:')
+                    self.logger.warning(str(response))
+
         except:
-            
+
             ingest_success = False
             self.logger.warning('Image NOT ingested or updated in the DB, something went really wrong!')
 
@@ -657,7 +658,7 @@ class Image(object):
             self.logger.info('Catalog successfully moved to the catalog directory')
 
         except:
-            self.logger.error('The catalog can not be copied in the good directory!')
+            self.logger.error('The catalog cannot be written to the good directory!')
 
 def find_frames_to_process(new_frames_directory, logger):
 
@@ -676,10 +677,15 @@ def read_config():
     """Function to read the XML configuration file for Obs_Control"""
     
     host_name = socket.gethostname()
+    userid = pwd.getpwuid( os.getuid() ).pw_name
+
     if 'rachel' in str(host_name).lower():
         config_file_path = os.path.join('/Users/rstreet/.robonet_site/reception_config.xml')
-    else:
+    elif 'einstein' in str(host_name).lower() and userid == 'robouser':
         config_file_path = '/var/www/robonetsite/configs/reception_config.xml'
+    else:
+        config_file_path = os.path.join('/home/',userid,'.robonet_site','reception_config.xml')
+
     if os.path.isfile(config_file_path) == False:
         raise IOError('Cannot find configuration file, looking for:'+config_file_path)
     config = config_parser.read_config(config_file_path)
@@ -701,7 +707,10 @@ def process_new_images():
     logger = log_utilities. start_day_log( config, 'reception', console=False )
     
     NewFrames = find_frames_to_process(config['new_frames_directory'], logger)
-    
+
+    if os.path.isdir(os.path.join(config['new_frames_directory'],'Processed')) == False:
+        os.makedirs(os.path.join(config['new_frames_directory'],'Processed'))
+
     if NewFrames :
         
         for newframe in NewFrames :
@@ -717,7 +726,7 @@ def process_new_images():
             image.find_wcs_template()
             image.create_image_control_region()
             image.find_WCS_offset()
-            image.generate_sextractor_catalog()
+            image.generate_sextractor_catalog(config)
             image.assess_image_quality()
             image.determine_the_output_directory()
             image.find_or_construct_the_output_directory()
@@ -730,7 +739,10 @@ def process_new_images():
 
                 if sorting_success == True:
 
-                    shutil.move(new_frames_directory+newframe,new_frames_directory+'Processed/'+newframe)
+                    src = os.path.join(config['new_frames_directory'],newframe)
+                    dest = os.path.join(config['new_frames_directory'],'Processed',newframe)
+
+                    shutil.move(src,dest)
                     logger.info('Successfully moved the frame in the Processed directory!')
                 
                 else:
@@ -739,14 +751,14 @@ def process_new_images():
 
             if success == False:
 
-                logger.warning('The image can not be update/ingest in the DB, aboard this frame! ')
+                logger.warning('The image cannot be update/ingest in the DB, aborting this frame! ')
 
 
         log_utilities.end_day_log(logger)
     else :
 
         logger.info('')
-        logger.info('No frames to treat, aboard!')
+        logger.info('No frames to treat, halting!')
         log_utilities.end_day_log(logger)
 
 def convolve(image, psf, ft_psf=None, ft_image=None, no_ft=None, correlate=None, auto_correlation=None):

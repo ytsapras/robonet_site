@@ -54,7 +54,7 @@ def test_api_image_record():
 	      'moon_up': False,
 	      'elongation': 0.6,
 	      'nstars': 1043,
-	      'ztemp': 15.0,
+	      'ztemp': -15.0,
 	      'shift_x': 32,
 	      'shift_y': 24,
 	      'quality': 'No sky level variations measured! ; No maximum sky level measured! ; Bad seeing'

@@ -13,6 +13,9 @@
     <parameter name='image_output_origin_directory'>
 	<value>/path/to/directory</value>
     </parameter>
+    <parameter name='sextractor_path'>
+	<value>/bin/sex</value>
+    </parameter>
     <parameter name='simulate'>
       	<value>False</value>
     </parameter>

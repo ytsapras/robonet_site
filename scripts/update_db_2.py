@@ -1319,11 +1319,10 @@ def add_taplima(event_name, timestamp=timezone.now(), priority='N', tsamp=0, tex
 
 ###################################################################################
 def add_image(field_name, image_name, date_obs, timestamp=timezone.now(), tel='', inst='',
-              filt='', grp_id='', track_id='', req_id='', airmass=None, avg_fwhm=None, 
-	      avg_sky=None, avg_sigsky=None, moon_sep=None, moon_phase=None, moon_up=False,
-	      elongation=None, nstars=None, ztemp=None, shift_x=None, shift_y=None, quality=''):
-   """
-   Add or update an image entry to the database. If the image already exists, it only allows 
+              filt='', grp_id='', track_id='', req_id='', airmass=None, avg_fwhm=None,
+              avg_sky=None, avg_sigsky=None, moon_sep=None, moon_phase=None, moon_up=False,
+              elongation=None, nstars=None, ztemp=None, shift_x=None, shift_y=None, quality=''):
+    """Add or update an image entry to the database. If the image already exists, it only allows
    the user to set the target_* parameters.
    
    Keyword arguments:
@@ -1375,25 +1374,34 @@ def add_image(field_name, image_name, date_obs, timestamp=timezone.now(), tel=''
              (integer, optional, default=None)	     
    quality -- Image quality description.
                  (string, optional, default='')
-   """
-   # Check if the field already exists in the database.
-   if Field.objects.filter(name=field_name).exists()==True:
-      # Get field identifier
-      field = Field.objects.get(name=field_name)
-      field_object = Field.objects.get(id=field.id)
-      try:
-      	 add_new = Image(field=field_object, image_name=image_name, date_obs=date_obs, timestamp=timestamp, 
-	 	         tel=tel, inst=inst, filt=filt, grp_id=grp_id, track_id=track_id, req_id=req_id, 
-	 		 airmass=airmass, avg_fwhm=avg_fwhm, avg_sky=avg_sky, avg_sigsky=avg_sigsky, 
-         		 moon_sep=moon_sep, moon_phase=moon_phase, moon_up=moon_up, elongation=elongation,
-	 		 nstars=nstars, ztemp=ztemp, shift_x=shift_x, shift_y=shift_y, quality=quality)
-	 add_new.save()
-	 successful = True
-      except:
-      	 successful = False
-   else:
-      successful = False
-   return successful
+    """
+
+    # Check if the field already exists in the database.
+    if Field.objects.filter(name=field_name).exists()==True:
+
+        field = Field.objects.get(name=field_name)
+        field_object = Field.objects.get(id=field.id)
+
+ #       try:
+        add_new = Image(field=field_object, image_name=image_name, date_obs=date_obs, timestamp=timestamp,
+                        tel=tel, inst=inst, filt=filt, grp_id=grp_id, track_id=track_id, req_id=req_id,
+                        airmass=airmass, avg_fwhm=avg_fwhm, avg_sky=avg_sky, avg_sigsky=avg_sigsky,
+                        moon_sep=moon_sep, moon_phase=moon_phase, moon_up=moon_up, elongation=elongation,
+                        nstars=nstars, ztemp=ztemp, shift_x=shift_x, shift_y=shift_y, quality=quality)
+
+        add_new.save()
+
+        successful = True
+
+ #       except:
+
+ #           successful = False
+
+    else:
+
+        successful = False
+
+    return successful
    
 def update_image(image_name, date_obs, timestamp=timezone.now(), 
                  tel='', inst='',filt='', grp_id='', track_id='', req_id='',
