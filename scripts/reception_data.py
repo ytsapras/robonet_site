@@ -16,8 +16,6 @@ import datetime
 import rome_telescopes_dict
 import rome_filters_dict
 import shutil
-import update_db_2 as update_db
-import query_db
 import api_tools
 import socket
 import config_parser
