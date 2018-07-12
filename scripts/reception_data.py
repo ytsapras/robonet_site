@@ -680,7 +680,7 @@ def read_config():
     if 'rachel' in str(host_name).lower():
         config_file_path = os.path.join('/Users/rstreet/.robonet_site/reception_config.xml')
     elif 'einstein' in str(host_name).lower() and userid == 'robouser':
-        config_file_path = '/var/www/robonetsite/configs/reception_config.xml'
+        config_file_path = '/data/romerea/configs/reception_config.xml'
     else:
         config_file_path = os.path.join('/home/',userid,'.robonet_site','reception_config.xml')
 
