@@ -40,6 +40,7 @@ from scripts import obs_monitor
 from scripts import rome_fields_dict
 from scripts import rea_obs
 from scripts import obs_control
+from scripts import log_utilities
 import requests
 import pytz
 
@@ -747,7 +748,7 @@ def trigger_rea_hi_obs(request):
     """Function to trigger REA-HI mode observations for a selected field"""
     
     if request.user.is_authenticated():
-        
+
         qs = Field.objects.all().order_by('name')
         
         fields = []
@@ -757,29 +758,46 @@ def trigger_rea_hi_obs(request):
         
         config = config_parser.read_config_for_code('obs_control')
         
+        log = log_utilities.start_day_log( config, 
+                                           'obs_control_rea_hi' )
+        
         if request.method == "POST":
             
             eform = ObsExposureForm(request.POST)
             nform = FieldNameForm(request.POST)
             
+            log.info('Gathered POSTed form data')
+            
             if nform.is_valid() and eform.is_valid():
+                
+                log.info('Form data validated')
                 
                 epost = eform.save(commit=False)
                 npost = nform.save(commit=False)
                                 
                 field = Field.objects.get(name=npost.name)
                 
+                log.info('Building REA-HI request for field '+npost.name)
+                
                 obs_requests = rea_obs.build_rea_hi_request(config,field, 
                                                        epost.exptime, 
-                                                       (float(epost.t_sample)/60.0))
+                                                       (float(epost.t_sample)/60.0),
+                                                        log=log)
                 
+                log.info('Received list of '+str(len(obs_requests))+\
+                        ' observation requests')
+                        
                 submit_status = obs_control.submit_obs_requests(config,
-                                                                obs_requests)
+                                                                obs_requests,
+                                                                log=log)
                 
                 message = 'Returned status of observation requests at 3 sites: '
                 for status in submit_status:
                     message += status + ' '
-                    
+                
+                log.info(message)
+                log_utilities.end_day_log( log )
+                
                 return render(request, 'events/trigger_rea_hi.html', \
                                     {'nform': nform, 'eform':eform,
                                     'fields': fields,
@@ -792,6 +810,9 @@ def trigger_rea_hi_obs(request):
                 
                 message = 'ERROR validating submission'
                 
+                log.info(message)
+                log_utilities.end_day_log( log )
+                
                 return render(request, 'events/trigger_rea_hi.html', \
                                     {'nform': nform, 'eform':eform,
                                     'fields': fields,
@@ -802,6 +823,9 @@ def trigger_rea_hi_obs(request):
             eform = ObsExposureForm()
             nform = FieldNameForm()
             
+            log.info('REA-HI form loaded, no data POSTed')
+            log_utilities.end_day_log( log )
+                
             return render(request, 'events/trigger_rea_hi.html', \
                                     {'nform': nform, 'eform':eform,
                                     'fields': fields,

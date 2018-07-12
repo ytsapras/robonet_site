@@ -168,18 +168,24 @@ def get_rea_tsamp(priority):
         
         return 0.0
 
-def build_rea_hi_request(script_config, field, exptime, t_sample):
+def build_rea_hi_request(script_config, field, exptime, t_sample, log=None):
     """Function to compose a triggered observation in REA-HI mode for a 
     specific field"""
     
     (default_obs_sequence, tolerances) = rea_obs_sequence()
     
+    if log != None:
+        log.info(' -> Received default_obs_sequence')
+        
     rea_obs = []
 
     for s in range(0,len(default_obs_sequence['sites']),1):
-
+        
         site_code = default_obs_sequence['sites'][s]
         
+        if log != None:
+            log.info(' -> Preparing observations for site '+site_code)
+            
         (site_obs_sequence, tolerances) = rea_obs_sequence(site_code)
 
         site_obs_sequence['filters'] = [ 'SDSS-i' ]
@@ -190,7 +196,10 @@ def build_rea_hi_request(script_config, field, exptime, t_sample):
         
         target_obs_sequence = observing_tools.review_filters_for_observing_conditions(site_obs_sequence,rome_field,
                                                                                ts_submit, ts_expire, tolerances,
-                                                                               log=None)
+                                                                               log=log)
+        
+        if log != None:
+            log.info(' -> Derived target_obs_sequence')
         
         obs = observation_classes.ObsRequest()
         
@@ -216,10 +225,13 @@ def build_rea_hi_request(script_config, field, exptime, t_sample):
         obs.token = script_config['token']
         obs.focus_offset = [ 0.0 ]
         #obs.request_type = str(target.priority)
-        obs.request_type = 'M'
+        obs.request_type = 'A'
         obs.req_origin = 'www'
         obs.get_group_id()
         
         rea_obs.append(obs)
-    
+        
+        if log != None:
+            log.info(' -> Completed obs request for site '+site_code)
+            
     return rea_obs
