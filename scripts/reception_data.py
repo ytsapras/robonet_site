@@ -543,7 +543,7 @@ class Image(object):
         params = {'field_name': self.field_name,
                   'image_name': self.image_name,
                   'date_obs': observing_date,
-                  'timestamp': datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),
+                  'timestamp': datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),
                   'tel': telescope_name,
                   'inst': self.camera_name,
                   'filt': camera_filter,
