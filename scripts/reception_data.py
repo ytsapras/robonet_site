@@ -220,7 +220,7 @@ class Image(object):
             self.logger.info('And so the assiocated field : '+self.field_name)
         except:
         
-            self.logger.error('I can not recognize the object name or/and field name!')
+            self.logger.error('I cannot recognize the object name or/and field name!')
 
     def determine_the_output_directory(self):
 
@@ -566,15 +566,15 @@ class Image(object):
 
         try :
             message = api_tools.check_image_in_db(config,params,
-                                                      testing=bool(config['testing']),
-                                                      verbose=bool(config['verbose']))
+                                                      testing=config['testing'],
+                                                      verbose=config['verbose'])
             self.logger.info('Image known to the DB? '+str(message))
 
             if 'true' in str(message).lower():
 
                 response = api_tools.submit_image_record(config,params,
-                                             testing=bool(config['testing']),
-                                             verbose=bool(config['verbose']))
+                                             testing=config['testing'],
+                                             verbose=config['verbose'])
 
 
                 if 'success' in str(response).lower():
@@ -591,8 +591,8 @@ class Image(object):
             else:
 
                 response = api_tools.submit_image_record(config,params,
-                                                         testing=bool(config['testing']),
-                                                         verbose=bool(config['verbose']))
+                                                         testing=config['testing'],
+                                                         verbose=config['verbose'])
 
                 if 'success' in str(response).lower():
 
@@ -690,6 +690,16 @@ def read_config():
         raise IOError('Cannot find configuration file, looking for:'+config_file_path)
     config = config_parser.read_config(config_file_path)
     
+    for key, value in config.items():
+        
+        if str(value).lower() == 'true':
+            
+            config[key] = True
+            
+        elif str(value).lower() == 'false':
+            
+            config[key] = False
+            
     return config
 
 
@@ -705,7 +715,10 @@ def process_new_images():
     config = read_config()
 
     logger = log_utilities. start_day_log( config, 'reception', console=False )
-    
+
+    logger.info("Testing mode: "+repr(config['testing']))
+    logger.info("Verbosity mode: "+repr(config['verbose']))
+
     NewFrames = find_frames_to_process(config['new_frames_directory'], logger)
 
     if os.path.isdir(os.path.join(config['new_frames_directory'],'Processed')) == False:
