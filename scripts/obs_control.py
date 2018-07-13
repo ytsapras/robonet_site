@@ -167,7 +167,14 @@ def submit_obs_requests(script_config,obs_requests,log=None):
             
     submit_status = []
     obsrecord = log_utilities.start_obs_record( script_config )
+    
+    if log != None: 
+        log.info('Starting loop over observations:')
+            
     for obs in obs_requests:
+        if log != None:
+            log.info('Building '+obs.group_id)
+            
         ur = obs.build_cadence_request( log=log, debug=True )
         if log != None: 
             log.info(obs.group_id + ': Built json request')
