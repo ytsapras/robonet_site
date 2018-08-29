@@ -263,6 +263,7 @@ def plot_percent_complete(active_obs, dbg=False):
 #        fig.patch(xdata, ydata, color=camera_colors[camera][0], alpha=0.6, 
 #                line_color="black",legend=camera)
         
+        print camera, camera_colors[camera][0]
         p = fig.scatter(xdata, ydata, color=camera_colors[camera][0])
         r = fig.line(xdata, ydata, color=camera_colors[camera][0], line_width=2)
         
@@ -453,7 +454,8 @@ def get_instrument_list(active_obs):
         
         if entry['obsrequest'].which_inst not in instruments:
             
-            instruments.append(entry['obsrequest'].which_inst)
+            if entry['obsrequest'].which_inst != '':
+                instruments.append(entry['obsrequest'].which_inst)
     
     return instruments
 
