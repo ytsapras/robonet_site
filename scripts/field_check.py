@@ -48,4 +48,4 @@ if __name__ == '__main__':
     (radeg, decdeg) = utilities.sex2decdeg(ra,dec)
     
     (field, rate) = romecheck(radeg, decdeg)
-    print field
+    print (field)
