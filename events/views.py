@@ -864,29 +864,64 @@ def list_year(request, year):
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')
-def list_all(request):
-   """
-   Will list all events in database. 
-   """
-   if request.user.is_authenticated():
-      events = Event.objects.all()
-      ev_id = [k.pk for k in events]
-      field = [k.field.name.replace(' footprint','') for k in events]
-      ra = [k.ev_ra for k in events]
-      dec = [k.ev_dec for k in events]
-      status = [k.status for k in events]
-      year_disc = [k.year for k in events]
-      names_list = []
-      for i in range(len(events)):
-         evnm = EventName.objects.filter(event=events[i])
-         names = [k.name for k in evnm]
-         names_list.append(names)
-      rows = zip(ev_id, names_list, field, ra, dec, status, year_disc)
-      rows = sorted(rows, key=lambda row: row[1])
-      context = {'rows': rows}
-      return render(request, 'events/list_events.html', context)
-   else:
-      return HttpResponseRedirect('login')
+def list_all(request, display_year=None):
+    """
+    Will list all events in database. 
+    """
+    
+    if request.user.is_authenticated():
+        
+        time_now = Time.now()
+        
+        if display_year == None:
+            current_date = datetime.now()
+            display_year = current_date.year
+            events = Event.objects.filter(year=display_year)
+            
+        elif display_year == 'ALL':
+            events = Event.objects.all()
+
+        else:
+            events = Event.objects.filter(year=display_year)
+        
+        ev_id = [k.pk for k in events]
+        field = [k.field.name.replace(' footprint','') for k in events]
+        ra = [k.ev_ra for k in events]
+        dec = [k.ev_dec for k in events]
+        status = [k.status for k in events]
+        year_disc = [k.year for k in events]
+        
+        names_list = []
+        t0_list = []
+        tE_list = []
+        u0_list = []
+        imag_list = []
+        for i in range(len(events)):
+            
+            evnm = EventName.objects.filter(event=events[i])
+            last_model = query_db.get_last_single_model(events[i])
+            
+            names = [k.name for k in evnm]
+            names_list.append(names)
+            if last_model != None:
+                t0_list.append(last_model.Tmax)
+                tE_list.append(last_model.tau)
+                u0_list.append(last_model.umin)
+            else:
+                t0_list.append('NONE')
+                tE_list.append('NONE')
+                u0_list.append('NONE')
+        
+        rows = zip(ev_id, names_list, field, ra, dec, status, year_disc,
+                   t0_list, tE_list, u0_list)
+        rows = sorted(rows, key=lambda row: row[1], reverse=True)
+        context = {'rows': rows, 'JD_now': time_now.jd}
+
+        return render(request, 'events/list_events.html', context)
+    
+    else:
+        
+        return HttpResponseRedirect('login')
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')
