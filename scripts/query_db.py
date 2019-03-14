@@ -287,6 +287,13 @@ def get_event_names(event_id):
     
     qs = EventName.objects.filter(event_id=event_id)
     return qs
+
+def get_event_by_params(params):
+    """Function to extract a set of events matching all the parameters given"""
+    
+    qs = Event.objects.filter(**params)
+    
+    return qs
     
 def get_event_name_list(event_id):
     """Function to extract the names of a target, given the event ID number

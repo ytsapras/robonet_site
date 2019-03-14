@@ -884,37 +884,38 @@ def list_all(request, display_year=None):
         else:
             events = Event.objects.filter(year=display_year)
         
-        ev_id = [k.pk for k in events]
-        field = [k.field.name.replace(' footprint','') for k in events]
-        ra = [k.ev_ra for k in events]
-        dec = [k.ev_dec for k in events]
-        status = [k.status for k in events]
-        year_disc = [k.year for k in events]
+        rows = render_event_queryset_as_table_rows(events)
+#        ev_id = [k.pk for k in events]
+#        field = [k.field.name.replace(' footprint','') for k in events]
+#        ra = [k.ev_ra for k in events]
+#        dec = [k.ev_dec for k in events]
+ #       status = [k.status for k in events]
+#        year_disc = [k.year for k in events]
         
-        names_list = []
-        t0_list = []
-        tE_list = []
-        u0_list = []
-        imag_list = []
-        for i in range(len(events)):
+#        names_list = []
+#        t0_list = []
+#        tE_list = []
+#        u0_list = []
+#        imag_list = []
+#        for i in range(len(events)):
             
-            evnm = EventName.objects.filter(event=events[i])
-            last_model = query_db.get_last_single_model(events[i])
+#            evnm = EventName.objects.filter(event=events[i])
+#            last_model = query_db.get_last_single_model(events[i])
             
-            names = [k.name for k in evnm]
-            names_list.append(names)
-            if last_model != None:
-                t0_list.append(last_model.Tmax)
-                tE_list.append(last_model.tau)
-                u0_list.append(last_model.umin)
-            else:
-                t0_list.append('NONE')
-                tE_list.append('NONE')
-                u0_list.append('NONE')
+#            names = [k.name for k in evnm]
+#            names_list.append(names)
+#            if last_model != None:
+#                t0_list.append(last_model.Tmax)
+#                tE_list.append(last_model.tau)
+#                u0_list.append(last_model.umin)
+#            else:
+#                t0_list.append('NONE')
+#                tE_list.append('NONE')
+#                u0_list.append('NONE')
         
-        rows = zip(ev_id, names_list, field, ra, dec, status, year_disc,
-                   t0_list, tE_list, u0_list)
-        rows = sorted(rows, key=lambda row: row[1], reverse=True)
+#        rows = zip(ev_id, names_list, field, ra, dec, status, year_disc,
+#                   t0_list, tE_list, u0_list)
+#        rows = sorted(rows, key=lambda row: row[1], reverse=True)
         context = {'rows': rows, 'JD_now': time_now.jd}
 
         return render(request, 'events/list_events.html', context)
@@ -922,6 +923,88 @@ def list_all(request, display_year=None):
     else:
         
         return HttpResponseRedirect('login')
+
+def render_event_queryset_as_table_rows(events):
+    """Function to return a neat table of event parameters"""
+    
+    ev_id = [k.pk for k in events]
+    field = [k.field.name.replace(' footprint','') for k in events]
+    ra = [k.ev_ra for k in events]
+    dec = [k.ev_dec for k in events]
+    status = [k.status for k in events]
+    year_disc = [k.year for k in events]
+    
+    names_list = []
+    t0_list = []
+    tE_list = []
+    u0_list = []
+    imag_list = []
+    for i in range(len(events)):
+        
+        evnm = EventName.objects.filter(event=events[i])
+        last_model = query_db.get_last_single_model(events[i])
+        
+        names = [k.name for k in evnm]
+        names_list.append(names)
+        if last_model != None:
+            t0_list.append(last_model.Tmax)
+            tE_list.append(last_model.tau)
+            u0_list.append(last_model.umin)
+        else:
+            t0_list.append('NONE')
+            tE_list.append('NONE')
+            u0_list.append('NONE')
+    
+    rows = zip(ev_id, names_list, field, ra, dec, status, year_disc,
+               t0_list, tE_list, u0_list)
+    rows = sorted(rows, key=lambda row: row[1], reverse=True)
+    
+    return rows
+    
+##############################################################################################################
+@login_required(login_url='/db/login/')
+def search_events(request):
+    """Function to provide a basic search form for the events DB"""
+    
+    search_keys = ['field', 'operator', 'ev_ra', 'ev_dec', 'status', 
+                   'year', 'anomaly_rank']
+                   
+    if request.user.is_authenticated():
+        
+        if request.method == "POST":
+            
+            eform = EventForm(request.POST)
+            
+            if eform.is_valid():
+                
+                epost = eform.save(commit=False)
+                
+                params = {}
+                
+                for key in search_keys:
+                    params[key] = getattr(epost,key)
+                
+                events = query_db.get_event_by_params(params)
+                
+                rows = render_event_queryset_as_table_rows(events)
+                
+                return render(request, 'events/search_events.html', \
+                          params, rows)
+                          
+        else:
+            
+            eform = EventForm()
+            
+            params = {}
+            for key in search_keys:
+                params[key] = None
+                
+            return render(request, 'events/search_events.html', \
+                          params, rows)
+    else:
+        
+        return HttpResponseRedirect('login')
+
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')
