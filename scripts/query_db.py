@@ -375,6 +375,43 @@ def get_events_within_radius(ra_str, dec_str, radius):
     
     return events_list
 
+def get_events_box_search(ra_min, ra_max, dec_min, dec_max):
+    """Function to find a list of all events within a specified radius less than
+    1 arcmin.  Related to update_db_2's check_coords function. 
+    Inputs:
+        ra_centre   float    RA of cone centre
+        dec_centre  float    Dec of cone centre
+        delta_ra   float  Search height in RA, decimal arcsec < 60 arcsec
+        delta_dec   float  Search height in Dec, decimal arcsec < 60 arcsec
+    Outputs:
+        events_list list  Event objects
+    Events_list is returned sorted, with the nearest match first
+    """
+
+    radius = radius / 3600.0
+
+    events_list = []
+    separations = []
+    
+    qs_events = Event.objects.filter(ev_ra__gte=ra_min,
+                                     ev_ra__lte=ra_max,
+                                     ev_dec__gte=dec_min,
+                                     ev_dec__lte=dec_max)
+    
+    for event in qs_events:
+        
+        (ra2, dec2) = utilities.sex2decdeg(event.ev_ra,event.ev_dec)
+        sep = utilities.separation_two_points((ra1,dec2),(ra2,dec2))
+
+        if sep <= radius:
+            events_list.append(event)
+            separations.append(sep)
+
+    if len(events_list) > 1:
+        (separations, events_list) = zip(*sorted(zip(separations,events_list)))
+    
+    return events_list, separations
+    
 def combine_event_names(qs_event_names):
     """Function to return the combined name of an event discovered by multiple
     surveys.

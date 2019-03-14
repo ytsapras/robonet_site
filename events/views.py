@@ -13,6 +13,7 @@ from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, I
 from .forms import RecordSubObsRequestForm, QueryObsRequestDateForm
 from .forms import TapStatusForm, EventAnomalyStatusForm, EventNameForm
 from .forms import ObsExposureForm, FieldNameForm, ImageNameForm
+from .forms import EventPositionForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from rest_framework.authentication import TokenAuthentication, BasicAuthentication
@@ -885,37 +886,6 @@ def list_all(request, display_year=None):
             events = Event.objects.filter(year=display_year)
         
         rows = render_event_queryset_as_table_rows(events)
-#        ev_id = [k.pk for k in events]
-#        field = [k.field.name.replace(' footprint','') for k in events]
-#        ra = [k.ev_ra for k in events]
-#        dec = [k.ev_dec for k in events]
- #       status = [k.status for k in events]
-#        year_disc = [k.year for k in events]
-        
-#        names_list = []
-#        t0_list = []
-#        tE_list = []
-#        u0_list = []
-#        imag_list = []
-#        for i in range(len(events)):
-            
-#            evnm = EventName.objects.filter(event=events[i])
-#            last_model = query_db.get_last_single_model(events[i])
-            
-#            names = [k.name for k in evnm]
-#            names_list.append(names)
-#            if last_model != None:
-#                t0_list.append(last_model.Tmax)
-#                tE_list.append(last_model.tau)
-#                u0_list.append(last_model.umin)
-#            else:
-#                t0_list.append('NONE')
-#                tE_list.append('NONE')
-#                u0_list.append('NONE')
-        
-#        rows = zip(ev_id, names_list, field, ra, dec, status, year_disc,
-#                   t0_list, tE_list, u0_list)
-#        rows = sorted(rows, key=lambda row: row[1], reverse=True)
         context = {'rows': rows, 'JD_now': time_now.jd}
 
         return render(request, 'events/list_events.html', context)
@@ -924,7 +894,7 @@ def list_all(request, display_year=None):
         
         return HttpResponseRedirect('login')
 
-def render_event_queryset_as_table_rows(events):
+def render_event_queryset_as_table_rows(events,separations=None):
     """Function to return a neat table of event parameters"""
     
     ev_id = [k.pk for k in events]
@@ -955,52 +925,114 @@ def render_event_queryset_as_table_rows(events):
             tE_list.append('NONE')
             u0_list.append('NONE')
     
-    rows = zip(ev_id, names_list, field, ra, dec, status, year_disc,
+    if separations == None:
+        rows = zip(ev_id, names_list, field, ra, dec, status, year_disc,
                t0_list, tE_list, u0_list)
-    rows = sorted(rows, key=lambda row: row[1], reverse=True)
-    
+        rows = sorted(rows, key=lambda row: row[1], reverse=True)
+    else:
+        rows = zip(ev_id, names_list, field, ra, dec, status, year_disc,
+               t0_list, tE_list, u0_list, separations)
+        rows = sorted(rows, key=lambda row: row[10], reverse=True)
+        
     return rows
-    
+
 ##############################################################################################################
 @login_required(login_url='/db/login/')
-def search_events(request):
+def search_events(request,search_type=None):
     """Function to provide a basic search form for the events DB"""
     
     search_keys = ['field', 'operator', 'ev_ra', 'ev_dec', 'status', 
                    'year', 'anomaly_rank']
                    
+    qs = Field.objects.all()
+    field_list = [k.name for k in qs]
+
+    qs = Operator.objects.all()
+    operator_list = [k.name for k in qs]
+    
+    status_list = [ 'NF','AC','MO','AN','EX' ]
+    
+    separations = None
+    
     if request.user.is_authenticated():
         
         if request.method == "POST":
             
             eform = EventForm(request.POST)
+            pform = EventPositionForm(request.POST)
+            nform = EventNameForm(request.POST)
             
-            if eform.is_valid():
+            if search_type == 'name' and nform.is_valid():
+                
+                npost = nform.save(commit=False)
+            
+                (e,message) = query_db.get_event_by_name(npost.name)
+                
+                if e != None:
+                    events = [e]
+                else:
+                    events = []
+                
+            elif search_type == 'position' and pform.is_valid():
+                
+                ppost = pform.save(commit=False)
+            
+                (events,separations) = query_db.get_events_box_search(ra_min, ra_max, 
+                                                        dec_min, dec_max)
+                                                        
+            elif search_type == 'params' and eform.is_valid():
                 
                 epost = eform.save(commit=False)
-                
-                params = {}
-                
-                for key in search_keys:
-                    params[key] = getattr(epost,key)
-                
+            
                 events = query_db.get_event_by_params(params)
+            
+            if nform.is_valid() or pform.is_valid() or eform.is_valid():
                 
-                rows = render_event_queryset_as_table_rows(events)
+                rows = render_event_queryset_as_table_rows(events,
+                                                           separations=separations)
+                
+                return render(request, 'events/search_events.html', 
+                              {'eform':eform, 'pform':pform, 'nform':nform, 
+                               'search_type':search_type,
+                               'fields': field_list, 
+                               'operators': operator_list, 
+                               'status_options': status_list,
+                               'rows': rows})
+                    
+            else:
+                
+                eform = EventForm()
+                pform = EventPositionForm()
+                nform = EventNameForm()
+                
+                rows = ()
+                
+                message = 'Error - invalid form input'
                 
                 return render(request, 'events/search_events.html', \
-                          params, rows)
+                              {'eform':eform, 'pform':pform, 'nform':nform, 
+                                   'search_type':search_type,
+                                   'fields': field_list, 
+                                   'operators': operator_list, 
+                                   'status_options': status_list,
+                                   'rows': rows, 'message': message})
                           
         else:
             
             eform = EventForm()
+            pform = EventPositionForm()
+            nform = EventNameForm()
             
-            params = {}
-            for key in search_keys:
-                params[key] = None
-                
+            rows = ()
+            
             return render(request, 'events/search_events.html', \
-                          params, rows)
+                          {'eform':eform, 'pform':pform, 'nform':nform, 
+                               'search_type':search_type,
+                               'fields': field_list, 
+                               'operators': operator_list, 
+                               'status_options': status_list,
+                               'rows': rows})
+                          
     else:
         
         return HttpResponseRedirect('login')

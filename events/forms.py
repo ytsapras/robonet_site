@@ -31,6 +31,15 @@ class EventNameForm(forms.ModelForm):
       model = EventName
       fields = ('name',)
 
+class EventPositionForm(forms.ModelForm):
+   class Meta:
+      model = Event
+      fields = ('ra_min', 'ra_max', 'dec_min', 'dec_max',)
+   ra_min = forms.FloatField(label='ra_min',min_value=0.0,max_value=360.0)
+   ra_max = forms.FloatField(label='ra_max',min_value=0.0,max_value=360.0)
+   dec_min = forms.FloatField(label='dec_min',min_value=-90.0,max_value=90.0)
+   dec_max = forms.FloatField(label='dec_max',min_value=-90.0,max_value=90.0)
+   
 class EventAnomalyStatusForm(forms.ModelForm):
    class Meta:
       model = Event

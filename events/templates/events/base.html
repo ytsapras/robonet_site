@@ -3,8 +3,29 @@
 <head>
     <meta HTTP-EQUIV="PRAGMA" content="NO-CACHE">
     <meta name="robots" content="NONE,NOARCHIVE" />
-    <link rel="stylesheet" type="text/css" href={% static 'events/events.css' %} />
+    <!--<link rel="stylesheet" type="text/css" href={% static 'events/events.css' %} />-->
+    <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="/static/bootstrap/css/sticky-footer-navbar.css" rel="stylesheet">
     {% block head_extras %}<title>ROME/REA Key Project</title>{% endblock %}
+		<style>
+		    input[type="range"] {
+		    width: 300px;
+		    padding: 0px;
+		    }
+		    input[type="range"]::-ms-tooltip { /* hides readout in IE */
+		    display: none;
+		    }
+		    input[type="range"]::-ms-track { /* hides tick marks in IE */
+		    color: transparent;
+		    }
+            table, th, td {
+            border: 1px;
+            padding: 5px;
+            }
+            table {
+            border-spacing: 15px;
+            }
+		</style>
 </head>
 
 <body bgcolor="#98AFC7" style="font-family:verdana;">
