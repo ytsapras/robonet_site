@@ -8,12 +8,13 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.db.models import Max
 from django.utils import timezone
 from django.http import HttpResponse, Http404, HttpResponseRedirect
+from django import forms
 from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, TelescopeForm, EventForm, EventNameForm, SingleModelForm
 from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, ImageForm, RecordDataFileForm, TapLimaForm
 from .forms import RecordSubObsRequestForm, QueryObsRequestDateForm
 from .forms import TapStatusForm, EventAnomalyStatusForm, EventNameForm
 from .forms import ObsExposureForm, FieldNameForm, ImageNameForm
-from .forms import EventPositionForm
+from .forms import EventPositionForm, EventSearchForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from rest_framework.authentication import TokenAuthentication, BasicAuthentication
@@ -941,24 +942,11 @@ def render_event_queryset_as_table_rows(events,separations=None):
 def search_events(request,search_type=None):
     """Function to provide a basic search form for the events DB"""
     
-    search_keys = ['field', 'operator', 'ev_ra', 'ev_dec', 'status', 
-                   'year', 'anomaly_rank']
-                   
-    qs = Field.objects.all()
-    field_list = [k.name for k in qs]
-
-    qs = Operator.objects.all()
-    operator_list = [k.name for k in qs]
-    
-    status_list = [ 'NF','AC','MO','AN','EX' ]
-    
-    separations = None
-    
     if request.user.is_authenticated():
         
         if request.method == "POST":
             
-            eform = EventForm(request.POST)
+            eform = EventSearchForm(request.POST)
             pform = EventPositionForm(request.POST)
             nform = EventNameForm(request.POST)
             
@@ -975,33 +963,40 @@ def search_events(request,search_type=None):
                 
             elif search_type == 'position' and pform.is_valid():
                 
-                ppost = pform.save(commit=False)
-            
-                (events,separations) = query_db.get_events_box_search(ra_min, ra_max, 
-                                                        dec_min, dec_max)
-                                                        
+                search_params = {}
+                for key, value in pform.cleaned_data.items():
+                    search_params[key] = value
+                
+                events = query_db.get_events_box_search(search_params)
+                
             elif search_type == 'params' and eform.is_valid():
                 
-                epost = eform.save(commit=False)
-            
-                events = query_db.get_event_by_params(params)
+                search_params = {}
+                for key, value in eform.cleaned_data.items():
+                    search_params[key] = value
+                
+                events = query_db.get_event_by_params(search_params)
             
             if nform.is_valid() or pform.is_valid() or eform.is_valid():
                 
-                rows = render_event_queryset_as_table_rows(events,
-                                                           separations=separations)
+                rows = render_event_queryset_as_table_rows(events)
                 
+                if len(rows) == 0:
+                    message = 'Search returned no matching entries'
+                else:
+                    message = ''
+                    
                 return render(request, 'events/search_events.html', 
                               {'eform':eform, 'pform':pform, 'nform':nform, 
                                'search_type':search_type,
-                               'fields': field_list, 
-                               'operators': operator_list, 
-                               'status_options': status_list,
-                               'rows': rows})
+                               'fields': eform.fields['field'].choices, 
+                               'operators': eform.fields['operator'].choices, 
+                               'status_options': eform.fields['status'].choices,
+                               'rows': rows, 'message': message})
                     
             else:
                 
-                eform = EventForm()
+                eform = EventSearchForm()
                 pform = EventPositionForm()
                 nform = EventNameForm()
                 
@@ -1012,14 +1007,14 @@ def search_events(request,search_type=None):
                 return render(request, 'events/search_events.html', \
                               {'eform':eform, 'pform':pform, 'nform':nform, 
                                    'search_type':search_type,
-                                   'fields': field_list, 
-                                   'operators': operator_list, 
-                                   'status_options': status_list,
+                                   'fields': eform.fields['field'].choices, 
+                                   'operators': eform.fields['operator'].choices, 
+                                   'status_options': eform.fields['status'].choices,
                                    'rows': rows, 'message': message})
                           
         else:
             
-            eform = EventForm()
+            eform = EventSearchForm()
             pform = EventPositionForm()
             nform = EventNameForm()
             
@@ -1028,10 +1023,10 @@ def search_events(request,search_type=None):
             return render(request, 'events/search_events.html', \
                           {'eform':eform, 'pform':pform, 'nform':nform, 
                                'search_type':search_type,
-                               'fields': field_list, 
-                               'operators': operator_list, 
-                               'status_options': status_list,
-                               'rows': rows})
+                               'fields': eform.fields['field'].choices, 
+                               'operators': eform.fields['operator'].choices, 
+                               'status_options': eform.fields['status'].choices,
+                               'rows': rows, 'message': ''})
                           
     else:
         

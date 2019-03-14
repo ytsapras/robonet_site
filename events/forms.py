@@ -31,15 +31,63 @@ class EventNameForm(forms.ModelForm):
       model = EventName
       fields = ('name',)
 
-class EventPositionForm(forms.ModelForm):
+class EventPositionForm(forms.Form):
    class Meta:
-      model = Event
       fields = ('ra_min', 'ra_max', 'dec_min', 'dec_max',)
    ra_min = forms.FloatField(label='ra_min',min_value=0.0,max_value=360.0)
    ra_max = forms.FloatField(label='ra_max',min_value=0.0,max_value=360.0)
    dec_min = forms.FloatField(label='dec_min',min_value=-90.0,max_value=90.0)
    dec_max = forms.FloatField(label='dec_max',min_value=-90.0,max_value=90.0)
-   
+
+class EventSearchForm(forms.Form):
+    class Meta:
+        fields = ('field', 'operator', 'status', 'anomaly_rank', 
+                   'ibase_min', 'ibase_max', 'year')
+    
+    possible_status = (
+                      ('NF', 'Not in footprint'),
+                      ('AC', 'active'),
+                      ('MO', 'monitor'),
+                      ('AN', 'anomaly'),
+                      ('EX', 'expired'),
+                      ('ANY', 'any')
+                      )
+    possible_operators = ( ('OGLE','OGLE'),
+                         ('MOA','MOA'),
+                         ('ALL','ALL')
+                         )
+    possible_fields = ( ('ROME-FIELD-01', 'ROME-FIELD-01'), 
+                       ('ROME-FIELD-02', 'ROME-FIELD-02'),
+                       ('ROME-FIELD-03', 'ROME-FIELD-03'),
+                       ('ROME-FIELD-04', 'ROME-FIELD-04'),
+                       ('ROME-FIELD-05', 'ROME-FIELD-05'),
+                       ('ROME-FIELD-06', 'ROME-FIELD-06'),
+                       ('ROME-FIELD-07', 'ROME-FIELD-07'),
+                       ('ROME-FIELD-08', 'ROME-FIELD-08'),
+                       ('ROME-FIELD-09', 'ROME-FIELD-09'),
+                       ('ROME-FIELD-10', 'ROME-FIELD-10'),
+                       ('ROME-FIELD-11', 'ROME-FIELD-11'),
+                       ('ROME-FIELD-12', 'ROME-FIELD-12'),
+                       ('ROME-FIELD-13', 'ROME-FIELD-13'),
+                       ('ROME-FIELD-14', 'ROME-FIELD-14'),
+                       ('ROME-FIELD-15', 'ROME-FIELD-15'),
+                       ('ROME-FIELD-16', 'ROME-FIELD-16'),
+                       ('ROME-FIELD-17', 'ROME-FIELD-17'),
+                       ('ROME-FIELD-18', 'ROME-FIELD-18'),
+                       ('ROME-FIELD-19', 'ROME-FIELD-19'),
+                       ('ROME-FIELD-20', 'ROME-FIELD-20'),
+                       ('All ROME fields', 'All ROME fields'),
+                       ('Outside ROME footprint', 'Outside ROME footprint'),
+                      )
+                      
+    field = forms.ChoiceField(label='field', choices=possible_fields)
+    operator = forms.ChoiceField(label='operator', choices=possible_operators)
+    status = forms.ChoiceField(label='status', choices=possible_status)
+    anomaly_rank = forms.FloatField(label='Anomaly Rank', min_value=-1.0, max_value=100.0,required=False)
+    ibase_min = forms.FloatField(label='ibase_min',min_value=0.0,max_value=24.0,required=False)
+    ibase_max = forms.FloatField(label='ibase_max',min_value=0.0,max_value=24.0,required=False)
+    year = forms.IntegerField(label='year',min_value=2017, max_value=2019,required=False)
+
 class EventAnomalyStatusForm(forms.ModelForm):
    class Meta:
       model = Event

@@ -135,6 +135,10 @@ class Event(models.Model):
            (object, required) -- ForeignKey object
    ev_ra -- Event RA. (string, required)
    ev_dec -- Event DEC. (string, required)
+   ra -- Event RA (float, decimal, optional)
+   dec -- Event Dec (float, decimal, optional)
+   ibase -- Event baseline magnitude (float, decimal, optional)
+   
    status -- Events status (string, optional, default='NF')
                       Available choices: 
 		       'NF':'Not in footprint'
@@ -154,6 +158,10 @@ class Event(models.Model):
    operator = models.ForeignKey(Operator, related_name="ev_operator_id")
    ev_ra = models.CharField("RA", max_length=50)
    ev_dec = models.CharField("Dec", max_length=50)
+   ra = models.DecimalField("RA_deg", max_digits=12, decimal_places=9, null=True, blank=True)
+   dec = models.DecimalField("Dec_deg", max_digits=12, decimal_places=8, null=True, blank=True)
+   ibase = models.DecimalField("i_base", max_digits=6, decimal_places=3, null=True, blank=True)
+   
    # Event status (not in ROME footprint, active (in ROME footprint), monitor (60m REA cadence), 
    #               anomaly (20m REA cadence), expired)
    possible_status = (
