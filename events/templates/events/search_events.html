@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% block content %}
+
+<nav class="navbar navbar-default">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            </button>
+        </div>
+    </div>
+
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <ul class="nav navbar-nav">
+          <li><a href="{% url 'search_event_name' %}">Name</a></li>
+          <li><a href="{% url 'search_event_position' %}">Position</a></li>
+          <li><a href="{% url 'search_event_params' %}">Event parameters</a></li>
+        </ul>
+      </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+</nav>
+{% if search_type == None or search_type == 'name' %}
+    <center><h3>Search for Events by Name</h3>
+
+        <div>
+            <form method="POST" class="post-form">{% csrf_token %}
+                {{ formset.management_form }}
+                <table>
+                    <tr>
+                        <td><label for="{{nform.name.id_for_label}}">Event name:</label></td>
+                        <td>
+                            <div class="fieldWrapper">
+                                {{nform.name.errors}}
+                                {{nform.name}}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fieldWrapper">
+                                <button type="sumbit" class="save btn btn-default">Submit</button>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+    </center>
+
+{% elif search_type == 'position' %}
+<center><h3>Search for Events by Position</h3>
+
+        <div>
+            <form method="POST" class="post-form">{% csrf_token %}
+                {{ formset.management_form }}
+                <table>
+                    <tr>
+                        <td><label for="{{pform.ra_min.id_for_label}}">RA minimum [deg]:</label></td>
+                        <td>
+                            <div class="fieldWrapper">
+                                {{pform.ra_min.errors}}
+                                {{pform.ra_min}}
+                            </div>
+                        </td>
+                        <td><label for="{{pform.ra_max.id_for_label}}">RA maximum [deg]:</label></td>
+                        <td>
+                            <div class="fieldWrapper">
+                                {{pform.ra_max.errors}}
+                                {{pform.ra_max}}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label for="{{pform.dec_min.id_for_label}}">Dec minimum [deg]:</label></td>
+                        <td>
+                            <div class="fieldWrapper">
+                                {{pform.dec_min.errors}}
+                                {{pform.dec_min}}
+                            </div>
+                        </td>
+                        <td><label for="{{pform.dec_max.id_for_label}}">Dec maximum [deg]:</label></td>
+                        <td>
+                            <div class="fieldWrapper">
+                                {{pform.dec_max.errors}}
+                                {{pform.dec_max}}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="fieldWrapper">
+                                <button type="sumbit" class="save btn btn-default">Submit</button>
+                            </div>
+                        </td>
+                        <td></td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+    </center>
+
+{% elif search_type == 'params' %}
+<center><h3>Search for Events by Parameters</h3>
+
+        <div>
+            <form method="POST" class="post-form">{% csrf_token %}
+                {{ formset.management_form }}
+                <table>
+                    <tr>
+                        <td><label for="{{eform.field.id_for_label}}">Field:</label></td>
+                        <td>
+                            <select name="field">
+                                {% for name,label in fields %}
+                                    <option value="{{name}}">{{label}}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><label for="{{eform.operator.id_for_label}}">Survey operator:</label></td>
+                        <td>
+                            <select name="operator">
+                                {% for name,label in operators %}
+                                    <option value="{{name}}">{{label}}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label for="{{eform.status.id_for_label}}">Event status:</label></td>
+                        <td>
+                            <select name="status">
+                                {% for stat,label in status_options %}
+                                    <option value="{{stat}}">{{label}}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><label for="{{eform.anomaly_rank.id_for_label}}">Anomaly rank:</label></td>
+                        <td>
+                            <div class="fieldWrapper">
+                                {{eform.anomaly_rank.errors}}
+                                {{eform.anomaly_rank}}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                    <td><label for="{{eform.ibase_min.id_for_label}}">I<sub>base</sub> minimum [mag]:</label></td>
+                        <td>
+                            <div class="fieldWrapper">
+                                {{eform.ibase_min.errors}}
+                                {{eform.ibase_min}}
+                            </div>
+                        </td>
+                        <td><label for="{{eform.ibase_max.id_for_label}}">I<sub>base</sub> maximum [mag]:</label></td>
+                        <td>
+                            <div class="fieldWrapper">
+                                {{eform.ibase_max.errors}}
+                                {{eform.ibase_max}}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label for="{{eform.year.id_for_label}}">Year:</label></td>
+                        <td>
+                            <div class="fieldWrapper">
+                                {{eform.year.errors}}
+                                {{eform.year}}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fieldWrapper">
+                                <button type="sumbit" class="save btn btn-default">Submit</button>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+    </center>
+{% endif %}
+
+{% if message|length > 0 %}
+    <center><h5>{{message}}</h5></center>
+{% endif %}
+
+{% if rows|length > 0 %}
+    <div>
+        {% if rows|length == 1 %}
+            <center>Search returned {{rows|length}} entries</center>
+        {% else %}
+            <center>Search returned {{rows|length}} entries</center>
+        {% endif %}
+    </div>
+    <div>
+    <center>
+    <table class="sortable" border="0">
+        <tr>
+           <th bgcolor="#609ab6"><b style="color: #FFFFFF ">ID:</b></th>
+           <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Known Names:</b></th>
+           <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Field:</b></th>
+           <th bgcolor="#609ab6"><b style="color: #FFFFFF ">RA:</b></th>
+           <th bgcolor="#609ab6"><b style="color: #FFFFFF ">DEC:</b></th>
+           <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Status:</b></th>
+           <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Discovered:</b></th>
+           <th bgcolor="#609ab6"><b style="color: #FFFFFF ">T<sub>max</sub>:</b></th>
+           <th bgcolor="#609ab6"><b style="color: #FFFFFF ">t<sub>E</sub> [days]:</b></th>
+           <th bgcolor="#609ab6"><b style="color: #FFFFFF ">u<sub>0</sub>:</b></th>
+           <th bgcolor="#609ab6"><b style="color: #FFFFFF ">I<sub>base</sub> [mag]:</b></th>
+        </tr>
+        {% for row in rows %}
+        <tr bgcolor="{% cycle '#E6E6B8' '#FFFFCC' %}">
+            <td> {{ row.0 }} </td>
+               <td>{% for name in row.1 %}
+              <a href={% url 'show_event' event_name=name %} STYLE="text-decoration:none">{{ name }}</a><br>
+              {% endfor %}
+           </td>
+        {% if row.2 == "Outside ROMEREA" %}
+           <td style="color: #999999 ">{{ row.2 }} </td>
+           <td style="color: #999999 ">{{ row.3 }} </td>
+           <td style="color: #999999 ">{{ row.4 }} </td>
+           <td style="color: #999999 ">{{ row.5 }} </td>
+           <td style="color: #999999 ">{{ row.6 }} </td>
+            {% if row.7 != 'NONE' %}
+              <td style="color: #999999 ">{{ row.7 }} </td>
+              <td style="color: #999999 ">{{ row.8 }} </td>
+              <td style="color: #999999 ">{{ row.9 }} </td>
+              <td style="color: #999999 ">{{ row.10 }} </td>
+            {% else %}
+              <td style="color: #999999 ">-</td>
+              <td style="color: #999999 ">-</td>
+              <td style="color: #999999 ">-</td>
+              <td style="color: #999999 ">-</td>
+            {% endif %}
+        {% else %}
+           <td>{{ row.2 }} </td>
+           <td>{{ row.3 }} </td>
+           <td>{{ row.4 }} </td>
+           <td>{{ row.5 }} </td>
+           <td>{{ row.6 }} </td>
+            {% if row.7 != 'NONE'%}
+              <td>{{ row.7 }} </td>
+              <td>{{ row.8 }} </td>
+              <td>{{ row.9 }} </td>
+              <td>{{ row.10 }} </td>
+            {% else %}
+              <td>-</td>
+              <td>-</td>
+              <td>-</td>
+              <td>-</td>
+            {% endif %}
+        {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+    </center>
+    </div>
+{% endif %}
+{% endblock %}
