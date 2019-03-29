@@ -1599,14 +1599,17 @@ def query_event_in_survey(request, ra=None, dec=None):
             
             ra = float(ra)
             dec = float(dec)
-            print(ra, dec)
             
             result = query_db.get_field_containing_coordinates({'ra':ra, 
                                                                 'dec':dec})
             
+            if 'ROME-FIELD' in result:
+                result = 'TRUE'
+            else:
+                result = 'FALSE'
         else:
             
-            result = 'No coordinates specified'
+            result = 'ERROR: no coordinates specified'
             
         return render(request, 'events/query_event_in_survey.html', 
                           {'result': result})
