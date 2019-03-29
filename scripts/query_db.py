@@ -420,6 +420,24 @@ def get_events_box_search(params):
                                      dec__lte=params['dec_max'])
     
     return events
+
+def get_field_containing_coordinates(params):
+    """DB-enabled equivalent to field_check.romecheck; function to check whether
+    a given set of coordinates lies within the ROME survey fields"""
+    
+    field_list = Fields.objects.all()
+    
+    lhalf = 0.220833333333
+    
+    for f in field_list:
+        if params['ra'] < f.field_ra_decimal + lhalf and\
+           params['ra'] > f.field_ra_decimal - lhalf and\
+           params['dec'] < f.field_dec_decimal + lhalf and\
+           params['deg'] > f.field_dec_decimal - lhalf:
+               
+               return f.name
+               
+    return 'Outside ROME footprint'
     
 def combine_event_names(qs_event_names):
     """Function to return the combined name of an event discovered by multiple

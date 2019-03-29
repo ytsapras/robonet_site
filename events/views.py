@@ -1592,22 +1592,13 @@ def query_event_in_survey(request, ra, dec):
     Returns TRUE or FALSE
     """
     
-    field_list = Fields.objects.all()
-    
     if request.method == "GET":
 
-        (id_field, rate) = field_check.romecheck(ra, dec)
+        result = get_field_containing_coordinates({'ra':ra, 'dec':dec})
         
-        if id_field == -1:
-            
-            return render(request, 'events/query_event_in_survey.html', 
-                      {'result': 'FALSE'})
-            
-        else:
-            
-            return render(request, 'events/query_event_in_survey.html', 
-                      {'result': 'TRUE'})
-            
+        return render(request, 'events/query_event_in_survey.html', 
+                      {'result': result})
+                      
     else:
         
         return render(request, 'events/404.html', {})
