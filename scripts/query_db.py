@@ -425,17 +425,18 @@ def get_field_containing_coordinates(params):
     """DB-enabled equivalent to field_check.romecheck; function to check whether
     a given set of coordinates lies within the ROME survey fields"""
     
-    field_list = Fields.objects.all()
+    field_list = Field.objects.all()
     
     lhalf = 0.220833333333
     
     for f in field_list:
-        if params['ra'] < f.field_ra_decimal + lhalf and\
-           params['ra'] > f.field_ra_decimal - lhalf and\
-           params['dec'] < f.field_dec_decimal + lhalf and\
-           params['deg'] > f.field_dec_decimal - lhalf:
-               
-               return f.name
+        if f.field_ra_decimal != None and f.field_dec_decimal != None:
+            if params['ra'] < float(f.field_ra_decimal) + lhalf and\
+               params['ra'] > float(f.field_ra_decimal) - lhalf and\
+               params['dec'] < float(f.field_dec_decimal) + lhalf and\
+               params['dec'] > float(f.field_dec_decimal) - lhalf:
+                   
+                   return f.name
                
     return 'Outside ROME footprint'
     

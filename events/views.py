@@ -18,7 +18,7 @@ from .forms import EventPositionForm, EventSearchForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
 from rest_framework.authentication import TokenAuthentication, BasicAuthentication
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view,authentication_classes,permission_classes
@@ -1584,7 +1584,8 @@ def query_obs_by_date(request, timestamp, time_expire, request_status):
 ##############################################################################################################
 # PUBLICALLY ACCESSIBLE APIs
 @api_view(['GET'])
-def query_event_in_survey(request, ra, dec):
+@permission_classes((AllowAny,))
+def query_event_in_survey(request, ra=None, dec=None):
     """Function to provide a PUBLIC endpoint API for users to query whether
     a set of coordinates lie within the ROME/REA survey fields.
     
@@ -1593,12 +1594,23 @@ def query_event_in_survey(request, ra, dec):
     """
     
     if request.method == "GET":
-
-        result = get_field_containing_coordinates({'ra':ra, 'dec':dec})
         
+        if ra != None and dec != None:
+            
+            ra = float(ra)
+            dec = float(dec)
+            print(ra, dec)
+            
+            result = query_db.get_field_containing_coordinates({'ra':ra, 
+                                                                'dec':dec})
+            
+        else:
+            
+            result = 'No coordinates specified'
+            
         return render(request, 'events/query_event_in_survey.html', 
-                      {'result': result})
-                      
+                          {'result': result})
+                     
     else:
         
         return render(request, 'events/404.html', {})
