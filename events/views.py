@@ -40,6 +40,7 @@ from scripts import query_db
 from scripts import db_plotting_utilities
 from scripts import obs_monitor
 from scripts import rome_fields_dict
+from scripts import field_check
 from scripts import rea_obs
 from scripts import obs_control
 from scripts import log_utilities
@@ -1574,13 +1575,43 @@ def query_obs_by_date(request, timestamp, time_expire, request_status):
             return render(request, 'events/query_obs_by_date.html', \
                                     {'observations': obs_list,
                                      'message': message})
-                                     
+            
     else:
 
         return HttpResponseRedirect('login')
 
 
+##############################################################################################################
+# PUBLICALLY ACCESSIBLE APIs
+@api_view(['GET'])
+def query_event_in_survey(request, ra, dec):
+    """Function to provide a PUBLIC endpoint API for users to query whether
+    a set of coordinates lie within the ROME/REA survey fields.
+    
+    Expects RA, Dec in decimal degrees.
+    Returns TRUE or FALSE
+    """
+    
+    field_list = Fields.objects.all()
+    
+    if request.method == "GET":
 
+        (id_field, rate) = field_check.romecheck(ra, dec)
+        
+        if id_field == -1:
+            
+            return render(request, 'events/query_event_in_survey.html', 
+                      {'result': 'FALSE'})
+            
+        else:
+            
+            return render(request, 'events/query_event_in_survey.html', 
+                      {'result': 'TRUE'})
+            
+    else:
+        
+        return render(request, 'events/404.html', {})
+    
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def record_obs_request(request):

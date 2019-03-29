@@ -122,6 +122,8 @@ class Field(models.Model):
    name = models.CharField("Field name", max_length=50, default='Outside ROMEREA footprint')
    field_ra = models.CharField("RA", max_length=50, default='')
    field_dec = models.CharField("Dec", max_length=50, default='')
+   field_ra_decimal = models.DecimalField("RA_deg", max_digits=12, decimal_places=9, null=True, blank=True)
+   field_dec_decimal = models.DecimalField("Dec_deg", max_digits=12, decimal_places=8, null=True, blank=True)
    
 # Generic Events class
 class Event(models.Model):

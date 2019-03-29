@@ -23,6 +23,8 @@ urlpatterns = [
     url(r'^image_search/image_name=(?P<image_name>[a-z0-9-_]+.[a-z]+)/$', views.image_search, name='image_search'),
     url(r'^query_obs_requests/$', views.query_obs_requests, name='query_obs_requests'),
     url(r'^query_obs_by_date/timestamp=(?P<timestamp>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})&time_expire=(?P<time_expire>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})&request_status=(?P<request_status>[A-Z][A-Z])/$', views.query_obs_by_date, name='query_obs_by_date'),
+    url(r'^query_event_in_survey/$', views.query_event_in_survey, name='query_event_in_survey'),
+    url(r'^query_event_in_survey/ra=(?P<ra>[0-9]+.[0-9]+)&dec=(?P<dec>[0-9]+.[0-9]+)/$', views.query_event_in_survey, name='query_event_in_survey'),
     url(r'^record_obs_request/$', views.record_obs_request, name='record_obs_requests'),
     url(r'^record_sub_obs_request/sr_id=(?P<sr_id>[0-9]+)&grp_id=(?P<grp_id>[A-Za-z0-9]+.[0-9]+)&track_id=(?P<track_id>[0-9]+)&window_start=(?P<window_start>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})&window_end=(?P<window_end>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})&status=(?P<status>[A-Z_]+)/$', views.record_sub_obs_request, name='record_sub_obs_request'),
     url(r'^record_sub_obs_request/sr_id=(?P<sr_id>[0-9]+)&grp_id=(?P<grp_id>[A-Za-z0-9]+.[0-9]+)&track_id=(?P<track_id>[0-9]+)&window_start=(?P<window_start>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})&window_end=(?P<window_end>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})&status=(?P<status>[A-Z_]+)&time_executed=(?P<time_executed>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/$', views.record_sub_obs_request, name='record_sub_obs_request'),
