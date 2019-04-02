@@ -174,7 +174,7 @@ def dashboard(request):
             # Report the time allocation only for the 1m network
             proposals_dict = response.json()  # api returns a json dictionary containing proposal information
             for alloc in proposals_dict['results'][0]['timeallocation_set']:
-                if ( (alloc['telescope_class'] == u'1m0') and (alloc['semester'] == '2018A') ):
+                if ( (alloc['telescope_class'] == u'1m0') and (alloc['semester'] == '2019A') ):
                         time_available = alloc['std_allocation']
                         time_used = alloc['std_time_used']
                         ipp_time_available = alloc['ipp_time_available']
@@ -1281,7 +1281,7 @@ def display_obs_monitor(request):
     """Display of functions which monitor the observing system, observations
     requested and data taken."""
     
-    rome_start = datetime.strptime('2018-04-01','%Y-%m-%d')
+    rome_start = datetime.strptime('2019-04-01','%Y-%m-%d')
     rome_start = rome_start.replace(tzinfo=pytz.UTC)
     now = datetime.utcnow()
     now = now.replace(tzinfo=pytz.UTC)
