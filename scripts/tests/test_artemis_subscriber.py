@@ -131,6 +131,14 @@ def test_event_data_check():
                                                          log=log)
     assert status == True
 
-if __name__ == '__main__':
-    test_list_data_files()
+def rsync_artemis_anomalies():
     
+    config = artemis_subscriber.read_config()
+    
+    artemis_subscriber.rsync_artemis_anomalies(config)
+    
+    
+if __name__ == '__main__':
+    
+    #test_list_data_files()
+    rsync_artemis_anomalies()

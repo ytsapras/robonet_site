@@ -670,7 +670,53 @@ def set_event_status(request):
         
         return HttpResponseRedirect('login')
 
- 
+
+@login_required(login_url='/db/login/')
+def set_event_status_api(request,event_name=None,status=None):
+    """API endpoint to programmatically set the REA status of an event.
+    Event_name can be the event name in plain text but the status of the event
+    must be the two-letter code used to indicate the status in the DB.
+    """
+    
+    possible_status = {'NF': 'Not in footprint',
+                       'AC': 'active',
+                       'MO': 'monitor',
+                       'AN': 'anomaly',
+                       'EX': 'expired'}
+   
+    if request.user.is_authenticated():
+        
+        if request.method == "POST":
+        
+            if event_name != None and status in possible_status.keys():
+                
+                qs = EventName.objects.filter(name=event_name)
+                
+                if len(qs) == 0:
+                    
+                    result = 'ERROR: Unrecognised event name'
+                    
+                else:
+                    
+                    (status, result) = update_db_2.update_event_status(qs[0].event, 
+                                                                        status)
+            
+            else:
+            
+                result = 'ERROR: Insufficient or invalid parameters specified'
+            
+        else:
+            
+            result = 'ERROR: This API accepts only POST requests'
+            
+        return render(request, 'events/plain_api_results_page.html', 
+                          {'result': result})
+                                        
+    else:
+        
+        return HttpResponseRedirect('login')
+    
+
 def get_events_from_tap_list():
     """Function to return a list of all current events"""
     

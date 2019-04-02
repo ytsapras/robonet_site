@@ -54,7 +54,9 @@ def sync_artemis():
         sync_artemis_data_db(config,'data',log)
         
         rsync_internal_data(config)
-    
+        
+        rsync_artemis_anomalies(config)
+        
     log_utilities.end_day_log( log )
 
 
@@ -362,7 +364,24 @@ def rsync_internal_data(config):
     args = command.split()
     p = subprocess.Popen(args)
     p.wait()
+
+
+def rsync_artemis_anomalies(config):
+    """Function to rsync Signalmen's internal files indicating an event is
+    in anomaly status"""
     
+    local_location = config['internal_data_local_location']
+    ts = Time.now()          # Defaults to UTC
+    ts = ts.now().iso.split('.')[0].replace(' ','T').replace(':','').replace('-','')
+    log_path = path.join( config['rsync_log_directory'], config['log_root_name'] + '_' + ts + '.log' )
+    
+    command = 'rsync -avz ARTEMiSinternal@mlrsync-stand.net::Models2019/*.anomaly ' + \
+              local_location + ' --password-file=' + config['auth'] + ' ' + \
+              '--log-file=' + log_path
+    
+    args = command.split()
+    p = subprocess.Popen(args)
+    p.wait()
     
 ###########################
 # READ RSYNC LOG
