@@ -122,7 +122,7 @@ def rome_obs_sequence(site_code=None):
                     'sites':        ['lsc', 'cpt', 'coj'],
                     'domes':        ['doma', 'domc', 'doma'],
                     'tels':         [ '1m0', '1m0', '1m0' ],
-                    'instruments':  ['fl15', 'fl06', 'fl12'],
+                    'instruments':  ['fa15', 'fa06', 'fa12'],
                     'cadence_hrs': 7.0,
                     'jitter_hrs': 7.0,
 #                    'TTL_days': 6.98,

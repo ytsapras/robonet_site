@@ -110,7 +110,7 @@ def rea_obs_sequence(site_code=None):
                     'sites':        ['lsc', 'cpt', 'coj'],
                     'domes':        ['doma', 'domc', 'doma'],
                     'tels':         [ '1m0', '1m0', '1m0' ],
-                    'instruments':  ['fl15', 'fl06', 'fl12'],
+                    'instruments':  ['fa15', 'fa06', 'fa12'],
                     'moon_sep_min': [ 30.0, 30.0, 30.0 ],
                     'TTL_N_days':  1.0,
                     'TTL_A_days': 0.5,
