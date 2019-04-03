@@ -89,5 +89,18 @@
     <parameter name='log_root_name'>
         <value>artemis_subscriber</value>
     </parameter>
+
+    <parameter name='db_user_id'>
+	<value>not_given</value>
+    </parameter>
+
+    <parameter name='db_pswd'>
+	<value>not_given</value>
+    </parameter>
+    
+    <parameter name='db_token'>
+	<value>not_given</value>
+    </parameter>
+    
     
 </artemis_sync_config>

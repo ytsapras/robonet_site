@@ -1,0 +1,17 @@
+{% extends "api_result_base.html" %}
+
+{% block content %}
+<div style="margin-top: 20px;">
+    <form method="POST" class="post-form">{% csrf_token %}
+        {{ formset.management_form }}
+        {{ formset.errors }}
+    </form>
+</div>
+<div>
+{% if message != 'OK' %}
+    <div>
+        <center><h5>{{ message }}</h5></center>
+    </div>
+{% endif %}
+</div>
+{% endblock %}

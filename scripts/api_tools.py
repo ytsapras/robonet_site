@@ -449,6 +449,19 @@ def submit_image_record(config,params,testing=False,verbose=False):
                             testing=testing,verbose=verbose)
     
     return message
+
+def submit_event_status(config,params,testing=False,verbose=False):
+    
+    end_point = 'set_event_status_api'
+    
+    key_order = [ 'event_name', 'status' ]
+    
+    query = build_url_query(end_point,key_order,params)
+    
+    message = talk_to_db(query,config['db_token'],
+                            testing=testing,verbose=verbose)
+    
+    return message
     
 ################################################################################
 def get_obs_list(config,params,testing=False,verbose=False):
@@ -598,7 +611,7 @@ def talk_to_db(query,token,testing=False,verbose=False):
         url = url + '/'
     
     if verbose==True:
-        print 'End point URL:',url
+        print('End point URL:',url)
     
     headers = {'Authorization': 'Token ' + token}
     

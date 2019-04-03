@@ -15,6 +15,7 @@ import glob
 from datetime import datetime
 import event_classes
 import pytest
+import test_api_set_event_status
 
 def test_read_config():
     """Function to verify that the artemis subscriber software can read its
@@ -131,14 +132,48 @@ def test_event_data_check():
                                                          log=log)
     assert status == True
 
-def rsync_artemis_anomalies():
+    log_utilities.end_day_log( log )
+    
+def test_rsync_artemis_anomalies():
     
     config = artemis_subscriber.read_config()
     
     artemis_subscriber.rsync_artemis_anomalies(config)
     
+def test_read_artemis_anomaly_files():
+    
+    config = artemis_subscriber.read_config()
+    
+    log = log_utilities.start_day_log( config, '_test_artemis_subscriber' )
+    
+    anomaly_list = artemis_subscriber.read_artemis_anomaly_files(config,log)
+    
+    assert type(anomaly_list) == type(['foo'])
+    assert len(anomaly_list) > 0
+    
+    log_utilities.end_day_log( log )
+
+def test_set_anomaly_status_db():
+    
+    config = artemis_subscriber.read_config()
+    
+    auth = test_api_set_event_status.get_config()
+    
+    for key, value in auth.items():
+        config[key] = value
+        
+    log = log_utilities.start_day_log( config, '_test_artemis_subscriber' )
+    
+    anomaly_list = ['MOA-2019-BLG-0002', 'OGLE-2018-BLG-0022']
+    
+    artemis_subscriber.set_anomaly_status_db(config,anomaly_list,log,
+                                             testing=True)
+    
+    log_utilities.end_day_log( log )
     
 if __name__ == '__main__':
     
     #test_list_data_files()
-    rsync_artemis_anomalies()
+    #test_rsync_artemis_anomalies()
+    #test_read_artemis_anomaly_files()
+    test_set_anomaly_status_db()
