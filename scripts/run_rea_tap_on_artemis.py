@@ -262,7 +262,8 @@ def assign_tap_priorities(logger):
             err_omega = 0.
 
             # CRITERIA FOR PERMITTING A NON-ZERO PRIORITY
-            if ibase_pspl > 0. and g_pspl < 210. and omega_now > 0.02:
+	    # reduce omega threshold and remove g_pspl cut (before 2019: 0.02 and 210)
+            if ibase_pspl > 0. and omega_now > 0.01:
                 add_tap(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
                         texp=texp, nexp=1., imag=imag, omega=omega_now,
                         err_omega=err_omega, peak_omega=omega_peak,
@@ -299,7 +300,7 @@ def run_tap_prioritization(logger):
     #adjust the allocation factor to 1 (if REA has an anomaly mode)
     #to 2 (if REA is the only follow-up mode)
     #to 2.8 (if REA is operated before and season start)
-    daily_visibility = 2. * full_visibility * 300. / 3198.
+    daily_visibility = 2.8 * full_visibility * 300. / 3198.
 
     list_evnt = Event.objects.filter(status__in=['AC', 'MO'])
     output = []
@@ -309,7 +310,7 @@ def run_tap_prioritization(logger):
             latest_ev_tap_val = Tap.objects.filter(
                 event=ev).values().latest('timestamp')
             # print 'done', ev.id, ev.status
-            if float(latest_ev_tap_val['omega']) >= 0.02:
+            if float(latest_ev_tap_val['omega']) >= 0.01:
                 output.append(latest_ev_tap_val)
                 logger.info('adding to be sorted (not queued!) ' + str(ev.id) + ' ' + str(
                     ev.status) + ' ' + str(EventName.objects.select_related().filter(event=ev.id)[0].name))
