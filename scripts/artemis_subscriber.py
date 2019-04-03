@@ -26,6 +26,7 @@ import mmap
 import pytz
 import get_errors
 import glob
+import api_tools
 
 version = 1.0
 
@@ -54,7 +55,13 @@ def sync_artemis():
         sync_artemis_data_db(config,'data',log)
         
         rsync_internal_data(config)
-    
+        
+        rsync_artemis_anomalies(config)
+        
+        anomaly_list = read_artemis_anomaly_files(config,log)
+        
+        set_anomaly_status_db(config,anomaly_list,log)
+        
     log_utilities.end_day_log( log )
 
 
@@ -362,7 +369,24 @@ def rsync_internal_data(config):
     args = command.split()
     p = subprocess.Popen(args)
     p.wait()
+
+
+def rsync_artemis_anomalies(config):
+    """Function to rsync Signalmen's internal files indicating an event is
+    in anomaly status"""
     
+    local_location = config['internal_data_local_location']
+    ts = Time.now()          # Defaults to UTC
+    ts = ts.now().iso.split('.')[0].replace(' ','T').replace(':','').replace('-','')
+    log_path = path.join( config['rsync_log_directory'], config['log_root_name'] + '_' + ts + '.log' )
+    
+    command = 'rsync -avz ARTEMiSinternal@mlrsync-stand.net::Models2019/*.anomaly ' + \
+              local_location + ' --password-file=' + config['auth'] + ' ' + \
+              '--log-file=' + log_path
+    
+    args = command.split()
+    p = subprocess.Popen(args)
+    p.wait()
     
 ###########################
 # READ RSYNC LOG
@@ -504,6 +528,39 @@ def read_artemis_align_params(data_file,filt):
     
     return params
 
+def read_artemis_anomaly_files(config,log):
+    """Function to parse the files used by ARTEMiS to flag anomalous events"""
+    
+    file_list = glob.glob(path.join(config['internal_data_local_location'],
+                                        '*.anomaly'))
+    
+    anomaly_list = []
+    
+    for f in file_list:
+
+        short_name = path.basename(f).replace('.anomaly','')
+
+        long_name = utilities.short_to_long_name(short_name)
+    
+        anomaly_list.append(long_name)
+    
+    log.info('ARTEMiS identified '+str(len(anomaly_list))+\
+             ' anomalous events (all years)')
+             
+    return anomaly_list
+
+def set_anomaly_status_db(config,anomaly_list,log,testing=False):
+    """Function to set the status of anomalous events"""
+    
+    for event_name in anomaly_list:
+        params = {'event_name': event_name,
+                  'status': 'AN'}
+                
+        response = api_tools.submit_event_status(config, params, testing=testing)
+        
+        log.info('Set event '+event_name+' to anomaly status with response '+\
+                 repr(response))
+    
 def get_artemis_data_params(data_file_path):
     '''Function to obtain information about the ARTEMiS-format photometry data file,
     without reading the whole file.'''

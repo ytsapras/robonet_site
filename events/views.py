@@ -602,7 +602,7 @@ def set_event_status(request):
     """View to enable users to manually set the REA status of an event in the
     TAP list"""
     
-    if request.user.is_authenticated():
+    def fetch_events_and_states():
         
         qs = Event.objects.all().order_by('year').reverse()
         
@@ -625,12 +625,17 @@ def set_event_status(request):
                       ('EX', 'expired')
                    )
         
+        return events, states
         
-        if request.method == "POST":
+    if request.user.is_authenticated():
         
+        if request.method == "POST" and event_name==None and status==None:
+        
+            (events, states) = fetch_events_and_states()
+            
             eform = EventAnomalyStatusForm(request.POST)
             nform = EventNameForm(request.POST)
-                        
+            
             if eform.is_valid() and nform.is_valid():
                 
                 epost = eform.save(commit=False)
@@ -655,9 +660,11 @@ def set_event_status(request):
                                     {'eform': eform, 'nform': nform,
                                     'events': events, 'states': states,
                                     'message':'Form entry was invalid.  Please try again.'})
-            
+        
         else:
-
+            
+            (events, states) = fetch_events_and_states()
+            
             eform = EventAnomalyStatusForm()
             nform = EventNameForm()
                 
@@ -670,7 +677,54 @@ def set_event_status(request):
         
         return HttpResponseRedirect('login')
 
- 
+
+@api_view(['POST'])
+@login_required(login_url='/db/login/')
+@authentication_classes((TokenAuthentication, BasicAuthentication))
+@permission_classes((IsAuthenticated,))
+def set_event_status_api(request,event_name,status):
+    """API endpoint to programmatically set the REA status of an event.
+    Event_name can be the event name in plain text but the status of the event
+    must be the two-letter code used to indicate the status in the DB.
+    """
+
+    possible_status = {'NF': 'Not in footprint',
+                       'AC': 'active',
+                       'MO': 'monitor',
+                       'AN': 'anomaly',
+                       'EX': 'expired'}
+   
+    if request.user.is_authenticated():
+        
+        if request.method == "POST" and event_name != None \
+            and status in possible_status.keys():
+            
+            eform = EventAnomalyStatusForm(request.POST)
+            nform = EventNameForm(request.POST)
+            
+            qs = EventName.objects.filter(name=event_name)
+            
+            if len(qs) == 0:
+                
+                message = 'DBREPLY: ERROR: Unrecognised event name'
+                
+            else:
+                
+                (status, message) = update_db_2.update_event_status(qs[0].event, 
+                                                                    status)
+        
+        else:
+            
+            message = 'DBREPLY: ERROR: Insufficient or invalid parameters specified'
+            
+        return render(request, 'events/set_event_anomaly_status_api.html', 
+                          {'message': message})
+                                        
+    else:
+        
+        return HttpResponseRedirect('login')
+    
+
 def get_events_from_tap_list():
     """Function to return a list of all current events"""
     
@@ -864,6 +918,40 @@ def list_year(request, year):
       return render(request, 'events/list_events.html', context)
    else:
       return HttpResponseRedirect('login')
+
+@login_required(login_url='/db/login/')
+def list_anomalies(request):
+    """Function to list all anomalous events from the current year"""
+    
+    if request.user.is_authenticated():
+        
+        current_date = datetime.now()
+        
+        events = Event.objects.filter(year=str(current_date.year), status='AN')
+        
+        ev_id = [k.pk for k in events]
+        field = [k.field.name.replace(' footprint','') for k in events]
+        ra = [k.ev_ra for k in events]
+        dec = [k.ev_dec for k in events]
+        status = [k.status for k in events]
+        year_disc = [k.year for k in events]
+        
+        names_list = []
+        
+        for i in range(len(events)):
+            evnm = EventName.objects.filter(event=events[i])
+            names = [k.name for k in evnm]
+            names_list.append(names)
+        
+        rows = zip(ev_id, names_list, field, ra, dec, status, year_disc)
+        rows = sorted(rows, key=lambda row: row[1])
+        
+        return render(request, 'events/list_events.html', {'rows': rows})
+    
+    else:
+        
+        return HttpResponseRedirect('login')
+
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')
