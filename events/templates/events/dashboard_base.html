@@ -3,7 +3,9 @@
 <head>
     <meta HTTP-EQUIV="PRAGMA" content="NO-CACHE">
     <meta name="robots" content="NONE,NOARCHIVE" />
-    <link rel="stylesheet" type="text/css" href={% static 'events/events.css' %} />
+    <!-- <link rel="stylesheet" type="text/css" href={% static 'events/events.css' %} /> -->
+    <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="/static/bootstrap/css/sticky-footer-navbar.css" rel="stylesheet">
     <title>ROME/REA Key Project Status</title>
 </head>
 
@@ -13,7 +15,7 @@
    <!-- Header -->
    <div id="header">
         <div id="branding">
-           <h1 id="site-name"><a href="{% url 'dashboard' %}">ROME/REA Database View</a></h1>
+           <h1 id="site-name"><a href="{% url 'dashboard' %}">ROME/REA Database</a></h1>
         </div>
         <div id="user-tools">
 	        {% if user.is_authenticated %}
@@ -36,8 +38,9 @@
 <!-- BEGIN WRAPPING TABLE -->
 <table border="1" width=900 bgcolor="#FFFFFF">
 <tr><td>
-<center>
+
 <!-- BEGIN MAP TABLE -->
+<div>
 <h4 style="color: #000000">{% block title %}ROME/REA Key Project Status:{% endblock %}</h4>
 <!-- Uncomment to view without marks <img src="http://www.fourmilab.ch/cgi-bin/Earth?img=clou
 dy.bmp&imgsize=320&dynimg=y&opt=-p&lat=&lon=&alt=&tle=&date=0&utc=&jd=" width="560" border="2
@@ -89,6 +92,7 @@ dy.bmp&imgsize=320&dynimg=y&opt=-p&lat=&lon=&alt=&tle=&date=0&utc=&jd=" width="5
 </td>
 </tr>
 </table>
+</div>
 <!-- END MAP TABLE -->
 
 <br>
