@@ -901,22 +901,13 @@ def list_year(request, year):
    """
    if request.user.is_authenticated():
       events = Event.objects.filter(year=str(year))
-      ev_id = [k.pk for k in events]
-      field = [k.field.name.replace(' footprint','') for k in events]
-      ra = [k.ev_ra for k in events]
-      dec = [k.ev_dec for k in events]
-      status = [k.status for k in events]
-      year_disc = [k.year for k in events]
-      names_list = []
-      for i in range(len(events)):
-         evnm = EventName.objects.filter(event=events[i])
-         names = [k.name for k in evnm]
-         names_list.append(names)
-      rows = zip(ev_id, names_list, field, ra, dec, status, year_disc)
-      rows = sorted(rows, key=lambda row: row[1])
-      context = {'rows': rows}
-      return render(request, 'events/list_events.html', context)
+      
+      rows = render_event_queryset_as_table_rows(events)
+        
+      return render(request, 'events/list_events.html', {'rows': rows})
+      
    else:
+
       return HttpResponseRedirect('login')
 
 @login_required(login_url='/db/login/')
@@ -929,22 +920,7 @@ def list_anomalies(request):
         
         events = Event.objects.filter(year=str(current_date.year), status='AN')
         
-        ev_id = [k.pk for k in events]
-        field = [k.field.name.replace(' footprint','') for k in events]
-        ra = [k.ev_ra for k in events]
-        dec = [k.ev_dec for k in events]
-        status = [k.status for k in events]
-        year_disc = [k.year for k in events]
-        
-        names_list = []
-        
-        for i in range(len(events)):
-            evnm = EventName.objects.filter(event=events[i])
-            names = [k.name for k in evnm]
-            names_list.append(names)
-        
-        rows = zip(ev_id, names_list, field, ra, dec, status, year_disc)
-        rows = sorted(rows, key=lambda row: row[1])
+        rows = render_event_queryset_as_table_rows(events)
         
         return render(request, 'events/list_events.html', {'rows': rows})
     
