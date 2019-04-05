@@ -33,7 +33,7 @@
 	</td>
     </tr>
     <tr>
-	<td colspan=4 height="50px" bgcolor="#FFFFFF"><b> Event name:</b>
+	<td colspan=3 height="50px" bgcolor="#FFFFFF"><b> Event name:</b>
 	{% for name in event_names %}
 	   {% if ogle_url != '' and 'OGLE' in name.name %}
 	      <a href="{{ ogle_url }}">{{ name.name }}</a>
@@ -41,6 +41,9 @@
 	      {{ name.name }}
 	   {% endif %}
 	{% endfor %}
+    <td height="50px" bgcolor="#FFFFFF">
+        <a href={% url 'event_obs_details' event_name=this_name %} STYLE="text-decoration:none">Observing details for this event</a>
+        </td>
     </tr>
     <tr>
 	<td height="50px" bgcolor="#FFFFFF"><b>RA:</b> {{ ev_ra }}</td>
@@ -70,14 +73,73 @@
     <tr>
 	<td bgcolor="#FFFFCC" height="50px"><b>u<sub>0</sub>:</b> {{ umin }}&plusmn;{{ e_umin }}</td>
     </tr>
-    <tr>
-        <td bgcolor="#FFFFFF"></td>
-	<td colspan=3 height="50px" bgcolor="#FFFFFF">
-	 <center>
-	  <a href={% url 'event_obs_details' event_name=this_name %} STYLE="text-decoration:none">Observing details for this event</a>
-	 </center>
-    </tr>
  </table>
+    {% if survey_data|length > 0 %}
+<div>
+    <table border="0" style="width:1100px" bgcolor="#FFFFFF">
+    <tr><th colspan=3 bgcolor="#E6E6B8" >RTModel</th>
+        <th colspan=2 bgcolor="#FFFFCC">MisMap</th>
+        <th colspan=2 bgcolor="#E6E6B8">MOA</th>
+        <th bgcolor="#FFFFCC">KMTNet</th>
+        <th bgcolor="#E6E6B8">OGLE</th></tr>
+    <tr>
+        {% if survey_data.0 == 'No event page' %}
+            <td>{{ survey_data.0|safe }}</td>
+        {% else %}
+            <td><a href="{{ survey_data.0 }}">Event page</a></td>
+        {% endif %}
+        
+        {% if survey_data.1 == 'Unclassified' %}
+            <td>Unclassified</td>
+        {% else %}
+            <td>{{ survey_data.1 }}</td>
+        {% endif %}
+        
+        {% if survey_data.2 == 'No image available' %}
+            <td>No model available</td>
+        {% else %}
+            <td><a href="{{ survey_data.2 }}">Model</a></td>
+        {% endif %}
+        
+        
+        {% if survey_data.3 == 'No event page' %}
+            <td>{{ survey_data.3|safe }}</td>
+        {% else %}
+            <td><a href="{{ survey_data.3 }}">Event page</a></td>
+        {% endif %}
+        {% if survey_data.4 == 'No image available' %}
+            <td>No image available</td>
+        {% else %}
+            <td><a href="{{ survey_data.4 }}">Model</a></td>
+        {% endif %}
+        
+        {% if survey_data.5 == 'No event page' %}
+            <td>{{ survey_data.5|safe }}</td>
+        {% else %}
+            <td><a href="{{ survey_data.5 }}">Event page</a></td>
+        {% endif %}
+        {% if survey_data.6 == 'No image available' %}
+            <td>No image available</td>
+        {% else %}
+            <td><a href="{{ survey_data.6 }}">Model</a></td>
+        {% endif %}
+        
+        {% if survey_data.7 == 'No event page' %}
+            <td>{{ survey_data.7|safe }}</td>
+        {% else %}
+            <td><a href="{{ survey_data.7 }}">Model</a></td>
+        {% endif %}
+        
+        {% if survey_data.8 == 'No finderchart' %}
+            <td>No finderchart</td>
+        {% else %}
+            <td><a href="{{ survey_data.8 }}">OGLE finderchart</a></td>
+        {% endif %}
+        
+        </tr>
+    </table>
+</div>
+    {% endif %}
  </center>
 {% endblock %}
 

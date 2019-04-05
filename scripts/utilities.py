@@ -83,6 +83,20 @@ def long_to_short_name(long_name):
 
     return short_name
 
+def long_to_artemis_name(long_name):
+    """Convert the long-form name to ARTEMiS format for bokeh plotting"""
+    
+    if 'OGLE' in long_name:
+        artemis_name = 'OB'+long_name.split('-')[1][2:]+long_name.split('-')[-1]
+    elif 'MOA' in long_name:
+        artemis_name = 'KB'+long_name.split('-')[1][2:]+long_name.split('-')[-1]
+    elif 'KMT' in long_name:
+        artemis_name = 'KM'+long_name.split('-')[1][2:]+long_name.split('-')[-1]
+    else:
+        artemis_name = 'UNKNOWN EVENT'
+    
+    return artemis_name
+    
 def combined_survey_name(name_list):
     """Function to return the complete name string for an event with multiple 
     survey detections

@@ -114,7 +114,7 @@ def test_scrape_moa():
 def test_scrape_kmt():
     
     year = 2019
-    event='OB190011'
+    event='OB190335'
     
     output = survey_data_utilities.scrape_kmt(year, event)
     
@@ -123,7 +123,9 @@ def test_scrape_kmt():
     assert 'jpg' in output[1] or 'N/A' in output[1]
     assert type(output[2]) == type(True)
     assert type(output[3]) == type(True)
-
+    
+    print(output)
+    
 def test_fetch_ogle_fchart():
     
     year = 2019
@@ -141,5 +143,5 @@ if __name__ == '__main__':
     #test_scrape_rtmodel()
     #test_scrape_mismap()
     #test_scrape_moa()
-    #test_scrape_kmt()
-    test_fetch_ogle_fchart()
+    test_scrape_kmt()
+    #test_fetch_ogle_fchart()

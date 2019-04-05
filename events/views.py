@@ -929,18 +929,14 @@ def list_anomalies(request):
         
         event_names = []
         for e in events:
-            name = EventName.objects.filter(event=e)
-            print(name)
-            event_names.append(utilities.long_to_short_name(name.name))
+            qs = EventName.objects.filter(event=e)
+            event_names.append(utilities.long_to_short_name(qs[0].name))
             
         rows = render_event_queryset_as_enhanced_table_rows(events)
         
-        survey_rows = render_survey_links_table_rows(event_names)
-        
         return render(request, 'events/list_anomalies.html', 
                               {'rows': rows, 
-                              'JD_now': time_now.jd,
-                               'survey_rows': survey_rows})
+                              'JD_now': time_now.jd})
     
     else:
         
@@ -1074,52 +1070,55 @@ def render_event_queryset_as_enhanced_table_rows(events):
         
     return rows
 
-def render_survey_links_table_rows(events_list):
+def gather_survey_links(short_name):
     """Function to fetch all available links to information from other surveys"""
 
     current_date = datetime.now()
-
-    rt_url_list = []
-    rt_classif_list = []
-    rt_images_list = []
-    mm_url_list = []
-    mm_image_list = []
-    kb_url_list = []
-    kb_image_list = []
-    kmt_url_list = []
-    ogle_image_list = []
     
-    for event in events_list:
-        
-        rtmodel = survey_data_utilities.scrape_rtmodel(current_date.year, event)
-        mismap = survey_data_utilities.scrape_mismap(current_date.year, event)
-        moa = survey_data_utilities.scrape_moa(current_date.year, event)
-        kmt = survey_data_utilities.scrape_kmt(current_date.year, event)
-        ogle = survey_data_utilities.fetch_ogle_fchart(current_date.year, event)
+    rtmodel = survey_data_utilities.scrape_rtmodel(current_date.year, short_name)
+    mismap = survey_data_utilities.scrape_mismap(current_date.year, short_name)
+    moa = survey_data_utilities.scrape_moa(current_date.year, short_name)
+    kmt = survey_data_utilities.scrape_kmt(current_date.year, short_name)
+    ogle = survey_data_utilities.fetch_ogle_fchart(current_date.year, short_name)
     
-        rt_url_list.append(rtmodel[0])
-        rt_classif_list.append(rtmodel[1])
-        rt_images_list.append(rtmodel[2])
-        
-        mm_url_list.append(mismap[0])
-        mm_image_list.append(mismap[1])
-
-        kb_url_list.append(moa[0])
-        kb_image_list.append(moa[1])
-        
-        kmt_url_list.append(kmt[1])
-        
-        ogle_image_list.append(ogle[0])
+    event_data = [ ]
     
-    rows = zip(rt_url_list, rt_classif_list, rt_images_list, 
-               mm_url_list, mm_image_list, 
-               kb_url_list, kb_image_list, 
-               kmt_url_list, 
-               ogle_image_list)
-               
-    rows = sorted(rows, key=lambda row: row[1], reverse=True)
+    if rtmodel[4]:
+        event_data.append(rtmodel[0])           # RTModel URL
+        event_data.append(rtmodel[1])           # RTModel classification
+        event_data.append(rtmodel[2])           # RTModel image
+    else:
+        event_data.append('No event page')
+        event_data.append('Unclassified')
+        event_data.append('No image available')
     
-    return rows
+    if mismap[3]:
+        event_data.append(mismap[0])            # MisMap URL
+        event_data.append(mismap[1])            # MisMap image
+    else:
+        event_data.append('No event page')
+        event_data.append('No image available')
+    
+    if moa[3]:
+        event_data.append(moa[0])               # MOA URL
+        event_data.append(moa[1])               # MOA image
+    else:
+        event_data.append('No event page')
+        event_data.append('No image available')
+    
+    if kmt[3]:
+        event_data.append(kmt[1])               # KMTNet URL
+    else:
+        event_data.append('No event page')
+    
+    if ogle[1]:
+        event_data.append(ogle[0])              # OGLE finder chart
+    else:
+        event_data.append('No finderchart')
+        
+    event_data = tuple(event_data)
+    
+    return event_data
     
 ##############################################################################################################
 @login_required(login_url='/db/login/')
@@ -1334,129 +1333,141 @@ def show_event_by_id(request, event_id):
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def show_event(request, event_name):
-   """
-   Will set up a single event page and display the lightcurve.
-   """
-   if request.user.is_authenticated():
-      time_now = datetime.now()
-      time_now_jd = Time(time_now).jd
-      possible_status = { 
-         'NF':'Not in footprint',
-         'AC':'active',
-         'MO':'monitor',
-         'AN':'anomaly',
-         'EX':'expired'}
-      try:
-         # Convert shorthand format to long format to make compatible with the DB
-         event_name = short_to_long_name(event_name)
-         this_event_number = event_name.split('-')[-1]
-         next_event_number = str(int(this_event_number)+1).zfill(4)
-         prev_event_number = str(int(this_event_number)-1).zfill(4)
-         next_name = event_name.replace(this_event_number, next_event_number)
-         prev_name = event_name.replace(this_event_number, prev_event_number)	 
-         # Get the ID for this event
-         event_id = EventName.objects.get(name=event_name).event_id
-         ev_ra = Event.objects.get(pk=event_id).ev_ra
-         ev_dec = Event.objects.get(pk=event_id).ev_dec
-         ev_names = EventName.objects.filter(event_id=event_id)
-         flag = 0
-         ev_ogle, ev_moa, ev_kmt = '', '', ''
-         for name in ev_names:
-            if 'OGLE' in name.name and flag==0:
-               ev_ogle = name.name
-               flag = 1
-            if 'MOA' in name.name:
-               ev_moa = name.name
-            if 'KMT' in name.name:
-               ev_kmt = name.name
-         # Get the names for this event ID from all surveys
-         # Keep just one so that we can generate the url link to /microlensing.zah.uni-heidelberg.de
-         if 'ev_ogle':
-            ev_name = ev_ogle
-            survey_name = "OGLE"
-            event_number = ev_name.split('-')[-1]
-         elif 'ev_moa':
-            ev_name = ev_moa
-            survey_name = "MOA"
-            event_number = ev_name.split('-')[-1]
-         elif 'ev_kmt':
-            ev_name = ev_kmt
-            survey_name = "KMT"
-            event_number = ev_name.split('-')[-1]
-         field_id =  Event.objects.get(pk=event_id).field.id
-         field = Field.objects.get(id=field_id).name
-         # Get list of all observations and select the one with the most recent time.
-         try:
-            event = Event.objects.get(id=event_id)
-            status_recent = Event.objects.get(pk=event_id).status	    
-            single_recent = SingleModel.objects.select_related().filter(event=event).filter(modeler='ARTEMiS').values().latest('last_updated')
-            Tmax = single_recent['Tmax']
-            e_Tmax = single_recent['e_Tmax']
-            tau = single_recent['tau']
-            e_tau = single_recent['e_tau']
-            umin = single_recent['umin']
-            e_umin = single_recent['e_umin']
-            last_updated = single_recent['last_updated']
-            last_updated_hjd =  Time(last_updated).jd
-            status = status_recent
-            ogle_url = ''
-            if "OGLE" in ev_name:
-               ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])
-         except:
-	    Tmax = "N/A"
-            e_Tmax = "N/A"
-            tau = "N/A"
-            e_tau = "N/A"
-            umin = "N/A"
-            e_umin = "N/A"
-            last_updated = "N/A"
-            last_updated_hjd = "N/A"
-            last_obs_tel = "N/A"
-            status = 'EX'
-            ogle_url = ''
-	 try:
-            obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_hjd')
-            last_obs_hjd = obs_recent['last_hjd']
-            last_obs = Time(float(last_obs_hjd), format='jd', scale='utc').iso
-            tel_id = obs_recent['datafile'].split('/')[-1].split('_')
-            if len(tel_id) == 2:
-               tel_id = tel_id[0]+'_'
-            else:
-               tel_id = obs_recent['datafile'].split('/')[-1][0]
-            last_obs_tel = site_dict[tel_id][-1]
-         except:
-            last_obs = "N/A"
-            last_obs_hjd = "N/A"
-	    last_obs_tel = "N/A"
-         # Convert the name to ARTEMiS format for bokeh plotting
-         if 'OGLE' in ev_name:
-            artemis_name = 'OB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
-         elif 'MOA' in ev_name:
-            artemis_name = 'KB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
-         elif 'KMT' in ev_name:
-            artemis_name = 'KM'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
-         else:
-            artemis_name = 'UNKNOWN EVENT'
-         try:
-            script, div = plot_it(artemis_name)
-         except:
-            script, div = '', 'Detected empty or corrupt datafile in list of lightcurve files.<br>Plotting disabled.'
-         context = {'event_id':event_id, 'event_names':ev_names, 
-        	    'this_name':event_name, 
-        	    'prev_name':prev_name, 'next_name':next_name,
-        	    'ev_ra':ev_ra, 'ev_dec':ev_dec, 'field':field, 'last_obs':last_obs, 
-        	    'Tmax':Tmax, 'e_Tmax':e_Tmax, 'tau':tau, 'e_tau':e_tau, 'umin':umin, 
-        	    'e_umin':e_umin, 'last_updated':last_updated, 'last_updated_hjd':last_updated_hjd,
-        	    'last_obs':last_obs, 'last_obs_hjd':last_obs_hjd, 'status':possible_status[status],
-        	    'last_obs_tel':last_obs_tel, 'ogle_url':ogle_url, 'time_now': time_now, 
-        	    'time_now_jd': time_now_jd, 'the_script': script, 'the_div': div}
-      except EventName.DoesNotExist:
-         raise Http404("Event does not exist in DB.")
-      except ValueError:
-         raise Http404("Unrecognized event name. Please provide name in standard short or long notation.")	 
-      return render(request, 'events/show_event.html', context)
-   else:
-      return HttpResponseRedirect('login')
+    """Will set up a single event page and display the lightcurve."""
+    
+    if request.user.is_authenticated():
+        
+        time_now = datetime.now()
+        time_now_jd = Time(time_now).jd
+        possible_status = { 'NF':'Not in footprint',
+                            'AC':'active',
+                            'MO':'monitor',
+                            'AN':'anomaly',
+                            'EX':'expired' }
+                            
+        try:
+        
+            # Convert shorthand format to long format to make compatible with the DB
+            event_name = short_to_long_name(event_name)
+            this_event_number = event_name.split('-')[-1]
+            next_event_number = str(int(this_event_number)+1).zfill(4)
+            prev_event_number = str(int(this_event_number)-1).zfill(4)
+            next_name = event_name.replace(this_event_number, next_event_number)
+            prev_name = event_name.replace(this_event_number, prev_event_number)
+            
+            # Get the ID for this event
+            event_id = EventName.objects.get(name=event_name).event_id
+            ev_ra = Event.objects.get(pk=event_id).ev_ra
+            ev_dec = Event.objects.get(pk=event_id).ev_dec
+            ev_names = EventName.objects.filter(event_id=event_id)
+            
+            flag = 0
+            ev_ogle, ev_moa, ev_kmt = '', '', ''
+            for name in ev_names:
+                if 'OGLE' in name.name and flag==0:
+                    ev_ogle = name.name
+                    flag = 1
+                if 'MOA' in name.name:
+                    ev_moa = name.name
+                if 'KMT' in name.name:
+                    ev_kmt = name.name
+            
+            # Get the names for this event ID from all surveys
+            # Keep just one so that we can generate the url link to /microlensing.zah.uni-heidelberg.de
+            if 'ev_ogle':
+                ev_name = ev_ogle
+                survey_name = "OGLE"
+                event_number = ev_name.split('-')[-1]
+            elif 'ev_moa':
+                ev_name = ev_moa
+                survey_name = "MOA"
+                event_number = ev_name.split('-')[-1]
+            elif 'ev_kmt':
+                ev_name = ev_kmt
+                survey_name = "KMT"
+                event_number = ev_name.split('-')[-1]
+            
+            field_id =  Event.objects.get(pk=event_id).field.id
+            field = Field.objects.get(id=field_id).name
+            # Get list of all observations and select the one with the most recent time.
+            
+            try:
+                event = Event.objects.get(id=event_id)
+                status_recent = Event.objects.get(pk=event_id).status
+                single_recent = SingleModel.objects.select_related().filter(event=event).filter(modeler='ARTEMiS').values().latest('last_updated')
+                Tmax = single_recent['Tmax']
+                e_Tmax = single_recent['e_Tmax']
+                tau = single_recent['tau']
+                e_tau = single_recent['e_tau']
+                umin = single_recent['umin']
+                e_umin = single_recent['e_umin']
+                last_updated = single_recent['last_updated']
+                last_updated_hjd =  Time(last_updated).jd
+                status = status_recent
+                ogle_url = ''
+                if "OGLE" in ev_name:
+                    ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])
+
+            except:
+                Tmax = "N/A"
+                e_Tmax = "N/A"
+                tau = "N/A"
+                e_tau = "N/A"
+                umin = "N/A"
+                e_umin = "N/A"
+                last_updated = "N/A"
+                last_updated_hjd = "N/A"
+                last_obs_tel = "N/A"
+                status = 'EX'
+                ogle_url = ''
+        
+            try:
+                obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_hjd')
+                last_obs_hjd = obs_recent['last_hjd']
+                last_obs = Time(float(last_obs_hjd), format='jd', scale='utc').iso
+                tel_id = obs_recent['datafile'].split('/')[-1].split('_')
+                if len(tel_id) == 2:
+                    tel_id = tel_id[0]+'_'
+                else:
+                    tel_id = obs_recent['datafile'].split('/')[-1][0]
+                last_obs_tel = site_dict[tel_id][-1]
+            except:
+                last_obs = "N/A"
+                last_obs_hjd = "N/A"
+                last_obs_tel = "N/A"
+        
+            artemis_name = utilities.long_to_artemis_name(ev_name)
+        
+            try:
+                script, div = plot_it(artemis_name)
+            except:
+                script, div = '', 'Detected empty or corrupt datafile in list of lightcurve files.<br>Plotting disabled.'
+                
+            survey_data = gather_survey_links(utilities.long_to_short_name(ev_name))
+            
+            context = {'event_id':event_id, 'event_names':ev_names, 
+                	    'this_name':event_name, 
+                	    'prev_name':prev_name, 'next_name':next_name,
+                	    'ev_ra':ev_ra, 'ev_dec':ev_dec, 'field':field, 'last_obs':last_obs, 
+                	    'Tmax':Tmax, 'e_Tmax':e_Tmax, 'tau':tau, 'e_tau':e_tau, 'umin':umin, 
+                	    'e_umin':e_umin, 'last_updated':last_updated, 'last_updated_hjd':last_updated_hjd,
+                	    'last_obs':last_obs, 'last_obs_hjd':last_obs_hjd, 'status':possible_status[status],
+                	    'last_obs_tel':last_obs_tel, 'ogle_url':ogle_url, 'time_now': time_now, 
+                	    'time_now_jd': time_now_jd, 'the_script': script, 'the_div': div,
+                      'survey_data': survey_data}
+            
+            return render(request, 'events/show_event.html', context)
+            
+        except EventName.DoesNotExist:
+            raise Http404("Event does not exist in DB.")
+    
+        except ValueError:
+            raise Http404("Unrecognized event name. Please provide name in standard short or long notation.")	 
+            
+    else:
+        
+        return HttpResponseRedirect('login')
+
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')
