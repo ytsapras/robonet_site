@@ -234,7 +234,7 @@ def assign_tap_priorities(logger):
                     alignpars = str.split(fentry)
             filein.close()
 
-        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')) and (current_year_2digits == eventname_short[2:4]) and ("Outside" not in EventName.objects.select_related().filter(event=event)[0].field_name):
+        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')) and (current_year_2digits == eventname_short[2:4]): #and ("Outside" not in EventName.objects.select_related().filter(event=event)[0].field_name):
             filein = open(os.path.join(modelpath, eventname_short + '.model'))
             psplpars = str.split(filein.readline())
             filein.close()
