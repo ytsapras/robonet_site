@@ -10,6 +10,7 @@
 # Import dependencies
 import warnings
 import time
+import datetime
 import log_utilities
 from update_db_2 import *
 import numpy as np
@@ -124,6 +125,7 @@ def assign_tap_priorities(logger):
     """
 
     ut_current = time.gmtime()
+    current_year_2digits = str(datetime.datetime.now().year)[2:]
     t_current = gcal2jd(ut_current[0], ut_current[1], ut_current[2])[
         1] - 49999.5 + ut_current[3] / 24.0 + ut_current[4] / (1440.)
     full_visibility = romerea_visibility_3sites_40deg(t_current)
@@ -158,7 +160,7 @@ def assign_tap_priorities(logger):
                     alignpars = str.split(fentry)
             filein.close()
 
-        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')):
+        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')) :
             filein = open(os.path.join(modelpath, eventname_short + '.model'))
             psplpars = str.split(filein.readline())
             filein.close()
@@ -188,7 +190,7 @@ def assign_tap_priorities(logger):
             err_omega = 0.
 
             # CRITERIA FOR PERMITTING A NON-ZERO PRIORITY
-            if ibase_pspl > 0. and g_pspl < 210. and omega_now > 0.02:
+            if ibase_pspl > 0. and omega_now > 0.01:
                 add_tap(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
                         texp=texp, nexp=1., imag=imag, omega=omega_now,
                         err_omega=err_omega, peak_omega=omega_peak,
@@ -232,7 +234,7 @@ def assign_tap_priorities(logger):
                     alignpars = str.split(fentry)
             filein.close()
 
-        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')):
+        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')) and (current_year_2digits == eventname_short[2:4]) and ("Outside" not in EventName.objects.select_related().filter(event=event)[0].field_name):
             filein = open(os.path.join(modelpath, eventname_short + '.model'))
             psplpars = str.split(filein.readline())
             filein.close()
@@ -277,9 +279,9 @@ def assign_tap_priorities(logger):
             # expire events -> deactivated
             # if t_current > te_pspl+t0_pspl:
             #    Event.objects.filter(event_id=event_id).update(status="EX")
-        else:
-            nmissing += 1
-
+#        else:
+#            nmissing += 1 #
+#report missing files only for non-anomalous events.
     if nmissing > 0:
         update_err('run_rea_tap', 'Missing DataFile: ' +
                    str(nmissing) + ' events')
