@@ -13,6 +13,9 @@ import event_classes
 import survey_classes
 import pytz
 import glob
+import requests
+from bs4 import BeautifulSoup as bs
+
 
 def read_ogle_param_files( config ):
     """Function to read the listing of OGLE data"""
@@ -157,3 +160,170 @@ def read_update_file( file_path ):
         ts = None
         
     return ts
+
+def scrape_rtmodel(year, event):
+    """Function to scape data on a specific event from RTmodel, if any is available.
+    
+    Original code by Y. Tsapras
+    """
+    
+    root_url = 'http://www.fisica.unisa.it/GravitationAstrophysics/RTModel/'
+    
+    event = str(event)
+    rtmodel_html = path.join(root_url,str(year),event+'.htm')
+    page = requests.get(rtmodel_html)
+    if page.status_code == 200:
+        soup = bs(page.content,'html.parser')
+        # Extract the bits with the event name and classification
+        try:
+            text1 = soup.find_all('div')[1].get_text().replace('\r\n\t\t','')
+            text2 = soup.find_all('div')[2].get_text().replace('\r\n\t\t','')
+            # Extract the best model image link
+            text3 = path.join(root_url,str(year),soup.find_all('div')[4].find_all('a')[1]['href'])
+        except IndexError:
+            text1 = ''
+        # Check that the event name matches
+        if event in text1:
+            rtmodel = True
+            classif = text2
+            image_link = text3
+            page_response = True
+        else:
+            rtmodel = False
+            classif = 'N/A'
+            image_link = 'N/A'
+            page_response = True
+    else:
+        rtmodel = False
+        classif = 'N/A'
+        image_link = 'N/A'
+        page_response = False
+    return (rtmodel_html, classif, image_link, page_response, rtmodel)
+
+# Look if there is a MiSMap model for these events
+def scrape_mismap(year, event):
+    """Function to scape data on a specific event from MiSMAP, if any is available.
+    
+    Original code by Y. Tsapras
+    """
+    
+    root_url = 'http://www.iap.fr/miiriads/MiSMap/Events/'
+    
+    event = str(event)
+    mismap_html = path.join(root_url, event+'.html')
+    page = requests.get(mismap_html)
+    if page.status_code == 200:
+        soup = bs(page.content,'html.parser')
+        # Extract the bits with the event name
+        try:
+            text1 = soup.find_all('div')[5].find_all('option')[1]['value'].split('/')[-1].split('_')[0]
+        except IndexError:
+            text1 = ''
+        # Extract the search map image link
+        text2 = path.join(root_url, event+'.png')
+        # Check that the event name matches
+        if event in text1:
+            mismap = True
+            image_link = text2
+            page_response = True
+        else:
+            mismap = False
+            image_link = 'N/A'
+            page_response = True
+    else:
+        mismap = False
+        image_link = 'N/A'
+        page_response = False
+    return (mismap_html, image_link, page_response, mismap)
+    
+# Look if there is a MOA model for these events
+def scrape_moa(year, event):
+    """Function to scape data on a specific event from MOA, if any is available.
+    
+    Original code by Y. Tsapras
+    """
+    
+    root_url = 'http://iral2.ess.sci.osaka-u.ac.jp/~moa/anomaly/'
+    
+    event = str(event)
+    moa_html = 'N/A'
+    moa = False
+    image_link = 'N/A'
+    page_response = False
+    # Reformat name
+    event_reformatted = 'OGLE-'+str(year)+'-BLG-'+event[4:]  
+    page_html = path.join(root_url,str(year),'index.html')
+    try:
+        page = requests.get(page_html)
+        lines = page.content.splitlines()[19:-5]
+        # Find if the event is in the list
+        for oneline in lines:
+            if event_reformatted in str(oneline):
+                event_moa = str(oneline).split('<td>')[-1].split('="')[1].split('.html')[0]
+                moa = True
+                moa_html = path.join(root_url,str(year),event_moa+'.html')
+                image_link = path.join(root_url,str(year),event_moa+'.jpg')
+                page_response = True
+                break
+    except IOError:
+        moa = False
+        moa_html = 'N/A'
+        image_link = 'N/A'
+        page_response = False
+
+    return (moa_html, image_link, page_response, moa)
+
+# Look if there are KMTNet data for these events
+def scrape_kmt(year, event):
+    """Function to scape data on a specific event from KMTNet, if any is available.
+    
+    Original code by Y. Tsapras
+    """
+    
+    root_url = 'http://kmtnet.kasi.re.kr/ulens/event/'
+    
+    event = str(event)
+    kmt_html = path.join(root_url,str(year))
+    
+    page = requests.get(kmt_html)
+    if page.status_code == 200:
+        soup = bs(page.content,'html.parser')
+        # Extract the table rows
+        rows = soup.find_all('tr')
+        # Look for the event
+        for row in rows:
+            text1 = row.find_all('td')[-1].get_text().strip()
+            kmtname = row.find_all('td')[0].get_text().strip()
+            # Check that the event name matches
+            if event in text1:
+                kmtnet = True
+                kmt_link = path.join(root_url,str(year),'view.php?event='+kmtname)
+                page_response = True
+                break
+            else:
+                kmtnet = False
+                kmt_link = 'N/A'
+                page_response = True
+    else:
+        kmtnet = False
+        kmt_link = 'N/A'
+        page_response = False
+    return (kmt_html, kmt_link, page_response, kmtnet)
+
+# Get OGLE finder chart
+def fetch_ogle_fchart(year, event):
+    """Function to fetch the finder chart from the OGLE website, if any
+    
+    Original code by Y. Tsapras
+    """
+    
+    root_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/'
+    
+    ogle_id = event.replace(event[0:4],'blg-')
+    finder_url = path.join(root_url,'data',str(year),ogle_id,'fchart.jpg')
+    page = requests.get(finder_url)
+    if page.status_code == 200:
+        ogle_finder = True
+    else:
+        ogle_finder = False
+    return (finder_url, ogle_finder)

@@ -79,7 +79,7 @@ def read_config():
         #config_file_path = '/data/romerea/configs/artemis_sync.xml'
     
     if path.isfile(config_file_path) == False:
-        print 'ERROR: Cannot find configuration file, looked for '+config_file_path
+        print('ERROR: Cannot find configuration file, looked for '+config_file_path)
         exit()
 
     config = config_parser.read_config(config_file_path)
@@ -274,9 +274,13 @@ def sync_data_align_files_with_db(config,data_file,align_file,log):
               'last_upd': last_upd,
               }
     (status,message) = update_db_2.add_datafile_via_api(params)
+    
     if log!=None:
         log.info(' -> Status: '+repr(status)+', '+message)
     
+    (status,message) = update_db_2.update_event(utilities.short_to_long_name(short_name),
+                                                 {'ibase': align_pars['baseline']})
+                                                 
 def look_up_origin(origin):
     """Function to return the full telescope ID for common survey names"""
     

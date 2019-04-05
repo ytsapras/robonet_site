@@ -261,4 +261,28 @@ def review_filters_for_observing_conditions(site_obs_sequence,field,
         log.info('\n')
         
     return site_obs_sequence
+
+def calculate_exptime_romerea(magin, snrin=25):
+    """
+    This function calculates the required exposure time
+    for a given iband magnitude (e.g. OGLE I which also
+    roughly matches SDSS i) based on a fit to the empiric
+    RMS diagram of DANDIA light curves from 2016. The
+    output is in seconds.
     
+    Ported in from code by Y. Tsapras
+    
+    R.Street: Added maximum exposure time
+    """
+
+    if magin < 14.7:
+        mag = 14.7
+    else:
+        mag = magin
+    lrms = 0.14075464 * mag * mag - 4.00137342 * mag + 24.17513298
+    snr = 1.0 / np.exp(lrms)
+    # target 4% -> snr 25
+    expt = round((snrin / snr)**2 * 300., 1)
+    expt = min(300.0, expt)
+    
+    return expt

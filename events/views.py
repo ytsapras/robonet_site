@@ -16,7 +16,7 @@ from .forms import TapStatusForm, EventAnomalyStatusForm, EventNameForm
 from .forms import ObsExposureForm, FieldNameForm, ImageNameForm
 from .forms import EventPositionForm, EventSearchForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
-from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image
+from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image, DataFile
 from rest_framework.authentication import TokenAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -44,6 +44,9 @@ from scripts import field_check
 from scripts import rea_obs
 from scripts import obs_control
 from scripts import log_utilities
+from scripts import utilities
+from scripts import observing_tools
+from scripts import survey_data_utilities
 import requests
 import pytz
 
@@ -903,8 +906,11 @@ def list_year(request, year):
       events = Event.objects.filter(year=str(year))
       
       rows = render_event_queryset_as_table_rows(events)
+      
+      time_now = Time.now()
         
-      return render(request, 'events/list_events.html', {'rows': rows})
+      return render(request, 'events/list_events.html', 
+                    {'rows': rows, 'JD_now': time_now.jd})
       
    else:
 
@@ -917,18 +923,30 @@ def list_anomalies(request):
     if request.user.is_authenticated():
         
         current_date = datetime.now()
+        time_now = Time.now()
         
         events = Event.objects.filter(year=str(current_date.year), status='AN')
         
-        rows = render_event_queryset_as_table_rows(events)
+        event_names = []
+        for e in events:
+            name = EventName.objects.filter(event=e)
+            print(name)
+            event_names.append(utilities.long_to_short_name(name.name))
+            
+        rows = render_event_queryset_as_enhanced_table_rows(events)
         
-        return render(request, 'events/list_events.html', {'rows': rows})
+        survey_rows = render_survey_links_table_rows(event_names)
+        
+        return render(request, 'events/list_anomalies.html', 
+                              {'rows': rows, 
+                              'JD_now': time_now.jd,
+                               'survey_rows': survey_rows})
     
     else:
         
         return HttpResponseRedirect('login')
 
-
+    
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def list_all(request, display_year=None):
@@ -1001,7 +1019,108 @@ def render_event_queryset_as_table_rows(events,separations=None):
         rows = sorted(rows, key=lambda row: row[10], reverse=True)
         
     return rows
+    
+def render_event_queryset_as_enhanced_table_rows(events):
+    """Function to return a neat table of event parameters, with additional
+    data for DayOps purposes"""
+    
+    ev_id = [k.pk for k in events]
+    field = [k.field.name.replace(' footprint','') for k in events]
+    ra = [k.ev_ra for k in events]
+    dec = [k.ev_dec for k in events]
+    
+    names_list = []
+    t0_list = []
+    tE_list = []
+    u0_list = []
+    imag_list = []
+    texp25_list = []
+    texp100_list = []
+    for i in range(len(events)):
+        
+        evnm = EventName.objects.filter(event=events[i])
+        last_model = query_db.get_last_single_model(events[i])
+        last_data = query_db.get_last_datafile(events[i])
+        
+        names = [k.name for k in evnm]
+        names_list.append(names)
+        if last_model != None:
+            t0_list.append(last_model.Tmax)
+            tE_list.append(last_model.tau)
+            u0_list.append(last_model.umin)
+        else:
+            t0_list.append('NONE')
+            tE_list.append('NONE')
+            u0_list.append('NONE')
+        
+        if last_data != None:
+            imag_list.append(last_data.last_mag)
+            
+            t25 = observing_tools.calculate_exptime_romerea(float(last_data.last_mag), snrin=25)
+            t100 = observing_tools.calculate_exptime_romerea(float(last_data.last_mag), snrin=100)
 
+            texp25_list.append( t25 )
+            texp100_list.append( t100 )
+            
+        else:
+            imag_list.append('NONE')
+            texp25_list.append('NONE')
+            texp100_list.append('NONE')
+            
+    rows = zip(ev_id, names_list, field, ra, dec, 
+               t0_list, tE_list, u0_list, imag_list, 
+               texp25_list, texp100_list)
+    rows = sorted(rows, key=lambda row: row[1], reverse=True)
+        
+    return rows
+
+def render_survey_links_table_rows(events_list):
+    """Function to fetch all available links to information from other surveys"""
+
+    current_date = datetime.now()
+
+    rt_url_list = []
+    rt_classif_list = []
+    rt_images_list = []
+    mm_url_list = []
+    mm_image_list = []
+    kb_url_list = []
+    kb_image_list = []
+    kmt_url_list = []
+    ogle_image_list = []
+    
+    for event in events_list:
+        
+        rtmodel = survey_data_utilities.scrape_rtmodel(current_date.year, event)
+        mismap = survey_data_utilities.scrape_mismap(current_date.year, event)
+        moa = survey_data_utilities.scrape_moa(current_date.year, event)
+        kmt = survey_data_utilities.scrape_kmt(current_date.year, event)
+        ogle = survey_data_utilities.fetch_ogle_fchart(current_date.year, event)
+    
+        rt_url_list.append(rtmodel[0])
+        rt_classif_list.append(rtmodel[1])
+        rt_images_list.append(rtmodel[2])
+        
+        mm_url_list.append(mismap[0])
+        mm_image_list.append(mismap[1])
+
+        kb_url_list.append(moa[0])
+        kb_image_list.append(moa[1])
+        
+        kmt_url_list.append(kmt[1])
+        
+        ogle_image_list.append(ogle[0])
+    
+    rows = zip(rt_url_list, rt_classif_list, rt_images_list, 
+               mm_url_list, mm_image_list, 
+               kb_url_list, kb_image_list, 
+               kmt_url_list, 
+               ogle_image_list)
+               
+    rows = sorted(rows, key=lambda row: row[1], reverse=True)
+    
+    return rows
+    
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def search_events(request,search_type=None):

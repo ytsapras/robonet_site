@@ -71,3 +71,75 @@ def test_read_moa_param_files():
     
     lens = event_classes.Lens()
     assert type(moa_data.lenses['MOA-2016-BLG-618']) == type(lens)
+
+def test_scrape_rtmodel():
+    
+    year = 2019
+    event='OB190011'
+    
+    output = survey_data_utilities.scrape_rtmodel(year, event)
+    
+    assert len(output) == 5
+    assert 'http' in output[0]
+    assert 'http' in output[2]
+    assert type(output[3]) == type(True)
+    assert type(output[4]) == type(True)
+
+def test_scrape_mismap():
+    
+    year = 2019
+    event='OB190011'
+    
+    output = survey_data_utilities.scrape_mismap(year, event)
+    
+    assert len(output) == 4
+    assert 'http' in output[0]
+    assert 'png' in output[1]
+    assert type(output[2]) == type(True)
+    assert type(output[3]) == type(True)
+
+def test_scrape_moa():
+    
+    year = 2019
+    event='OB190011'
+    
+    output = survey_data_utilities.scrape_moa(year, event)
+    
+    assert len(output) == 4
+    assert 'http' in output[0]
+    assert 'jpg' in output[1]
+    assert type(output[2]) == type(True)
+    assert type(output[3]) == type(True)
+
+def test_scrape_kmt():
+    
+    year = 2019
+    event='OB190011'
+    
+    output = survey_data_utilities.scrape_kmt(year, event)
+    
+    assert len(output) == 4
+    assert 'http' in output[0]
+    assert 'jpg' in output[1] or 'N/A' in output[1]
+    assert type(output[2]) == type(True)
+    assert type(output[3]) == type(True)
+
+def test_fetch_ogle_fchart():
+    
+    year = 2019
+    event='OB190011'
+    
+    output = survey_data_utilities.fetch_ogle_fchart(year, event)
+    
+    assert len(output) == 2
+    assert 'http' in output[0]
+    assert 'jpg' in output[0]
+    assert type(output[1]) == type(True)
+
+if __name__ == '__main__':
+    
+    #test_scrape_rtmodel()
+    #test_scrape_mismap()
+    #test_scrape_moa()
+    #test_scrape_kmt()
+    test_fetch_ogle_fchart()

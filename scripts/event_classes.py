@@ -17,6 +17,7 @@ from rome_fields_dict import field_dict
 import utilities
 import query_db
 import get_errors
+from astropy.coordinates import SkyCoord
 
 from local_conf import get_conf
 robonet_site = get_conf('robonet_site')
@@ -90,11 +91,13 @@ class Lens():
         year = str(self.name).split('-')[1]
         
         # Add the event to the database - returns False if already present
+        (ra, dec) = utilities.sex2decdeg(self.ra,self.dec)
         (event_status, ev_ra, ev_dec,response) = update_db_2.add_event(id_field, \
                                                     self.origin, \
                                                     self.ra,self.dec,\
                                                     status=event_status,\
-                                                    year=year)
+                                                    year=year,
+                                                    ibase=self.i0)
         if debug==True and log!=None:
             log.info(' -> Tried to add_event with output:')
             log.info(' -> '+str(event_status)+' '+str(ev_ra)+' '+str(ev_dec)+\

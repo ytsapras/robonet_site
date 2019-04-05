@@ -175,70 +175,87 @@ def add_field(field_name = 'Outside ROMEREA footprint', field_ra = '', field_dec
    return successful
 
 ##################################################################################
-def add_event(field_name, operator_name, ev_ra, ev_dec, status = 'NF', 
-              anomaly_rank = -1.0, year = str(datetime.now().year)):
-   """
-   Add a new event to the database. Will return successful = True/False
-   and either the coordinates of the object itself or those of the closest 
-   matching object.
-   
-   Keyword arguments:
-   field_name -- Field name 
-           (string, required)
-   operator_name -- Operator name
-           (string, required)
-   ev_ra -- Event RA. (string, required)
-        	   e.g. "17:54:33.58"
-   ev_dec -- Event DEC. (string, required)
-        	   e.g. "-30:31:02.02"
-   status -- Events status (string, optional, default='NF')
-                      Available choices: 
-		       'NF':'Not in footprint'
-  	               'AC':'active'
-	               'MO':'monitor'
-  		       'AN':'anomaly'
-  		       'EX':'expired'
-   anomaly_rank -- The relative importance of the anomaly. -1 for no anomaly, or 
-                                                       a positive decimal number. 
-		                                 (float, optional, default=-1.0)
-   year -- Year of discovery. (string, optional, default=<current year>)
-   """
-   ra, dec = ev_ra, ev_dec
-   # Check that requested field name is a known field
-   unknown_field = False
-   try:
-      field_id = Field.objects.get(name=field_name).id
-      field = Field.objects.get(id=field_id)
-   except:
-      print 'Event not added: Unknown Field: %s' % field_name
-      unknown_field = True
-   # Check that requested operator name is a known operator
-   unknown_operator = False
-   try:
-      operator_id = Operator.objects.get(name=operator_name).id
-      operator = Operator.objects.get(id=operator_id)
-   except:
-      print 'Event not added: Unknown Operator: %s' % operator_name
-      unknown_operator = True
-   # Check whether an event already exists at these coordinates
-   coordinates_known = coords_exist(ev_ra, ev_dec)
-   if (coordinates_known[0]==False and unknown_operator==False and unknown_field==False):
-      try:
-         add_new = Event(field=field, operator=operator, ev_ra=ev_ra, ev_dec=ev_dec, 
-		         status=status, 
-			 anomaly_rank=anomaly_rank,
-			 year = year)
-         add_new.save()
-         successful = True
-	 response = 'OK'
-      except:
-         successful = False
-	 response = 'Failed to add new event.'
-   else:
-      successful = False
-      response = 'An event already exists with these coordinates.'
-      ra, dec = coordinates_known[1], coordinates_known[2]
-   return successful, ra, dec, response
+def add_event(field_name, operator_name, ev_ra, ev_dec, status = 'NF',
+              anomaly_rank = -1.0, year = str(datetime.now().year),
+              ra_deg = None, dec_deg = None, ibase = None):
+    """Add a new event to the database. Will return successful = True/False
+    and either the coordinates of the object itself or those of the closest
+    matching object.
+    
+    Keyword arguments:
+    field_name -- Field name (string, required)
+    operator_name -- Operator name (string, required)
+    ev_ra -- Event RA. (string, required) e.g. "17:54:33.58"
+    ev_dec -- Event DEC. (string, required) e.g. "-30:31:02.02"
+    status -- Events status (string, optional, default='NF')
+                                Available choices: 
+                                'NF':'Not in footprint'
+                                'AC':'active'
+                                'MO':'monitor'
+                                'AN':'anomaly'
+                                'EX':'expired'
+    anomaly_rank -- The relative importance of the anomaly. -1 for no anomaly, 
+                    or a positive decimal number. 
+                    (float, optional, default=-1.0)
+    year -- Year of discovery. (string, optional, default=<current year>)
+    ra_deg -- Event RA (decimal degrees, optional)
+    dec_deg -- Event Dec (decimal degrees, optional)
+    ibase -- Event baseline magnitude (mag, optional)
+    """
+    
+    # Check that requested field name is a known field
+    unknown_field = False
+    
+    try:
+        field_id = Field.objects.get(name=field_name).id
+        field = Field.objects.get(id=field_id)
+    
+    except:
+        print 'Event not added: Unknown Field: %s' % field_name
+        unknown_field = True
+        
+    # Check that requested operator name is a known operator
+    unknown_operator = False
+    
+    try:
+        operator_id = Operator.objects.get(name=operator_name).id
+        operator = Operator.objects.get(id=operator_id)
+    
+    except:
+        print 'Event not added: Unknown Operator: %s' % operator_name
+        unknown_operator = True
+        
+    # Check whether an event already exists at these coordinates
+    coordinates_known = coords_exist(ev_ra, ev_dec)
+    
+    if (coordinates_known[0]==False and unknown_operator==False and unknown_field==False):
+        
+        try:
+            
+            add_new = Event(field=field, operator=operator, 
+                            ev_ra=ev_ra, ev_dec=ev_dec, 
+                            ra=ra_deg, dec=dec_deg,
+                            status=status, 
+                            anomaly_rank=anomaly_rank,
+                            year = year,
+                            ibase = ibase)
+            add_new.save()
+            
+            successful = True
+            response = 'OK'
+        
+        except:
+            
+            successful = False
+            response = 'Failed to add new event.'
+            
+    else:
+        
+        successful = False
+        response = 'An event already exists with these coordinates.'
+        ev_ra, ev_dec = coordinates_known[1], coordinates_known[2]
+        
+    return successful, ev_ra, ev_dec, response
 
 ##################################################################################
 def add_event_name(event, operator, name):
@@ -999,7 +1016,41 @@ def update_event_status(event, state):
         
     return successful, message
 
-
+def update_event(event_name, params):
+    """Function to update the parameters of an event that is already known
+    to the database.
+    
+    Only supports the parameters ra, dec and ibase.
+    """
+    
+    qs = EventName.objects.filter(name=event_name)
+    
+    if len(qs) > 0:
+        
+        event = qs[0].event
+        
+        set_keys = ''
+        
+        for key, value in params.items():
+            
+            if key in ['ra', 'dec', 'ibase']:
+                
+                setattr(event,key,value)
+                
+                set_keys += key+' '
+                
+        event.save()
+        
+        successful = True
+        message = 'DBREPLY: event '+set_keys+' updated'
+        
+    else:
+        
+        successful = False
+        message = 'DBREPLY: Unrecognised event'
+        
+    return successful, message
+    
 ################################################################################################################
 def add_status(event_name, timestamp=timezone.now(), status='NF', comment='', 
                updated_by='', rec_cad=0, rec_texp=0, rec_nexp=0, rec_telclass=''):

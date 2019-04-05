@@ -204,5 +204,19 @@ def test_update_event_status():
     assert submit_ok == True
     assert 'event status updated' in message
     
+def test_update_event():
+    
+    event_name = 'OGLE-2017-BLG-0620'
+    
+    new_params = {'ra': 12.34556, 'dec': -12.3456, 'ibase': 12.345}
+    
+    (submit_ok, message) = update_db_2.update_event(event_name, new_params)
+
+    print submit_ok, message
+    assert submit_ok == True
+    assert 'updated' in message
+    
 if __name__ == '__main__':
-   test_update_event_status()
+   
+   #test_update_event_status()
+   test_update_event()

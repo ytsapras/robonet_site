@@ -21,7 +21,7 @@ from rome_fields_dict import field_dict
 from field_check import romecheck
 import utilities
 from events.models import ObsRequest, Tap, Event, SingleModel, SubObsRequest
-from events.models import EventName, Image, Field, Operator
+from events.models import EventName, Image, Field, Operator, DataFile
 from observation_classes import get_request_desc
 
 class TapEvent():
@@ -257,6 +257,31 @@ def get_last_single_model(event,modeler=None,log=None):
         log.info('\n')
    
     return model
+
+def get_last_datafile(event,log=None):
+    """Function to return the last datafile submitted to the DB for a given 
+    event
+    
+    Inputs:
+        events    Event object
+        log       Logger object
+    """
+    
+    qs = DataFile.objects.filter(event=event).order_by('last_upd').reverse()
+    
+    try:    
+        df = qs[0]
+    except IndexError:
+        df = None
+        
+    if log != None:
+        log.info('\n')
+        log.info('Queried DB for last datafile for this event:')
+        log.info(' '.join(['HJD='+str(df.last_hjd),\
+                        'i='+str(df.last_mag)]))
+        log.info('\n')
+   
+    return df
 
 def get_event(event_pk):
     """Function to extract an event object from the DB based on its 
