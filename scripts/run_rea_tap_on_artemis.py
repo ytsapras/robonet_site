@@ -133,7 +133,7 @@ def assign_tap_priorities(logger):
 
     # FILTER FOR ACTIVE EVENTS (BY DEFINITION WITHIN ROME FOOTPRINT0
     active_events_list = Event.objects.select_related().filter(status__in=[
-        'AC', 'MO'])
+        'AC', 'MO']).filter(year=str(datetime.datetime.now().year))
     logger.info('RoboTAP: Processing ' +
                 str(len(active_events_list)) + ' active events.')
 
@@ -208,7 +208,7 @@ def assign_tap_priorities(logger):
             nmissing += 1
     # FILTER FOR ACTIVE EVENTS (BY DEFINITION WITHIN ROME FOOTPRINT0
     active_events_list = Event.objects.select_related().filter(status__in=[
-        'AN'])
+        'AN']).filter(year=str(datetime.datetime.now().year))
     logger.info('RoboTAP: Processing ' +
                 str(len(active_events_list)) + ' anomalous events.')
 
@@ -233,8 +233,8 @@ def assign_tap_priorities(logger):
                 if 'KI' in fentry and 'K' in eventname_short:
                     alignpars = str.split(fentry)
             filein.close()
-
-        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')) and (current_year_2digits == eventname_short[2:4]) and ("Outside" not in EventName.objects.select_related().filter(event=event)[0].field_name):
+        
+        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')) and (current_year_2digits == eventname_short[2:4]) and ("Outside" not in Event.objects.get(id=event_id).field.name):
             filein = open(os.path.join(modelpath, eventname_short + '.model'))
             psplpars = str.split(filein.readline())
             filein.close()
@@ -304,7 +304,7 @@ def run_tap_prioritization(logger):
     #to 2.8 (if REA is operated before and season start)
     daily_visibility = 2.8 * full_visibility * 300. / 3198.
 
-    list_evnt = Event.objects.filter(status__in=['AC', 'MO'])
+    list_evnt = Event.objects.filter(status__in=['AC', 'MO']).filter(year=str(datetime.datetime.now().year))
     output = []
     nmissing = 0
     for ev in list_evnt:
@@ -323,7 +323,7 @@ def run_tap_prioritization(logger):
             logger.info(serrmsg)
             nmissing = nmissing + 1
 
-    list_evnt = Event.objects.filter(status__in=['AN'])
+    list_evnt = Event.objects.filter(status__in=['AN']).filter(year=str(datetime.datetime.now().year))
     for ev in list_evnt:
         try:
             latest_ev_tap_val = Tap.objects.filter(
