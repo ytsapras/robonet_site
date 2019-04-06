@@ -1020,6 +1020,11 @@ def render_event_queryset_as_enhanced_table_rows(events):
     """Function to return a neat table of event parameters, with additional
     data for DayOps purposes"""
     
+    priorities = {'A': 'REA High',
+                  'L': 'REA Low',
+                  'B': 'REA Post-High',
+                  'N': 'Not selected'}
+    
     ev_id = [k.pk for k in events]
     field = [k.field.name.replace(' footprint','') for k in events]
     ra = [k.ev_ra for k in events]
@@ -1032,14 +1037,18 @@ def render_event_queryset_as_enhanced_table_rows(events):
     imag_list = []
     texp25_list = []
     texp100_list = []
+    tap_list = []
+    
     for i in range(len(events)):
         
         evnm = EventName.objects.filter(event=events[i])
         last_model = query_db.get_last_single_model(events[i])
         last_data = query_db.get_last_datafile(events[i])
+        last_tap = query_db.get_latest_tap_entry(events[i])
         
         names = [k.name for k in evnm]
         names_list.append(names)
+        
         if last_model != None:
             t0_list.append(last_model.Tmax)
             tE_list.append(last_model.tau)
@@ -1049,6 +1058,12 @@ def render_event_queryset_as_enhanced_table_rows(events):
             tE_list.append('NONE')
             u0_list.append('NONE')
         
+        if last_tap != None:
+            print(last_tap.priority, priorities[last_tap.priority])
+            tap_list.append(priorities[last_tap.priority])
+        else:
+            tap_list.append('Not selected')
+            
         if last_data != None:
             imag_list.append(last_data.last_mag)
             
@@ -1065,7 +1080,7 @@ def render_event_queryset_as_enhanced_table_rows(events):
             
     rows = zip(ev_id, names_list, field, ra, dec, 
                t0_list, tE_list, u0_list, imag_list, 
-               texp25_list, texp100_list)
+               texp25_list, texp100_list, tap_list)
     rows = sorted(rows, key=lambda row: row[1], reverse=True)
         
     return rows

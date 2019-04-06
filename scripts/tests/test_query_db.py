@@ -21,7 +21,7 @@ from django import setup
 from datetime import datetime, timedelta
 import pytz
 setup()
-from events.models import Event, EventName, SingleModel
+from events.models import Event, EventName, SingleModel, Tap
 import query_db
 import utilities
 
@@ -64,6 +64,15 @@ def test_get_tap_list():
     qs = query_db.get_tap_list()
     
     assert qs.count > 0
+
+def test_get_latest_tap_entry():
+    
+    event_name = 'OGLE-2019-BLG-0011'
+    event = EventName.objects.filter(name=event_name)[0].event
+    
+    entry = query_db.get_latest_tap_entry(event=event)
+
+    assert type(entry) == type(Tap())
     
 def test_get_event():
     
@@ -176,5 +185,5 @@ def test_get_subrequests_for_obsrequest():
         
 if __name__ == '__main__':
     
-    test_get_subrequests_for_obsrequest()
-    
+    #test_get_subrequests_for_obsrequest()
+    test_get_latest_tap_entry()

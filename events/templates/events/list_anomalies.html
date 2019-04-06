@@ -15,6 +15,7 @@
         <ul class="nav navbar-nav">
           <li><a href="{% url 'list_all' display_year='ALL'%}">Display all events</a></li>
           <li><a href="{% url 'search_events' %}">Search DB</a></li>
+          <li><a href="{% url 'set_tap_status' %}">Set TAP status</a></li>
         </ul>
       </div><!-- /.navbar-collapse -->
     </div><!-- /.container-fluid -->
@@ -39,6 +40,7 @@
        <td bgcolor="#609ab6"><b style="color: #FFFFFF ">I<sub>last</sub> [mag]:</b></td>
        <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Exptime<sub>S/N=25</sub> [s]:</b></td>
        <td bgcolor="#609ab6"><b style="color: #FFFFFF ">Exptime<sub>S/N=100</sub> [s]:</b></td>
+       <td bgcolor="#609ab6"><b style="color: #FFFFFF ">TAP</b></td>
     </tr>
     <ul>
     {% for row in rows %}
@@ -59,7 +61,9 @@
           <td style="color: #999999 ">{{ row.8 }} </td>
           <td style="color: #999999 ">{{ row.9 }} </td>
           <td style="color: #999999 ">{{ row.10 }} </td>
+          <td style="color: #999999 ">{{ row.11 }} </td>
         {% else %}
+          <td style="color: #999999 ">-</td>
           <td style="color: #999999 ">-</td>
           <td style="color: #999999 ">-</td>
           <td style="color: #999999 ">-</td>
@@ -76,7 +80,9 @@
           <td>{{ row.8 }} </td>
           <td>{{ row.9 }} </td>
           <td>{{ row.10 }} </td>
+          <td>{{ row.11 }} </td>
         {% else %}
+          <td>-</td>
           <td>-</td>
           <td>-</td>
           <td>-</td>

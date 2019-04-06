@@ -283,6 +283,30 @@ def get_last_datafile(event,log=None):
    
     return df
 
+def get_latest_tap_entry(event,log=None):
+    """Function to extract the latest entry in the TAP table, if any,
+    for a given event
+    Inputs:
+        events    Event object
+        log       Logger object
+    """
+    
+    qs = Tap.objects.filter(event=event).order_by('timestamp').reverse()
+    
+    if len(qs) == 0:
+        entry = None
+    else:
+        entry = qs[0]
+    
+    if log != None:
+        log.info('\n')
+        log.info('Queried DB for last TAP entry for this event:')
+        log.info(' '.join(['HJD='+str(entry.timestamp),\
+                        'i='+str(entry.priority)]))
+        log.info('\n')
+    
+    return entry
+    
 def get_event(event_pk):
     """Function to extract an event object from the DB based on its 
     primary key)
