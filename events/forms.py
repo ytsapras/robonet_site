@@ -89,10 +89,12 @@ class EventSearchForm(forms.Form):
     year = forms.IntegerField(label='year',min_value=2017, max_value=2019,required=False)
 
 class EventAnomalyStatusForm(forms.ModelForm):
-   class Meta:
-      model = Event
-      fields = ('status',)
-      
+    class Meta:
+        model = Event
+        fields = ('status','override',)
+    override = forms.BooleanField(label='override')
+
+
 class SingleModelForm(forms.ModelForm):
    class Meta:
       model = SingleModel

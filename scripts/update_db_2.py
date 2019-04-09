@@ -966,7 +966,7 @@ def update_tap_status(event, priority):
         
     return successful, message
 
-def update_event_status(event, state):
+def update_event_status(event, state, override):
     """
     Update an existsing observing sub-request in the database.
     
@@ -980,6 +980,7 @@ def update_event_status(event, state):
                 'MO', 'monitor'
                 'AN', 'anomaly'
                 'EX', 'expired'
+    override -- The manual override flag for TAP (True or False)
     """
     
     if Event.objects.filter(pk=event.pk).exists()==True:
@@ -993,6 +994,7 @@ def update_event_status(event, state):
                 e = qs[0]
                 
                 e.status = state
+                e.override = override
                 
                 e.save()
                 

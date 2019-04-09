@@ -47,8 +47,20 @@
                 {% endfor %}
                 </select></label>
                 </td>
+                <td><label for="{{uform.email_notifications.id_for_label}}">Allow email notifications?:</label></td>
+                <td><div class="fieldWrapper">
+                        {{uform.email_notifications.errors}}
+                        {{uform.email_notifications}}
+                    </div>
+                    
+                    <div class="fieldWrapper">
+                        {{ form.override.errors }}
+                        <label for="{{ form.override.id_for_label }}">Manual override?</label>
+                        {{ form.override }}
+                    </div>
+                </td>
                 </tr>
-                <tr><td></td><td>
+                <tr><td></td><td><td></td>
                 <div class="fieldWrapper">
                     <button type="submit" class="save btn btn-default">Submit</button>
                 </div>

@@ -181,6 +181,9 @@ class Event(models.Model):
    # Year the event was discovered
    year = models.CharField("Year of discovery", max_length=10, default='', blank=True)
    
+   # Manual override flag
+   override = models.BooleanField(default=False,blank=True)
+   
 # Generic Events Name class
 # EventName uses two foreign keys so related_name needs to be set
 class EventName(models.Model):
@@ -919,7 +922,7 @@ class Tap(models.Model):
    passband = models.CharField(max_length=12, default='SDSS-i', blank=True)
    # Inter Proposal Priority value
    ipp = models.DecimalField(max_digits=10,decimal_places=3, blank=True, default=1.0)
-
+   
 # TAPLIMA parameters
 class TapLima(models.Model):
    """

@@ -499,6 +499,7 @@ def tap(request):
          colors = []
          visibility = []
 	 field_names = []
+      
          count = 0
          for i in ev_id:
             evnm = EventName.objects.filter(event=i)
@@ -565,7 +566,7 @@ def set_tap_status(request):
                 
         if request.method == "POST":
         
-            form = TapStatusForm(request.POST)
+            tform = TapStatusForm(request.POST)
             
             if form.is_valid():
                 
@@ -647,7 +648,8 @@ def set_event_status(request):
                 event = Event.objects.get(pk=npost.name)
                 
                 (status, message) = update_db_2.update_event_status(event, 
-                                                                    epost.status)
+                                                                    epost.status,
+                                                                    epost.override)
                 
                 return render(request, 'events/set_event_anomaly_status.html', \
                                     {'eform': eform, 'nform': nform,
