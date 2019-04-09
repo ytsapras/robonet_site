@@ -966,7 +966,7 @@ def update_tap_status(event, priority):
         
     return successful, message
 
-def update_event_status(event, state, override):
+def update_event_status(event, state, override, interactive=False):
     """
     Update an existsing observing sub-request in the database.
     
@@ -993,7 +993,7 @@ def update_event_status(event, state, override):
                 
                 e = qs[0]
                 
-                if e.override == False:
+                if e.override == False or interactive::
                     e.status = state
                     e.override = override
                     e.save()

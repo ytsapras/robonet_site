@@ -674,7 +674,8 @@ def set_event_status(request):
                 
                 (status, message) = update_db_2.update_event_status(event, 
                                                                     epost.status,
-                                                                    epost.override)
+                                                                    epost.override,
+                                                                    interactive=True)
                 
                 return render(request, 'events/set_event_anomaly_status.html', \
                                     {'eform': eform, 'nform': nform,
