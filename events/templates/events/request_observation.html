@@ -28,10 +28,10 @@
             {{ formset.management_form }}
             <table>
                 <tr>
-                    <td><label for="{{oform.id.id_for_label}}">Field:</label></td>
+                    <td><label for="{{oform.field.id_for_label}}">Field:</label></td>
                     <td><div class="fieldWrapper">
-                            <select name="id">
-                                {% for name in fields %}
+                            <select name="field">
+                                {% for name,f in fields %}
                                     <option value="{{name}}">{{name}}</option>
                                 {% endfor %}
                             </select>
@@ -118,7 +118,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td><label for="{{oform.timestampe.id_for_label}}">Start date 
+                    <td><label for="{{oform.timestamp.id_for_label}}">Start date 
                             <button id="help-start-date"><img src="/static/events/clipart-question_button.png" width="10" style="border: 0;"></button>
                         :</label>
                         <p id="correct-start-date-format"> </p>
@@ -136,7 +136,7 @@
                         </div>
                     </td>
                     <td>
-                        <label for="{{oform.start_obs.id_for_label}}">End date 
+                        <label for="{{oform.time_expire.id_for_label}}">End date 
                             <button id="help-end-date"><img src="/static/events/clipart-question_button.png" width="10" style="border: 0;"></button>
                         :</label>
                         <p id="correct-end-date-format"> </p>
@@ -162,7 +162,11 @@
                             {{oform.t_sample}}
                         </div>
                     </td>
-                    <td></td>
+                    <td><label for="{{oform.jitter.id_for_label}}">Jitter [hrs]:</label></td>
+                        <td><div class="fieldWrapper">
+                            {{oform.jitter.errors}}
+                            {{oform.jitter}}
+                        </div></td>
                 </tr>
                 <tr>
                     <td><label for="{{oform.airmass_limit.id_for_label}}">Airmass limit:</label></td>

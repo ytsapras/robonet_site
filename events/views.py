@@ -49,6 +49,7 @@ from scripts import log_utilities
 from scripts import utilities
 from scripts import observing_tools
 from scripts import survey_data_utilities
+from scripts import manual_obs
 import requests
 import pytz
 
@@ -768,8 +769,37 @@ def request_obs(request):
         obs_options = get_obs_request_options()
         
         if request.method == "POST":
-             pass
-         
+            
+            oform = ObsRequestForm(request.POST)
+            eform1 = ObsExposureForm(request.POST)
+            eform2 = ObsExposureForm(request.POST)
+            eform3 = ObsExposureForm(request.POST)
+            
+            if oform.is_valid() and eform1.is_valid() and \
+                eform2.is_valid() and eform3.is_valid():
+                
+                params = manual_obs.extract_obs_params_from_post(request,oform,
+                                                                 eform1,eform2,eform3)
+                
+            else:
+                
+                oform = ObsRequestForm()
+                eform1 = ObsExposureForm()
+                eform2 = ObsExposureForm(initial=obs_options['exp_defaults'])
+                eform3 = ObsExposureForm(initial=obs_options['exp_defaults'])
+                
+                message = ['ERROR: Form input invalid.  '
+                            'Please review parameters and try again']
+                
+                return render(request, 'events/request_observation.html', \
+                                        {'oform': oform, 'eform1': eform1,
+                                         'eform2': eform2, 'eform3': eform3,
+                                         'fields': obs_options['fields'],
+                                         'facilities': obs_options['facilities'],
+                                         'rome_facilities': obs_options['rome_facilities'],
+                                         'rea_facilities': obs_options['rea_facilities'],
+                                         'filters': obs_options['filters'],
+                                        'message': message})
         else:
             
             oform = ObsRequestForm()
@@ -796,12 +826,12 @@ def get_obs_request_options():
     
     obs_options = {}
     
-    qs = Field.objects.all()
-        
+    qs = Field.objects.order_by('name')
+    
     obs_options['fields'] = []
     for f in qs:
-        obs_options['fields'].append(f.name)
-    obs_options['fields'].sort()
+        if 'Outside' not in f.name:
+            obs_options['fields'].append( (f.name, f) )
     
     obs_options['request_type'] = 'I'  # Interactive or manual request
 

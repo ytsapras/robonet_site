@@ -58,7 +58,6 @@ def parse_args(script_config):
     """Function to check for commandline arguments to Obs_Control.
     Default [no arguments] will revert to REA strategy.
     1st argument= -rome will trigger the ROME observation strategy
-    
     """
     
     script_config['selected_field'] = None

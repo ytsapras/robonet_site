@@ -156,7 +156,7 @@ class ImageNameForm(forms.ModelForm):
       model = Image
       fields = ('image_name',)
 
-class ObsExposureForm(forms.ModelForm):
+class ObsExposureForm(forms.Form):
     class Meta:
         model = ObsRequest
         fields = ('exptime', 'which_filter', 'n_exp')
@@ -165,17 +165,44 @@ class ObsExposureForm(forms.ModelForm):
                          ('SDSS-r', 'SDSS-r'),
                          ('SDSS-g', 'SDSS-g') )
                          
-    exptime = forms.IntegerField()
-    t_sample = forms.DecimalField(max_digits=6,decimal_places=2)
+    n_exp = forms.IntegerField()
+    exptime = forms.FloatField(label='exptime',min_value=0.0,max_value=1500.0)
     which_filter = forms.ChoiceField(label='field', choices=possible_filters)
     
-class ObsRequestForm(forms.ModelForm):
+class ObsRequestForm(forms.Form):
     class Meta:
         model = ObsRequest
         fields = ('field', 'pfrm_on', 'onem_on', 'twom_on', 't_sample', 
                   'exptime', 'timestamp', 'time_expire', 'n_exp',
                   'jitter', 'airmass_limit', 'lunar_distance_limit', 
                   'ipp', 'simulate')
+    
+    possible_fields = ( ('ROME-FIELD-01', 'ROME-FIELD-01'), 
+                       ('ROME-FIELD-02', 'ROME-FIELD-02'),
+                       ('ROME-FIELD-03', 'ROME-FIELD-03'),
+                       ('ROME-FIELD-04', 'ROME-FIELD-04'),
+                       ('ROME-FIELD-05', 'ROME-FIELD-05'),
+                       ('ROME-FIELD-06', 'ROME-FIELD-06'),
+                       ('ROME-FIELD-07', 'ROME-FIELD-07'),
+                       ('ROME-FIELD-08', 'ROME-FIELD-08'),
+                       ('ROME-FIELD-09', 'ROME-FIELD-09'),
+                       ('ROME-FIELD-10', 'ROME-FIELD-10'),
+                       ('ROME-FIELD-11', 'ROME-FIELD-11'),
+                       ('ROME-FIELD-12', 'ROME-FIELD-12'),
+                       ('ROME-FIELD-13', 'ROME-FIELD-13'),
+                       ('ROME-FIELD-14', 'ROME-FIELD-14'),
+                       ('ROME-FIELD-15', 'ROME-FIELD-15'),
+                       ('ROME-FIELD-16', 'ROME-FIELD-16'),
+                       ('ROME-FIELD-17', 'ROME-FIELD-17'),
+                       ('ROME-FIELD-18', 'ROME-FIELD-18'),
+                       ('ROME-FIELD-19', 'ROME-FIELD-19'),
+                       ('ROME-FIELD-20', 'ROME-FIELD-20'),
+                      )
+                      
+    field = forms.ChoiceField(label='field', choices=possible_fields)
+    timestamp = forms.DateTimeField(label='timestamp',input_formats=["%Y-%m-%dT%H:%M:%S"])
+    time_expire = forms.DateTimeField(label='time_expire',input_formats=["%Y-%m-%dT%H:%M:%S"])
+    t_sample = forms.FloatField(label='t_sample',min_value=0.1,max_value=24.0)
     jitter = forms.FloatField(label='jitter',min_value=0.1,max_value=24.0)
     airmass_limit = forms.FloatField(label='airmass_limit',min_value=1.0,max_value=2.2)
     lunar_distance_limit = forms.FloatField(label='lunar_distance_limit',min_value=1.0,max_value=180.0)
