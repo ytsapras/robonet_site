@@ -224,16 +224,19 @@
     </div>
     
 {% if message|length > 0 %}
-    <div>
+    <div margin:20px;>
     <center>
         {% for line in message %}
             <h5>{{ line }}</h5>
         {% endfor %}
     </center>
     </div>
+{% else %}
+    <div margin:20px;>
+    </div>
 {% endif %}
-
-    <div>
+    </center>
+    <div border:20px;>
         <h4>Advisory</h4><br>
         The following facilities are currently in use for ROME/REA:<br>
         <table>
