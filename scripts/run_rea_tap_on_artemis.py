@@ -123,13 +123,12 @@ def assign_tap_priorities(logger):
     datafile and need to be present for a succesful run. Currently, MOA parameters
     are not provided by ARTEMiS and require another processing step.
     """
-
+    time_allocation = 300. #hours
     ut_current = time.gmtime()
-    current_year_2digits = str(datetime.datetime.now().year)[2:]
     t_current = gcal2jd(ut_current[0], ut_current[1], ut_current[2])[
         1] - 49999.5 + ut_current[3] / 24.0 + ut_current[4] / (1440.)
     full_visibility = romerea_visibility_3sites_40deg(t_current)
-    daily_visibility = 2.8 * full_visibility * 300. / 3198.
+    daily_visibility = 2.8 * full_visibility * time_allocation / 3198.
 
     # FILTER FOR ACTIVE EVENTS (BY DEFINITION WITHIN ROME FOOTPRINT0
     active_events_list = Event.objects.select_related().filter(status__in=[
@@ -234,7 +233,7 @@ def assign_tap_priorities(logger):
                     alignpars = str.split(fentry)
             filein.close()
         
-        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')) and (current_year_2digits == eventname_short[2:4]) and ("Outside" not in Event.objects.get(id=event_id).field.name):
+        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')):
             filein = open(os.path.join(modelpath, eventname_short + '.model'))
             psplpars = str.split(filein.readline())
             filein.close()
@@ -265,13 +264,13 @@ def assign_tap_priorities(logger):
 
             # CRITERIA FOR PERMITTING A NON-ZERO PRIORITY
 	    # reduce omega threshold and remove g_pspl cut (before 2019: 0.02 and 210)
-            if ibase_pspl > 0. and omega_now > 0.01:
-                add_tap(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
-                        texp=texp, nexp=1., imag=imag, omega=omega_now,
-                        err_omega=err_omega, peak_omega=omega_peak,
-                        visibility=full_visibility, cost1m=cost1m)
-            else:
-                add_tap(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
+            #if ibase_pspl > 0. and omega_now > 0.01:
+            #    add_tap(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
+            #            texp=texp, nexp=1., imag=imag, omega=omega_now,
+            #            err_omega=err_omega, peak_omega=omega_peak,
+            #            visibility=full_visibility, cost1m=cost1m)
+            #else:
+            add_tap(event_name=event_name, timestamp=timestamp, tsamp=tsamp,
                         texp=texp, nexp=1., imag=imag, omega=0.0,
                         err_omega=err_omega, peak_omega=omega_peak,
                         visibility=full_visibility, cost1m=cost1m)
@@ -294,7 +293,7 @@ def run_tap_prioritization(logger):
     For very high priority events A_now>500, the anomaly status
     can be set (not implemented yet).
     """
-
+    time_allocation = 300. #hours
     ut_current = time.gmtime()
     t_current = gcal2jd(ut_current[0], ut_current[1], ut_current[2])[
         1] - 49999.5 + ut_current[3] / 24.0 + ut_current[4] / (1440.)
@@ -302,7 +301,7 @@ def run_tap_prioritization(logger):
     #adjust the allocation factor to 1 (if REA has an anomaly mode)
     #to 2 (if REA is the only follow-up mode)
     #to 2.8 (if REA is operated before and season start)
-    daily_visibility = 2.8 * full_visibility * 300. / 3198.
+    daily_visibility = 2.8 * full_visibility * time_allocation / 3198.
 
     list_evnt = Event.objects.filter(status__in=['AC', 'MO']).filter(year=str(datetime.datetime.now().year))
     output = []
@@ -343,7 +342,7 @@ def run_tap_prioritization(logger):
     sorted_list = sorted(output, key=lambda k: k['omega'], reverse=True)
 
     # FIRST RESET ALL MONITORING EVENTS TO ACTIVE
-    Event.objects.filter(status='MO').update(status="AC")
+    Event.objects.filter(status='MO', override=False).update(status="AC")
     # RESET ANOMALIES (PERMITS RE-CHECK)
     #logger.info('revert anomalies to active - no anomaly trigger active!')
     # Event.objects.filter(status='AN').update(status="AC")
