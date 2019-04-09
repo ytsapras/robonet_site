@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% block page_title %}{{page.name}}{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-default">
+<div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        </button>
+    </div>
+</div>
+
+<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+    <ul class="nav navbar-nav">
+      <li><a href="{% url 'list_anomalies' %}">Anomalies</a></li>
+      <li><a href="{% url 'tap' %}">TAP List</a></li>
+    </ul>
+  </div><!-- /.navbar-collapse -->
+</div><!-- /.container-fluid -->
+</nav>
+<div style="margin-top: 20px;">
+<center>
+<h3>Submit a Single-site Observation Request</h3>
+    <div>
+        <form method="POST" class="post-form">{% csrf_token %}
+            {{ formset.management_form }}
+            <table>
+                <tr>
+                    <td><label for="{{tform.id.id_for_label}}">Target:</label></td>
+                    <td><div class="fieldWrapper">
+                            <select name="id">
+                                {% for name,target in targets %}
+                                    <option value="{{target}}">{{name}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </td>
+                    <td><label>Aperture class:</label></td>
+                    <td><div class="fieldWrapper">
+                            <select name="aperture_class">
+                                {% for label,telcode in aperture_classes %}
+                                    <option value="{{telcode}}">{{label}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td><label for="{{eform1.inst_filter.id_for_label}}">Exposure group 1 Filter:</label></td>
+                    <td><div class="fieldWrapper">
+                            {{eform1.inst_filter.errors}}
+                            {{eform1.inst_filter}}
+                        </div>
+                    </td>
+                    <td><label for="{{eform1.exp_time.id_for_label}}">Exposure [sec]:</label></td>
+                    <td><div class="fieldWrapper">
+                            {{eform1.exp_time.errors}}
+                            {{eform1.exp_time}}
+                        </div>
+                    </td>
+                    <td><label for="{{eform1.n_exp.id_for_label}}">Number of exposures:</label></td>
+                    <td><div class="fieldWrapper">
+                            {{eform1.n_exp.errors}}
+                            {{eform1.n_exp}}
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="{{eform2.inst_filter.id_for_label}}">Exposure group 2 Filter:</label></td>
+                    <td><div class="fieldWrapper">
+                            {{eform2.inst_filter.errors}}
+                            {{eform2.inst_filter}}
+                        </div>
+                    </td>
+                    <td><label for="{{eform2.exp_time.id_for_label}}">Exposure [sec]:</label></td>
+                    <td><div class="fieldWrapper">
+                            {{eform2.exp_time.errors}}
+                            {{eform2.exp_time}}
+                        </div>
+                    </td>
+                    <td><label for="{{eform2.n_exp.id_for_label}}">Number of exposures:</label></td>
+                    <td><div class="fieldWrapper">
+                            {{eform2.n_exp.errors}}
+                            {{eform2.n_exp}}
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="{{eform3.inst_filter.id_for_label}}">Exposure group 3 Filter:</label></td>
+                    <td><div class="fieldWrapper">
+                            {{eform3.inst_filter.errors}}
+                            {{eform3.inst_filter}}
+                        </div>
+                    </td>
+                    <td><label for="{{eform3.exp_time.id_for_label}}">Exposure [sec]:</label></td>
+                    <td><div class="fieldWrapper">
+                            {{eform3.exp_time.errors}}
+                            {{eform3.exp_time}}
+                        </div>
+                    </td>
+                    <td><label for="{{eform3.n_exp.id_for_label}}">Number of exposures:</label></td>
+                    <td><div class="fieldWrapper">
+                            {{eform3.n_exp.errors}}
+                            {{eform3.n_exp}}
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="{{oform.start_obs.id_for_label}}">Start date 
+                            <button id="help-start-date"><img src="/static/tom/clipart-question_button.png" width="10" style="border: 0;"></button>
+                        :</label>
+                        <p id="correct-start-date-format"> </p>
+                        <script>
+                            document.getElementById("help-start-date").addEventListener("click", show_start_date_format)
+
+                            function show_start_date_format() {
+                              document.getElementById("correct-start-date-format").innerHTML = "Format: YYYY-MM-DDTHH:MM:SS"
+                            }
+                        </script>
+                    </td>
+                    <td><div class="fieldWrapper">
+                            {{oform.start_obs.errors}}
+                            {{oform.start_obs}}
+                        </div>
+                    </td>
+                    <td>
+                        <label for="{{oform.start_obs.id_for_label}}">End date 
+                            <button id="help-end-date"><img src="/static/tom/clipart-question_button.png" width="10" style="border: 0;"></button>
+                        :</label>
+                        <p id="correct-end-date-format"> </p>
+                        <script>
+                            document.getElementById("help-end-date").addEventListener("click", show_end_date_format)
+
+                            function show_end_date_format() {
+                              document.getElementById("correct-end-date-format").innerHTML = "Format: YYYY-MM-DDTHH:MM:SS"
+                            }
+                        </script>
+                    </td>
+                    <td><div class="fieldWrapper">
+                            {{oform.stop_obs.errors}}
+                            {{oform.stop_obs}}
+                        </div>
+                    </td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td><label for="{{oform.cadence.id_for_label}}">Cadence [hrs]:</label></td>
+                    <td><div class="fieldWrapper">
+                            {{oform.cadence.errors}}
+                            {{oform.cadence}}
+                        </div>
+                    </td>
+                    <td><label for="{{oform.jitter.id_for_label}}">Jitter [hrs]:</label></td>
+                    <td><div class="fieldWrapper">
+                            {{oform.jitter.errors}}
+                            {{oform.jitter}}
+                        </div>
+                    </td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td><label for="{{oform.airmass_limit.id_for_label}}">Airmass limit:</label></td>
+                    <td><div class="fieldWrapper">
+                            {{oform.airmass_limit.errors}}
+                            {{oform.airmass_limit}}
+                        </div>
+                    </td>
+                    <td><label for="{{oform.lunar_distance_limit.id_for_label}}">Minimum lunar separation:</label></td>
+                    <td><div class="fieldWrapper">
+                            {{oform.lunar_distance_limit.errors}}
+                            {{oform.lunar_distance_limit}}
+                        </div>
+                    </td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td><label for="{{oform.IPP.id_for_label}}"><a href="https://lco.global/files/User_Documentation/the_new_priority_factor.pdf">Intra-proposal Priority:</a></label></td>
+                    <td><div class="fieldWrapper">
+                            {{oform.ipp.errors}}
+                            {{oform.ipp}}
+                        </div>
+                    </td>
+                    {% if project.allowed_rapid is True %} 
+                        <td><label for="{{oform.jitter.id_for_label}}">Rapid response:</label></td>
+                        <td><div class="fieldWrapper">
+                                {{oform.rapid_mode.errors}}
+                                {{oform.rapid_mode}}
+                            </div>
+                        </td>
+                        <td></td>
+                    {% else %}
+                        <td></td>
+                        <td></td>
+                    {% endif %}
+                </tr>
+                <tr>
+                    <td>
+                        <div class="fieldWrapper">
+                        <button type="sumbit" class="save btn btn-default">Submit</button>
+                        </div>
+                    </td>
+                    <td></td>
+                    <td><label for="{{oform.simulate.id_for_label}}">Simulate
+                            <button id="help-simulate"><img src="/static/tom/clipart-question_button.png" width="10" style="border: 0;"></button>
+                        :</label>
+                        <p id="use-simulate"> </p>
+                        <script>
+                            document.getElementById("help-simulate").addEventListener("click", show_simulate_help)
+
+                            function show_simulate_help() {
+                              document.getElementById("use-simulate").innerHTML = "Testing mode: simulate=True <br>will not submit observation request"
+                            }
+                        </script>
+                    </td>
+                    <td><div class="fieldWrapper">
+                            {{oform.simulate.errors}}
+                            {{oform.simulate}}
+                        </div>
+                    </td>
+                    <td></td>
+            </tr>
+            </table>
+        </form>
+    </div>
+    
+{% if message|length > 0 %}
+    <div>
+    <center>
+        {% for line in message %}
+            <h5>{{ line }}</h5>
+        {% endfor %}
+    </center>
+    </div>
+{% endif %}
+
+</center>
+{% endblock %}

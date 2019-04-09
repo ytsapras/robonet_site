@@ -163,6 +163,11 @@ class ObsExposureForm(forms.ModelForm):
     exptime = forms.IntegerField()
     t_sample = forms.DecimalField(max_digits=6,decimal_places=2)
 
+class ObsRequestForm(forms.ModelForm):
+    class Meta:
+        model = ObsRequest
+        fields = '__all__'
+        
 class FieldNameForm(forms.ModelForm):
     class Meta:
         model = Field

@@ -15,7 +15,7 @@ from .forms import RecordSubObsRequestForm, QueryObsRequestDateForm
 from .forms import TapStatusForm, EventAnomalyStatusForm, EventNameForm
 from .forms import ObsExposureForm, FieldNameForm, ImageNameForm
 from .forms import EventPositionForm, EventSearchForm
-from .forms import EventOverrideForm
+from .forms import EventOverrideForm, ObsRequestForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image, DataFile
 from rest_framework.authentication import TokenAuthentication, BasicAuthentication
@@ -757,6 +757,31 @@ def set_event_status_api(request,event_name,status):
         
         return HttpResponseRedirect('login')
     
+############################################################################
+@login_required(login_url='/db/login/')
+def request_obs(request):
+    """Function to enable users to specify a direct observation request"""
+    
+    if request.user.is_authenticated():
+        
+        if request.method == "POST":
+             pass
+         
+        else:
+            
+            fform = FieldNameForm()
+            oform = ObsRequestForm()
+                
+            return render(request, 'events/request_observation.html', \
+                                    {'oform': oform, 
+                                    'message':'OK'})
+        
+    else:
+        
+        return HttpResponseRedirect('login')
+    
+
+############################################################################
 
 def get_events_from_tap_list():
     """Function to return a list of all current events"""
