@@ -464,95 +464,120 @@ def active_obs_requests(request):
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def tap(request):
-   """
-   Will load the TAP page.
-   """
-   if request.user.is_authenticated():
-      try:
-	 list_ev = Event.objects.select_related().filter(status__in=['MO']).annotate(latest_tap=Max('tap__timestamp'))
-	 latest_ev_tap = Tap.objects.filter(timestamp__in=[e.latest_tap for e in list_ev])
-         time_now = datetime.now()
-         time_now_jd = Time(time_now).jd
-         ##### TAP query goes here ###
-	 selection_tap = latest_ev_tap.order_by('omega').reverse()
-         #####
-         ev_id = []
-         timestamp = []
-         check_list = []
-         for f in selection_tap:
-            if f.event_id not in check_list:
-               ev_id.append(f.event_id)
-               timestamp.append(f.timestamp)
-            check_list.append(f.event_id)
-         ra = []
-         dec = []
-         names_list = []
-         cadence = []
-         nexp = []
-         texp = []
-         priority = []
-         imag = []
-         tsamp = []
-         omega_s = []
-         sig_omega_s = []
-         omega_peak = []
-         colors = []
-         visibility = []
-	 field_names = []
-      
-         count = 0
-         for i in ev_id:
-            evnm = EventName.objects.filter(event=i)
-            names = [k.name for k in evnm]
-            ev_ra = Event.objects.all().get(pk=i).ev_ra
-            ev_dec = Event.objects.all().get(pk=i).ev_dec
-	    field_name = (Event.objects.get(id=i)).field.name
-            sampling_time = Tap.objects.all().get(event=i, timestamp=timestamp[count]).tsamp
-            time_exp = Tap.objects.all().get(event=i, timestamp=timestamp[count]).texp
-            prior = Tap.objects.all().get(event=i, timestamp=timestamp[count]).priority
-            if prior == 'A':
-               colors.append('#FE2E2E')
-            elif prior == 'H':
-               colors.append('#FA8258')
-            elif prior == 'M':
-               colors.append('#F4FA58')
-            elif prior == 'L':
-               colors.append('#A9F5A9')
+    """Function to load the TAP page of targets recommended for observation"""
+    
+    if request.user.is_authenticated():
+#        try:
+            list_ev = Event.objects.select_related().filter(status__in=['MO']).annotate(latest_tap=Max('tap__timestamp'))
+            latest_ev_tap = Tap.objects.filter(timestamp__in=[e.latest_tap for e in list_ev])
+            
+            time_now = datetime.now()
+            time_now_jd = Time(time_now).jd
+            
+            ##### TAP query goes here ###
+            selection_tap = latest_ev_tap.order_by('omega').reverse()
+            #####
+            
+            ev_id = []
+            timestamp = []
+            check_list = []
+            for f in selection_tap:
+                if f.event_id not in check_list:
+                    ev_id.append(f.event_id)
+                    timestamp.append(f.timestamp)
+                    check_list.append(f.event_id)
+            
+            if len(selection_tap) > 0:
+                ra = []
+                dec = []
+                names_list = []
+                cadence = []
+                nexp = []
+                texp = []
+                priority = []
+                imag = []
+                tsamp = []
+                omega_s = []
+                sig_omega_s = []
+                omega_peak = []
+                colors = []
+                visibility = []
+                field_names = []
+                override = []
+                
+                count = 0
+                for i in ev_id:
+                    evnm = EventName.objects.filter(event=i)
+                    names = [k.name for k in evnm]
+                    
+                    ev_ra = Event.objects.all().get(pk=i).ev_ra
+                    ev_dec = Event.objects.all().get(pk=i).ev_dec
+                    field_name = (Event.objects.get(id=i)).field.name
+                    override_status = Event.objects.all().get(pk=i).override
+                    
+                    sampling_time = Tap.objects.all().get(event=i, timestamp=timestamp[count]).tsamp
+                    time_exp = Tap.objects.all().get(event=i, timestamp=timestamp[count]).texp
+                    prior = Tap.objects.all().get(event=i, timestamp=timestamp[count]).priority
+                    
+                    if prior == 'A':
+                        colors.append('#FE2E2E')
+                    elif prior == 'H':
+                        colors.append('#FA8258')
+                    elif prior == 'M':
+                        colors.append('#F4FA58')
+                    elif prior == 'L':
+                        colors.append('#A9F5A9')
+                    else:
+                        colors.append('#808080')
+                        
+                    baseline = Tap.objects.all().get(event=i, timestamp=timestamp[count]).imag
+                    oms = Tap.objects.all().get(event=i, timestamp=timestamp[count]).omega
+                    omsp = Tap.objects.all().get(event=i, timestamp=timestamp[count]).peak_omega
+                    vis = Tap.objects.all().get(event=i, timestamp=timestamp[count]).visibility
+                    
+                    texp.append(time_exp)
+                    tsamp.append(sampling_time)
+                    priority.append(prior)
+                    imag.append(baseline)
+                    omega_s.append(oms)
+                    omega_peak.append(omsp)
+                    names_list.append(names)
+                    visibility.append(vis)
+                    ra.append(ev_ra)
+                    dec.append(ev_dec)
+                    field_names.append(field_name)
+                    override.append(override_status)
+                    count = count + 1
+                    print(override)
+                    #### TAP rows need to be defined here ####
+                    rows = zip(colors, ev_id, names_list, ra, dec, texp, priority, 
+                               tsamp, imag, omega_s, omega_peak, 
+                               visibility, field_names, override)
             else:
-               colors.append('#808080')
-            baseline = Tap.objects.all().get(event=i, timestamp=timestamp[count]).imag
-            oms = Tap.objects.all().get(event=i, timestamp=timestamp[count]).omega
-            omsp = Tap.objects.all().get(event=i, timestamp=timestamp[count]).peak_omega
-            vis = Tap.objects.all().get(event=i, timestamp=timestamp[count]).visibility
-            texp.append(time_exp)
-            tsamp.append(sampling_time)
-            priority.append(prior)
-            imag.append(baseline)
-            omega_s.append(oms)
-            omega_peak.append(omsp)
-            names_list.append(names)
-            visibility.append(vis)
-            ra.append(ev_ra)
-            dec.append(ev_dec)
-	    field_names.append(field_name)
-            count = count + 1
-         #### TAP rows need to be defined here ####
-         rows = zip(colors, ev_id, names_list, ra, dec, texp, priority, tsamp, imag, omega_s,
-        	    omega_peak, visibility, field_names)
-         rowsrej = ''
-         time1 = 'Unknown' # This should be an estimate of when the target list will be uploaded next (in minutes)
-         #time2 = str(blg_visibility(mlsites=['CPT','COJ','LSC'])) # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
-         time2 = 'test' # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
-         nsite = '3' # The number of sites the bulge is visible from for time2 hours
-         occupy = '<font color="red"> Unknown</font>' # This should be a string (can include html)
-         ##########################################
-      except:
-         raise Http404("Encountered a problem while loading. Please contact the site administrator.")
-      context = {'rows': rows, 'rowsrej':rowsrej, 'time_now': time_now, 'time_now_jd': time_now_jd,
-        	 'time1':time1, 'time2':time2, 'nsite':nsite, 'occupy':occupy}
-      return render(request, 'events/tap.html', context)
-   else:
-      return HttpResponseRedirect('login')
+                
+                rows = []
+                
+            rowsrej = ''
+            time1 = 'Unknown' # This should be an estimate of when the target list will be uploaded next (in minutes)
+            #time2 = str(blg_visibility(mlsites=['CPT','COJ','LSC'])) # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
+            time2 = 'test' # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
+            nsite = '3' # The number of sites the bulge is visible from for time2 hours
+            occupy = '<font color="red"> Unknown</font>' # This should be a string (can include html)
+            ##########################################
+            
+            context = {'rows': rows, 'rowsrej':rowsrej, 'time_now': time_now, 
+                       'time_now_jd': time_now_jd, 'time1':time1, 
+                       'time2':time2, 'nsite':nsite, 'occupy':occupy}
+                       
+            return render(request, 'events/tap.html', context)
+            
+#        except:
+            
+#            raise Http404("Encountered a problem while loading. Please contact the site administrator.")
+            
+    else:
+        
+        return HttpResponseRedirect('login')
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')
@@ -633,7 +658,7 @@ def set_event_status(request):
         
     if request.user.is_authenticated():
         
-        if request.method == "POST" and event_name==None and status==None:
+        if request.method == "POST":
         
             (events, states) = fetch_events_and_states()
             

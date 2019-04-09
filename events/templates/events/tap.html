@@ -39,25 +39,14 @@ a:active {
 <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
     <ul class="nav navbar-nav">
       <li><a href="{% url 'list_anomalies' %}">Anomalies</a></li>
+      <li><a href="{% url 'set_event_status' %}">Set event status</a></li>
     </ul>
   </div><!-- /.navbar-collapse -->
 </div><!-- /.container-fluid -->
 </nav>
 <center><br>
-<table style="border: 0px" width="90%">
-    <tr>
-        <td align="left" width="50%"><b>Current Time:</b> {{ time_now }} UT [HJD: {{ time_now_jd }}]</td>
-        <td align="center" bgcolor="#609ab6" width="20%"><a href="{% url 'set_tap_status' %}"><b style="color: #FFFFFF ">Change TAP priorities</b></a></td>
-    </tr>
-    <tr>
-        <td></td>
-        <td align="center" bgcolor="#609ab6" width="20%"><a href="{% url 'set_event_status' %}"><b style="color: #FFFFFF ">Change event status</b></a></td>
-    </tr>
-    <tr>
-        <td></td>
-        <td align="center" bgcolor="#609ab6" width="20%"><a href="{% url 'trigger_rea_hi_obs' %}"><b style="color: #FFFFFF ">Trigger REA-HI mode</b></a></td>
-    </tr>
-</table>
+<b>Current Time:</b> {{ time_now }} UT [HJD: {{ time_now_jd }}]
+
 <h2> Target Priority: LCO 1m network</h2>
 {% if rows %}
 {% load staticfiles %}
@@ -80,6 +69,7 @@ a:active {
   <th bgcolor="#609ab6"><b style="color: #FFFFFF ">&Omega;<sub>S</sub>@peak</b></th>
   <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Visibility [h]</b></th>
   <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Field</b></th>
+  <th bgcolor="#609ab6"><b style="color: #FFFFFF ">Manual override set?</b></th>
  </tr>
  {% for row in rows %}
  <tr bgcolor="{{ row.0 }}">
@@ -98,6 +88,11 @@ a:active {
    <td>{{ row.10 }}</td>
    <td>{{ row.11 }}</td>
    <td>{{ row.12 }}</td>
+     {% if row.13 == True %}
+     <td><b style="color: #ff0000">True</b></td>
+     {% else %}
+     <td>False</td>
+     {% endif %}
  </tr>
  {% endfor %}
  </table>
