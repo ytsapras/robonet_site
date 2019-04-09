@@ -993,7 +993,7 @@ def update_event_status(event, state, override, interactive=False):
                 
                 e = qs[0]
                 
-                if e.override == False or interactive::
+                if e.override == False or interactive:
                     e.status = state
                     e.override = override
                     e.save()
