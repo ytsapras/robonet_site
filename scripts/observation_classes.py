@@ -335,7 +335,7 @@ class ObsRequest:
                 log.info(' -> Molecule: ' + str(molecule))
     
             molecule_list.append(molecule)
-                
+        print(molecule_list)
         return molecule_list  
                 
     def get_cadence_requests(self,ur,log=None):
@@ -492,6 +492,8 @@ def get_request_desc(request_type):
         request_desc = 'rea-lo'
     elif request_type == 'N':
         request_desc = 'rea'
+    elif request_type == 'I':
+        request_desc = 'man'
     else:
         request_desc = 'unknown'
         raise ValueError('Unknown observation request type, ' + request_type)

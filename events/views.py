@@ -779,8 +779,29 @@ def request_obs(request):
                 eform2.is_valid() and eform3.is_valid():
                 
                 params = manual_obs.extract_obs_params_from_post(request,oform,
-                                                                 eform1,eform2,eform3)
+                                                                 eform1,eform2,eform3,
+                                                                 obs_options)
+                                                                 
+                (obs_requests, script_config, simulate) = manual_obs.build_obs_request(params)
                 
+                message = ['Built observation request with status: ']
+                
+                if simulate == False:
+                    message.append(obs_control.submit_obs_requests(script_config,
+                                                                obs_requests))
+                else:
+                    message.append('Simulated observation built OK')
+                    
+                return render(request, 'events/request_observation.html', \
+                                        {'oform': oform, 'eform1': eform1,
+                                         'eform2': eform2, 'eform3': eform3,
+                                         'fields': obs_options['fields'],
+                                         'facilities': obs_options['facilities'],
+                                         'rome_facilities': obs_options['rome_facilities'],
+                                         'rea_facilities': obs_options['rea_facilities'],
+                                         'filters': obs_options['filters'],
+                                        'message': message})
+                                        
             else:
                 
                 oform = ObsRequestForm()

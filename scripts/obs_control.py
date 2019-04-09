@@ -58,6 +58,7 @@ def parse_args(script_config):
     """Function to check for commandline arguments to Obs_Control.
     Default [no arguments] will revert to REA strategy.
     1st argument= -rome will trigger the ROME observation strategy
+    
     """
     
     script_config['selected_field'] = None
@@ -175,6 +176,7 @@ def submit_obs_requests(script_config,obs_requests,log=None):
             log.info('Building '+obs.group_id)
             
         ur = obs.build_cadence_request( log=log, debug=True )
+        
         if log != None: 
             log.info(obs.group_id + ': Built json request')
         
