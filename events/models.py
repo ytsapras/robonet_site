@@ -659,7 +659,8 @@ class ObsRequest(models.Model):
    possible_types = (
    ('A', 'REA High - 20 min cadence'),
    ('M', 'REA Low - 60 min cadence'),
-   ('L', 'ROME Standard - every 7 hours')
+   ('L', 'ROME Standard - every 7 hours'),
+   ('I', 'Manual request' )
    )
    status_choice = (
    ('AC', 'ACTIVE'),

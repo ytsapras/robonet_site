@@ -42,6 +42,7 @@ from scripts import db_plotting_utilities
 from scripts import obs_monitor
 from scripts import rome_fields_dict
 from scripts import field_check
+from scripts import rome_obs
 from scripts import rea_obs
 from scripts import obs_control
 from scripts import log_utilities
@@ -764,23 +765,84 @@ def request_obs(request):
     
     if request.user.is_authenticated():
         
+        obs_options = get_obs_request_options()
+        
         if request.method == "POST":
              pass
          
         else:
             
-            fform = FieldNameForm()
             oform = ObsRequestForm()
-                
+            eform1 = ObsExposureForm()
+            eform2 = ObsExposureForm(initial=obs_options['exp_defaults'])
+            eform3 = ObsExposureForm(initial=obs_options['exp_defaults'])
+            
             return render(request, 'events/request_observation.html', \
-                                    {'oform': oform, 
-                                    'message':'OK'})
+                                    {'oform': oform, 'eform1': eform1,
+                                     'eform2': eform2, 'eform3': eform3,
+                                     'fields': obs_options['fields'],
+                                     'facilities': obs_options['facilities'],
+                                     'rome_facilities': obs_options['rome_facilities'],
+                                     'rea_facilities': obs_options['rea_facilities'],
+                                     'filters': obs_options['filters'],
+                                    'message':''})
         
     else:
         
         return HttpResponseRedirect('login')
     
+def get_obs_request_options():
+    """Function containing the available observing options"""
+    
+    obs_options = {}
+    
+    qs = Field.objects.all()
+        
+    obs_options['fields'] = []
+    for f in qs:
+        obs_options['fields'].append(f.name)
+    obs_options['fields'].sort()
+    
+    obs_options['request_type'] = 'I'  # Interactive or manual request
 
+    (rome_sequence,tols) = rome_obs.rome_obs_sequence()
+    obs_options['rome_facilities'] = extract_facilities_list(rome_sequence)
+    
+    (rea_sequence,tols) = rea_obs.rea_obs_sequence()
+    obs_options['rea_facilities'] = extract_facilities_list(rea_sequence)
+    
+    obs_options['facilities'] = []
+    for f in obs_options['rome_facilities']+obs_options['rea_facilities']:
+        if f not in obs_options['facilities']:
+            obs_options['facilities'].append(f)
+    
+    obs_options['filters'] = ( ('SDSS-i', 'SDSS-i'),
+                         ('SDSS-r', 'SDSS-r'),
+                         ('SDSS-g', 'SDSS-g') )
+    
+    obs_options['exp_defaults'] = { 'which_filter': 'None', 
+                                     'exptime': 0,
+                                     'n_exp': 0 }
+                                     
+    return obs_options
+    
+def extract_facilities_list(obs_sequence):
+    """Function to distill the list of facilities currently configured based
+    on an observing strategy sequence
+    """
+    
+    facilities = []
+    
+    for i,site in enumerate(obs_sequence['sites']):
+        
+        dome = obs_sequence['domes'][i]
+        tel = obs_sequence['tels'][i]
+        camera = obs_sequence['instruments'][i]
+        
+        facilities.append( site+' '+dome+' '+tel+' '+camera )
+    
+    return facilities
+    
 ############################################################################
 
 def get_events_from_tap_list():

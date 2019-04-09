@@ -28,20 +28,20 @@
             {{ formset.management_form }}
             <table>
                 <tr>
-                    <td><label for="{{tform.id.id_for_label}}">Target:</label></td>
+                    <td><label for="{{oform.id.id_for_label}}">Field:</label></td>
                     <td><div class="fieldWrapper">
                             <select name="id">
-                                {% for name,target in targets %}
-                                    <option value="{{target}}">{{name}}</option>
+                                {% for name in fields %}
+                                    <option value="{{name}}">{{name}}</option>
                                 {% endfor %}
                             </select>
                         </div>
                     </td>
-                    <td><label>Aperture class:</label></td>
+                    <td><label>Facility:</label></td>
                     <td><div class="fieldWrapper">
-                            <select name="aperture_class">
-                                {% for label,telcode in aperture_classes %}
-                                    <option value="{{telcode}}">{{label}}</option>
+                            <select name="facility">
+                                {% for telcode in facilities %}
+                                    <option value="{{telcode}}">{{telcode}}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -49,16 +49,19 @@
                     <td></td>
                 </tr>
                 <tr>
-                    <td><label for="{{eform1.inst_filter.id_for_label}}">Exposure group 1 Filter:</label></td>
+                    <td><label for="{{eform1.which_filter.id_for_label}}">Exposure group 1 Filter:</label></td>
                     <td><div class="fieldWrapper">
-                            {{eform1.inst_filter.errors}}
-                            {{eform1.inst_filter}}
+                        <select name="which_filter">
+                            {% for value,name in filters %}
+                                <option value="{{value}}">{{name}}</option>
+                            {% endfor %}
+                        </select>
                         </div>
                     </td>
-                    <td><label for="{{eform1.exp_time.id_for_label}}">Exposure [sec]:</label></td>
+                    <td><label for="{{eform1.exptime.id_for_label}}">Exposure [sec]:</label></td>
                     <td><div class="fieldWrapper">
-                            {{eform1.exp_time.errors}}
-                            {{eform1.exp_time}}
+                            {{eform1.exptime.errors}}
+                            {{eform1.exptime}}
                         </div>
                     </td>
                     <td><label for="{{eform1.n_exp.id_for_label}}">Number of exposures:</label></td>
@@ -69,16 +72,19 @@
                     </td>
                 </tr>
                 <tr>
-                    <td><label for="{{eform2.inst_filter.id_for_label}}">Exposure group 2 Filter:</label></td>
+                    <td><label for="{{eform2.which_filter.id_for_label}}">Exposure group 2 Filter:</label></td>
                     <td><div class="fieldWrapper">
-                            {{eform2.inst_filter.errors}}
-                            {{eform2.inst_filter}}
+                        <select name="which_filter">
+                            {% for value,name in filters %}
+                                <option value="{{value}}">{{name}}</option>
+                            {% endfor %}
+                        </select>
                         </div>
                     </td>
-                    <td><label for="{{eform2.exp_time.id_for_label}}">Exposure [sec]:</label></td>
+                    <td><label for="{{eform2.exptime.id_for_label}}">Exposure [sec]:</label></td>
                     <td><div class="fieldWrapper">
-                            {{eform2.exp_time.errors}}
-                            {{eform2.exp_time}}
+                            {{eform2.exptime.errors}}
+                            {{eform2.exptime}}
                         </div>
                     </td>
                     <td><label for="{{eform2.n_exp.id_for_label}}">Number of exposures:</label></td>
@@ -89,16 +95,19 @@
                     </td>
                 </tr>
                 <tr>
-                    <td><label for="{{eform3.inst_filter.id_for_label}}">Exposure group 3 Filter:</label></td>
+                    <td><label for="{{eform3.which_filter.id_for_label}}">Exposure group 3 Filter:</label></td>
                     <td><div class="fieldWrapper">
-                            {{eform3.inst_filter.errors}}
-                            {{eform3.inst_filter}}
+                        <select name="which_filter">
+                            {% for value,name in filters %}
+                                <option value="{{value}}">{{name}}</option>
+                            {% endfor %}
+                        </select>
                         </div>
                     </td>
-                    <td><label for="{{eform3.exp_time.id_for_label}}">Exposure [sec]:</label></td>
+                    <td><label for="{{eform3.exptime.id_for_label}}">Exposure [sec]:</label></td>
                     <td><div class="fieldWrapper">
-                            {{eform3.exp_time.errors}}
-                            {{eform3.exp_time}}
+                            {{eform3.exptime.errors}}
+                            {{eform3.exptime}}
                         </div>
                     </td>
                     <td><label for="{{eform3.n_exp.id_for_label}}">Number of exposures:</label></td>
@@ -109,8 +118,8 @@
                     </td>
                 </tr>
                 <tr>
-                    <td><label for="{{oform.start_obs.id_for_label}}">Start date 
-                            <button id="help-start-date"><img src="/static/tom/clipart-question_button.png" width="10" style="border: 0;"></button>
+                    <td><label for="{{oform.timestampe.id_for_label}}">Start date 
+                            <button id="help-start-date"><img src="/static/events/clipart-question_button.png" width="10" style="border: 0;"></button>
                         :</label>
                         <p id="correct-start-date-format"> </p>
                         <script>
@@ -122,13 +131,13 @@
                         </script>
                     </td>
                     <td><div class="fieldWrapper">
-                            {{oform.start_obs.errors}}
-                            {{oform.start_obs}}
+                            {{oform.timestamp.errors}}
+                            {{oform.timestamp}}
                         </div>
                     </td>
                     <td>
                         <label for="{{oform.start_obs.id_for_label}}">End date 
-                            <button id="help-end-date"><img src="/static/tom/clipart-question_button.png" width="10" style="border: 0;"></button>
+                            <button id="help-end-date"><img src="/static/events/clipart-question_button.png" width="10" style="border: 0;"></button>
                         :</label>
                         <p id="correct-end-date-format"> </p>
                         <script>
@@ -140,23 +149,17 @@
                         </script>
                     </td>
                     <td><div class="fieldWrapper">
-                            {{oform.stop_obs.errors}}
-                            {{oform.stop_obs}}
+                            {{oform.time_expire.errors}}
+                            {{oform.time_expire}}
                         </div>
                     </td>
                     <td></td>
                 </tr>
                 <tr>
-                    <td><label for="{{oform.cadence.id_for_label}}">Cadence [hrs]:</label></td>
+                    <td><label for="{{oform.t_sample.id_for_label}}">Cadence [hrs]:</label></td>
                     <td><div class="fieldWrapper">
-                            {{oform.cadence.errors}}
-                            {{oform.cadence}}
-                        </div>
-                    </td>
-                    <td><label for="{{oform.jitter.id_for_label}}">Jitter [hrs]:</label></td>
-                    <td><div class="fieldWrapper">
-                            {{oform.jitter.errors}}
-                            {{oform.jitter}}
+                            {{oform.t_sample.errors}}
+                            {{oform.t_sample}}
                         </div>
                     </td>
                     <td></td>
@@ -183,18 +186,8 @@
                             {{oform.ipp}}
                         </div>
                     </td>
-                    {% if project.allowed_rapid is True %} 
-                        <td><label for="{{oform.jitter.id_for_label}}">Rapid response:</label></td>
-                        <td><div class="fieldWrapper">
-                                {{oform.rapid_mode.errors}}
-                                {{oform.rapid_mode}}
-                            </div>
-                        </td>
-                        <td></td>
-                    {% else %}
                         <td></td>
                         <td></td>
-                    {% endif %}
                 </tr>
                 <tr>
                     <td>
@@ -235,6 +228,22 @@
     </center>
     </div>
 {% endif %}
+
+    <div>
+        <h4>Advisory</h4><br>
+        The following facilities are currently in use for ROME/REA:<br>
+        <table>
+            <tr><th>Survey</th><th>Facility</th></tr>
+            {% for f in rome_facilities %}
+                <tr><td>ROME</td><td>{{f}}</td></tr>
+            {% endfor %}
+                
+            {% for f in rea_facilities %}
+                <tr><td>REA</td><td>{{f}}</td></tr>
+            {% endfor %}
+            </tr>
+        </table>
+    </div>
 
 </center>
 {% endblock %}

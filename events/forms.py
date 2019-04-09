@@ -159,15 +159,29 @@ class ImageNameForm(forms.ModelForm):
 class ObsExposureForm(forms.ModelForm):
     class Meta:
         model = ObsRequest
-        fields = ('exptime', 't_sample')
+        fields = ('exptime', 'which_filter', 'n_exp')
+    
+    possible_filters = ( ('SDSS-i', 'SDSS-i'),
+                         ('SDSS-r', 'SDSS-r'),
+                         ('SDSS-g', 'SDSS-g') )
+                         
     exptime = forms.IntegerField()
     t_sample = forms.DecimalField(max_digits=6,decimal_places=2)
-
+    which_filter = forms.ChoiceField(label='field', choices=possible_filters)
+    
 class ObsRequestForm(forms.ModelForm):
     class Meta:
         model = ObsRequest
-        fields = '__all__'
-        
+        fields = ('field', 'pfrm_on', 'onem_on', 'twom_on', 't_sample', 
+                  'exptime', 'timestamp', 'time_expire', 'n_exp',
+                  'jitter', 'airmass_limit', 'lunar_distance_limit', 
+                  'ipp', 'simulate')
+    jitter = forms.FloatField(label='jitter',min_value=0.1,max_value=24.0)
+    airmass_limit = forms.FloatField(label='airmass_limit',min_value=1.0,max_value=2.2)
+    lunar_distance_limit = forms.FloatField(label='lunar_distance_limit',min_value=1.0,max_value=180.0)
+    ipp = forms.FloatField(label='ipp',min_value=0.1,max_value=2.0)
+    simulate = forms.ChoiceField([(False,False),(True,True)])
+    
 class FieldNameForm(forms.ModelForm):
     class Meta:
         model = Field
