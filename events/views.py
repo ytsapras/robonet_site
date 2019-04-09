@@ -15,6 +15,7 @@ from .forms import RecordSubObsRequestForm, QueryObsRequestDateForm
 from .forms import TapStatusForm, EventAnomalyStatusForm, EventNameForm
 from .forms import ObsExposureForm, FieldNameForm, ImageNameForm
 from .forms import EventPositionForm, EventSearchForm
+from .forms import EventOverrideForm
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, Image, DataFile
 from rest_framework.authentication import TokenAuthentication, BasicAuthentication
@@ -593,32 +594,32 @@ def set_tap_status(request):
         
             tform = TapStatusForm(request.POST)
             
-            if form.is_valid():
+            if tform.is_valid():
                 
-                post = form.save(commit=False)
+                post = tform.save(commit=False)
                 
                 (status, message) = update_db_2.update_tap_status(post.event, 
                                                                   post.priority)
                 
                 return render(request, 'events/set_tap_status.html', \
-                                    {'form': form, 'tap_targets': tap_targets,
-                                     'priorities': priorities,
+                                    {'tform': tform, 'tap_targets': tap_targets,\
+                                     'priorities': priorities,\
                                      'message': message})
             
             else:
                 
-                form = TapStatusForm()
+                tform = TapStatusForm()
                 
                 return render(request, 'events/set_tap_status.html', \
-                                    {'form': form, 'tap_targets': tap_targets,\
+                                    {'tform': tform, 'tap_targets': tap_targets,\
                                      'priorities': priorities,\
                                     'message':'Form entry was invalid.  Please try again.'})
             
         else:
-            form = TapStatusForm()
+            tform = TapStatusForm()
                 
             return render(request, 'events/set_tap_status.html', \
-                                    {'form': form, 'tap_targets': tap_targets,\
+                                    {'tform': tform, 'tap_targets': tap_targets,\
                                      'priorities': priorities,\
                                     'message':'OK'})
                                         

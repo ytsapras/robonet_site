@@ -180,7 +180,11 @@ def get_rea_targets(log=None):
 def get_tap_list(log=None):
     """Function to query the DB and return the list of targets recommended 
     for REA-mode observations by TAP, and the details of those 
-    observations"""
+    observations
+    
+    Note that this will ONLY return the objects for which TAP has calculated
+    priorities etc.    
+    """
     
     tap_list = []
     qs = Event.objects.filter(status='MO')
@@ -194,24 +198,27 @@ def get_tap_list(log=None):
                 name += '/' + n.name
         target = TapEvent()
         target.event_id = q.pk
+        target.event = q
         target.names = name
         target.field = q.field
         target.ev_ra = q.ev_ra
         target.ev_dec = q.ev_dec
         target.tap_status = q.status
         
-        tap_entry = Tap.objects.filter(event=q.pk).order_by('timestamp').reverse()[0]
-        target.pk = tap_entry.pk
-        target.event = q
-        target.priority = tap_entry.priority
-        target.tsamp = float(tap_entry.tsamp)
-        target.texp = float(tap_entry.texp)
-        target.nexp = int(tap_entry.nexp)
-        target.telclass = tap_entry.telclass+'0'
-        target.omega = tap_entry.omega
-        target.passband = tap_entry.passband
-        target.ipp = float(tap_entry.ipp)
-        tap_list.append(target)
+        tap_entries = Tap.objects.filter(event=q.pk).order_by('timestamp').reverse()
+        
+        if len(tap_entries) > 0:
+            target.pk = tap_entries[0].pk
+            target.priority = tap_entries[0].priority
+            target.tsamp = float(tap_entries[0].tsamp)
+            target.texp = float(tap_entries[0].texp)
+            target.nexp = int(tap_entries[0].nexp)
+            target.telclass = tap_entries[0].telclass+'0'
+            target.omega = tap_entries[0].omega
+            target.passband = tap_entries[0].passband
+            target.ipp = float(tap_entries[0].ipp)
+            
+            tap_list.append(target)
         
     if log != None:
         log.info('\n')

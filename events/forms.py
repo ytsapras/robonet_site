@@ -95,6 +95,12 @@ class EventAnomalyStatusForm(forms.ModelForm):
     override = forms.BooleanField(label='override', required=False)
 
 
+class EventOverrideForm(forms.ModelForm):
+    class Meta:
+        model = Event
+        fields = ('override',)
+    override = forms.BooleanField(label='override', required=False)
+    
 class SingleModelForm(forms.ModelForm):
    class Meta:
       model = SingleModel

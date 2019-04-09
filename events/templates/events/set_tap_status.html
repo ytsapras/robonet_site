@@ -17,6 +17,7 @@
     <ul class="nav navbar-nav">
       <li><a href="{% url 'list_anomalies' %}">Anomalies</a></li>
       <li><a href="{% url 'tap' %}">TAP List</a></li>
+      <li><a href="{% url 'set_event_status' %}">Set event status</a></li>
     </ul>
   </div><!-- /.navbar-collapse -->
 </div><!-- /.container-fluid -->
@@ -34,33 +35,21 @@
         {{ formset.management_form }}
         {{ formset.errors }}
         <center>
-            <table><tr><td><label for="{{form.event.id_for_label}}">
+            <table><tr><td><label for="{{tform.event.id_for_label}}">
                 <select name="event">
                 {% for e, target_id in tap_targets %}
                     <option value="{{e.pk}}">{{target_id}}</option>
                 {% endfor %}
                 </select></label></td>
-                <td><label for="{{form.priority.id_for_label}}">
+                <td><label for="{{tform.priority.id_for_label}}">
                 <select name="priority">
                 {% for code,priority in priorities %}
                     <option value="{{code}}">{{priority}}</option>
                 {% endfor %}
                 </select></label>
                 </td>
-                <td><label for="{{uform.email_notifications.id_for_label}}">Allow email notifications?:</label></td>
-                <td><div class="fieldWrapper">
-                        {{uform.email_notifications.errors}}
-                        {{uform.email_notifications}}
-                    </div>
-                    
-                    <div class="fieldWrapper">
-                        {{ form.override.errors }}
-                        <label for="{{ form.override.id_for_label }}">Manual override?</label>
-                        {{ form.override }}
-                    </div>
-                </td>
                 </tr>
-                <tr><td></td><td><td></td>
+                <tr><td></td><td>
                 <div class="fieldWrapper">
                     <button type="submit" class="save btn btn-default">Submit</button>
                 </div>
