@@ -548,7 +548,7 @@ def tap(request):
                     field_names.append(field_name)
                     override.append(override_status)
                     count = count + 1
-                    print(override)
+                    
                     #### TAP rows need to be defined here ####
                     rows = zip(colors, ev_id, names_list, ra, dec, texp, priority, 
                                tsamp, imag, omega_s, omega_peak, 
