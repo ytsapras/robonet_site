@@ -741,7 +741,8 @@ def set_event_status_api(request,event_name,status):
             else:
                 
                 (status, message) = update_db_2.update_event_status(qs[0].event, 
-                                                                    status)
+                                                                    status,
+                                                                    False)
         
         else:
             

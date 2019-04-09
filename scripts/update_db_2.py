@@ -993,13 +993,18 @@ def update_event_status(event, state, override):
                 
                 e = qs[0]
                 
-                e.status = state
-                e.override = override
-                
-                e.save()
-                
-                successful = True
-                message = 'DBREPLY: event status updated'
+                if e.override == False:
+                    e.status = state
+                    e.override = override
+                    e.save()
+                    
+                    successful = True
+                    message = 'DBREPLY: event status updated'
+                    
+                else:
+
+                   successful = True
+                   message = 'DBREPLY: event state manually overridden, no update made'
             
             except:
                 
