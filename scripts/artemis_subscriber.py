@@ -273,6 +273,7 @@ def sync_data_align_files_with_db(config,data_file,align_file,log):
               'ndata': mapcount_file_lines(data_file),
               'last_upd': last_upd,
               }
+    
     (status,message) = update_db_2.add_datafile_via_api(params)
     
     if log!=None:
@@ -315,13 +316,17 @@ def mapcount_file_lines(file_path):
     lines in a file efficiently by using memory mapping.
     Function counts all lines of the file, subtracting the assumed 1-line header
     """
-    f = open(file_path, "r+")
-    buf = mmap.mmap(f.fileno(), 0)
-    lines = 0
-    readline = buf.readline
-    while readline():
-        lines += 1
-    lines -= 1
+    try:
+        f = open(file_path, "r+")
+        buf = mmap.mmap(f.fileno(), 0)
+        lines = 0
+        readline = buf.readline
+        while readline():
+            lines += 1
+        lines -= 1
+    except ValueError:
+        lines = []
+        
     return lines
 
 ###########################

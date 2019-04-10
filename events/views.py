@@ -1172,14 +1172,15 @@ def render_event_queryset_as_table_rows(events,separations=None):
             t0_list.append('NONE')
             tE_list.append('NONE')
             u0_list.append('NONE')
+        imag_list.append(events[i].ibase)
     
     if separations == None:
         rows = zip(ev_id, names_list, field, ra, dec, status, year_disc,
-               t0_list, tE_list, u0_list)
+               t0_list, tE_list, u0_list, imag_list)
         rows = sorted(rows, key=lambda row: row[1], reverse=True)
     else:
         rows = zip(ev_id, names_list, field, ra, dec, status, year_disc,
-               t0_list, tE_list, u0_list, separations)
+               t0_list, tE_list, u0_list, imag_list, separations)
         rows = sorted(rows, key=lambda row: row[10], reverse=True)
         
     return rows
