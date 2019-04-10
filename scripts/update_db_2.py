@@ -23,7 +23,10 @@ setup()
 
 from events.models import Field, Operator, Telescope, Instrument, Filter, Event, EventName, SingleModel, BinaryModel
 from events.models import EventReduction, ObsRequest, EventStatus, DataFile, Tap, TapLima, Image, SubObsRequest
-from scripts import api_tools, query_db, rea_obs
+try:
+   from scripts import api_tools, query_db, rea_obs
+except ImportError:
+   import api_tools, query_db, rea_obs
 import pytz
 
 ##################################################################################

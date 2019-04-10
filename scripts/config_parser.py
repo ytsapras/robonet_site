@@ -78,7 +78,8 @@ def read_config_for_code(code_name):
         config_file = configs[code_name]
     
     host_name = socket.gethostname()
-    if 'rachel' in str(host_name).lower() or 'uni-heidelberg' in str(host_name).lower():
+    #if 'rachel' in str(host_name).lower() or 'uni-heidelberg' in str(host_name).lower():
+    if 'rachel' in str(host_name).lower() in str(host_name).lower():
         config_file_path = path.join('/Users/rstreet/.robonet_site/',configs[code_name])
     elif 'cursa' in host_name:
         config_file_path = path.join('/home/Tux/ytsapras/robonet_site/configs/',configs[code_name])

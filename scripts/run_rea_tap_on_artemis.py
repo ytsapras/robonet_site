@@ -10,7 +10,6 @@
 # Import dependencies
 import warnings
 import time
-import datetime
 import log_utilities
 from update_db_2 import *
 import numpy as np
@@ -19,6 +18,7 @@ from django.db.models import Max
 import log_utilities
 from get_errors import update_err
 from os import listdir
+from datetime import datetime
 
 warnings.filterwarnings('ignore', module='astropy.coordinates')
 
@@ -132,7 +132,7 @@ def assign_tap_priorities(logger):
 
     # FILTER FOR ACTIVE EVENTS (BY DEFINITION WITHIN ROME FOOTPRINT0
     active_events_list = Event.objects.select_related().filter(status__in=[
-        'AC', 'MO']).filter(year=str(datetime.datetime.now().year))
+        'AC', 'MO']).filter(year=str(datetime.now().year))
     logger.info('RoboTAP: Processing ' +
                 str(len(active_events_list)) + ' active events.')
 
@@ -207,7 +207,7 @@ def assign_tap_priorities(logger):
             nmissing += 1
     # FILTER FOR ACTIVE EVENTS (BY DEFINITION WITHIN ROME FOOTPRINT0
     active_events_list = Event.objects.select_related().filter(status__in=[
-        'AN']).filter(year=str(datetime.datetime.now().year))
+        'AN']).filter(year=str(datetime.now().year))
     logger.info('RoboTAP: Processing ' +
                 str(len(active_events_list)) + ' anomalous events.')
 
@@ -303,7 +303,7 @@ def run_tap_prioritization(logger):
     #to 2.8 (if REA is operated before and season start)
     daily_visibility = 2.8 * full_visibility * time_allocation / 3198.
 
-    list_evnt = Event.objects.filter(status__in=['AC', 'MO']).filter(year=str(datetime.datetime.now().year))
+    list_evnt = Event.objects.filter(status__in=['AC', 'MO']).filter(year=str(datetime.now().year))
     output = []
     nmissing = 0
     for ev in list_evnt:
@@ -322,7 +322,7 @@ def run_tap_prioritization(logger):
             logger.info(serrmsg)
             nmissing = nmissing + 1
 
-    list_evnt = Event.objects.filter(status__in=['AN']).filter(year=str(datetime.datetime.now().year))
+    list_evnt = Event.objects.filter(status__in=['AN']).filter(year=str(datetime.now().year))
     for ev in list_evnt:
         try:
             latest_ev_tap_val = Tap.objects.filter(
