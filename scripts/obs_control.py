@@ -76,7 +76,7 @@ def read_config():
     """Function to read the XML configuration file for Obs_Control"""
     
     host_name = socket.gethostname()
-    if 'rachel' in str(host_name).lower():
+    if 'rachel' in str(host_name).lower() or 'tuc.noao.edu' in str(host_name).lower():
         config_file_path = path.join('/Users/rstreet/.robonet_site/obscontrol_config.xml')
     else:
         config_file_path = '/var/www/robonetsite/configs/obscontrol_config.xml'

@@ -335,7 +335,7 @@ class ObsRequest:
                 log.info(' -> Molecule: ' + str(molecule))
     
             molecule_list.append(molecule)
-        print(molecule_list)
+
         return molecule_list  
                 
     def get_cadence_requests(self,ur,log=None):

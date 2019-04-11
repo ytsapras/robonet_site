@@ -1228,7 +1228,6 @@ def render_event_queryset_as_enhanced_table_rows(events):
             u0_list.append('NONE')
         
         if last_tap != None:
-            print(last_tap.priority, priorities[last_tap.priority])
             tap_list.append(priorities[last_tap.priority])
         else:
             tap_list.append('Not selected')
