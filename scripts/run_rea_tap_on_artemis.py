@@ -159,7 +159,7 @@ def assign_tap_priorities(logger):
                     alignpars = str.split(fentry)
             filein.close()
 
-        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')) alignpars != []:
+        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')) and alignpars != []:
             filein = open(os.path.join(modelpath, eventname_short + '.model'))
             psplpars = str.split(filein.readline())
             filein.close()
@@ -233,7 +233,7 @@ def assign_tap_priorities(logger):
                     alignpars = str.split(fentry)
             filein.close()
         
-        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')) alignpars != []:
+        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')) and alignpars != []:
             filein = open(os.path.join(modelpath, eventname_short + '.model'))
             psplpars = str.split(filein.readline())
             filein.close()
