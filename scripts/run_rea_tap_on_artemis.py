@@ -149,7 +149,7 @@ def assign_tap_priorities(logger):
             eventname_short = 'KB' + event_name[6:8] + event_name[13:17]
         else:
             eventname_short = 'OB' + event_name[7:9] + event_name[14:18]
-
+        alignpars = []
         if os.path.exists(os.path.join(modelpath, eventname_short + '.align')):
             filein = open(os.path.join(modelpath, eventname_short + '.align'))
             for fentry in filein:
@@ -159,7 +159,7 @@ def assign_tap_priorities(logger):
                     alignpars = str.split(fentry)
             filein.close()
 
-        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')) :
+        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')) alignpars != []:
             filein = open(os.path.join(modelpath, eventname_short + '.model'))
             psplpars = str.split(filein.readline())
             filein.close()
@@ -223,7 +223,7 @@ def assign_tap_priorities(logger):
             eventname_short = 'KB' + event_name[6:8] + event_name[13:17]
         else:
             eventname_short = 'OB' + event_name[7:9] + event_name[14:18]
-
+        alignpars = []
         if os.path.exists(os.path.join(modelpath, eventname_short + '.align')):
             filein = open(os.path.join(modelpath, eventname_short + '.align'))
             for fentry in filein:
@@ -233,7 +233,7 @@ def assign_tap_priorities(logger):
                     alignpars = str.split(fentry)
             filein.close()
         
-        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')):
+        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')) alignpars != []:
             filein = open(os.path.join(modelpath, eventname_short + '.model'))
             psplpars = str.split(filein.readline())
             filein.close()
