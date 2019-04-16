@@ -8,6 +8,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.db.models import Max
 from django.utils import timezone
 from django.http import HttpResponse, Http404, HttpResponseRedirect
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
 from django import forms
 from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, TelescopeForm, EventForm, EventNameForm, SingleModelForm
 from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, ImageForm, RecordDataFileForm, TapLimaForm
@@ -761,6 +762,8 @@ def set_event_status_api(request,event_name,status):
     
 ############################################################################
 @login_required(login_url='/db/login/')
+@ensure_csrf_cookie
+@csrf_protect
 def request_obs(request):
     """Function to enable users to specify a direct observation request"""
     

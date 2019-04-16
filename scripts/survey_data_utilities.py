@@ -182,6 +182,9 @@ def scrape_rtmodel(year, event):
             text3 = path.join(root_url,str(year),soup.find_all('div')[4].find_all('a')[1]['href'])
         except IndexError:
             text1 = ''
+            text2 = ''
+            text3 = ''
+            
         # Check that the event name matches
         if event in text1:
             rtmodel = True

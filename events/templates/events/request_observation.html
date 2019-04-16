@@ -24,7 +24,7 @@
 <center>
 <h3>Submit a Single-site Observation Request</h3>
     <div>
-        <form method="POST" class="post-form">{% csrf_token %}
+        <form method="POST" class="post-form" >{% csrf_token %}
             {{ formset.management_form }}
             <table>
                 <tr>
