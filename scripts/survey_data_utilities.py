@@ -255,7 +255,7 @@ def scrape_moa(year, event):
     image_link = 'N/A'
     page_response = False
     # Reformat name
-    event_reformatted = 'OGLE-'+str(year)+'-BLG-'+event[4:]  
+    event_reformatted = 'MOA-'+str(year)+'-BLG-'+event[5:]  
     page_html = path.join(root_url,str(year),'index.html')
     try:
         page = requests.get(page_html)
@@ -287,6 +287,11 @@ def scrape_kmt(year, event):
     root_url = 'http://kmtnet.kasi.re.kr/ulens/event/'
     
     event = str(event)
+    if 'KB' in event:
+        event = event.replace('KB','MB')
+    if event[4:5] == '0':
+        event = event[0:4]+event[5:]
+    
     kmt_html = path.join(root_url,str(year))
     
     page = requests.get(kmt_html)
