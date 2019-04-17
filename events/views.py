@@ -1530,7 +1530,7 @@ def show_event(request, event_name):
                             'MO':'monitor',
                             'AN':'anomaly',
                             'EX':'expired' }
-                            
+        
         try:
         
             # Convert shorthand format to long format to make compatible with the DB
@@ -1560,15 +1560,15 @@ def show_event(request, event_name):
             
             # Get the names for this event ID from all surveys
             # Keep just one so that we can generate the url link to /microlensing.zah.uni-heidelberg.de
-            if 'ev_ogle':
+            if len(ev_ogle) > 0:
                 ev_name = ev_ogle
                 survey_name = "OGLE"
                 event_number = ev_name.split('-')[-1]
-            elif 'ev_moa':
+            elif len(ev_moa) > 0:
                 ev_name = ev_moa
                 survey_name = "MOA"
                 event_number = ev_name.split('-')[-1]
-            elif 'ev_kmt':
+            elif len(ev_kmt) > 0:
                 ev_name = ev_kmt
                 survey_name = "KMT"
                 event_number = ev_name.split('-')[-1]
@@ -1628,7 +1628,7 @@ def show_event(request, event_name):
                 script, div = plot_it(artemis_name)
             except:
                 script, div = '', 'Detected empty or corrupt datafile in list of lightcurve files.<br>Plotting disabled.'
-                
+            
             survey_data = gather_survey_links(utilities.long_to_short_name(ev_name))
             
             context = {'event_id':event_id, 'event_names':ev_names, 

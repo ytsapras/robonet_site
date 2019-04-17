@@ -170,6 +170,7 @@ def scrape_rtmodel(year, event):
     root_url = 'http://www.fisica.unisa.it/GravitationAstrophysics/RTModel/'
     
     event = str(event)
+    
     rtmodel_html = path.join(root_url,str(year),event+'.htm')
     page = requests.get(rtmodel_html)
     if page.status_code == 200:
@@ -195,7 +196,7 @@ def scrape_rtmodel(year, event):
             rtmodel = False
             classif = 'N/A'
             image_link = 'N/A'
-            page_response = True
+            page_response = False
     else:
         rtmodel = False
         classif = 'N/A'
@@ -232,7 +233,7 @@ def scrape_mismap(year, event):
         else:
             mismap = False
             image_link = 'N/A'
-            page_response = True
+            page_response = False
     else:
         mismap = False
         image_link = 'N/A'
@@ -306,7 +307,7 @@ def scrape_kmt(year, event):
             else:
                 kmtnet = False
                 kmt_link = 'N/A'
-                page_response = True
+                page_response = False
     else:
         kmtnet = False
         kmt_link = 'N/A'
