@@ -18,6 +18,7 @@ from observation_classes import get_request_desc
 import validation
 import socket
 import get_errors
+import system_utils
 
 def obs_control():
     """Observation Control Software for the LCO Network
@@ -28,6 +29,10 @@ def obs_control():
 
     version = 'obs_control_0.93'    
     
+    result = system_utils.check_for_multiple_instances('obs_control.py')
+    if result:
+        exit()
+        
     script_config = read_config()
     script_config = parse_args(script_config)
     
