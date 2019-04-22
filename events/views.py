@@ -46,6 +46,7 @@ from scripts import field_check
 from scripts import rome_obs
 from scripts import rea_obs
 from scripts import obs_control
+from scripts import observing_tools
 from scripts import log_utilities
 from scripts import utilities
 from scripts import observing_tools
@@ -240,13 +241,16 @@ def dashboard(request):
         status_time = datetime.now()
         date_today = str(status_time.year)+str(status_time.month).zfill(2)+str(status_time.day).zfill(2)
         status_time_jd = Time(status_time).jd
+        lunar_separation = observing_tools.estimate_moon_separation_from_bulge()
+        
         context = {'status_time':status_time, 'status_time_jd':status_time_jd, 
                    'date_today':date_today, 'errors': errors,
 		   'coj_doma':coj_doma, 'coj_domb':coj_domb,
 		   'cpt_doma':cpt_doma, 'cpt_domb':cpt_domb, 'cpt_domc':cpt_domc,
 		   'lsc_doma':lsc_doma, 'lsc_domb':lsc_domb, 'lsc_domc':lsc_domc,
 		   'time_used':str.format('{0:.1f}', time_used),'time_available':str.format('{0:.1f}', time_available),
-		   'ipp_limit':str.format('{0:.1f}', ipp_limit),'ipp_time_available':str.format('{0:.1f}', ipp_time_available)
+		   'ipp_limit':str.format('{0:.1f}', ipp_limit),'ipp_time_available':str.format('{0:.1f}', ipp_time_available),
+                'moon_sep':lunar_separation
                     }
         return render(request, 'events/dashboard.html', context)
     else:

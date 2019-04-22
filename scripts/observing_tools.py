@@ -11,6 +11,7 @@ from astropy.time import Time
 import numpy as np
 import observation_classes
 from datetime import datetime, timedelta
+import utilities
 
 def get_site_location(site_code):
     """Function to return an LCO site location as an astropy EarthLocation.
@@ -286,3 +287,21 @@ def calculate_exptime_romerea(magin, snrin=25):
     expt = min(300.0, expt)
     
     return expt
+
+def estimate_moon_separation_from_bulge():
+    """Function to estimate the approximate angular separation of the Moon
+    from the Bulge"""
+    
+    survey_centre = ['17:56:11.6396', '-28:38:38.643']
+    
+    target = get_skycoord(survey_centre)
+    
+    site = get_site_location('lsc')
+    
+    ts = Time(datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),
+                 format='isot', scale='utc')
+    
+    separation = get_Moon_separation(target, site, ts)
+    
+    return round(separation.value,1)
+    
