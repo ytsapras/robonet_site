@@ -206,8 +206,8 @@ def assign_tap_priorities(logger):
         else:
             nmissing += 1
     # FILTER FOR ACTIVE EVENTS (BY DEFINITION WITHIN ROME FOOTPRINT0
-    active_events_list = Event.objects.select_related().filter(status__in=[
-        'AN']).filter(year=str(datetime.now().year))
+    active_events_list = [] #Event.objects.select_related().filter(status__in=[
+    #    'AN']).filter(year=str(datetime.now().year))
     logger.info('RoboTAP: Processing ' +
                 str(len(active_events_list)) + ' anomalous events.')
 
@@ -322,7 +322,7 @@ def run_tap_prioritization(logger):
             logger.info(serrmsg)
             nmissing = nmissing + 1
 
-    list_evnt = Event.objects.filter(status__in=['AN']).filter(year=str(datetime.now().year))
+    list_evnt = []#Event.objects.filter(status__in=['AN']).filter(year=str(datetime.now().year))
     for ev in list_evnt:
         try:
             latest_ev_tap_val = Tap.objects.filter(
