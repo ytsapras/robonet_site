@@ -37,63 +37,69 @@ def build_rea_obs(script_config,log=None,tap_list=None):
 
         for target in tap_list:
             
-            rome_field=field_dict[str(target.field)]
-            
-            (site_obs_sequence, tolerances) = rea_obs_sequence(site_code)
-            
-            site_obs_sequence['filters'] = [ str(target.passband) ]
-            
-            (ts_submit, ts_expire) = observation_classes.get_obs_dates(site_obs_sequence['TTL_'+str(target.priority)+'_days'])
-
-            if log!=None:
-                log.info('Site observing sequence: '+repr(site_obs_sequence))
-            
-            target_obs_sequence = observing_tools.review_filters_for_observing_conditions(site_obs_sequence,rome_field,
-                                                                                   ts_submit, ts_expire, tolerances,
-                                                                                   log=log)
-            
-            if log!=None:
-                log.info('Target observing sequence: '+repr(target_obs_sequence))
+            if 'Outside' not in str(target.field):
+                rome_field=field_dict[str(target.field)]
                 
-            if len(target_obs_sequence['filters']) > 0:
+                (site_obs_sequence, tolerances) = rea_obs_sequence(site_code)
                 
-                obs = observation_classes.ObsRequest()
+                site_obs_sequence['filters'] = [ str(target.passband) ]
                 
-                obs.name = str(target.field)               
-                obs.ra = rome_field[2]
-                obs.dec = rome_field[3]
-                obs.site = target_obs_sequence['sites'][0]
-                obs.observatory= target_obs_sequence['domes'][0]
-                obs.tel = target_obs_sequence['tels'][0]
-                obs.instrument = target_obs_sequence['instruments'][0]
-                obs.instrument_class = '1M0-SCICAM-SINISTRO'
-                obs.set_aperture_class()
-                obs.moon_sep_min = target_obs_sequence['moon_sep_min']
-                obs.filters = [ str(target.passband) ]
-                obs.exposure_times = [ float(target.texp) ]
-                obs.exposure_counts = [ int(target.nexp) ]
-                obs.cadence = float(target.tsamp)
-                obs.jitter = target_obs_sequence['jitter_hrs']
-                obs.priority = float(target.ipp)
-                obs.ttl = target_obs_sequence['TTL_'+str(target.priority)+'_days']
-                obs.user_id = script_config['user_id']
-                obs.proposal_id = script_config['proposal_id']
-                obs.token = script_config['token']
-                obs.focus_offset = [ 0.0 ]
-                #obs.request_type = str(target.priority)
-                obs.request_type = 'M'
-                obs.req_origin = 'obscontrol'
-                obs.get_group_id()
+                (ts_submit, ts_expire) = observation_classes.get_obs_dates(site_obs_sequence['TTL_'+str(target.priority)+'_days'])
+    
+                if log!=None:
+                    log.info('Site observing sequence: '+repr(site_obs_sequence))
                 
-                rea_obs.append(obs)
+                target_obs_sequence = observing_tools.review_filters_for_observing_conditions(site_obs_sequence,rome_field,
+                                                                                       ts_submit, ts_expire, tolerances,
+                                                                                       log=log)
                 
-                if log != None:
-                    log.info(obs.summary())
+                if log!=None:
+                    log.info('Target observing sequence: '+repr(target_obs_sequence))
+                    
+                if len(target_obs_sequence['filters']) > 0:
+                    
+                    obs = observation_classes.ObsRequest()
+                    
+                    obs.name = str(target.field)               
+                    obs.ra = rome_field[2]
+                    obs.dec = rome_field[3]
+                    obs.site = target_obs_sequence['sites'][0]
+                    obs.observatory= target_obs_sequence['domes'][0]
+                    obs.tel = target_obs_sequence['tels'][0]
+                    obs.instrument = target_obs_sequence['instruments'][0]
+                    obs.instrument_class = '1M0-SCICAM-SINISTRO'
+                    obs.set_aperture_class()
+                    obs.moon_sep_min = target_obs_sequence['moon_sep_min']
+                    obs.filters = [ str(target.passband) ]
+                    obs.exposure_times = [ float(target.texp) ]
+                    obs.exposure_counts = [ int(target.nexp) ]
+                    obs.cadence = float(target.tsamp)
+                    obs.jitter = target_obs_sequence['jitter_hrs']
+                    obs.priority = float(target.ipp)
+                    obs.ttl = target_obs_sequence['TTL_'+str(target.priority)+'_days']
+                    obs.user_id = script_config['user_id']
+                    obs.proposal_id = script_config['proposal_id']
+                    obs.token = script_config['token']
+                    obs.focus_offset = [ 0.0 ]
+                    #obs.request_type = str(target.priority)
+                    obs.request_type = 'M'
+                    obs.req_origin = 'obscontrol'
+                    obs.get_group_id()
+                    
+                    rea_obs.append(obs)
+                    
+                    if log != None:
+                        log.info(obs.summary())
                 
+                else:
+                    
+                    if log != None:
+                        log.info('WARNING: No observations possible')
+                    
             else:
                 
                 if log != None:
-                    log.info('WARNING: No observations possible')
+                    log.info('WARNING: TAP selected a target outside the ROME fields')
                     
         if log != None:
             log.info('\n')
