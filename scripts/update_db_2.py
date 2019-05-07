@@ -758,21 +758,24 @@ def add_request(field_name, t_sample, exptime, timestamp=timezone.now(),
    n_exp -- Number of exposures to obtain.
             (integer, optional, default=1)
    """
+
    if Field.objects.filter(name=field_name).exists()==True:
       # Get field identifier
       field = Field.objects.get(name=field_name)
       field_object = Field.objects.get(id=field.id)
+      observations_to_save = []
       try:
-         add_new = ObsRequest(field=field_object, t_sample=t_sample, exptime=exptime, 
-                               timestamp=timestamp, time_expire=time_expire,
-                               pfrm_on= pfrm_on, onem_on=onem_on, twom_on=twom_on, 
+          add_new = ObsRequest(field=field_object, t_sample=t_sample, exptime=exptime, 
+                           timestamp=timestamp, time_expire=time_expire,
+                           pfrm_on= pfrm_on, onem_on=onem_on, twom_on=twom_on, 
 		               request_type=request_type, which_site=which_site, 
 			       which_filter=which_filter,
 			       which_inst=which_inst, grp_id=grp_id, track_id=track_id,
 			       req_id=req_id, n_exp=n_exp, request_status=request_status)
-         add_new.save()
-         successful = True
-      except:
+          # add_new.save()
+          # successful = True
+      except Exception as e:
+         print e
          successful = False
    else:
       successful = False

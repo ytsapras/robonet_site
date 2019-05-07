@@ -50,7 +50,7 @@ class Telescope(models.Model):
    """   
    def __str__(self):
       return self.name
-   operator = models.ForeignKey(Operator)
+   operator = models.ForeignKey(Operator, on_delete=models.PROTECT)
    name = models.CharField("Telescope name", max_length=100)
    aperture = models.DecimalField("Telescope Aperture (m)", max_digits=6,
                                   decimal_places=2, null=True, blank=True)
@@ -81,7 +81,7 @@ class Instrument(models.Model):
    """
    def __str__(self):
       return self.name
-   telescope = models.ForeignKey(Telescope)
+   telescope = models.ForeignKey(Telescope, on_delete=models.PROTECT)
    name = models.CharField("Instrument name", max_length=50)
    pixscale = models.DecimalField("Pixel scale (arcsec/pix)", max_digits=12,
                                   decimal_places=4, null=True, blank=True)
@@ -101,7 +101,7 @@ class Filter(models.Model):
    """
    def __str__(self):
       return self.name
-   instrument = models.ForeignKey(Instrument)
+   instrument = models.ForeignKey(Instrument, on_delete=models.PROTECT)
    name = models.CharField("Filter name", max_length=50, blank=True)
 
 # Known Fields
@@ -156,8 +156,8 @@ class Event(models.Model):
    def __str__(self):
       return "RA: "+str(self.ev_ra)+" Dec: "+str(self.ev_dec)+" ID: "+str(self.pk)
    # Which ROME field does this event belong to?
-   field = models.ForeignKey(Field, related_name="ev_field_id")
-   operator = models.ForeignKey(Operator, related_name="ev_operator_id")
+   field = models.ForeignKey(Field, related_name="ev_field_id", on_delete=models.PROTECT)
+   operator = models.ForeignKey(Operator, related_name="ev_operator_id", on_delete=models.PROTECT)
    ev_ra = models.CharField("RA", max_length=50)
    ev_dec = models.CharField("Dec", max_length=50)
    ra = models.DecimalField("RA_deg", max_digits=12, decimal_places=9, null=True, blank=True)
@@ -201,8 +201,8 @@ class EventName(models.Model):
    """
    def __str__(self):
       return "Name:"+str(self.name)+" ID: "+str(self.event_id)
-   event = models.ForeignKey(Event, related_name="event_id")
-   operator = models.ForeignKey(Operator, related_name="operator_id")
+   event = models.ForeignKey(Event, related_name="event_id", on_delete=models.PROTECT)
+   operator = models.ForeignKey(Operator, related_name="operator_id", on_delete=models.PROTECT)
    name = models.CharField("Survey Event Name", max_length=50)
 
 # Single lens parameters
@@ -249,7 +249,7 @@ class SingleModel(models.Model):
    """
    def __str__(self):
       return str(self.event)+' updated at '+str(self.last_updated)
-   event = models.ForeignKey(Event)
+   event = models.ForeignKey(Event, on_delete=models.PROTECT)
    Tmax = models.DecimalField("Tmax", max_digits=12,decimal_places=4)
    e_Tmax = models.DecimalField("sig(Tmax)", max_digits=12,decimal_places=4,
                                 null=True, blank=True)
@@ -341,7 +341,7 @@ class BinaryModel(models.Model):
    """
    def __str__(self):
       return str(self.event)+' updated at '+str(self.last_updated)
-   event = models.ForeignKey(Event)
+   event = models.ForeignKey(Event, on_delete=models.PROTECT)
    Tmax = models.DecimalField("Tmax", max_digits=12,decimal_places=4)
    e_Tmax = models.DecimalField("sig(Tmax)", max_digits=12,decimal_places=4,
                                      null=True, blank=True)
@@ -535,7 +535,7 @@ class EventReduction(models.Model):
    """
    def __str__(self):
       return str(self.event)+' '+str(self.lc_file)
-   event = models.ForeignKey(Event)
+   event = models.ForeignKey(Event, on_delete=models.PROTECT)
    # location of lightcurve file
    lc_file = models.CharField(max_length=1000)
    timestamp = models.DateTimeField('date created')
@@ -655,7 +655,7 @@ class ObsRequest(models.Model):
    def __str__(self):
       #return str(self.field)+' updated at '+str(self.timestamp)
       return str(self.grp_id)+' '+str(self.field)+' status='+str(self.request_status)
-   field = models.ForeignKey(Field)
+   field = models.ForeignKey(Field, on_delete=models.PROTECT)
    possible_types = (
    ('A', 'REA High - 20 min cadence'),
    ('M', 'REA Low - 60 min cadence'),
@@ -764,7 +764,7 @@ class EventStatus(models.Model):
    """
    def __str__(self):
       return str(self.event)+' updated at '+str(self.timestamp)
-   event = models.ForeignKey(Event)
+   event = models.ForeignKey(Event, on_delete=models.PROTECT)
    possible_status = (
       ('NF', 'Not in footprint'),
       ('AC', 'active'),
@@ -821,7 +821,7 @@ class DataFile(models.Model):
    """
    def __str__(self):
       return str(self.event)+' '+str((self.datafile).split('/')[-1])
-   event = models.ForeignKey(Event)
+   event = models.ForeignKey(Event, on_delete=models.PROTECT)
    datafile = models.CharField(max_length=1000)
    # Date the file was last updated
    last_upd = models.DateTimeField('date last updated')
@@ -887,7 +887,7 @@ class Tap(models.Model):
    """
    def __str__(self):
       return str(self.event)+' priority: '+str(self.priority)
-   event = models.ForeignKey(Event)
+   event = models.ForeignKey(Event, on_delete=models.PROTECT)
    possible_priority = (
       ('A','REA High'),
       ('L','REA Low'),
@@ -970,7 +970,7 @@ class TapLima(models.Model):
    """
    def __str__(self):
       return str(self.event)+' priority: '+str(self.priority)
-   event = models.ForeignKey(Event)
+   event = models.ForeignKey(Event, on_delete=models.PROTECT)
    possible_priority = (
       ('A','REA High'),
       ('L','REA Low'),
@@ -1064,7 +1064,7 @@ class Image(models.Model):
    """
    def __str__(self):
       return str(self.field)+' Image: '+str(self.image_name)
-   field = models.ForeignKey(Field)
+   field = models.ForeignKey(Field, on_delete=models.PROTECT)
    image_name = models.CharField(max_length=200)
    timestamp = models.DateTimeField('Date received')
    date_obs = models.DateTimeField('Date of observation')
