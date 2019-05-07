@@ -717,52 +717,52 @@ def set_event_status(request):
         return HttpResponseRedirect('login')
 
 
-@api_view(['POST'])
-@login_required(login_url='/db/login/')
-@authentication_classes((TokenAuthentication, BasicAuthentication))
-@permission_classes((IsAuthenticated,))
-def set_event_status_api(request,event_name,status):
-    """API endpoint to programmatically set the REA status of an event.
-    Event_name can be the event name in plain text but the status of the event
-    must be the two-letter code used to indicate the status in the DB.
-    """
+#@api_view(['POST'])
+#@login_required(login_url='/db/login/')
+#@authentication_classes((TokenAuthentication, BasicAuthentication))
+#@permission_classes((IsAuthenticated,))
+#def set_event_status_api(request,event_name,status):
+#    """API endpoint to programmatically set the REA status of an event.
+#    Event_name can be the event name in plain text but the status of the event
+#    must be the two-letter code used to indicate the status in the DB.
+#    """
 
-    possible_status = {'NF': 'Not in footprint',
-                       'AC': 'active',
-                       'MO': 'monitor',
-                       'AN': 'anomaly',
-                       'EX': 'expired'}
+#    possible_status = {'NF': 'Not in footprint',
+#                       'AC': 'active',
+#                       'MO': 'monitor',
+#                       'AN': 'anomaly',
+#                       'EX': 'expired'}
    
-    if request.user.is_authenticated():
+#    if request.user.is_authenticated():
         
-        if request.method == "POST" and event_name != None \
-            and status in possible_status.keys():
+#        if request.method == "POST" and event_name != None \
+#            and status in possible_status.keys():
             
-            eform = EventAnomalyStatusForm(request.POST)
-            nform = EventNameForm(request.POST)
+#            eform = EventAnomalyStatusForm(request.POST)
+#            nform = EventNameForm(request.POST)
             
-            qs = EventName.objects.filter(name=event_name)
+#            qs = EventName.objects.filter(name=event_name)
             
-            if len(qs) == 0:
+#            if len(qs) == 0:
                 
-                message = 'DBREPLY: ERROR: Unrecognised event name'
+#                message = 'DBREPLY: ERROR: Unrecognised event name'
                 
-            else:
+#            else:
                 
-                (status, message) = update_db_2.update_event_status(qs[0].event, 
-                                                                    status,
-                                                                    False)
+#                (status, message) = update_db_2.update_event_status(qs[0].event, 
+#                                                                    status,
+#                                                                    False)
         
-        else:
+#        else:
             
-            message = 'DBREPLY: ERROR: Insufficient or invalid parameters specified'
+#            message = 'DBREPLY: ERROR: Insufficient or invalid parameters specified'
             
-        return render(request, 'events/set_event_anomaly_status_api.html', 
-                          {'message': message})
+#        return render(request, 'events/set_event_anomaly_status_api.html', 
+#                          {'message': message})
                                         
-    else:
+#    else:
         
-        return HttpResponseRedirect('login')
+#        return HttpResponseRedirect('login')
     
 ############################################################################
 @login_required(login_url='/db/login/')
