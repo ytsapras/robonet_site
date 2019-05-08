@@ -35,16 +35,23 @@ class Command(BaseCommand):
                     entries = line.replace('\n','').split()
                     record = ObsRecord(entries)
                     
+                    print(record.summary())
+                    
                     qs = ObsRequest.objects.filter(grp_id=record.grp_id, 
                                                    which_filter=record.which_filter)
                     
                     if len(qs) == 0:
                         obs = record.build_obs_object()
                         obs_list.append(obs)
+                        print(' -> Added to observation list')
+            
+            print('Total of '+str(len(obs_list))+' observations to ingest')
             
             if len(obs_list) > 0:
                 ObsRequest.objects.bulk_create(obs_list)
-            
+                
+                print('Completed ingest')
+                
     def handle(self,*args, **options):
         self._update_db_from_obsrecord(*args,**options)
 
