@@ -772,10 +772,9 @@ def add_request(field_name, t_sample, exptime, timestamp=timezone.now(),
 			       which_filter=which_filter,
 			       which_inst=which_inst, grp_id=grp_id, track_id=track_id,
 			       req_id=req_id, n_exp=n_exp, request_status=request_status)
-          # add_new.save()
-          # successful = True
-      except Exception as e:
-         print e
+          add_new.save()
+          successful = True
+      except 
          successful = False
    else:
       successful = False
