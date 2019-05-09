@@ -1,7 +1,6 @@
 appdirs==1.4.3
 appnope==0.1.0
 astropy==1.3
-astropy-helpers==1.3.1
 backports-abc==0.5
 backports.functools-lru-cache==1.5
 backports.shutil-get-terminal-size==1.0.0
@@ -39,12 +38,10 @@ pySLALIB==1.0.4
 pytest==3.0.7
 python-dateutil==2.6.0
 pytz==2016.10
-pyvo==0.5.2
 PyYAML==3.12
 requests==2.13.0
 scandir==1.5
 scipy==0.18.1
-sewpy==1.0.dev0
 simplegeneric==0.8.1
 singledispatch==3.4.0.3
 six==1.10.0
