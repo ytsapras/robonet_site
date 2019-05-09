@@ -29,10 +29,9 @@ import math
 import query_db
 import observation_classes
 
-from bokeh.plotting import figure, show, output_file, gridplot,vplot
+from bokeh.plotting import figure, show, output_file, gridplot
 from bokeh.models import ColumnDataSource, HoverTool, LinearColorMapper, Legend,CheckboxGroup
 from bokeh.models import FixedTicker,PrintfTickFormatter, ColumnDataSource, DatetimeTickFormatter
-from bokeh.models import DEFAULT_DATETIME_FORMATS
 from bokeh.models import BoxSelectTool
 from bokeh.models import Legend
 from bokeh.embed import components
