@@ -37,7 +37,7 @@ class MLplots():
                 index=np.where(data[:,2]>self.data_limits)[0]
                 self.lightcurves.append(data[index])
                 self.telescopes.append([i.replace(self.lightcurves_path,'')[0],i.replace(self.lightcurves_path,'')])
-
+        
     def load_models(self):
         self.model=glob.glob(self.models_path+self.name+'.model')
         data=np.loadtxt(self.model[0],dtype='string')
@@ -94,7 +94,7 @@ class MLplots():
         to=self.models[0][1][0]
         tE=self.models[0][1][1]
         self.plot_limits=[[to-factor_time*tE,to+factor_time*tE],[np.max(self.lightcurves[self.survey[0][1]][:,0])+offset_magnitude,np.min(self.lightcurves[self.survey[0][1]][:,0])-offset_magnitude]]
-	
+        
     def align_data(self):
         parameters=self.models[0][1]
         to=parameters[0]
@@ -130,7 +130,7 @@ class MLplots():
             else :
                 normalisation=self.lightcurves[i]
             self.aligned_lightcurves.append(normalisation)
-			
+        
     def VB_binary(self):
         import  VBBinaryLensing
         def mu_binary(t,u0,te,t0,d,q,rs,alpha,acc):
@@ -147,9 +147,21 @@ class MLplots():
         #output_file(self.name+'_'+self.models[0][0]+'.html',title=self.name)
         tools = "pan,wheel_zoom,box_zoom,reset,save"
         #tools = tools+",hover"
-        fig1=figure(title=self.name+'_'+self.models[0][0],title_text_align='center',y_axis_label='I',x_range=self.plot_limits[0],y_range=self.plot_limits[1],min_border_left=50,min_border_bottom=10,tools=tools,width=700,plot_height=250,title_text_font_size='12pt')
+        fig1=figure(y_axis_label='I',
+                    x_range=self.plot_limits[0],
+                    y_range=self.plot_limits[1],
+                    tools=tools,
+                    width=700,
+                    plot_height=250)
         T=np.arange(self.models[0][1][0]-3*self.models[0][1][1],self.models[0][1][0]+3*self.models[0][1][1],0.01)
-        fig1.line(T,18-2.5*np.log10(self.lightcurve_model(self.models[0][0],self.models[0][1],T)),line_width=0.7,color='red')
+        fig1.line(T,
+                  18-2.5*np.log10(self.lightcurve_model(self.models[0][0],
+                  self.models[0][1],T)),
+                  line_width=0.7,
+                  color='red',
+                  legend='PSPL model',
+                  muted_color='red', 
+                  muted_alpha=0.2)
         for i in xrange(len(self.telescopes)):
             tel_colour = '#'+self.colors[self.telescopes[i][0]]
             #fig1.scatter(self.aligned_lightcurves[i][:,2],self.aligned_lightcurves[i][:,0],fill_color='#'+self.colors[self.telescopes[i][0]],line_color=None,legend=self.telescopes[i][1],size=5/10**np.abs(self.aligned_lightcurves[i][:,1]))
@@ -158,6 +170,7 @@ class MLplots():
                          self.aligned_lightcurves[i][:,2],
                          self.aligned_lightcurves[i][:,0]-np.abs(self.aligned_lightcurves[i][:,1]),
                          color=tel_colour,
+                         legend=self.telescopes[i][1],
                          line_alpha=0.3,
                          muted_color=tel_colour, 
                          muted_alpha=0.2)
@@ -174,27 +187,36 @@ class MLplots():
             fig1.xaxis.major_label_text_font_size='0pt'
             fig1.yaxis.axis_label_text_font_size='12pt'
             fig1.yaxis[0].formatter=PrintfTickFormatter(format="%4.2f")
-            fig1.legend.click_policy="mute"
-            #fig1.legend.label_text_font = "times"
-            #fig1.legend.background_fill_alpha = 0.5
-            #fig1.legend.label_text_color=colors
-
+        fig1.legend.click_policy="hide"
+        #fig1.legend.label_text_font = "times"
+        #fig1.legend.background_fill_alpha = 0.5
+        #fig1.legend.label_text_color=colors
         fig2=figure(width=700,plot_height=125,x_range=fig1.x_range,y_range=(-0.1,0.1),x_axis_label='HJD-2450000',y_axis_label=u'\u0394I',min_border_left=70,min_border_top=10,tools=tools)
         for i in xrange(len(self.telescopes)):
+            tel_colour = '#'+self.colors[self.telescopes[i][0]]
             residuals=self.residuals(i,self.models[0][0],self.models[0][1])
             fig2.segment(self.lightcurves[i][:,2],
                          residuals+np.abs(self.lightcurves[i][:,1]),
                          self.lightcurves[i][:,2],
                          residuals-np.abs(self.lightcurves[i][:,1]),
-                         color='#'+self.colors[self.telescopes[i][0]],line_alpha=0.3)
+                         color=tel_colour,
+                         legend=self.telescopes[i][1],
+                         line_alpha=0.3,
+                         muted_color=tel_colour, 
+                         muted_alpha=0.2)
             fig2.scatter(self.lightcurves[i][:,2],
                          residuals,
-                         fill_color='#'+self.colors[self.telescopes[i][0]],
-                         line_color=None,size=4)
+                         fill_color=tel_colour,
+                         line_color=None,
+                         size=4,
+                         legend=self.telescopes[i][1],
+                         muted_color=tel_colour, 
+                         muted_alpha=0.2)
             fig2.xaxis.minor_tick_line_color=None
             fig2.xaxis.axis_label_text_font_size='12pt'
             fig2.yaxis.axis_label_text_font_size='14pt'
-            fig1.yaxis[0].formatter=PrintfTickFormatter(format="%3.2f")
+        fig2.legend.click_policy="hide"
+        fig1.yaxis[0].formatter=PrintfTickFormatter(format="%3.2f")
         p=gridplot([[fig1],[fig2]],toolbar_location="right")
         # --- Include hovertool ---
         #hover = p.select(dict(type=HoverTool))
