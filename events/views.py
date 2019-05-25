@@ -52,6 +52,7 @@ from scripts import utilities
 from scripts import observing_tools
 from scripts import survey_data_utilities
 from scripts import manual_obs
+from scripts import log_utilities
 import requests
 import pytz
 
@@ -776,9 +777,15 @@ def request_obs(request):
     
     if request.user.is_authenticated():
         
+        script_config = obs_control.read_config()
+    
+        log = log_utilities.start_day_log( script_config, 'obs_control_manual' )
+    
         obs_options = get_obs_request_options()
         
         if request.method == "POST":
+            
+            log.info('Received POST from online form')
             
             oform = ObsRequestForm(request.POST)
             eform1 = ObsExposureForm(request.POST)
@@ -790,18 +797,22 @@ def request_obs(request):
                 
                 params = manual_obs.extract_obs_params_from_post(request,oform,
                                                                  eform1,eform2,eform3,
-                                                                 obs_options)
+                                                                 obs_options,log=log)
                                                                  
-                (obs_requests, script_config, simulate) = manual_obs.build_obs_request(params)
+                (obs_requests, script_config, simulate) = manual_obs.build_obs_request(params,log=log)
                 
                 message = ['Built observation request with status: ']
                 
                 if simulate == False:
                     message.append(obs_control.submit_obs_requests(script_config,
-                                                                obs_requests))
+                                                                obs_requests,
+                                                                log=log))
                 else:
                     message.append('Simulated observation built OK')
-                    
+                    log.info(repr(message))
+                
+                log_utilities.end_day_log( log )
+                
                 return render(request, 'events/request_observation.html', \
                                         {'oform': oform, 'eform1': eform1,
                                          'eform2': eform2, 'eform3': eform3,
@@ -821,6 +832,8 @@ def request_obs(request):
                 
                 message = ['ERROR: Form input invalid.  '
                             'Please review parameters and try again']
+                log.info(repr(message))
+                log_utilities.end_day_log( log )
                 
                 return render(request, 'events/request_observation.html', \
                                         {'oform': oform, 'eform1': eform1,
@@ -831,12 +844,17 @@ def request_obs(request):
                                          'rea_facilities': obs_options['rea_facilities'],
                                          'filters': obs_options['filters'],
                                         'message': message})
+                                        
         else:
+            
+            log.info('Observation request form opened')
             
             oform = ObsRequestForm()
             eform1 = ObsExposureForm()
             eform2 = ObsExposureForm(initial=obs_options['exp_defaults'])
             eform3 = ObsExposureForm(initial=obs_options['exp_defaults'])
+            
+            log_utilities.end_day_log( log )
             
             return render(request, 'events/request_observation.html', \
                                     {'oform': oform, 'eform1': eform1,

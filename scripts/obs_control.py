@@ -194,22 +194,29 @@ def submit_obs_requests(script_config,obs_requests,log=None):
         obsrecord.write( obs.obs_record( script_config ) )
         
         if str(script_config['simulate']).lower() == 'false':
+            
+            if log != None:
+                log.info('Requests being submitted to the DB with parameters:')
+                
             for i in range(0,len(obs.exposure_times),1):
-                params = {'field_name':obs.name, 't_sample': (obs.cadence*60.0), \
+                params = {'field_name':str(obs.name), 't_sample': (obs.cadence*60.0), \
                         'exptime':int(obs.exposure_times[i]), \
                         'timestamp': obs.ts_submit, 'time_expire': obs.ts_expire, \
                         'pfrm_on': obs.pfrm,'onem_on': obs.onem, 'twom_on': obs.twom, \
-                        'request_type': obs.request_type, 'which_filter':obs.filters[i],\
+                        'request_type': str(obs.request_type), 'which_filter':str(obs.filters[i]),\
                         'which_site':obs.site,\
-                        'which_inst':obs.instrument, 'grp_id':obs.group_id, \
-                        'track_id':obs.track_id, 'req_id':obs.req_id, \
+                        'which_inst':str(obs.instrument), 'grp_id':obs.group_id, \
+                        'track_id':str(obs.track_id), 'req_id':str(obs.req_id), \
                         'n_exp':obs.exposure_counts[i]}
                 
+                if log!=None:
+                    log.info(repr(params))
+                    
                 if obs.submit_status == 'add_OK':
                     req_status = 'AC'
                 else:
                     req_status = 'CN'
-                    
+                
                 (status, msg) = validation.check_obs_request(params)
                 if log != None: 
                     log.info('    => Validation result: ' + repr(status) + ' ' + msg)
@@ -221,7 +228,7 @@ def submit_obs_requests(script_config,obs_requests,log=None):
                     pfrm_on=obs.pfrm, onem_on=obs.onem, twom_on=obs.twom, \
                     request_type=obs.request_type, which_site=obs.site,\
                     which_filter=obs.filters[i],which_inst=obs.instrument, \
-                    grp_id=obs.group_id, track_id=obs.track_id, req_id=obs.req_id,\
+                    grp_id=str(obs.group_id), track_id=obs.track_id, req_id=obs.req_id,\
                     n_exp=obs.exposure_counts[i],\
                     request_status=req_status)
                     
@@ -232,6 +239,8 @@ def submit_obs_requests(script_config,obs_requests,log=None):
     if log != None: 
         log.info('Finished requesting observations')
         log.info('\n')
+    
+    log_utilities.end_day_log( log )
     
     return submit_status
     

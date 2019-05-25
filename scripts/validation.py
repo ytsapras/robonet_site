@@ -68,9 +68,9 @@ def check_obs_request(params):
         return status, msg
     if debug == True: print 'Tested integer parameters with status ',status
     
-    if len(params['request_type']) != 1 or params['request_type'] not in ['L','A','M','N']:
+    if len(params['request_type']) != 1 or params['request_type'] not in ['L','A','M','N','I']:
         status = False
-        msg = 'Request type parameter must be a one-character string code, one of {L,A,M,N}'
+        msg = 'Request type parameter must be a one-character string code, one of {L,A,M,N,I}'
         return status, msg
     if debug == True: print 'Verified request type with status ',status
     
