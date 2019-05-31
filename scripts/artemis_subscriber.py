@@ -21,6 +21,7 @@ import log_utilities
 from numpy import array
 import event_classes
 import update_db_2
+import query_db
 import socket
 import mmap
 import pytz
@@ -564,12 +565,21 @@ def set_anomaly_status_db(config,anomaly_list,log,testing=False):
     for event_name in anomaly_list:
         params = {'event_name': event_name,
                   'status': 'AN'}
-                
-        response = api_tools.submit_event_status(config, params, testing=testing)
         
-        log.info('Set event '+event_name+' to anomaly status with response '+\
-                 repr(response))
-    
+        (event, report) = query_db.get_event_by_name(event_name)
+        
+        if 'OK' in report:
+            (status, message) = update_db_2.update_event_status(event,'AN', False)
+                                                                    
+            #response = api_tools.submit_event_status(config, params, testing=testing)
+        
+            log.info('Set event '+event_name+' to anomaly status')
+        
+        else:
+            
+            log.info('Error: Cannot set event '+event_name+' to anomaly status, got DB response '+\
+                 repr(report))
+                 
 def get_artemis_data_params(data_file_path):
     '''Function to obtain information about the ARTEMiS-format photometry data file,
     without reading the whole file.'''

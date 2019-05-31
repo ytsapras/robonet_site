@@ -170,6 +170,7 @@ def scrape_rtmodel(year, event):
     root_url = 'http://www.fisica.unisa.it/GravitationAstrophysics/RTModel/'
     
     event = str(event)
+    
     rtmodel_html = path.join(root_url,str(year),event+'.htm')
     page = requests.get(rtmodel_html)
     if page.status_code == 200:
@@ -182,6 +183,9 @@ def scrape_rtmodel(year, event):
             text3 = path.join(root_url,str(year),soup.find_all('div')[4].find_all('a')[1]['href'])
         except IndexError:
             text1 = ''
+            text2 = ''
+            text3 = ''
+            
         # Check that the event name matches
         if event in text1:
             rtmodel = True
@@ -192,7 +196,7 @@ def scrape_rtmodel(year, event):
             rtmodel = False
             classif = 'N/A'
             image_link = 'N/A'
-            page_response = True
+            page_response = False
     else:
         rtmodel = False
         classif = 'N/A'
@@ -229,7 +233,7 @@ def scrape_mismap(year, event):
         else:
             mismap = False
             image_link = 'N/A'
-            page_response = True
+            page_response = False
     else:
         mismap = False
         image_link = 'N/A'
@@ -251,7 +255,7 @@ def scrape_moa(year, event):
     image_link = 'N/A'
     page_response = False
     # Reformat name
-    event_reformatted = 'OGLE-'+str(year)+'-BLG-'+event[4:]  
+    event_reformatted = 'MOA-'+str(year)+'-BLG-'+event[5:]  
     page_html = path.join(root_url,str(year),'index.html')
     try:
         page = requests.get(page_html)
@@ -283,6 +287,11 @@ def scrape_kmt(year, event):
     root_url = 'http://kmtnet.kasi.re.kr/ulens/event/'
     
     event = str(event)
+    if 'KB' in event:
+        event = event.replace('KB','MB')
+    if event[4:5] == '0':
+        event = event[0:4]+event[5:]
+    
     kmt_html = path.join(root_url,str(year))
     
     page = requests.get(kmt_html)
@@ -303,7 +312,7 @@ def scrape_kmt(year, event):
             else:
                 kmtnet = False
                 kmt_link = 'N/A'
-                page_response = True
+                page_response = False
     else:
         kmtnet = False
         kmt_link = 'N/A'

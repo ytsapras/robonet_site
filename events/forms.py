@@ -207,7 +207,7 @@ class ObsRequestForm(forms.Form):
     airmass_limit = forms.FloatField(label='airmass_limit',min_value=1.0,max_value=2.2)
     lunar_distance_limit = forms.FloatField(label='lunar_distance_limit',min_value=1.0,max_value=180.0)
     ipp = forms.FloatField(label='ipp',min_value=0.1,max_value=2.0)
-    simulate = forms.ChoiceField([(False,False),(True,True)])
+    simulate = forms.ChoiceField(label='simulate',choices=[(False,False),(True,True)])
     
 class FieldNameForm(forms.ModelForm):
     class Meta:

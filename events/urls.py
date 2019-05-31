@@ -44,7 +44,7 @@ urlpatterns = [
     url(r'^tap/', views.tap, name='tap'),
     url(r'^set_tap_status/', views.set_tap_status, name='set_tap_status'),
     url(r'^set_event_status/', views.set_event_status, name='set_event_status'),
-    url(r'^set_event_status_api/event_name=(?P<event_name>[A-Za-z0-9-]+)&status=(?P<status>[A-Z]+)/$', views.set_event_status_api, name='set_event_status_api'),
+#    url(r'^set_event_status_api/event_name=(?P<event_name>[A-Za-z0-9-]+)&status=(?P<status>[A-Z]+)/$', views.set_event_status_api, name='set_event_status_api'),
     url(r'^request_obs/$', views.request_obs, name='request_obs'),
     url(r'^list_year/(?P<year>[0-9]+)', views.list_year, name='list_year'),
     url(r'^list_anomalies/', views.list_anomalies, name='list_anomalies'),

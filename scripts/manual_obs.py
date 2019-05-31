@@ -14,7 +14,7 @@ import config_parser
 from obs_control import read_config
 
 
-def build_obs_request(params):
+def build_obs_request(params,log=None):
     """Function to build an observation request based on the parameters
     provided through a manual interface"""
     
@@ -53,9 +53,14 @@ def build_obs_request(params):
     
     obs_requests.append(obs)
     
+    if log!=None:
+        log.info('Manual observation requested with parameters:')
+        log.info(obs.summary())
+        
     return obs_requests, script_config, params['simulate']
 
-def extract_obs_params_from_post(request,oform,eform1,eform2,eform3,obs_options):
+def extract_obs_params_from_post(request,oform,eform1,eform2,eform3,obs_options,
+                                 log=None):
     """Function to extract and parse the parameters of an observation request,
     from the parameters provided by the webform."""
     
@@ -105,7 +110,9 @@ def extract_obs_params_from_post(request,oform,eform1,eform2,eform3,obs_options)
     
     params['request_type'] = obs_options['request_type']
     
-#    for key, value in params.items():
-#        print(key, value)
+    if log!=None:
+        log.info('Observation parameters requested from online form:')
+        for key, value in params.items():
+            log.info(str(key)+' = '+repr(value))
         
     return params

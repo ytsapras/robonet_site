@@ -1,13 +1,9 @@
 {% extends "base.html" %}
 {% load staticfiles %}
 {% block head_extras %}
-            <meta charset="utf-8" />
+        <meta charset="utf-8" />
 	    <meta http-equiv='content-type' content='text/html; charset=utf-8' />
 	    <title>RoboNet Observe</title>
-            <!-- <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-            <script src="http://cdn.rawgit.com/novus/nvd3/v1.8.1/build/nv.d3.min.js" charset="utf-8"></script>
-	    <script type="text/javascript" src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-            <link rel="stylesheet" href="http://cdn.rawgit.com/novus/nvd3/v1.8.1/build/nv.d3.css"> -->
 	    <style>
 	    .button {
 	    	background-color: #f44336;
@@ -27,6 +23,26 @@
 {% endblock %}
 
 {% block content %}
+<nav class="navbar navbar-default">
+<div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        </button>
+    </div>
+</div>
+
+<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+    <ul class="nav navbar-nav">
+      <li><a href="{% url 'list_anomalies' %}">Anomalies</a></li>
+      <li><a href="{% url 'tap' %}">TAP List</a></li>
+      <li><a href="{% url 'set_tap_status' %}">Set TAP status</a></li>
+    </ul>
+  </div><!-- /.navbar-collapse -->
+</nav>
+
+<div>
   <center><br>
   <b>Current Time:</b> {{ time_now }}
   [HJD: {{ time_now_jd }}]
@@ -83,11 +99,6 @@
        </td>
     <tr>
        <td>
-          <center>
-          <!--<form action="url_to_redirect_to">
-             <input type="submit" class="button" value="Edit">
-          </form>-->
-	  <center>
        </td>
        <td colspan=3>
        <!-- Requested vs Observed Plot -->
@@ -95,4 +106,5 @@
     </tr>
  </table>
  </center>
+</div>
 {% endblock %}

@@ -149,7 +149,7 @@ def assign_tap_priorities(logger):
             eventname_short = 'KB' + event_name[6:8] + event_name[13:17]
         else:
             eventname_short = 'OB' + event_name[7:9] + event_name[14:18]
-
+        alignpars = []
         if os.path.exists(os.path.join(modelpath, eventname_short + '.align')):
             filein = open(os.path.join(modelpath, eventname_short + '.align'))
             for fentry in filein:
@@ -159,7 +159,7 @@ def assign_tap_priorities(logger):
                     alignpars = str.split(fentry)
             filein.close()
 
-        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')) :
+        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')) and alignpars != []:
             filein = open(os.path.join(modelpath, eventname_short + '.model'))
             psplpars = str.split(filein.readline())
             filein.close()
@@ -206,8 +206,8 @@ def assign_tap_priorities(logger):
         else:
             nmissing += 1
     # FILTER FOR ACTIVE EVENTS (BY DEFINITION WITHIN ROME FOOTPRINT0
-    active_events_list = Event.objects.select_related().filter(status__in=[
-        'AN']).filter(year=str(datetime.now().year))
+    active_events_list = [] #Event.objects.select_related().filter(status__in=[
+    #    'AN']).filter(year=str(datetime.now().year))
     logger.info('RoboTAP: Processing ' +
                 str(len(active_events_list)) + ' anomalous events.')
 
@@ -223,7 +223,7 @@ def assign_tap_priorities(logger):
             eventname_short = 'KB' + event_name[6:8] + event_name[13:17]
         else:
             eventname_short = 'OB' + event_name[7:9] + event_name[14:18]
-
+        alignpars = []
         if os.path.exists(os.path.join(modelpath, eventname_short + '.align')):
             filein = open(os.path.join(modelpath, eventname_short + '.align'))
             for fentry in filein:
@@ -233,7 +233,7 @@ def assign_tap_priorities(logger):
                     alignpars = str.split(fentry)
             filein.close()
         
-        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')):
+        if os.path.exists(os.path.join(modelpath, eventname_short + '.model')) and alignpars != []:
             filein = open(os.path.join(modelpath, eventname_short + '.model'))
             psplpars = str.split(filein.readline())
             filein.close()
@@ -322,7 +322,7 @@ def run_tap_prioritization(logger):
             logger.info(serrmsg)
             nmissing = nmissing + 1
 
-    list_evnt = Event.objects.filter(status__in=['AN']).filter(year=str(datetime.now().year))
+    list_evnt = []#Event.objects.filter(status__in=['AN']).filter(year=str(datetime.now().year))
     for ev in list_evnt:
         try:
             latest_ev_tap_val = Tap.objects.filter(

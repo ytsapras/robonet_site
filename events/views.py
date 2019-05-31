@@ -8,6 +8,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.db.models import Max
 from django.utils import timezone
 from django.http import HttpResponse, Http404, HttpResponseRedirect
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
 from django import forms
 from .forms import QueryObsRequestForm, RecordObsRequestForm, OperatorForm, TelescopeForm, EventForm, EventNameForm, SingleModelForm
 from .forms import BinaryModelForm, EventReductionForm, DataFileForm, TapForm, ImageForm, RecordDataFileForm, TapLimaForm
@@ -45,11 +46,13 @@ from scripts import field_check
 from scripts import rome_obs
 from scripts import rea_obs
 from scripts import obs_control
+from scripts import observing_tools
 from scripts import log_utilities
 from scripts import utilities
 from scripts import observing_tools
 from scripts import survey_data_utilities
 from scripts import manual_obs
+from scripts import log_utilities
 import requests
 import pytz
 
@@ -86,27 +89,30 @@ with open(colordef) as f:
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def change_password(request):
-   """
-   Will allow a user to change their password.
-   """
-   if request.user.is_authenticated():
-      try:
-         if request.method == 'POST':
- 	    form = PasswordChangeForm(request.user, request.POST)
- 	    if form.is_valid():
- 	       user = form.save()
- 	       update_session_auth_hash(request, user)  # Important!
- 	       messages.success(request, 'Your password was successfully updated!')
- 	       return HttpResponseRedirect('/db')
- 	    else:
- 	       messages.error(request, 'Please correct the error below.')
- 	 else:
- 	    form = PasswordChangeForm(request.user)
- 	 return render(request, 'events/change_password.html', {'form': form})
-      except:
-         raise Http404("Encountered a problem while rendering page.")  
-   else:
-      return HttpResponseRedirect('login')
+    """
+    Will allow a user to change their password.
+    """
+    
+    if request.user.is_authenticated():
+        try:
+            if request.method == 'POST':
+                form = PasswordChangeForm(request.user, request.POST)
+                if form.is_valid():
+                    user = form.save()
+                    update_session_auth_hash(request, user)  # Important!
+                    messages.success(request, 'Your password was successfully updated!')
+                    
+                    return HttpResponseRedirect('/db')
+                else:
+                    messages.error(request, 'Please correct the error below.')
+            
+            else:
+                form = PasswordChangeForm(request.user)
+                return render(request, 'events/change_password.html', {'form': form})
+        except:
+            raise Http404("Encountered a problem while rendering page.")
+    else:
+        return HttpResponseRedirect('login')
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')
@@ -239,13 +245,16 @@ def dashboard(request):
         status_time = datetime.now()
         date_today = str(status_time.year)+str(status_time.month).zfill(2)+str(status_time.day).zfill(2)
         status_time_jd = Time(status_time).jd
+        lunar_separation = observing_tools.estimate_moon_separation_from_bulge()
+        
         context = {'status_time':status_time, 'status_time_jd':status_time_jd, 
                    'date_today':date_today, 'errors': errors,
 		   'coj_doma':coj_doma, 'coj_domb':coj_domb,
 		   'cpt_doma':cpt_doma, 'cpt_domb':cpt_domb, 'cpt_domc':cpt_domc,
 		   'lsc_doma':lsc_doma, 'lsc_domb':lsc_domb, 'lsc_domc':lsc_domc,
 		   'time_used':str.format('{0:.1f}', time_used),'time_available':str.format('{0:.1f}', time_available),
-		   'ipp_limit':str.format('{0:.1f}', ipp_limit),'ipp_time_available':str.format('{0:.1f}', ipp_time_available)
+		   'ipp_limit':str.format('{0:.1f}', ipp_limit),'ipp_time_available':str.format('{0:.1f}', ipp_time_available),
+                'moon_sep':lunar_separation
                     }
         return render(request, 'events/dashboard.html', context)
     else:
@@ -351,7 +360,7 @@ def obs_log(request, date):
    if request.user.is_authenticated():
       try:
          date_min = datetime(int(date[0:4]), int(date[4:6]), int(date[6:8]))
-	 date_min = timezone.make_aware(date_min, timezone.get_current_timezone())
+         date_min = timezone.make_aware(date_min, timezone.get_current_timezone())
          date_max = date_min + timedelta(hours=24)
       except:
          raise Http404("Encountered an error: Date must be provided in the format: YYYYMMDD")
@@ -397,26 +406,26 @@ def obs_requests24(request):
    if request.user.is_authenticated():
       try:
          date_max = datetime.now()
-	 date_max = timezone.make_aware(date_max, timezone.get_current_timezone())
+         date_max = timezone.make_aware(date_max, timezone.get_current_timezone())
          date_min = date_max + timedelta(hours=-24)
       except:
          raise Http404("Encountered an error: Date must be provided in the format: YYYYMMDD")
       try:
          obs_requests = ObsRequest.objects.filter(timestamp__range=(date_min, date_max))
-	 field = [k.field.name for k in obs_requests]       
-	 t_sample = [k.t_sample for k in obs_requests] 
-	 exptime = [k.exptime for k in obs_requests]   
-	 timestamp = [k.timestamp.strftime("%Y-%m-%dT%H:%M:%S") for k in obs_requests]  
-	 time_expire = [k.time_expire.strftime("%Y-%m-%dT%H:%M:%S") for k in obs_requests] 
-	 request_status = [k.request_status for k in obs_requests]   
-	 request_type = [k.request_type for k in obs_requests]
-	 which_site = [k.which_site for k in obs_requests]
-	 which_inst = [k.which_inst for k in obs_requests]
-	 which_filter = [k.which_filter for k in obs_requests]
-	 grp_id = [k.grp_id for k in obs_requests]
-	 track_id = [k.track_id for k in obs_requests]
-	 req_id = [k.req_id for k in obs_requests] 
-	 n_exp  = [k.n_exp for k in obs_requests]    
+         field = [k.field.name for k in obs_requests]
+         t_sample = [k.t_sample for k in obs_requests]
+         exptime = [k.exptime for k in obs_requests]
+         timestamp = [k.timestamp.strftime("%Y-%m-%dT%H:%M:%S") for k in obs_requests]
+         time_expire = [k.time_expire.strftime("%Y-%m-%dT%H:%M:%S") for k in obs_requests]
+         request_status = [k.request_status for k in obs_requests]
+         request_type = [k.request_type for k in obs_requests]
+         which_site = [k.which_site for k in obs_requests]
+         which_inst = [k.which_inst for k in obs_requests]
+         which_filter = [k.which_filter for k in obs_requests]
+         grp_id = [k.grp_id for k in obs_requests]
+         track_id = [k.track_id for k in obs_requests]
+         req_id = [k.req_id for k in obs_requests]
+         n_exp  = [k.n_exp for k in obs_requests]
          rows = zip(field,t_sample,exptime,timestamp,time_expire,request_status,
 	            request_type,which_site,which_inst,which_filter,grp_id,
 		    track_id,req_id,n_exp)
@@ -438,21 +447,21 @@ def active_obs_requests(request):
    if request.user.is_authenticated():
       try:
          obs_requests = ObsRequest.objects.filter(request_status='AC')
-	 field_id = [k.field for k in obs_requests]
-	 field = [k.name for k in field_id]
-	 t_sample = [k.t_sample for k in obs_requests]
-	 exptime = [k.exptime for k in obs_requests]
-	 timestamp = [k.timestamp.strftime("%Y-%m-%dT%H:%M:%S") for k in obs_requests]  
-	 time_expire = [k.time_expire.strftime("%Y-%m-%dT%H:%M:%S") for k in obs_requests] 
-	 request_status = [k.request_status for k in obs_requests]   
-	 request_type = [k.request_type for k in obs_requests]
-	 which_site = [k.which_site for k in obs_requests]
-	 which_inst = [k.which_inst for k in obs_requests]
-	 which_filter = [k.which_filter for k in obs_requests]
-	 grp_id = [k.grp_id for k in obs_requests]
-	 track_id = [k.track_id for k in obs_requests]
-	 req_id = [k.req_id for k in obs_requests] 
-	 n_exp  = [k.n_exp for k in obs_requests]    
+         field_id = [k.field for k in obs_requests]
+         field = [k.name for k in field_id]
+         t_sample = [k.t_sample for k in obs_requests]
+         exptime = [k.exptime for k in obs_requests]
+         timestamp = [k.timestamp.strftime("%Y-%m-%dT%H:%M:%S") for k in obs_requests]
+         time_expire = [k.time_expire.strftime("%Y-%m-%dT%H:%M:%S") for k in obs_requests]
+         request_status = [k.request_status for k in obs_requests]
+         request_type = [k.request_type for k in obs_requests]
+         which_site = [k.which_site for k in obs_requests]
+         which_inst = [k.which_inst for k in obs_requests]
+         which_filter = [k.which_filter for k in obs_requests]
+         grp_id = [k.grp_id for k in obs_requests]
+         track_id = [k.track_id for k in obs_requests]
+         req_id = [k.req_id for k in obs_requests]
+         n_exp  = [k.n_exp for k in obs_requests]    
          rows = zip(field,t_sample,exptime,timestamp,time_expire,request_status,
 	            request_type,which_site,which_inst,which_filter,grp_id,
 		    track_id,req_id,n_exp)
@@ -712,63 +721,71 @@ def set_event_status(request):
         return HttpResponseRedirect('login')
 
 
-@api_view(['POST'])
-@login_required(login_url='/db/login/')
-@authentication_classes((TokenAuthentication, BasicAuthentication))
-@permission_classes((IsAuthenticated,))
-def set_event_status_api(request,event_name,status):
-    """API endpoint to programmatically set the REA status of an event.
-    Event_name can be the event name in plain text but the status of the event
-    must be the two-letter code used to indicate the status in the DB.
-    """
+#@api_view(['POST'])
+#@login_required(login_url='/db/login/')
+#@authentication_classes((TokenAuthentication, BasicAuthentication))
+#@permission_classes((IsAuthenticated,))
+#def set_event_status_api(request,event_name,status):
+#    """API endpoint to programmatically set the REA status of an event.
+#    Event_name can be the event name in plain text but the status of the event
+#    must be the two-letter code used to indicate the status in the DB.
+#    """
 
-    possible_status = {'NF': 'Not in footprint',
-                       'AC': 'active',
-                       'MO': 'monitor',
-                       'AN': 'anomaly',
-                       'EX': 'expired'}
+#    possible_status = {'NF': 'Not in footprint',
+#                       'AC': 'active',
+#                       'MO': 'monitor',
+#                       'AN': 'anomaly',
+#                       'EX': 'expired'}
    
-    if request.user.is_authenticated():
+#    if request.user.is_authenticated():
         
-        if request.method == "POST" and event_name != None \
-            and status in possible_status.keys():
+#        if request.method == "POST" and event_name != None \
+#            and status in possible_status.keys():
             
-            eform = EventAnomalyStatusForm(request.POST)
-            nform = EventNameForm(request.POST)
+#            eform = EventAnomalyStatusForm(request.POST)
+#            nform = EventNameForm(request.POST)
             
-            qs = EventName.objects.filter(name=event_name)
+#            qs = EventName.objects.filter(name=event_name)
             
-            if len(qs) == 0:
+#            if len(qs) == 0:
                 
-                message = 'DBREPLY: ERROR: Unrecognised event name'
+#                message = 'DBREPLY: ERROR: Unrecognised event name'
                 
-            else:
+#            else:
                 
-                (status, message) = update_db_2.update_event_status(qs[0].event, 
-                                                                    status,
-                                                                    False)
+#                (status, message) = update_db_2.update_event_status(qs[0].event, 
+#                                                                    status,
+#                                                                    False)
         
-        else:
+#        else:
             
-            message = 'DBREPLY: ERROR: Insufficient or invalid parameters specified'
+#            message = 'DBREPLY: ERROR: Insufficient or invalid parameters specified'
             
-        return render(request, 'events/set_event_anomaly_status_api.html', 
-                          {'message': message})
+#        return render(request, 'events/set_event_anomaly_status_api.html', 
+#                          {'message': message})
                                         
-    else:
+#    else:
         
-        return HttpResponseRedirect('login')
+#        return HttpResponseRedirect('login')
     
 ############################################################################
 @login_required(login_url='/db/login/')
+@ensure_csrf_cookie
+@csrf_protect
 def request_obs(request):
     """Function to enable users to specify a direct observation request"""
     
     if request.user.is_authenticated():
         
+        script_config = obs_control.read_config()
+    
+        log = log_utilities.start_day_log( script_config, 'obs_control_manual' )
+    
         obs_options = get_obs_request_options()
         
         if request.method == "POST":
+            
+            log.info('Received POST from online form')
             
             oform = ObsRequestForm(request.POST)
             eform1 = ObsExposureForm(request.POST)
@@ -780,18 +797,22 @@ def request_obs(request):
                 
                 params = manual_obs.extract_obs_params_from_post(request,oform,
                                                                  eform1,eform2,eform3,
-                                                                 obs_options)
+                                                                 obs_options,log=log)
                                                                  
-                (obs_requests, script_config, simulate) = manual_obs.build_obs_request(params)
+                (obs_requests, script_config, simulate) = manual_obs.build_obs_request(params,log=log)
                 
                 message = ['Built observation request with status: ']
                 
                 if simulate == False:
                     message.append(obs_control.submit_obs_requests(script_config,
-                                                                obs_requests))
+                                                                obs_requests,
+                                                                log=log))
                 else:
                     message.append('Simulated observation built OK')
-                    
+                    log.info(repr(message))
+                
+                log_utilities.end_day_log( log )
+                
                 return render(request, 'events/request_observation.html', \
                                         {'oform': oform, 'eform1': eform1,
                                          'eform2': eform2, 'eform3': eform3,
@@ -811,6 +832,8 @@ def request_obs(request):
                 
                 message = ['ERROR: Form input invalid.  '
                             'Please review parameters and try again']
+                log.info(repr(message))
+                log_utilities.end_day_log( log )
                 
                 return render(request, 'events/request_observation.html', \
                                         {'oform': oform, 'eform1': eform1,
@@ -821,12 +844,17 @@ def request_obs(request):
                                          'rea_facilities': obs_options['rea_facilities'],
                                          'filters': obs_options['filters'],
                                         'message': message})
+                                        
         else:
+            
+            log.info('Observation request form opened')
             
             oform = ObsRequestForm()
             eform1 = ObsExposureForm()
             eform2 = ObsExposureForm(initial=obs_options['exp_defaults'])
             eform3 = ObsExposureForm(initial=obs_options['exp_defaults'])
+            
+            log_utilities.end_day_log( log )
             
             return render(request, 'events/request_observation.html', \
                                     {'oform': oform, 'eform1': eform1,
@@ -1228,7 +1256,6 @@ def render_event_queryset_as_enhanced_table_rows(events):
             u0_list.append('NONE')
         
         if last_tap != None:
-            print(last_tap.priority, priorities[last_tap.priority])
             tap_list.append(priorities[last_tap.priority])
         else:
             tap_list.append('Not selected')
@@ -1403,116 +1430,126 @@ def search_events(request,search_type=None):
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def show_event_by_id(request, event_id):
-   """
-   Will set up a single event page and display the lightcurve.
-   """
-   if request.user.is_authenticated():
-      time_now = datetime.now()
-      time_now_jd = Time(time_now).jd
-      possible_status = { 
-         'NF':'Not in footprint',
-         'AC':'active',
-         'MO':'monitor',
-         'AN':'anomaly',
-         'EX':'expired'}
-      try:
-         ev_ra = Event.objects.get(pk=event_id).ev_ra
-         ev_dec = Event.objects.get(pk=event_id).ev_dec
-         ev_names = EventName.objects.filter(event_id=event_id)
-         flag = 0
-         ev_ogle, ev_moa, ev_kmt = '', '', ''
-         for name in ev_names:
-            if 'OGLE' in name.name and flag==0:
-               ev_ogle = name.name
-               flag = 1
-            if 'MOA' in name.name:
-               ev_moa = name.name
-            if 'KMT' in name.name:
-               ev_kmt = name.name
-         # Get the names for this event ID from all surveys
-         # Keep just one so that we can generate the url link to /microlensing.zah.uni-heidelberg.de
-         if 'ev_ogle':
-            ev_name = ev_ogle
-            survey_name = "OGLE"
-            event_number = ev_name.split('-')[-1]
-         elif 'ev_moa':
-            ev_name = ev_moa
-            survey_name = "MOA"
-            event_number = ev_name.split('-')[-1]
-         elif 'ev_kmt':
-            ev_name = ev_kmt
-            survey_name = "KMT"
-            event_number = ev_name.split('-')[-1]
-         field_id =  Event.objects.get(pk=event_id).field.id
-         field = Field.objects.get(id=field_id).name
-         # Get list of all observations and select the one with the most recent time.
-         try:
-            event = Event.objects.get(id=event_id)
-            status_recent = Event.objects.get(pk=event_id).status	    
-            single_recent = SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')
-            Tmax = single_recent['Tmax']
-            e_Tmax = single_recent['e_Tmax']
-            tau = single_recent['tau']
-            e_tau = single_recent['e_tau']
-            umin = single_recent['umin']
-            e_umin = single_recent['e_umin']
-            last_updated = single_recent['last_updated']
-            last_updated_hjd =  Time(last_updated).jd
-            status = status_recent
-            ogle_url = ''
-            if "OGLE" in ev_name:
-               ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])
-         except:
-	    Tmax = "N/A"
-            e_Tmax = "N/A"
-            tau = "N/A"
-            e_tau = "N/A"
-            umin = "N/A"
-            e_umin = "N/A"
-            last_updated = "N/A"
-            last_updated_hjd = "N/A"
-            last_obs_tel = "N/A"
-            status = 'EX'
-            ogle_url = ''
-	 try:
-            obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
-            last_obs = obs_recent['last_obs']
-            last_obs_hjd = Time(last_obs).jd
-            tel_id = obs_recent['datafile'].split('/')[-1].split('_')
-            if len(tel_id) == 2:
-               tel_id = tel_id[0]+'_'
+    """
+    Will set up a single event page and display the lightcurve.
+    """
+    
+    if request.user.is_authenticated():
+        time_now = datetime.now()
+        time_now_jd = Time(time_now).jd
+        possible_status = { 
+             'NF':'Not in footprint',
+             'AC':'active',
+             'MO':'monitor',
+             'AN':'anomaly',
+             'EX':'expired'}
+        
+        try:
+            ev_ra = Event.objects.get(pk=event_id).ev_ra
+            ev_dec = Event.objects.get(pk=event_id).ev_dec
+            ev_names = EventName.objects.filter(event_id=event_id)
+            flag = 0
+            ev_ogle, ev_moa, ev_kmt = '', '', ''
+             
+            for name in ev_names:
+                if 'OGLE' in name.name and flag==0:
+                    ev_ogle = name.name
+                    flag = 1
+                if 'MOA' in name.name:
+                    ev_moa = name.name
+                if 'KMT' in name.name:
+                    ev_kmt = name.name
+                    
+            # Get the names for this event ID from all surveys
+            # Keep just one so that we can generate the url link to /microlensing.zah.uni-heidelberg.de
+            if 'ev_ogle':
+                ev_name = ev_ogle
+                survey_name = "OGLE"
+                event_number = ev_name.split('-')[-1]
+            elif 'ev_moa':
+                ev_name = ev_moa
+                survey_name = "MOA"
+                event_number = ev_name.split('-')[-1]
+            elif 'ev_kmt':
+                ev_name = ev_kmt
+                survey_name = "KMT"
+                event_number = ev_name.split('-')[-1]
+            field_id =  Event.objects.get(pk=event_id).field.id
+            field = Field.objects.get(id=field_id).name
+            
+            # Get list of all observations and select the one with the most recent time.
+            try:
+                event = Event.objects.get(id=event_id)
+                status_recent = Event.objects.get(pk=event_id).status	    
+                single_recent = SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')
+                Tmax = single_recent['Tmax']
+                e_Tmax = single_recent['e_Tmax']
+                tau = single_recent['tau']
+                e_tau = single_recent['e_tau']
+                umin = single_recent['umin']
+                e_umin = single_recent['e_umin']
+                last_updated = single_recent['last_updated']
+                last_updated_hjd =  Time(last_updated).jd
+                status = status_recent
+                ogle_url = ''
+                if "OGLE" in ev_name:
+                    ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])
+            except:
+                Tmax = "N/A"
+                e_Tmax = "N/A"
+                tau = "N/A"
+                e_tau = "N/A"
+                umin = "N/A"
+                e_umin = "N/A"
+                last_updated = "N/A"
+                last_updated_hjd = "N/A"
+                last_obs_tel = "N/A"
+                status = 'EX'
+                ogle_url = ''
+            try:
+                obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_obs')
+                last_obs = obs_recent['last_obs']
+                last_obs_hjd = Time(last_obs).jd
+                tel_id = obs_recent['datafile'].split('/')[-1].split('_')
+                if len(tel_id) == 2:
+                    tel_id = tel_id[0]+'_'
+                else:
+                    tel_id = obs_recent['datafile'].split('/')[-1][0]
+                last_obs_tel = site_dict[tel_id][-1]
+            except:
+                last_obs = "N/A"
+                last_obs_hjd = "N/A"
+                last_obs_tel = "N/A"
+                
+            # Convert the name to ARTEMiS format for bokeh plotting
+            if 'OGLE' in ev_name:
+                artemis_name = 'OB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
+            elif 'MOA' in ev_name:
+                artemis_name = 'KB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
+            elif 'KMT' in ev_name:
+                artemis_name = 'KM'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
             else:
-               tel_id = obs_recent['datafile'].split('/')[-1][0]
-            last_obs_tel = site_dict[tel_id][-1]
-         except:
-            last_obs = "N/A"
-            last_obs_hjd = "N/A"
-	    last_obs_tel = "N/A"
-         # Convert the name to ARTEMiS format for bokeh plotting
-         if 'OGLE' in ev_name:
-            artemis_name = 'OB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
-         elif 'MOA' in ev_name:
-            artemis_name = 'KB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
-         elif 'KMT' in ev_name:
-            artemis_name = 'KM'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
-         else:
-            artemis_name = 'UNKNOWN EVENT'
-         try:
-            script, div = plot_it(artemis_name)
-         except:
-            script, div = '', 'Detected empty or corrupt datafile in list of lightcurve files.<br>Plotting disabled.'
-         context = {'event_id':event_id, 'event_name':ev_names,
-        	    'ev_ra':ev_ra, 'ev_dec':ev_dec, 'field':field, 'last_obs':last_obs, 
-        	    'Tmax':Tmax, 'e_Tmax':e_Tmax, 'tau':tau, 'e_tau':e_tau, 'umin':umin, 
-        	    'e_umin':e_umin, 'last_updated':last_updated, 'last_updated_hjd':last_updated_hjd,
-        	    'last_obs':last_obs, 'last_obs_hjd':last_obs_hjd, 'status':possible_status[status],
-        	    'last_obs_tel':last_obs_tel, 'ogle_url':ogle_url, 'time_now': time_now, 
-        	    'time_now_jd': time_now_jd, 'the_script': script, 'the_div': div}
-      except Event.DoesNotExist:
-         raise Http404("Event does not exist.")
-      return render(request, 'events/show_event_by_id.html', context)
-   else:
-      return HttpResponseRedirect('login')
+                artemis_name = 'UNKNOWN EVENT'
+            try:
+                script, div = plot_it(artemis_name)
+            except:
+                script, div = '', 'Detected empty or corrupt datafile in list of lightcurve files.<br>Plotting disabled.'
+            
+            context = {'event_id':event_id, 'event_name':ev_names,
+                       'ev_ra':ev_ra, 'ev_dec':ev_dec, 'field':field, 'last_obs':last_obs, 
+                       'Tmax':Tmax, 'e_Tmax':e_Tmax, 'tau':tau, 'e_tau':e_tau, 'umin':umin, 
+                       'e_umin':e_umin, 'last_updated':last_updated, 'last_updated_hjd':last_updated_hjd,
+                       'last_obs':last_obs, 'last_obs_hjd':last_obs_hjd, 'status':possible_status[status],
+                       'last_obs_tel':last_obs_tel, 'ogle_url':ogle_url, 'time_now': time_now, 
+                       'time_now_jd': time_now_jd, 'the_script': script, 'the_div': div}
+        
+        except Event.DoesNotExist:
+             raise Http404("Event does not exist.")
+             
+        return render(request, 'events/show_event_by_id.html', context)
+        
+    else:
+        return HttpResponseRedirect('login')
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')
@@ -1528,7 +1565,7 @@ def show_event(request, event_name):
                             'MO':'monitor',
                             'AN':'anomaly',
                             'EX':'expired' }
-                            
+        
         try:
         
             # Convert shorthand format to long format to make compatible with the DB
@@ -1558,15 +1595,15 @@ def show_event(request, event_name):
             
             # Get the names for this event ID from all surveys
             # Keep just one so that we can generate the url link to /microlensing.zah.uni-heidelberg.de
-            if 'ev_ogle':
+            if len(ev_ogle) > 0:
                 ev_name = ev_ogle
                 survey_name = "OGLE"
                 event_number = ev_name.split('-')[-1]
-            elif 'ev_moa':
+            elif len(ev_moa) > 0:
                 ev_name = ev_moa
                 survey_name = "MOA"
                 event_number = ev_name.split('-')[-1]
-            elif 'ev_kmt':
+            elif len(ev_kmt) > 0:
                 ev_name = ev_kmt
                 survey_name = "KMT"
                 event_number = ev_name.split('-')[-1]
@@ -1626,7 +1663,7 @@ def show_event(request, event_name):
                 script, div = plot_it(artemis_name)
             except:
                 script, div = '', 'Detected empty or corrupt datafile in list of lightcurve files.<br>Plotting disabled.'
-                
+            
             survey_data = gather_survey_links(utilities.long_to_short_name(ev_name))
             
             context = {'event_id':event_id, 'event_names':ev_names, 
@@ -1703,177 +1740,188 @@ def display_obs_monitor(request):
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def event_obs_details(request, event_name):
-   """
-   Will set up a single event page with current observing details.
-   """
-   if request.user.is_authenticated():
-      # Convert shorthand format to long format to make compatible with the DB
-      event_name = short_to_long_name(event_name)
-      # Get the ID for this event
-      event_id = EventName.objects.get(name=event_name).event_id
-      # Define pie chart plotting
-      # arguments are [telescopes], [colors], [number_observations], ndata, event_id
-      def pie_chart(tels, cols, num_obs, ndata, event_id):
-         from pylab import figure, rcParams, title, legend, savefig, close, axes, pie
-         from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-         import os
-         fig = figure(num=11, figsize=[10, 10])
-         ax = fig.add_subplot(111)
-         rcParams['axes.titlesize'] = 10.0
-         rcParams['xtick.labelsize'] = 14.0
-         rcParams['legend.fontsize'] = 22.0
-         rcParams['font.size'] = 22.0
-         colors=cols
-         fracs=num_obs
-         patches = ax.pie(fracs, colors=cols, labels=tels, labeldistance=0.95, explode=None, autopct='%1.f%%', shadow=False)
-         for pie_wedge in patches[0]:
-            pie_wedge.set_edgecolor('white')
+    """
+    Will set up a single event page with current observing details.
+    """
+    
+    if request.user.is_authenticated():
+        # Convert shorthand format to long format to make compatible with the DB
+        event_name = short_to_long_name(event_name)
+        # Get the ID for this event
+        event_id = EventName.objects.get(name=event_name).event_id
+        # Define pie chart plotting
+        # arguments are [telescopes], [colors], [number_observations], ndata, event_id
+        def pie_chart(tels, cols, num_obs, ndata, event_id):
+            from pylab import figure, rcParams, title, legend, savefig, close, axes, pie
+            from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+            import os
+            fig = figure(num=11, figsize=[10, 10])
+            ax = fig.add_subplot(111)
+            rcParams['axes.titlesize'] = 10.0
+            rcParams['xtick.labelsize'] = 14.0
+            rcParams['legend.fontsize'] = 22.0
+            rcParams['font.size'] = 22.0
+            colors=cols
+            fracs=num_obs
+            patches = ax.pie(fracs, colors=cols, labels=tels, labeldistance=0.95, explode=None, autopct='%1.f%%', shadow=False)
+            for pie_wedge in patches[0]:
+                pie_wedge.set_edgecolor('white')
  
-         title = "Observations: "+str(ndata)
-         legend([k[0]+': '+str(k[1]) for k in zip(tels, num_obs)],loc=(-.12,-.12), framealpha=0.4)
-         canvas = FigureCanvas(fig)
-         filename = settings.MEDIA_ROOT+str(event_id)+".png"
-         if (os.path.exists(filename) ):
-             os.remove(filename)
-         # save the new file
-         canvas.print_figure(filename)
-         # close the figure
-         close(11)
+            title = "Observations: "+str(ndata)
+            legend([k[0]+': '+str(k[1]) for k in zip(tels, num_obs)],loc=(-.12,-.12), framealpha=0.4)
+            canvas = FigureCanvas(fig)
+            filename = settings.MEDIA_ROOT+str(event_id)+".png"
+            if (os.path.exists(filename) ):
+                os.remove(filename)
+            # save the new file
+            canvas.print_figure(filename)
+            # close the figure
+            close(11)
  
-      time_now = datetime.now()
-      time_now_jd = Time(time_now).jd
-      possible_status = {
-         'NF':'Not in footprint',
-         'AC':'active',
-         'MO':'monitor',
-         'AN':'anomaly',
-         'EX':'expired'}
-      try:
-         ev_ra = Event.objects.get(pk=event_id).ev_ra
-         ev_dec = Event.objects.get(pk=event_id).ev_dec
-         ev_names = EventName.objects.filter(event_id=event_id)
-         flag = 0
-         ev_ogle, ev_moa, ev_kmt = '', '', ''
-         for name in ev_names:
-            if 'OGLE' in name.name and flag==0:
-               ev_ogle = name.name
-               flag = 1
-            if 'MOA' in name.name:
-               ev_moa = name.name
-            if 'KMT' in name.name:
-               ev_kmt = name.name
-         # Get the names for this event ID from all surveys
-         # Keep just one so that we can generate the url link to /microlensing.zah.uni-heidelberg.de
-         if 'ev_ogle':
-            ev_name = ev_ogle
-            survey_name = "OGLE"
-            event_number = ev_name.split('-')[-1]
-         elif 'ev_moa':
-            ev_name = ev_moa
-            survey_name = "MOA"
-            event_number = ev_name.split('-')[-1]
-         elif 'ev_kmt':
-            ev_name = ev_kmt
-            survey_name = "KMT"
-            event_number = ev_name.split('-')[-1]
-         field = Event.objects.get(pk=event_id).field.name
-         # Get list of all observations and select the one with the most recent time.
-         try:
-            event = Event.objects.get(id=event_id)
-            single_recent = SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')
-            obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_hjd')
-            status_recent = Event.objects.get(pk=event_id).status
-            #status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
-            # Make sure duplicate entries are avoided. Start adding by most recent files
-            data_all = DataFile.objects.filter(event_id=event_id).order_by('last_hjd').reverse()
-            data = []
-            check_list = []
-            for f in data_all:
-               if f.datafile not in check_list:
-        	  data.append(f)
-               check_list.append(f.datafile)
-            labels = []
-            values = []
-            colors = []
-            for i in data:
-               if 'LCOGT' in i.tel:
-        	  labels.append(i.tel)
-        	  values.append(i.ndata)
-        	  try:
-        	     colors.append('#'+col_dict[site_dict[i.datafile.split('/')[-1][0]][1]])
-        	  except:
-        	     import random
-        	     r = lambda: random.randint(0,255)
-        	     rand_col = '#%02X%02X%02X' % (r(),r(),r())
-        	     colors.append(rand_col)
-            #ndata = sum([(i.ndata) for i in data]) # Contains ALL data from ALL telescopes
-            ndata = sum(values) # Contains only LCOGT data
-            pie_chart(labels, colors, values, ndata, event_id)
-            if labels == []:
-               my_pie = 'No RoboNet data'
-            else:
-               my_pie = '<img src="/media/%s.png" height="300" width="300">' % str(event_id)
-            try:
-               cadence = Tap.objects.filter(event_id=event_id)[0].tsamp
-            except:
-               cadence = -1
-            last_obs_hjd = obs_recent['last_hjd']
-            last_obs = Time(float(last_obs_hjd), format='jd', scale='utc').iso
-            last_updated = single_recent['last_updated']
-            last_updated_hjd =  Time(last_updated).jd
-            tel_id = obs_recent['datafile'].split('/')[-1].split('_')
-            if len(tel_id) == 2:
-               tel_id = tel_id[0]+'_'
-            else:
-               tel_id = obs_recent['datafile'].split('/')[-1][0]
-            last_obs_tel = site_dict[tel_id][-1]
-            status = status_recent
-            ogle_url = ''
-            if "OGLE" in ev_name:
-               ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])
-         except:
-            #pie_url = ''
-            my_pie = 'Image Failed to Load'
-            cadence = -1
-            ndata = 0
-            last_obs = "N/A"
-            last_obs_hjd = "N/A"
-            last_updated = "N/A"
-            last_updated_hjd = "N/A"
-            last_obs_tel = "N/A"
-	    try:
-               status = Event.objects.get(pk=event_id).status
-	    except:
-	       status = "EX"
-	    ogle_url = ''
-	    try:
-	       if "OGLE" in ev_name:
-                  ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])
-	    except:
-               ogle_url = ''
-         # Convert the name to ARTEMiS format for bokeh plotting
-         if 'OGLE' in ev_name:
-            artemis_name = 'OB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
-         elif 'MOA' in ev_name:
-            artemis_name = 'KB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
-         elif 'KMT' in ev_name:
-            artemis_name = 'KM'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
-         else:
-            artemis_name = 'UNKNOWN EVENT'
-         context = {'event_id': event_id, 'event_name': ev_names, 'field': field,
-        	    'ev_ra': ev_ra, 'ev_dec':ev_dec, 'cadence':cadence,
-        	    #'pie_url':pie_url,
-        	    'my_pie':my_pie,
-        	    'last_obs':last_obs, 'last_obs_hjd':last_obs_hjd,
-        	    'status':possible_status[status],
-        	    'last_obs_tel':last_obs_tel, 'ogle_url':ogle_url, 'time_now': time_now,
-        	    'time_now_jd': time_now_jd}
-      except Event.DoesNotExist:
-         raise Http404("Event does not exist.")
-      return render(request, 'events/event_obs_details.html', context)
-   else:
-      return HttpResponseRedirect('login')
- 
+        time_now = datetime.now()
+        time_now_jd = Time(time_now).jd
+        possible_status = {
+                        'NF':'Not in footprint',
+                        'AC':'active',
+                        'MO':'monitor',
+                        'AN':'anomaly',
+                        'EX':'expired'}
+        try:
+            ev_ra = Event.objects.get(pk=event_id).ev_ra
+            ev_dec = Event.objects.get(pk=event_id).ev_dec
+            ev_names = EventName.objects.filter(event_id=event_id)
+            flag = 0
+            ev_ogle, ev_moa, ev_kmt = '', '', ''
+            for name in ev_names:
+                if 'OGLE' in name.name and flag==0:
+                    ev_ogle = name.name
+                    flag = 1
+                if 'MOA' in name.name:
+                    ev_moa = name.name
+                if 'KMT' in name.name:
+                    ev_kmt = name.name
+                # Get the names for this event ID from all surveys
+                # Keep just one so that we can generate the url link to /microlensing.zah.uni-heidelberg.de
+                if 'ev_ogle':
+                    ev_name = ev_ogle
+                    survey_name = "OGLE"
+                    event_number = ev_name.split('-')[-1]
+                elif 'ev_moa':
+                    ev_name = ev_moa
+                    survey_name = "MOA"
+                    event_number = ev_name.split('-')[-1]
+                elif 'ev_kmt':
+                    ev_name = ev_kmt
+                    survey_name = "KMT"
+                    event_number = ev_name.split('-')[-1]
+                
+                field = Event.objects.get(pk=event_id).field.name
+                # Get list of all observations and select the one with the most recent time.
+                try:
+                    event = Event.objects.get(id=event_id)
+                    single_recent = SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')
+                    obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_hjd')
+                    status_recent = Event.objects.get(pk=event_id).status
+                    #status_recent = RobonetStatus.objects.select_related().filter(event=event).values().latest('timestamp')
+                    # Make sure duplicate entries are avoided. Start adding by most recent files
+                    data_all = DataFile.objects.filter(event_id=event_id).order_by('last_hjd').reverse()
+                    data = []
+                    check_list = []
+                    for f in data_all:
+                        if f.datafile not in check_list:
+                            data.append(f)
+                            check_list.append(f.datafile)
+                            labels = []
+                            values = []
+                            colors = []
+                            for i in data:
+                                if 'LCOGT' in i.tel:
+                                    labels.append(i.tel)
+                                    values.append(i.ndata)
+                                    try:
+                                        colors.append('#'+col_dict[site_dict[i.datafile.split('/')[-1][0]][1]])
+                                    except:
+                                        import random
+                                        r = lambda: random.randint(0,255)
+                                        rand_col = '#%02X%02X%02X' % (r(),r(),r())
+                                        colors.append(rand_col)
+                            #ndata = sum([(i.ndata) for i in data]) # Contains ALL data from ALL telescopes
+                            ndata = sum(values) # Contains only LCOGT data
+                            pie_chart(labels, colors, values, ndata, event_id)
+                            if labels == []:
+                                my_pie = 'No RoboNet data'
+                            else:
+                                my_pie = '<img src="/media/%s.png" height="300" width="300">' % str(event_id)
+                            try:
+                                cadence = Tap.objects.filter(event_id=event_id)[0].tsamp
+                            except:
+                                cadence = -1
+                            last_obs_hjd = obs_recent['last_hjd']
+                            last_obs = Time(float(last_obs_hjd), format='jd', scale='utc').iso
+                            last_updated = single_recent['last_updated']
+                            last_updated_hjd =  Time(last_updated).jd
+                            tel_id = obs_recent['datafile'].split('/')[-1].split('_')
+                            if len(tel_id) == 2:
+                                tel_id = tel_id[0]+'_'
+                            else:
+                                tel_id = obs_recent['datafile'].split('/')[-1][0]
+                                last_obs_tel = site_dict[tel_id][-1]
+                                status = status_recent
+                                ogle_url = ''
+                            if "OGLE" in ev_name:
+                                ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])
+                        
+                except:
+                    #pie_url = ''
+                    my_pie = 'Image Failed to Load'
+                    cadence = -1
+                    ndata = 0
+                    last_obs = "N/A"
+                    last_obs_hjd = "N/A"
+                    last_updated = "N/A"
+                    last_updated_hjd = "N/A"
+                    last_obs_tel = "N/A"
+
+                try:
+                    status = Event.objects.get(pk=event_id).status
+                except:
+                    status = "EX"
+                    ogle_url = ''
+                try:
+                    if "OGLE" in ev_name:
+                        ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])
+                except:
+                    ogle_url = ''
+
+                # Convert the name to ARTEMiS format for bokeh plotting
+                if 'OGLE' in ev_name:
+                    artemis_name = 'OB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
+                elif 'MOA' in ev_name:
+                    artemis_name = 'KB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
+                elif 'KMT' in ev_name:
+                    artemis_name = 'KM'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
+                else:
+                    artemis_name = 'UNKNOWN EVENT'
+                
+                context = {'event_id': event_id, 'event_name': ev_names, 'field': field,
+                                'ev_ra': ev_ra, 'ev_dec':ev_dec, 'cadence':cadence,
+                                #'pie_url':pie_url,
+                                'my_pie':my_pie,
+                                'last_obs':last_obs, 'last_obs_hjd':last_obs_hjd,
+                                'status':possible_status[status],
+                                'last_obs_tel':last_obs_tel, 'ogle_url':ogle_url, 'time_now': time_now,
+                                'time_now_jd': time_now_jd}
+                
+                return render(request, 'events/event_obs_details.html', context)
+                
+        except Event.DoesNotExist:
+                                    
+            raise Http404("Event does not exist.")
+                    
+    else:
+        
+        return HttpResponseRedirect('login')
+                     
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')
@@ -2280,7 +2328,7 @@ def add_singlemodel(request):
             form = SingleModelForm(request.POST)
             if form.is_valid():
                 post = form.save(commit=False)
-		evname = EventName.objects.filter(event_id=post.event)[0].name
+                evname = EventName.objects.filter(event_id=post.event)[0].name
                 status = update_db_2.add_single_lens(event_name=str(evname),
 		                                     Tmax=post.Tmax,
 						     tau=post.tau,
@@ -2327,7 +2375,7 @@ def add_binarymodel(request):
             form = BinaryModelForm(request.POST)
             if form.is_valid():
                 post = form.save(commit=False)
-		evname = EventName.objects.filter(event_id=post.event)[0].name
+                evname = EventName.objects.filter(event_id=post.event)[0].name
                 status = update_db_2.add_binary_lens(event_name=str(evname),
 		                                     Tmax=post.Tmax,
 						     tau=post.tau,
@@ -2383,7 +2431,7 @@ def add_eventreduction(request):
             form = EventReductionForm(request.POST)
             if form.is_valid():
                 post = form.save(commit=False)
-		evname = EventName.objects.filter(event_id=post.event)[0].name
+                evname = EventName.objects.filter(event_id=post.event)[0].name
                 status = update_db_2.add_reduction(event_name=str(evname),
 		                                   lc_file = post.lc_file,
 						   timestamp = post.timestamp,
@@ -2467,7 +2515,7 @@ def add_tap(request):
             form = TapForm(request.POST)
             if form.is_valid():
                 post = form.save(commit=False)
-		evname = EventName.objects.filter(event_id=post.event)[0].name
+                evname = EventName.objects.filter(event_id=post.event)[0].name
                 status = update_db_2.add_tap(event_name=evname, 
 		                             timestamp=post.timestamp, 
 					     priority=post.priority, 
@@ -2513,7 +2561,7 @@ def add_taplima(request):
             form = TapLimaForm(request.POST)
             if form.is_valid():
                 post = form.save(commit=False)
-		evname = EventName.objects.filter(event_id=post.event)[0].name
+                evname = EventName.objects.filter(event_id=post.event)[0].name
                 status = update_db_2.add_taplima(event_name=evname, 
 		                             timestamp=post.timestamp, 
 					     priority=post.priority, 
@@ -2560,7 +2608,7 @@ def add_datafile(request):
             form = DataFileForm(request.POST)
             if form.is_valid():
                 post = form.save(commit=False)
-		evname = EventName.objects.filter(event_id=post.event)[0].name
+                evname = EventName.objects.filter(event_id=post.event)[0].name
                 status = update_db_2.add_datafile(event_name=evname,
 						  datafile=post.datafile,
 						  last_upd=post.last_upd,
