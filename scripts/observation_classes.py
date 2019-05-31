@@ -194,6 +194,13 @@ class ObsRequest:
                             self.submit_response = 'No_obs_submitted'
                             self.req_id = '9999999999'
                             self.track_id = '99999999999'
+                        except KeyError:
+                            log.info('WARNING: scheduler returned no valid observing windows for this target')
+                            log.info('request dictionary contains: '+repr(r))
+                            self.submit_status = 'No_obs_submitted'
+                            self.submit_response = 'No_obs_submitted'
+                            self.req_id = '9999999999'
+                            self.track_id = '99999999999'
                 elif 'detail' in ur.keys():
                     self.submit_status = 'No_obs_submitted'
                     if self.submit_response != None:
