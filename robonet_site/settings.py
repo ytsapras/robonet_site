@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
 import os
+import ast
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = ast.literal_eval(os.environ.get('DEBUG', 'False'))
 
 ALLOWED_HOSTS = ['einstein.lco.gtn', 'robonet.lco.global','127.0.0.1']
 
@@ -97,7 +98,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': '/var/www/robonetsite/db.sqlite3',
         # FOR LOCAL TESTING ONLY:
-       # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        #'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
 

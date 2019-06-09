@@ -172,36 +172,54 @@ def scrape_rtmodel(year, event):
     event = str(event)
     
     rtmodel_html = path.join(root_url,str(year),event+'.htm')
-    page = requests.get(rtmodel_html)
-    if page.status_code == 200:
-        soup = bs(page.content,'html.parser')
-        # Extract the bits with the event name and classification
-        try:
-            text1 = soup.find_all('div')[1].get_text().replace('\r\n\t\t','')
-            text2 = soup.find_all('div')[2].get_text().replace('\r\n\t\t','')
-            # Extract the best model image link
-            text3 = path.join(root_url,str(year),soup.find_all('div')[4].find_all('a')[1]['href'])
-        except IndexError:
-            text1 = ''
-            text2 = ''
-            text3 = ''
+    
+    site_offline = True
+    if site_offline:
+        rtmodel = False
+        classif = 'N/A'
+        image_link = 'N/A'
+        page_response = False
             
-        # Check that the event name matches
-        if event in text1:
-            rtmodel = True
-            classif = text2
-            image_link = text3
-            page_response = True
+        return (rtmodel_html, classif, image_link, page_response, rtmodel)
+            
+    try:
+        page = requests.get(rtmodel_html)
+        if page.status_code == 200:
+            soup = bs(page.content,'html.parser')
+            # Extract the bits with the event name and classification
+            try:
+                text1 = soup.find_all('div')[1].get_text().replace('\r\n\t\t','')
+                text2 = soup.find_all('div')[2].get_text().replace('\r\n\t\t','')
+                # Extract the best model image link
+                text3 = path.join(root_url,str(year),soup.find_all('div')[4].find_all('a')[1]['href'])
+            except IndexError:
+                text1 = ''
+                text2 = ''
+                text3 = ''
+                
+            # Check that the event name matches
+            if event in text1:
+                rtmodel = True
+                classif = text2
+                image_link = text3
+                page_response = True
+            else:
+                rtmodel = False
+                classif = 'N/A'
+                image_link = 'N/A'
+                page_response = False
         else:
             rtmodel = False
             classif = 'N/A'
             image_link = 'N/A'
             page_response = False
-    else:
+        
+    except ConnectionError:
         rtmodel = False
         classif = 'N/A'
         image_link = 'N/A'
         page_response = False
+            
     return (rtmodel_html, classif, image_link, page_response, rtmodel)
 
 # Look if there is a MiSMap model for these events
