@@ -224,7 +224,100 @@ class ObsRequest:
             log.info(' -> Submit response: '+str(self.submit_response))
             
         return ur
+    
+    def build_cadence_request_aeon(self, log=None, debug=False):
         
+        if debug == True and log != None:
+            log.info('Building Valhalla-AEON observation request')
+            
+        self.get_group_id()
+        
+        if type(self.ra) == type(1.0):
+            ra_deg = self.ra
+            dec_deg = self.dec
+        else:
+            (ra_deg, dec_deg) = utilities.sex2decdeg(self.ra, self.dec)
+            
+        target = {
+                'name': str(self.name),
+                'type': 'SIDEREAL',
+                'ra'	: ra_deg,
+                'dec': dec_deg,
+                'proper_motion_ra': 0, 
+                'proper_motion_dec': 0,
+                'parallax': 0, 
+                'epoch': 2000,	  
+                }
+        
+        if debug == True and log != None:
+            log.info('Target dictionary: ' + str( target ))
+            
+        location = {
+                    'telescope_class' : str(self.tel).replace('a',''),
+                    'site':             str(self.site),
+                    'observatory':      str(self.observatory)
+                    }
+                    
+        if debug == True and log != None:
+            log.info('Location dictionary: ' + str( location ))
+        
+        constraints = { 
+        		    'max_airmass': float(self.airmass_limit),
+                      'min_lunar_distance': float(self.moon_sep_min)
+                      }
+                    
+        if debug == True and log != None:
+            log.info('Constraints dictionary: ' + str( constraints ))
+        
+        (self.ts_submit,self.ts_expire) = get_obs_dates(self.ttl)
+
+        cadence = { 'start': self.ts_submit.strftime("%Y-%m-%d %H:%M:%S"),
+                    'end': self.ts_expire.strftime("%Y-%m-%d %H:%M:%S"),
+                    'period': float(self.cadence),
+                    'jitter': float(self.jitter) }
+                    
+        inst_config_list = self.build_image_config_list(target, constraints)
+        
+        request_group = {'name': self.group_id,
+                         'proposal': self.proposal_id,
+                         'ipp_value': float(self.priority),
+                         'operator': 'SINGLE',
+                         'observation_type': 'NORMAL',
+                         'requests': [{'configurations': inst_config_list,
+                                       'cadence': cadence,
+                                       'location': location}]
+                         }
+        
+        ur = self.get_cadence_requests(request_group,log=log)
+
+        return ur
+
+    def build_image_config_list(self, target, constraints):
+        """Function to compose the instrument configuration dictionary"""
+
+        config_list = []
+        
+        for i in range(0,len(self.exposure_counts),1):
+            
+            config = {'type': 'EXPOSE',
+                      'instrument_type': self.instrument_class,
+                      'target': target,
+                      'constraints': constraints,
+                      'acquisition_config': {},
+                      'guiding_config': {},
+                      'instrument_configs': [ {
+                                            'exposure_time': float(self.exposure_times[i]),
+                                            'exposure_count': int(self.exposure_counts[i]),
+                                            'optical_elements': {
+                                                'filter': self.filters[i]},
+                                                }
+                                            } ]
+                      }
+            
+            config_list.append(config)
+            
+        return config_list
+    
     def build_single_request(self, log=None, debug=False):
         
         if debug == True and log != None:
