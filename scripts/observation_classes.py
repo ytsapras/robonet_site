@@ -240,7 +240,7 @@ class ObsRequest:
             
         target = {
                 'name': str(self.name),
-                'type': 'SIDEREAL',
+                'type': 'ICRS',
                 'ra'	: ra_deg,
                 'dec': dec_deg,
                 'proper_motion_ra': 0, 
@@ -271,8 +271,8 @@ class ObsRequest:
         
         (self.ts_submit,self.ts_expire) = get_obs_dates(self.ttl)
 
-        cadence = { 'start': self.ts_submit.strftime("%Y-%m-%d %H:%M:%S"),
-                    'end': self.ts_expire.strftime("%Y-%m-%d %H:%M:%S"),
+        cadence = { 'start': self.ts_submit.strftime("%Y-%m-%dT%H:%M:%S"),
+                    'end': self.ts_expire.strftime("%Y-%m-%dT%H:%M:%S"),
                     'period': float(self.cadence),
                     'jitter': float(self.jitter) }
                     
@@ -289,12 +289,16 @@ class ObsRequest:
                          }
         
         ur = self.get_cadence_requests(request_group,log=log)
-
+        
         return ur
 
     def build_image_config_list(self, target, constraints):
         """Function to compose the instrument configuration dictionary"""
-
+        
+        def parse_filter(flong):
+            filters = {'SDSS-i': 'ip', 'SDSS-r': 'rp', 'SDSS-g': 'gp'}
+            return filters[flong]
+            
         config_list = []
         
         for i in range(0,len(self.exposure_counts),1):
@@ -309,7 +313,7 @@ class ObsRequest:
                                             'exposure_time': float(self.exposure_times[i]),
                                             'exposure_count': int(self.exposure_counts[i]),
                                             'optical_elements': {
-                                                'filter': self.filters[i]},
+                                                'filter': parse_filter(self.filters[i])},
                                                 } ]
                       }
             
@@ -440,7 +444,8 @@ class ObsRequest:
     def get_cadence_requests(self,ur,log=None):
         
         
-        end_point = "userrequests/cadence"
+        #end_point = "userrequests/cadence"
+        end_point = "requestgroups/cadence"
         ur = self.talk_to_lco(ur,end_point,'POST')
         
         if log !=None:
@@ -475,7 +480,8 @@ class ObsRequest:
                 log.info(' -> IN SIMULATION MODE: ' + self.submit_status)
         
         else:
-            end_point = 'userrequests'
+            #end_point = 'userrequests'
+            end_point = 'requestgroups'
             response = self.talk_to_lco(ur,end_point,'POST')
             self.parse_submit_response( response, log=log )
             

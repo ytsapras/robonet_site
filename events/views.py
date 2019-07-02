@@ -1121,7 +1121,8 @@ def list_anomalies(request):
         current_date = datetime.now()
         time_now = Time.now()
         
-        events = Event.objects.filter(year=str(current_date.year), status='AN')
+        #events = Event.objects.filter(year=str(current_date.year), status='AN')
+        events = Event.objects.filter(status='AN')
         
         event_names = []
         for e in events:
