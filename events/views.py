@@ -175,7 +175,7 @@ def dashboard(request):
             # Retrieve time usage information
             response = requests.get(
                 'https://observe.lco.global/api/proposals/?id=KEY2017AB-004',
-                headers={'Authorization': 'Token {}'.format(api_token)}
+                headers={'Authorization': 'Token '+str(api_token)}
                 )
             # Make sure this api call was successful
             try:
@@ -186,7 +186,7 @@ def dashboard(request):
             # Report the time allocation only for the 1m network
             proposals_dict = response.json()  # api returns a json dictionary containing proposal information
             for alloc in proposals_dict['results'][0]['timeallocation_set']:
-                if ( (alloc['telescope_class'] == u'1m0') and (alloc['semester'] == '2019A') ):
+                if ( (alloc['instrument_type'] == '1M0-SCICAM-SINISTRO') and (alloc['semester'] == '2019B') ):
                         time_available = alloc['std_allocation']
                         time_used = alloc['std_time_used']
                         ipp_time_available = alloc['ipp_time_available']
@@ -198,7 +198,7 @@ def dashboard(request):
             # Get telescope status information
             response3 = requests.get(
                 'https://observe.lco.global/api/telescope_states/',
-                headers={'Authorization': 'Token {}'.format(api_token)}
+                headers={'Authorization': 'Token '+str(api_token)}
                 )
             # Make sure this api call was successful
             try:

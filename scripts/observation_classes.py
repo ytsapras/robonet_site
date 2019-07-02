@@ -255,7 +255,7 @@ class ObsRequest:
         location = {
                     'telescope_class' : str(self.tel).replace('a',''),
                     'site':             str(self.site),
-                    'observatory':      str(self.observatory)
+                    'enclosure':      str(self.observatory)
                     }
                     
         if debug == True and log != None:
@@ -310,8 +310,7 @@ class ObsRequest:
                                             'exposure_count': int(self.exposure_counts[i]),
                                             'optical_elements': {
                                                 'filter': self.filters[i]},
-                                                }
-                                            } ]
+                                                } ]
                       }
             
             config_list.append(config)
