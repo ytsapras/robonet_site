@@ -443,9 +443,8 @@ class ObsRequest:
                 
     def get_cadence_requests(self,ur,log=None):
         
-        
-        #end_point = "userrequests/cadence"
-        end_point = "requestgroups/cadence"
+        end_point = "userrequests/cadence"
+        #end_point = "requestgroups/cadence"
         ur = self.talk_to_lco(ur,end_point,'POST')
         
         if log !=None:
@@ -480,8 +479,8 @@ class ObsRequest:
                 log.info(' -> IN SIMULATION MODE: ' + self.submit_status)
         
         else:
-            #end_point = 'userrequests'
-            end_point = 'requestgroups'
+            end_point = 'userrequests'
+            #end_point = 'requestgroups'
             response = self.talk_to_lco(ur,end_point,'POST')
             self.parse_submit_response( response, log=log )
             
