@@ -781,7 +781,7 @@ def request_obs(request):
     
         log = log_utilities.start_day_log( script_config, 'obs_control_manual' )
     
-        obs_options = get_obs_request_options()
+        obs_options = get_obs_request_options(log)
         
         if request.method == "POST":
             
@@ -870,7 +870,7 @@ def request_obs(request):
         
         return HttpResponseRedirect('login')
     
-def get_obs_request_options():
+def get_obs_request_options(log):
     """Function containing the available observing options"""
     
     obs_options = {}
@@ -902,7 +902,9 @@ def get_obs_request_options():
     obs_options['exp_defaults'] = { 'which_filter': 'None', 
                                      'exptime': 0,
                                      'n_exp': 0 }
-                                     
+    
+    log.info('Extracted dictionary of fields and instruments')
+    
     return obs_options
     
 def extract_facilities_list(obs_sequence):

@@ -180,8 +180,8 @@ def submit_obs_requests(script_config,obs_requests,log=None):
         if log != None:
             log.info('Building '+obs.group_id)
             
-        #ur = obs.build_cadence_request_aeon( log=log, debug=True )
-        ur = obs.build_cadence_request( log=log, debug=True )
+        ur = obs.build_cadence_request_aeon( log=log, debug=True )
+        #ur = obs.build_cadence_request( log=log, debug=True )
         
         if log != None: 
             log.info(obs.group_id + ': Built json request')
