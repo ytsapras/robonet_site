@@ -1,6 +1,27 @@
 {% extends "base.html" %}
 {% load staticfiles %}
 {% block content %}
+<nav class="navbar navbar-default">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            </button>
+        </div>
+    </div>
+
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <ul class="nav navbar-nav">
+          <li><a href="{% url 'list_all' %}">Display events</a></li>
+          <li><a href="{% url 'display_fields' %}">Display fields</a></li>
+          <li><a href="{% url 'search_events' %}">Search DB</a></li>
+          <li><a href="{% url 'tap' %}">TAP list</a></li>
+          <li><a href="{% url 'set_event_status' %}">Set event status</a></li>
+      <li><a href="{% url 'request_obs' %}">Request Obs</a></li>
+        </ul>
+      </div><!-- /.navbar-collapse -->
+</nav>
 {% if rows %}
 <center>
     <script type="text/javascript" src="{% static 'events/sorttable.js' %}"></script>
