@@ -780,7 +780,9 @@ def request_obs(request):
         script_config = obs_control.read_config()
     
         log = log_utilities.start_day_log( script_config, 'obs_control_manual' )
-    
+        
+        log_file_path = script_config['log_directory']
+        
         obs_options = get_obs_request_options(log)
         
         if request.method == "POST":
@@ -821,6 +823,7 @@ def request_obs(request):
                                          'rome_facilities': obs_options['rome_facilities'],
                                          'rea_facilities': obs_options['rea_facilities'],
                                          'filters': obs_options['filters'],
+                                         'log_file_path': log_file_path,
                                         'message': message})
                                         
             else:
@@ -843,6 +846,7 @@ def request_obs(request):
                                          'rome_facilities': obs_options['rome_facilities'],
                                          'rea_facilities': obs_options['rea_facilities'],
                                          'filters': obs_options['filters'],
+                                         'log_file_path': log_file_path,
                                         'message': message})
                                         
         else:
@@ -864,6 +868,7 @@ def request_obs(request):
                                      'rome_facilities': obs_options['rome_facilities'],
                                      'rea_facilities': obs_options['rea_facilities'],
                                      'filters': obs_options['filters'],
+                                     'log_file_path': log_file_path,
                                     'message':''})
         
     else:
