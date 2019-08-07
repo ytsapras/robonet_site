@@ -778,7 +778,8 @@ def request_obs(request):
     if request.user.is_authenticated():
         
         script_config = obs_control.read_config()
-    
+        script_config['log_root_name'] = 'obscontrol_manual'
+        
         log = log_utilities.start_day_log( script_config, 'obs_control_manual' )
         
         log_file_path = script_config['log_directory']
