@@ -11,7 +11,7 @@ certifi==2017.1.23
 cycler==0.10.0
 decorator==4.0.11
 Django==1.11.16
-djangorestframework==3.8.2
+djangorestframework==3.9.1
 enum34==1.1.6
 ephem==3.7.6.0
 functools32==3.2.3.post2
