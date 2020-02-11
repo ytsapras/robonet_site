@@ -10,7 +10,7 @@ bs4==0.0.1
 certifi==2017.1.23
 cycler==0.10.0
 decorator==4.0.11
-Django==1.11.16
+Django==1.11.28
 djangorestframework==3.8.2
 enum34==1.1.6
 ephem==3.7.6.0
