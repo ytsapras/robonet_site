@@ -150,8 +150,8 @@ def rome_obs_sequence(site_code=None):
                     'domes':        ['doma', 'doma', 'doma'],
                     'tels':         [ '1m0', '1m0', '1m0' ],
                     'instruments':  ['fa15', 'fa16', 'fa12'],
-                    'cadence_hrs': 7.0,
-                    'jitter_hrs': 7.0,
+                    'cadence_hrs': 4.0,
+                    'jitter_hrs': 4.0,
 #                    'TTL_days': 6.98,
                     'TTL_days': 3.98,
                     'priority': 1.05
