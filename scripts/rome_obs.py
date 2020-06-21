@@ -59,7 +59,8 @@ def build_rome_obs(script_config,log=None):
                 obs.instrument = field_obs_sequence['instruments'][0]
                 obs.instrument_class = '1M0-SCICAM-SINISTRO'
                 obs.set_aperture_class()
-                obs.airmass_limit = 1.2
+                #obs.airmass_limit = 1.2  # ROME survey limit
+                obs.airmass_limit = 2.0
                 obs.moon_sep_min = field_obs_sequence['moon_sep_min']
                 obs.filters = field_obs_sequence['filters']
                 obs.exposure_times = field_obs_sequence['exp_times']
