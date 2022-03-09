@@ -5,9 +5,9 @@ from bokeh.plotting import figure, show, output_file, gridplot
 from bokeh.resources import CDN
 from bokeh.embed import components
 from bokeh.models import PrintfTickFormatter, HoverTool, BoxZoomTool, PanTool,WheelZoomTool, ResetTool
-from local_conf import get_conf
+from . import local_conf
 
-artemis = get_conf('artemis')
+artemis = local_conf.get_conf('artemis')
 
 class MLplots():
     def __init__(self,name) :
@@ -22,14 +22,14 @@ class MLplots():
         self.colors=[]
         self.name=name
         self.data_limits=[]
-    
+
     def path_lightcurves(self,directory):
         self.lightcurves_path=directory
-    
+
     def path_models(self,directory):
         self.models_path=directory
-    
-    def load_data(self):	
+
+    def load_data(self):
         self.telescopes_names=glob.glob(self.lightcurves_path+'/*'+self.name+'*.dat')
         for i in self.telescopes_names :
             data=np.loadtxt(i)
@@ -37,7 +37,7 @@ class MLplots():
                 index=np.where(data[:,2]>self.data_limits)[0]
                 self.lightcurves.append(data[index])
                 self.telescopes.append([i.replace(self.lightcurves_path,'')[0],i.replace(self.lightcurves_path,'')])
-        
+
     def load_models(self):
         self.model=glob.glob(self.models_path+self.name+'.model')
         data=np.loadtxt(self.model[0],dtype='string')
@@ -55,12 +55,12 @@ class MLplots():
                 out_table.append(element_values[:3])
             elements = len(out_table)
             return out_table, elements
-                
+
         # Read in the colour definitions
-        artemis_col = get_conf('artemis_cols')
+        artemis_col = local_conf.get_conf('artemis_cols')
         (col_codes, nr_col) = rd_tables(artemis_col+'colourdef.sig.cfg')
         translation=dict(col_codes)
-        #import pdb; pdb.set_trace()    			
+        #import pdb; pdb.set_trace()
         # Convert to dictionary
         #col_cod = dict(col_codes)
         # Read in the observatory colour tags
@@ -72,7 +72,7 @@ class MLplots():
         cooleurs=[[i[0],translation[i[1]]] for i in couleurs]
         #import pdb; pdb.set_trace()
         self.colors=dict(cooleurs)
-		
+
     def find_survey(self) :
         letters=np.array([i[0] for i in self.telescopes])
         if 'O' in letters :
@@ -80,21 +80,21 @@ class MLplots():
             self.survey.append(['O',index])
         else :
             index=np.where(letters=='K')[0][0]
-            self.survey.append(['K',index])	
+            self.survey.append(['K',index])
 
     def set_data_limits(self):
         number_of_days=300
         parameters= self.models[0][1]
         to=parameters[0]
         self.data_limits=to-number_of_days
-	
+
     def set_plot_limits(self):
         factor_time=3
         offset_magnitude=0.2
         to=self.models[0][1][0]
         tE=self.models[0][1][1]
         self.plot_limits=[[to-factor_time*tE,to+factor_time*tE],[np.max(self.lightcurves[self.survey[0][1]][:,0])+offset_magnitude,np.min(self.lightcurves[self.survey[0][1]][:,0])-offset_magnitude]]
-        
+
     def align_data(self):
         parameters=self.models[0][1]
         to=parameters[0]
@@ -121,7 +121,7 @@ class MLplots():
                 else :
                     normalized_flux=(flux-fb)/fs*FS+FB
                     normalized_errflux=err_flux/(fs+fb)*(FS+FB)
-        				
+
                 #normalized_flux=(flux-fb)/fs*FS+FB
                 #normalized_errflux=err_flux/flux*normalized_flux
                 normalized_mag=18-2.5*np.log10(normalized_flux)
@@ -130,16 +130,16 @@ class MLplots():
             else :
                 normalisation=self.lightcurves[i]
             self.aligned_lightcurves.append(normalisation)
-        
+
     def VB_binary(self):
         import  VBBinaryLensing
         def mu_binary(t,u0,te,t0,d,q,rs,alpha,acc):
-            amp=[]  
+            amp=[]
             salpha=sin(alpha)
-            calpha=cos(alpha)  			
+            calpha=cos(alpha)
             for i in t :
                 y1=-u0*salpha+(t-t0)/te*calpha
-                y2=u0*calpha+(t-t0)/te*salpha    
+                y2=u0*calpha+(t-t0)/te*salpha
                 amp.append(VBBinaryLensing.BinaryLightCurve(float(d),float(q),float(y2),float(0.0),float(y1),float(rs),float(acc)))
         return np.array(amp)
 
@@ -160,7 +160,7 @@ class MLplots():
                   line_width=0.7,
                   color='red',
                   legend='PSPL model',
-                  muted_color='red', 
+                  muted_color='red',
                   muted_alpha=0.2)
         for i in xrange(len(self.telescopes)):
             tel_colour = '#'+self.colors[self.telescopes[i][0]]
@@ -172,7 +172,7 @@ class MLplots():
                          color=tel_colour,
                          legend=self.telescopes[i][1],
                          line_alpha=0.3,
-                         muted_color=tel_colour, 
+                         muted_color=tel_colour,
                          muted_alpha=0.2)
             fig1.scatter(self.aligned_lightcurves[i][:,2],
                          self.aligned_lightcurves[i][:,0],
@@ -180,7 +180,7 @@ class MLplots():
                          line_color=None,
                          legend=self.telescopes[i][1],
                          size=4,
-                         muted_color=tel_colour, 
+                         muted_color=tel_colour,
                          muted_alpha=0.2)
             fig1.xaxis.minor_tick_line_color=None
             fig1.xaxis.major_tick_line_color=None
@@ -202,7 +202,7 @@ class MLplots():
                          color=tel_colour,
                          legend=self.telescopes[i][1],
                          line_alpha=0.3,
-                         muted_color=tel_colour, 
+                         muted_color=tel_colour,
                          muted_alpha=0.2)
             fig2.scatter(self.lightcurves[i][:,2],
                          residuals,
@@ -210,7 +210,7 @@ class MLplots():
                          line_color=None,
                          size=4,
                          legend=self.telescopes[i][1],
-                         muted_color=tel_colour, 
+                         muted_color=tel_colour,
                          muted_alpha=0.2)
             fig2.xaxis.minor_tick_line_color=None
             fig2.xaxis.axis_label_text_font_size='12pt'
@@ -268,10 +268,9 @@ class MLplots():
         flux_data=10**((18-self.lightcurves[number][:,0])/2.5)
         flux_model=self.Flux_model(number,kind,parameters)
         if flux_model=='Bad fit' :
-            print flux_model
+            print(flux_model)
             delta_flux=flux_data-10**((18-self.aligned_lightcurves[number][:,0])/2.5)
         else :
             delta_flux=flux_data-flux_model
             res_mag=-2.5*np.log10(1-delta_flux/flux_data)
         return res_mag
-

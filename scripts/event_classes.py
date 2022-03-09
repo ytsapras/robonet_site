@@ -11,16 +11,15 @@ from sys import path as systempath
 cwd = getcwd()
 systempath.append(path.join(cwd,'..'))
 import numpy as np
-import update_db_2
-from field_check import romecheck
-from rome_fields_dict import field_dict
-import utilities
-import query_db
-import get_errors
+from . import update_db_2
+from . import field_check
+from . import utilities
+from . import query_db
+from . import get_errors
 from astropy.coordinates import SkyCoord
 
-from local_conf import get_conf
-robonet_site = get_conf('robonet_site')
+from . import local_conf
+robonet_site = local_conf.get_conf('robonet_site')
 systempath.append(robonet_site)
 environ.setdefault('DJANGO_SETTINGS_MODULE', 'robonet_site.settings')
 from django.core import management
@@ -34,7 +33,7 @@ from events.models import Event, EventName, Operator
 ##################################################
 # LENS CLASS DESCRIPTION
 class Lens():
-    """Class describing the basic parameters of a microlensing event 
+    """Class describing the basic parameters of a microlensing event
     (point source point lens) as required for most purposes for the
     database"""
 
@@ -52,12 +51,12 @@ class Lens():
         self.modeler = None
         self.classification = 'microlensing'
         self.last_updated = None
-        
+
     def set_par(self,par,par_value):
 
-        if par in [ 'name', 'survey_id', 'classification', 'last_updated' ]: 
+        if par in [ 'name', 'survey_id', 'classification', 'last_updated' ]:
             setattr(self,par,par_value)
-        else: 
+        else:
             if par_value == None or str(par_value).lower() == 'none':
                 setattr(self,par,par_value)
             else:
@@ -71,11 +70,11 @@ class Lens():
                 str(self.ra) + '  ' + str(self.dec) + '  ' + \
                 str(self.t0) + ' ' + str(self.te) + ' ' + str(self.u0) + '  ' +\
                 str(self.a0) + ' ' + str(self.i0) + ' ' + str(self.classification)
-                
-        
+
+
     def sync_event_with_DB(self,last_updated,log=None,debug=False):
         '''Method to sync the latest survey parameters with the database.'''
-        
+
         # Find out which sky region the target falls into:
         (id_field,rate) = query_db.get_event_field_id(self.ra,self.dec)
         if debug==True and log!=None:
@@ -85,11 +84,11 @@ class Lens():
             event_status = 'NF'
         else:
             event_status= 'AC'
-            
+
         # Get the discovery year of the event from the event name to avoid
         # it being autoset to the current year:
         year = str(self.name).split('-')[1]
-        
+
         # Add the event to the database - returns False if already present
         (ra, dec) = utilities.sex2decdeg(self.ra,self.dec)
         (event_status, ev_ra, ev_dec,response) = update_db_2.add_event(id_field, \
@@ -102,7 +101,7 @@ class Lens():
             log.info(' -> Tried to add_event with output:')
             log.info(' -> '+str(event_status)+' '+str(ev_ra)+' '+str(ev_dec)+\
                         ' '+str(response))
-        
+
         # Add_event doesn't ingest the EventName, so ensure that the eventname
         # is linked to the correct Event sky location:
         if debug==True and log!=None:
@@ -115,7 +114,7 @@ class Lens():
                                                             name=self.name)
             if debug==True and log!=None:
                 log.info(' -> New event, added eventname with output '+str(status)+' '+str(response))
-                
+
         elif event_status == False and 'exists' in response:
             event = query_db.get_event_by_position(ev_ra,ev_dec)
             if event != None:
@@ -130,7 +129,7 @@ class Lens():
                 if log!=None:
                     log.info(message)
                 name_list = []
-                
+
             if event != None and self.name not in name_list:
                 operator = Operator.objects.filter(name=self.origin)[0]
                 (status, response) = update_db_2.add_event_name(event=event,\
@@ -146,7 +145,7 @@ class Lens():
             get_errors.update_err('artemis_subscriber', message)
             if log!=None:
                 log.info(message)
-                
+
         # Confirm that both Event and EventName are properly registered:
         if log!=None:
             log.info(' -> Verifying event and names registered with DB:')
@@ -158,31 +157,31 @@ class Lens():
             for n in eventnames:
                 eventname+=str(n)
             log.info(' -> Searched for event name, found: '+eventname)
-        
+
         # Check that the current model parameters have been ingested and if
         # not, add them:
         last_model = query_db.get_last_single_model(event,modeler=self.modeler)
         if debug==True and log!=None:
             log.info(' -> Last model for event '+str(self.name)+': '+str(last_model))
-        
+
         if last_model == None or self.last_updated == None or \
                 self.last_updated > last_model.last_updated:
-                    
+
             if debug==True and log!=None:
                 log.info(' -> Attempting to add a single lens model with parameters:')
                 log.info(str(self.name)+' '+str(self.t0)+' '+str(self.te)+\
                         str(self.u0)+' '+str(last_updated)+' '+str(self.modeler))
-                        
+
             (model_status,response) = update_db_2.add_single_lens(self.name, \
-                            self.t0, self.te, self.u0, last_updated, 
+                            self.t0, self.te, self.u0, last_updated,
                             modeler=self.modeler)
-                            
+
             if debug==True and log!=None:
                 log.info(' -> Outcome of adding the single lens model:')
                 log.info(str(model_status)+' '+str(response))
-    
+
     def get_params(self):
-        """Method to return the parameters of the current event in a 
+        """Method to return the parameters of the current event in a
         dictionary format
         """
         key_list = [ 'name', 'survey_id', 'ra', 'dec', 't0', 'te', 'u0', \
@@ -192,11 +191,11 @@ class Lens():
             params[ key ] = getattr( self, key )
         return params
 
-            
+
 class EventDataSet():
     """Class describing all parameters associated with a data set taken for
     a microlensing event"""
-    
+
     def __init__(self):
         self.event_name = None
         self.data_file = None
@@ -209,15 +208,15 @@ class EventDataSet():
         self.ndata = 0
         self.baseline = None
         self.g = None
-        
+
     def sync_artemis_data_pars_with_db(self,log=None):
-        """Method to update the database with the data and alignment 
+        """Method to update the database with the data and alignment
         parameters from ARTEMiS"""
 
         if log!=None:
             log.info('Syncing ARTEMiS data and align parameters with DB')
             log.info(repr(self.event_name))
-        (status,message) = update_db_2.add_datafile(self.event_name,self.data_file, 
+        (status,message) = update_db_2.add_datafile(self.event_name,self.data_file,
                                             self.last_upd, self.last_hjd,
                                             self.last_mag,self.tel,
                                             self.ndata, inst=self.instrument,
@@ -225,4 +224,3 @@ class EventDataSet():
                                             baseline=self.baseline,g=self.g)
         if log!=None:
             log.info(' -> Status: '+repr(status)+', '+message)
-        

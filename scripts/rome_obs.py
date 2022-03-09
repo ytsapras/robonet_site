@@ -5,11 +5,11 @@ Created on Fri Mar 17 16:31:07 2017
 @author: rstreet
 """
 
-import observation_classes
+from . import observation_classes
 from datetime import datetime, timedelta
-from rome_fields_dict import field_dict
-import observing_tools
-import obs_conditions_tolerances
+from . import rome_fields_dict
+from . import observing_tools
+from . import obs_conditions_tolerances
 
 def build_rome_obs(script_config,log=None):
     """Function to define the observations to be taken during the ROME
@@ -95,10 +95,10 @@ def get_rome_fields(selected_field=None):
     """Function to define the fields to be observed with the ROME strategy"""
 
     if selected_field == None:
-        rome_fields=field_dict
+        rome_fields=rome_fields_dict.field_dict
     else:
-        if selected_field in field_dict.keys():
-            rome_fields={selected_field:field_dict[selected_field]}
+        if selected_field in rome_fields_dict.field_dict.keys():
+            rome_fields={selected_field:rome_fields_dict.field_dict[selected_field]}
 
     return rome_fields
 
@@ -194,4 +194,4 @@ if __name__ == '__main__':
                      'selected_field': 'ROME-FIELD-01'}
     rome_field_obs = build_rome_obs(script_config,log=None)
     for field_seq in rome_field_obs:
-        print field_seq.summary()
+        print(field_seq.summary())

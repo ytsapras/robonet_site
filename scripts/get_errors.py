@@ -2,7 +2,7 @@
 
 from datetime import datetime
 import re
-import config_parser
+from . import config_parser
 from shutil import move
 from os import remove, close, path
 import socket
@@ -29,10 +29,10 @@ class Error:
         self.codename = None
         self.ts = None
         self.status = None
-    
+
     def summary(self):
         return self.codename+' '+self.ts+' '+self.status
-    
+
 def read_err():
     """Function to the errors file and return a dictionary of the contents
     in the format:
@@ -57,10 +57,10 @@ def read_err():
 def update_err(process_name, comments, \
         date_updated=datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
         use_config='obs_control'):
-    """Function to add to a central file containing current errors within the 
+    """Function to add to a central file containing current errors within the
     system
         process_name can be one of the following:
-            'artemis_subscriber', 'obs_control_rome', 'obs_control_rea', 
+            'artemis_subscriber', 'obs_control_rome', 'obs_control_rea',
             'run_rea_tap', 'reception', 'backup'
         comments is a string
         date_updated is in the format 2017-05-31T14:10:19
@@ -88,7 +88,7 @@ def update_err(process_name, comments, \
     if replaced == False:
         out1 = process_name+'; '+date_updated+'; '+comments+'\n'
         errfile_new.write(out1)
-        
+
     errfile_new.close()
     # Clean up
     if path.isfile(filepath_old) == True:

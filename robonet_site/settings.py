@@ -25,7 +25,7 @@ SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = ast.literal_eval(os.environ.get('DEBUG', 'False'))
-
+DEBUG = True
 ALLOWED_HOSTS = ['einstein.lco.gtn', 'robonet.lco.global','127.0.0.1']
 
 
@@ -61,7 +61,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+    #'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -88,7 +88,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'robonet_site.wsgi.application'
+#WSGI_APPLICATION = 'robonet_site.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
@@ -96,9 +96,9 @@ WSGI_APPLICATION = 'robonet_site.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': '/var/www/robonetsite/db.sqlite3',
+        #'NAME': '/var/www/robonetsite/db.sqlite3',
         # FOR LOCAL TESTING ONLY:
-        #'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
 
@@ -152,3 +152,6 @@ LOGIN_REDIRECT_URL = 'dashboard'
 MESSAGE_LEVEL = 1
 
 CSRF_USE_SESSIONS = True
+
+# Necessary migration post Django 3.2
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

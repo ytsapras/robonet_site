@@ -11,8 +11,8 @@ matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from jdcal import gcal2jd
 from matplotlib.cm import coolwarm
-from local_conf import get_conf
-robonet_site = get_conf('robonet_site')
+from . import local_conf
+robonet_site = local_conf.get_conf('robonet_site')
 
 def generate_visibility_plot():
     ut_current = gmtime()
@@ -68,4 +68,3 @@ def generate_visibility_plot():
 
 if __name__ == '__main__':
     generate_visibility_plot()
-    

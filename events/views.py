@@ -4,7 +4,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
-from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth.forms import PasswordChangeForm, AuthenticationForm
 from django.db.models import Max
 from django.utils import timezone
 from django.http import HttpResponse, Http404, HttpResponseRedirect
@@ -87,12 +87,36 @@ with open(colordef) as f:
        col_dict[key] = val
 
 ##############################################################################################################
+def login_view(request):
+    print(request)
+    if not request.user.is_authenticated and request.method == 'POST':
+        form = AuthenticationForm(request=request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                pu = ProjectUser.objects.all().filter(handle=request.user.username)[0]
+                projects_list = pu.projects.all()
+                return render(request,'events/dashboard.html',{'projects':projects_list})
+        else:
+            return render(request, 'events/login_base.html', {'form': AuthenticationForm()})
+    else:
+        return render(request, 'events/login_base.html', {'form': AuthenticationForm()})
+
+def logout_view(request):
+    logout(request)
+    return HttpResponseRedirect('login')
+
+
+
 @login_required(login_url='/db/login/')
 def change_password(request):
     """
     Will allow a user to change their password.
     """
-    
+
     if request.user.is_authenticated():
         try:
             if request.method == 'POST':
@@ -101,11 +125,11 @@ def change_password(request):
                     user = form.save()
                     update_session_auth_hash(request, user)  # Important!
                     messages.success(request, 'Your password was successfully updated!')
-                    
+
                     return HttpResponseRedirect('/db')
                 else:
                     messages.error(request, 'Please correct the error below.')
-            
+
             else:
                 form = PasswordChangeForm(request.user)
                 return render(request, 'events/change_password.html', {'form': form})
@@ -128,7 +152,7 @@ def test(request):
 @login_required(login_url='/db/login/')
 def simple(request):
    ########### ONLY FOR TESTING ################
-   tels = [u'LCOGT CTIO 1m A', u'LCOGT CTIO 1m B', u'LCOGT CTIO 1m C', u'LCOGT SAAO 1m A', 
+   tels = [u'LCOGT CTIO 1m A', u'LCOGT CTIO 1m B', u'LCOGT CTIO 1m C', u'LCOGT SAAO 1m A',
            u'LCOGT SAAO 1m B', u'LCOGT SAAO 1m C', u'LCOGT SSO 1m B']
    cols =['#38FFB8', '#33285D', '#C04B31', '#DE96BC', '#C340AE', '#BD6D6F', '#151BE8']
    num_obs = [21, 13, 15, 13, 16, 3, 0]
@@ -138,7 +162,7 @@ def simple(request):
    from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
    import os
    fig = figure(figsize=[10, 10])
-   ax = fig.add_subplot(111)  
+   ax = fig.add_subplot(111)
    rcParams['axes.titlesize'] = 10.0
    rcParams['xtick.labelsize'] = 14.0
    rcParams['legend.fontsize'] = 22.0
@@ -148,7 +172,7 @@ def simple(request):
    patches = ax.pie(fracs, colors=cols, labels=tels, labeldistance=0.95, explode=None, autopct='%1.f%%', shadow=False)
    for pie_wedge in patches[0]:
       pie_wedge.set_edgecolor('white')
-   
+
    title = "Observations: "+str(ndata)
    legend([k[0]+': '+str(k[1]) for k in zip(tels, num_obs)],loc=(-.12,-.12), framealpha=0.4)
    # Store image in a string buffer
@@ -246,8 +270,8 @@ def dashboard(request):
         date_today = str(status_time.year)+str(status_time.month).zfill(2)+str(status_time.day).zfill(2)
         status_time_jd = Time(status_time).jd
         lunar_separation = observing_tools.estimate_moon_separation_from_bulge()
-        
-        context = {'status_time':status_time, 'status_time_jd':status_time_jd, 
+
+        context = {'status_time':status_time, 'status_time_jd':status_time_jd,
                    'date_today':date_today, 'errors': errors,
 		   'coj_doma':coj_doma, 'coj_domb':coj_domb,
 		   'cpt_doma':cpt_doma, 'cpt_domb':cpt_domb, 'cpt_domc':cpt_domc,
@@ -259,7 +283,7 @@ def dashboard(request):
         return render(request, 'events/dashboard.html', context)
     else:
         return HttpResponseRedirect('login')
-      
+
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def download_lc_by_id(request, event_id):
@@ -289,20 +313,20 @@ def download_lc_by_id(request, event_id):
       try:
          filename = tar_lc(lightcurves)
       except:
-         raise Http404("Encountered a problem while generating the tar file.") 
+         raise Http404("Encountered a problem while generating the tar file.")
       try:
          download = open(filename,'rb')
       except:
-         raise Http404("Encountered a problem while reading the tar file.") 
+         raise Http404("Encountered a problem while reading the tar file.")
       try:
          response = HttpResponse(download.read(),content_type='application/x-tar')
          response['Content-Disposition'] = 'attachment; filename="%s"' % filename.split('/')[-1]
       except:
-         raise Http404("Encountered a problem while generating the HttpResponse.")  
+         raise Http404("Encountered a problem while generating the HttpResponse.")
       return response
    else:
       return HttpResponseRedirect('login')
-      
+
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def download_lc(request, event_name):
@@ -335,16 +359,16 @@ def download_lc(request, event_name):
       try:
          filename = tar_lc(lightcurves)
       except:
-         raise Http404("Encountered a problem while generating the tar file.") 
+         raise Http404("Encountered a problem while generating the tar file.")
       try:
          download = open(filename,'rb')
       except:
-         raise Http404("Encountered a problem while reading the tar file.") 
+         raise Http404("Encountered a problem while reading the tar file.")
       try:
          response = HttpResponse(download.read(),content_type='application/x-tar')
          response['Content-Disposition'] = 'attachment; filename="%s"' % filename.split('/')[-1]
       except:
-         raise Http404("Encountered a problem while generating the HttpResponse.")  
+         raise Http404("Encountered a problem while generating the HttpResponse.")
       return response
    else:
       return HttpResponseRedirect('login')
@@ -461,7 +485,7 @@ def active_obs_requests(request):
          grp_id = [k.grp_id for k in obs_requests]
          track_id = [k.track_id for k in obs_requests]
          req_id = [k.req_id for k in obs_requests]
-         n_exp  = [k.n_exp for k in obs_requests]    
+         n_exp  = [k.n_exp for k in obs_requests]
          rows = zip(field,t_sample,exptime,timestamp,time_expire,request_status,
 	            request_type,which_site,which_inst,which_filter,grp_id,
 		    track_id,req_id,n_exp)
@@ -477,19 +501,19 @@ def active_obs_requests(request):
 @login_required(login_url='/db/login/')
 def tap(request):
     """Function to load the TAP page of targets recommended for observation"""
-    
+
     if request.user.is_authenticated():
 #        try:
             list_ev = Event.objects.select_related().filter(status__in=['MO']).annotate(latest_tap=Max('tap__timestamp'))
             latest_ev_tap = Tap.objects.filter(timestamp__in=[e.latest_tap for e in list_ev])
-            
+
             time_now = datetime.now()
             time_now_jd = Time(time_now).jd
-            
+
             ##### TAP query goes here ###
             selection_tap = latest_ev_tap.order_by('omega').reverse()
             #####
-            
+
             ev_id = []
             timestamp = []
             check_list = []
@@ -498,7 +522,7 @@ def tap(request):
                     ev_id.append(f.event_id)
                     timestamp.append(f.timestamp)
                     check_list.append(f.event_id)
-            
+
             if len(selection_tap) > 0:
                 ra = []
                 dec = []
@@ -516,21 +540,21 @@ def tap(request):
                 visibility = []
                 field_names = []
                 override = []
-                
+
                 count = 0
                 for i in ev_id:
                     evnm = EventName.objects.filter(event=i)
                     names = [k.name for k in evnm]
-                    
+
                     ev_ra = Event.objects.all().get(pk=i).ev_ra
                     ev_dec = Event.objects.all().get(pk=i).ev_dec
                     field_name = (Event.objects.get(id=i)).field.name
                     override_status = Event.objects.all().get(pk=i).override
-                    
+
                     sampling_time = Tap.objects.all().get(event=i, timestamp=timestamp[count]).tsamp
                     time_exp = Tap.objects.all().get(event=i, timestamp=timestamp[count]).texp
                     prior = Tap.objects.all().get(event=i, timestamp=timestamp[count]).priority
-                    
+
                     if prior == 'A':
                         colors.append('#FE2E2E')
                     elif prior == 'H':
@@ -541,12 +565,12 @@ def tap(request):
                         colors.append('#A9F5A9')
                     else:
                         colors.append('#808080')
-                        
+
                     baseline = Tap.objects.all().get(event=i, timestamp=timestamp[count]).imag
                     oms = Tap.objects.all().get(event=i, timestamp=timestamp[count]).omega
                     omsp = Tap.objects.all().get(event=i, timestamp=timestamp[count]).peak_omega
                     vis = Tap.objects.all().get(event=i, timestamp=timestamp[count]).visibility
-                    
+
                     texp.append(time_exp)
                     tsamp.append(sampling_time)
                     priority.append(prior)
@@ -560,15 +584,15 @@ def tap(request):
                     field_names.append(field_name)
                     override.append(override_status)
                     count = count + 1
-                    
+
                     #### TAP rows need to be defined here ####
-                    rows = zip(colors, ev_id, names_list, ra, dec, texp, priority, 
-                               tsamp, imag, omega_s, omega_peak, 
+                    rows = zip(colors, ev_id, names_list, ra, dec, texp, priority,
+                               tsamp, imag, omega_s, omega_peak,
                                visibility, field_names, override)
             else:
-                
+
                 rows = []
-                
+
             rowsrej = ''
             time1 = 'Unknown' # This should be an estimate of when the target list will be uploaded next (in minutes)
             #time2 = str(blg_visibility(mlsites=['CPT','COJ','LSC'])) # This should be an estimate of the bulge visibility on <nsite> sites (in hours)
@@ -576,19 +600,19 @@ def tap(request):
             nsite = '3' # The number of sites the bulge is visible from for time2 hours
             occupy = '<font color="red"> Unknown</font>' # This should be a string (can include html)
             ##########################################
-            
-            context = {'rows': rows, 'rowsrej':rowsrej, 'time_now': time_now, 
-                       'time_now_jd': time_now_jd, 'time1':time1, 
+
+            context = {'rows': rows, 'rowsrej':rowsrej, 'time_now': time_now,
+                       'time_now_jd': time_now_jd, 'time1':time1,
                        'time2':time2, 'nsite':nsite, 'occupy':occupy}
-                       
+
             return render(request, 'events/tap.html', context)
-            
+
 #        except:
-            
+
 #            raise Http404("Encountered a problem while loading. Please contact the site administrator.")
-            
+
     else:
-        
+
         return HttpResponseRedirect('login')
 
 ##############################################################################################################
@@ -596,68 +620,68 @@ def tap(request):
 def set_tap_status(request):
     """View to enable users to manually set the REA status of an event in the
     TAP list"""
-    
+
     if request.user.is_authenticated():
-        
+
         (tap_targets,priorities) = get_events_from_tap_list()
-                
+
         if request.method == "POST":
-        
+
             tform = TapStatusForm(request.POST)
-            
+
             if tform.is_valid():
-                
+
                 post = tform.save(commit=False)
-                
-                (status, message) = update_db_2.update_tap_status(post.event, 
+
+                (status, message) = update_db_2.update_tap_status(post.event,
                                                                   post.priority)
-                
+
                 return render(request, 'events/set_tap_status.html', \
                                     {'tform': tform, 'tap_targets': tap_targets,\
                                      'priorities': priorities,\
                                      'message': message})
-            
+
             else:
-                
+
                 tform = TapStatusForm()
-                
+
                 return render(request, 'events/set_tap_status.html', \
                                     {'tform': tform, 'tap_targets': tap_targets,\
                                      'priorities': priorities,\
                                     'message':'Form entry was invalid.  Please try again.'})
-            
+
         else:
             tform = TapStatusForm()
-                
+
             return render(request, 'events/set_tap_status.html', \
                                     {'tform': tform, 'tap_targets': tap_targets,\
                                      'priorities': priorities,\
                                     'message':'OK'})
-                                        
+
     else:
-        
+
         return HttpResponseRedirect('login')
 
 @login_required(login_url='/db/login/')
 def set_event_status(request):
     """View to enable users to manually set the REA status of an event in the
     TAP list"""
-    
+
     def fetch_events_and_states():
-        
+
         qs = Event.objects.all().order_by('year').reverse()
-        
+
         events = []
-        
+
         for q in qs:
-        
+
             names = query_db.get_event_names(q.pk)
             name = query_db.combine_event_names(names)
-            
+
             events.append( ( q, name+'(PK='+str(q.pk)+')', q.status) )
-        
+
         events = tuple(events)
-        
+
         states = (
                       ('NF', 'Not in footprint'),
                       ('AC', 'active'),
@@ -665,59 +689,59 @@ def set_event_status(request):
                       ('AN', 'anomaly'),
                       ('EX', 'expired')
                    )
-        
+
         return events, states
-        
+
     if request.user.is_authenticated():
-        
+
         if request.method == "POST":
-        
+
             (events, states) = fetch_events_and_states()
-            
+
             eform = EventAnomalyStatusForm(request.POST)
             nform = EventNameForm(request.POST)
-            
+
             if eform.is_valid() and nform.is_valid():
-                
+
                 epost = eform.save(commit=False)
                 npost = nform.save(commit=False)
-                
+
                 event = Event.objects.get(pk=npost.name)
-                
-                (status, message) = update_db_2.update_event_status(event, 
+
+                (status, message) = update_db_2.update_event_status(event,
                                                                     epost.status,
                                                                     epost.override,
                                                                     interactive=True)
-                
+
                 return render(request, 'events/set_event_anomaly_status.html', \
                                     {'eform': eform, 'nform': nform,
                                     'events': events, 'states': states,
                                      'message': message})
-            
+
             else:
-                
+
                 eform = EventAnomalyStatusForm()
                 nform = EventNameForm()
-                
+
                 return render(request, 'events/set_event_anomaly_status.html', \
                                     {'eform': eform, 'nform': nform,
                                     'events': events, 'states': states,
                                     'message':'Form entry was invalid.  Please try again.'})
-        
+
         else:
-            
+
             (events, states) = fetch_events_and_states()
-            
+
             eform = EventAnomalyStatusForm()
             nform = EventNameForm()
-                
+
             return render(request, 'events/set_event_anomaly_status.html', \
                                     {'eform': eform, 'nform': nform,
                                     'events': events, 'states': states,
                                     'message':'OK'})
-                                        
+
     else:
-        
+
         return HttpResponseRedirect('login')
 
 
@@ -736,76 +760,76 @@ def set_event_status(request):
 #                       'MO': 'monitor',
 #                       'AN': 'anomaly',
 #                       'EX': 'expired'}
-   
+
 #    if request.user.is_authenticated():
-        
+
 #        if request.method == "POST" and event_name != None \
 #            and status in possible_status.keys():
-            
+
 #            eform = EventAnomalyStatusForm(request.POST)
 #            nform = EventNameForm(request.POST)
-            
+
 #            qs = EventName.objects.filter(name=event_name)
-            
+
 #            if len(qs) == 0:
-                
+
 #                message = 'DBREPLY: ERROR: Unrecognised event name'
-                
+
 #            else:
-                
-#                (status, message) = update_db_2.update_event_status(qs[0].event, 
+
+#                (status, message) = update_db_2.update_event_status(qs[0].event,
 #                                                                    status,
 #                                                                    False)
-        
+
 #        else:
-            
+
 #            message = 'DBREPLY: ERROR: Insufficient or invalid parameters specified'
-            
-#        return render(request, 'events/set_event_anomaly_status_api.html', 
+
+#        return render(request, 'events/set_event_anomaly_status_api.html',
 #                          {'message': message})
-                                        
+
 #    else:
-        
+
 #        return HttpResponseRedirect('login')
-    
+
 ############################################################################
 @login_required(login_url='/db/login/')
 @ensure_csrf_cookie
 @csrf_protect
 def request_obs(request):
     """Function to enable users to specify a direct observation request"""
-    
+
     if request.user.is_authenticated():
-        
+
         script_config = obs_control.read_config()
         script_config['log_root_name'] = 'obscontrol_manual'
-        
+
         log = log_utilities.start_day_log( script_config, 'obs_control_manual' )
-        
+
         log_file_path = script_config['log_directory']
-        
+
         obs_options = get_obs_request_options(log)
-        
+
         if request.method == "POST":
-            
+
             log.info('Received POST from online form')
-            
+
             oform = ObsRequestForm(request.POST)
             eform1 = ObsExposureForm(request.POST)
             eform2 = ObsExposureForm(request.POST)
             eform3 = ObsExposureForm(request.POST)
-            
+
             if oform.is_valid() and eform1.is_valid() and \
                 eform2.is_valid() and eform3.is_valid():
-                
+
                 params = manual_obs.extract_obs_params_from_post(request,oform,
                                                                  eform1,eform2,eform3,
                                                                  obs_options,log=log)
-                                                                 
+
                 (obs_requests, script_config, simulate) = manual_obs.build_obs_request(params,log=log)
-                
+
                 message = ['Built observation request with status: ']
-                
+
                 if simulate == False:
                     message.append(obs_control.submit_obs_requests(script_config,
                                                                 obs_requests,
@@ -813,9 +837,9 @@ def request_obs(request):
                 else:
                     message.append('Simulated observation built OK')
                     log.info(repr(message))
-                
+
                 log_utilities.end_day_log( log )
-                
+
                 return render(request, 'events/request_observation.html', \
                                         {'oform': oform, 'eform1': eform1,
                                          'eform2': eform2, 'eform3': eform3,
@@ -826,19 +850,19 @@ def request_obs(request):
                                          'filters': obs_options['filters'],
                                          'log_file_path': log_file_path,
                                         'message': message})
-                                        
+
             else:
-                
+
                 oform = ObsRequestForm()
                 eform1 = ObsExposureForm()
                 eform2 = ObsExposureForm(initial=obs_options['exp_defaults'])
                 eform3 = ObsExposureForm(initial=obs_options['exp_defaults'])
-                
+
                 message = ['ERROR: Form input invalid.  '
                             'Please review parameters and try again']
                 log.info(repr(message))
                 log_utilities.end_day_log( log )
-                
+
                 return render(request, 'events/request_observation.html', \
                                         {'oform': oform, 'eform1': eform1,
                                          'eform2': eform2, 'eform3': eform3,
@@ -849,18 +873,18 @@ def request_obs(request):
                                          'filters': obs_options['filters'],
                                          'log_file_path': log_file_path,
                                         'message': message})
-                                        
+
         else:
-            
+
             log.info('Observation request form opened')
-            
+
             oform = ObsRequestForm()
             eform1 = ObsExposureForm()
             eform2 = ObsExposureForm(initial=obs_options['exp_defaults'])
             eform3 = ObsExposureForm(initial=obs_options['exp_defaults'])
-            
+
             log_utilities.end_day_log( log )
-            
+
             return render(request, 'events/request_observation.html', \
                                     {'oform': oform, 'eform1': eform1,
                                      'eform2': eform2, 'eform3': eform3,
@@ -871,117 +895,117 @@ def request_obs(request):
                                      'filters': obs_options['filters'],
                                      'log_file_path': log_file_path,
                                     'message':''})
-        
+
     else:
-        
+
         return HttpResponseRedirect('login')
-    
+
 def get_obs_request_options(log):
     """Function containing the available observing options"""
-    
+
     obs_options = {}
-    
+
     qs = Field.objects.order_by('name')
-    
+
     obs_options['fields'] = []
     for f in qs:
         if 'Outside' not in f.name:
             obs_options['fields'].append( (f.name, f) )
-    
+
     obs_options['request_type'] = 'I'  # Interactive or manual request
 
     (rome_sequence,tols) = rome_obs.rome_obs_sequence()
     obs_options['rome_facilities'] = extract_facilities_list(rome_sequence)
-    
+
     (rea_sequence,tols) = rea_obs.rea_obs_sequence()
     obs_options['rea_facilities'] = extract_facilities_list(rea_sequence)
-    
+
     obs_options['facilities'] = []
     for f in obs_options['rome_facilities']+obs_options['rea_facilities']:
         if f not in obs_options['facilities']:
             obs_options['facilities'].append(f)
-    
+
     obs_options['filters'] = ( ('SDSS-i', 'SDSS-i'),
                          ('SDSS-r', 'SDSS-r'),
                          ('SDSS-g', 'SDSS-g') )
-    
-    obs_options['exp_defaults'] = { 'which_filter': 'None', 
+
+    obs_options['exp_defaults'] = { 'which_filter': 'None',
                                      'exptime': 0,
                                      'n_exp': 0 }
-    
+
     log.info('Extracted dictionary of fields and instruments')
-    
+
     return obs_options
-    
+
 def extract_facilities_list(obs_sequence):
     """Function to distill the list of facilities currently configured based
     on an observing strategy sequence
     """
-    
+
     facilities = []
-    
+
     for i,site in enumerate(obs_sequence['sites']):
-        
+
         dome = obs_sequence['domes'][i]
         tel = obs_sequence['tels'][i]
         camera = obs_sequence['instruments'][i]
-        
+
         facilities.append( site+' '+dome+' '+tel+' '+camera )
-    
+
     return facilities
-    
+
 ############################################################################
 
 def get_events_from_tap_list():
     """Function to return a list of all current events"""
-    
-    
+
+
     priority_settings = {'A':'REA High',
                          'L':'REA Low',
                          'B':'REA Post-High',
                          'N':'None'}
-    
+
     priorities = []
-    
+
     for key, value in priority_settings.items():
-        
+
         priorities.append( (key, value) )
-    
+
     priorities = tuple(priorities)
-    
+
     tap_list = query_db.get_tap_list()
-    
+
     tap_targets = []
-    
+
     for target in tap_list:
-        
+
         tap_targets.append( (target.event, target.names+'(PK='+str(target.pk)+'): '+priority_settings[target.priority]) )
-    
+
     return tap_targets, priorities
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def display_fields(request):
     """Function to display the list of fields"""
-    
+
     if request.user.is_authenticated():
-        
+
         sort_fields = rome_fields_dict.field_dict.keys()
         sort_fields.sort()
-        
+
         fields = []
-        
+
         for f_id in sort_fields:
-            
+
             f_details = rome_fields_dict.field_dict[f_id]
-            
+
             fields.append( (f_id, f_details[2], f_details[3]) )
-        
+
         return render(request, 'events/display_fields.html', \
                                     {'fields': fields})
-                                     
+
     else:
-        
+
         return HttpResponseRedirect('login')
 
 
@@ -990,132 +1014,132 @@ def display_fields(request):
 @authentication_classes((TokenAuthentication, BasicAuthentication))
 @permission_classes((IsAuthenticated,))
 def image_search(request, image_name):
-    """Function to provide an API endpoint to check whether an image is known 
+    """Function to provide an API endpoint to check whether an image is known
     to the DB or not"""
-    
+
     if request.user.is_authenticated():
-        
+
         image_in_db = query_db.check_image_in_db(image_name)
-        
+
         message = 'DBREPLY: '+repr(image_in_db)
-        
+
         return render(request, 'events/image_search.html', \
                             {'message': message})
-        
+
     else:
 
         return HttpResponseRedirect('login')
-    
+
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def trigger_rea_hi_obs(request):
     """Function to trigger REA-HI mode observations for a selected field"""
-    
+
     if request.user.is_authenticated():
 
         qs = Field.objects.all().order_by('name')
-        
+
         fields = []
         for f in qs:
             if f.name != 'Outside ROMEREA footprint':
                 fields.append(f)
-        
+
         config = config_parser.read_config_for_code('obs_control')
-        
-        log = log_utilities.start_day_log( config, 
+
+        log = log_utilities.start_day_log( config,
                                            'obs_control_rea_hi' )
-        
+
         if request.method == "POST":
-            
+
             eform = ObsExposureForm(request.POST)
             nform = FieldNameForm(request.POST)
-            
+
             log.info('Gathered POSTed form data')
-            
+
             if nform.is_valid() and eform.is_valid():
-                
+
                 log.info('Form data validated')
-                
+
                 epost = eform.save(commit=False)
                 npost = nform.save(commit=False)
-                                
+
                 field = Field.objects.get(name=npost.name)
-                
+
                 log.info('Building REA-HI request for field '+npost.name)
-                
-                obs_requests = rea_obs.build_rea_hi_request(config,field, 
-                                                       epost.exptime, 
+
+                obs_requests = rea_obs.build_rea_hi_request(config,field,
+                                                       epost.exptime,
                                                        (float(epost.t_sample)/60.0),
                                                         log=log)
-                
+
                 log.info('Received list of '+str(len(obs_requests))+\
                         ' observation requests')
-                        
+
                 submit_status = obs_control.submit_obs_requests(config,
                                                                 obs_requests,
                                                                 log=log)
-                
+
                 message = 'Returned status of observation requests at 3 sites: '
                 for status in submit_status:
                     message += status + ' '
-                
+
                 log.info(message)
                 log_utilities.end_day_log( log )
-                
+
                 return render(request, 'events/trigger_rea_hi.html', \
                                     {'nform': nform, 'eform':eform,
                                     'fields': fields,
                                     'message':message})
-                
+
             else:
-                
+
                 eform = ObsExposureForm()
                 nform = FieldNameForm()
-                
+
                 message = 'ERROR validating submission'
-                
+
                 log.info(message)
                 log_utilities.end_day_log( log )
-                
+
                 return render(request, 'events/trigger_rea_hi.html', \
                                     {'nform': nform, 'eform':eform,
                                     'fields': fields,
                                     'message':message})
-                                    
+
         else:
 
             eform = ObsExposureForm()
             nform = FieldNameForm()
-            
+
             log.info('REA-HI form loaded, no data POSTed')
             log_utilities.end_day_log( log )
-                
+
             return render(request, 'events/trigger_rea_hi.html', \
                                     {'nform': nform, 'eform':eform,
                                     'fields': fields,
                                     'message':'OK'})
-                                    
+
     else:
-        
+
         return HttpResponseRedirect('login')
-     
+
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def list_year(request, year):
    """
-   Will list all events in database for a given year. 
+   Will list all events in database for a given year.
    """
    if request.user.is_authenticated():
       events = Event.objects.filter(year=str(year))
-      
+
       rows = render_event_queryset_as_table_rows(events)
-      
+
       time_now = Time.now()
-        
-      return render(request, 'events/list_events.html', 
+
+      return render(request, 'events/list_events.html',
                     {'rows': rows, 'JD_now': time_now.jd})
-      
+
    else:
 
       return HttpResponseRedirect('login')
@@ -1123,82 +1147,82 @@ def list_year(request, year):
 @login_required(login_url='/db/login/')
 def list_anomalies(request):
     """Function to list all anomalous events from the current year"""
-    
+
     if request.user.is_authenticated():
-        
+
         current_date = datetime.now()
         time_now = Time.now()
-        
+
         #events = Event.objects.filter(year=str(current_date.year), status='AN')
         events = Event.objects.filter(status='AN')
-        
+
         event_names = []
         for e in events:
             qs = EventName.objects.filter(event=e)
             event_names.append(utilities.long_to_short_name(qs[0].name))
-            
+
         rows = render_event_queryset_as_enhanced_table_rows(events)
-        
-        return render(request, 'events/list_anomalies.html', 
-                              {'rows': rows, 
+
+        return render(request, 'events/list_anomalies.html',
+                              {'rows': rows,
                               'JD_now': time_now.jd})
-    
+
     else:
-        
+
         return HttpResponseRedirect('login')
 
-    
+
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def list_all(request, display_year=None):
     """
-    Will list all events in database. 
+    Will list all events in database.
     """
-    
+
     if request.user.is_authenticated():
-        
+
         time_now = Time.now()
-        
+
         if display_year == None:
             current_date = datetime.now()
             display_year = current_date.year
             events = Event.objects.filter(year=display_year)
-            
+
         elif display_year == 'ALL':
             events = Event.objects.all()
 
         else:
             events = Event.objects.filter(year=display_year)
-        
+
         rows = render_event_queryset_as_table_rows(events)
         context = {'rows': rows, 'JD_now': time_now.jd}
 
         return render(request, 'events/list_events.html', context)
-    
+
     else:
-        
+
         return HttpResponseRedirect('login')
 
 def render_event_queryset_as_table_rows(events,separations=None):
     """Function to return a neat table of event parameters"""
-    
+
     ev_id = [k.pk for k in events]
     field = [k.field.name.replace(' footprint','') for k in events]
     ra = [k.ev_ra for k in events]
     dec = [k.ev_dec for k in events]
     status = [k.status for k in events]
     year_disc = [k.year for k in events]
-    
+
     names_list = []
     t0_list = []
     tE_list = []
     u0_list = []
     imag_list = []
     for i in range(len(events)):
-        
+
         evnm = EventName.objects.filter(event=events[i])
         last_model = query_db.get_last_single_model(events[i])
-        
+
         names = [k.name for k in evnm]
         names_list.append(names)
         if last_model != None:
@@ -1210,7 +1234,7 @@ def render_event_queryset_as_table_rows(events,separations=None):
             tE_list.append('NONE')
             u0_list.append('NONE')
         imag_list.append(events[i].ibase)
-    
+
     if separations == None:
         rows = zip(ev_id, names_list, field, ra, dec, status, year_disc,
                t0_list, tE_list, u0_list, imag_list)
@@ -1219,23 +1243,23 @@ def render_event_queryset_as_table_rows(events,separations=None):
         rows = zip(ev_id, names_list, field, ra, dec, status, year_disc,
                t0_list, tE_list, u0_list, imag_list, separations)
         rows = sorted(rows, key=lambda row: row[10], reverse=True)
-        
+
     return rows
-    
+
 def render_event_queryset_as_enhanced_table_rows(events):
     """Function to return a neat table of event parameters, with additional
     data for DayOps purposes"""
-    
+
     priorities = {'A': 'REA High',
                   'L': 'REA Low',
                   'B': 'REA Post-High',
                   'N': 'Not selected'}
-    
+
     ev_id = [k.pk for k in events]
     field = [k.field.name.replace(' footprint','') for k in events]
     ra = [k.ev_ra for k in events]
     dec = [k.ev_dec for k in events]
-    
+
     names_list = []
     t0_list = []
     tE_list = []
@@ -1244,17 +1268,17 @@ def render_event_queryset_as_enhanced_table_rows(events):
     texp25_list = []
     texp100_list = []
     tap_list = []
-    
+
     for i in range(len(events)):
-        
+
         evnm = EventName.objects.filter(event=events[i])
         last_model = query_db.get_last_single_model(events[i])
         last_data = query_db.get_last_datafile(events[i])
         last_tap = query_db.get_latest_tap_entry(events[i])
-        
+
         names = [k.name for k in evnm]
         names_list.append(names)
-        
+
         if last_model != None:
             t0_list.append(last_model.Tmax)
             tE_list.append(last_model.tau)
@@ -1263,46 +1287,46 @@ def render_event_queryset_as_enhanced_table_rows(events):
             t0_list.append('NONE')
             tE_list.append('NONE')
             u0_list.append('NONE')
-        
+
         if last_tap != None:
             tap_list.append(priorities[last_tap.priority])
         else:
             tap_list.append('Not selected')
-            
+
         if last_data != None:
             imag_list.append(last_data.last_mag)
-            
+
             t25 = observing_tools.calculate_exptime_romerea(float(last_data.last_mag), snrin=25)
             t100 = observing_tools.calculate_exptime_romerea(float(last_data.last_mag), snrin=100)
 
             texp25_list.append( t25 )
             texp100_list.append( t100 )
-            
+
         else:
             imag_list.append('NONE')
             texp25_list.append('NONE')
             texp100_list.append('NONE')
-            
-    rows = zip(ev_id, names_list, field, ra, dec, 
-               t0_list, tE_list, u0_list, imag_list, 
+
+    rows = zip(ev_id, names_list, field, ra, dec,
+               t0_list, tE_list, u0_list, imag_list,
                texp25_list, texp100_list, tap_list)
     rows = sorted(rows, key=lambda row: row[1], reverse=True)
-        
+
     return rows
 
 def gather_survey_links(short_name):
     """Function to fetch all available links to information from other surveys"""
 
     current_date = datetime.now()
-    
+
     rtmodel = survey_data_utilities.scrape_rtmodel(current_date.year, short_name)
     mismap = survey_data_utilities.scrape_mismap(current_date.year, short_name)
     moa = survey_data_utilities.scrape_moa(current_date.year, short_name)
     kmt = survey_data_utilities.scrape_kmt(current_date.year, short_name)
     ogle = survey_data_utilities.fetch_ogle_fchart(current_date.year, short_name)
-    
+
     event_data = [ ]
-    
+
     if rtmodel[4]:
         event_data.append(rtmodel[0])           # RTModel URL
         event_data.append(rtmodel[1])           # RTModel classification
@@ -1311,128 +1335,128 @@ def gather_survey_links(short_name):
         event_data.append('No event page')
         event_data.append('Unclassified')
         event_data.append('No image available')
-    
+
     if mismap[3]:
         event_data.append(mismap[0])            # MisMap URL
         event_data.append(mismap[1])            # MisMap image
     else:
         event_data.append('No event page')
         event_data.append('No image available')
-    
+
     if moa[3]:
         event_data.append(moa[0])               # MOA URL
         event_data.append(moa[1])               # MOA image
     else:
         event_data.append('No event page')
         event_data.append('No image available')
-    
+
     if kmt[3]:
         event_data.append(kmt[1])               # KMTNet URL
     else:
         event_data.append('No event page')
-    
+
     if ogle[1]:
         event_data.append(ogle[0])              # OGLE finder chart
     else:
         event_data.append('No finderchart')
-        
+
     event_data = tuple(event_data)
-    
+
     return event_data
-    
+
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def search_events(request,search_type=None):
     """Function to provide a basic search form for the events DB"""
-    
+
     if request.user.is_authenticated():
-        
+
         if request.method == "POST":
-            
+
             eform = EventSearchForm(request.POST)
             pform = EventPositionForm(request.POST)
             nform = EventNameForm(request.POST)
-            
+
             if search_type == 'name' and nform.is_valid():
-                
+
                 npost = nform.save(commit=False)
-            
+
                 (e,message) = query_db.get_event_by_name(npost.name)
-                
+
                 if e != None:
                     events = [e]
                 else:
                     events = []
-                
+
             elif search_type == 'position' and pform.is_valid():
-                
+
                 search_params = {}
                 for key, value in pform.cleaned_data.items():
                     search_params[key] = value
-                
+
                 events = query_db.get_events_box_search(search_params)
-                
+
             elif search_type == 'params' and eform.is_valid():
-                
+
                 search_params = {}
                 for key, value in eform.cleaned_data.items():
                     search_params[key] = value
-                
+
                 events = query_db.get_event_by_params(search_params)
-            
+
             if nform.is_valid() or pform.is_valid() or eform.is_valid():
-                
+
                 rows = render_event_queryset_as_table_rows(events)
-                
+
                 if len(rows) == 0:
                     message = 'Search returned no matching entries'
                 else:
                     message = ''
-                    
-                return render(request, 'events/search_events.html', 
-                              {'eform':eform, 'pform':pform, 'nform':nform, 
+
+                return render(request, 'events/search_events.html',
+                              {'eform':eform, 'pform':pform, 'nform':nform,
                                'search_type':search_type,
-                               'fields': eform.fields['field'].choices, 
-                               'operators': eform.fields['operator'].choices, 
+                               'fields': eform.fields['field'].choices,
+                               'operators': eform.fields['operator'].choices,
                                'status_options': eform.fields['status'].choices,
                                'rows': rows, 'message': message})
-                    
+
             else:
-                
+
                 eform = EventSearchForm()
                 pform = EventPositionForm()
                 nform = EventNameForm()
-                
+
                 rows = ()
-                
+
                 message = 'Error - invalid form input'
-                
+
                 return render(request, 'events/search_events.html', \
-                              {'eform':eform, 'pform':pform, 'nform':nform, 
+                              {'eform':eform, 'pform':pform, 'nform':nform,
                                    'search_type':search_type,
-                                   'fields': eform.fields['field'].choices, 
-                                   'operators': eform.fields['operator'].choices, 
+                                   'fields': eform.fields['field'].choices,
+                                   'operators': eform.fields['operator'].choices,
                                    'status_options': eform.fields['status'].choices,
                                    'rows': rows, 'message': message})
-                          
+
         else:
-            
+
             eform = EventSearchForm()
             pform = EventPositionForm()
             nform = EventNameForm()
-            
+
             rows = ()
-            
+
             return render(request, 'events/search_events.html', \
-                          {'eform':eform, 'pform':pform, 'nform':nform, 
+                          {'eform':eform, 'pform':pform, 'nform':nform,
                                'search_type':search_type,
-                               'fields': eform.fields['field'].choices, 
-                               'operators': eform.fields['operator'].choices, 
+                               'fields': eform.fields['field'].choices,
+                               'operators': eform.fields['operator'].choices,
                                'status_options': eform.fields['status'].choices,
                                'rows': rows, 'message': ''})
-                          
+
     else:
-        
+
         return HttpResponseRedirect('login')
 
 
@@ -1442,24 +1466,24 @@ def show_event_by_id(request, event_id):
     """
     Will set up a single event page and display the lightcurve.
     """
-    
+
     if request.user.is_authenticated():
         time_now = datetime.now()
         time_now_jd = Time(time_now).jd
-        possible_status = { 
+        possible_status = {
              'NF':'Not in footprint',
              'AC':'active',
              'MO':'monitor',
              'AN':'anomaly',
              'EX':'expired'}
-        
+
         try:
             ev_ra = Event.objects.get(pk=event_id).ev_ra
             ev_dec = Event.objects.get(pk=event_id).ev_dec
             ev_names = EventName.objects.filter(event_id=event_id)
             flag = 0
             ev_ogle, ev_moa, ev_kmt = '', '', ''
-             
+
             for name in ev_names:
                 if 'OGLE' in name.name and flag==0:
                     ev_ogle = name.name
@@ -1468,7 +1492,7 @@ def show_event_by_id(request, event_id):
                     ev_moa = name.name
                 if 'KMT' in name.name:
                     ev_kmt = name.name
-                    
+
             # Get the names for this event ID from all surveys
             # Keep just one so that we can generate the url link to /microlensing.zah.uni-heidelberg.de
             if 'ev_ogle':
@@ -1485,11 +1509,11 @@ def show_event_by_id(request, event_id):
                 event_number = ev_name.split('-')[-1]
             field_id =  Event.objects.get(pk=event_id).field.id
             field = Field.objects.get(id=field_id).name
-            
+
             # Get list of all observations and select the one with the most recent time.
             try:
                 event = Event.objects.get(id=event_id)
-                status_recent = Event.objects.get(pk=event_id).status	    
+                status_recent = Event.objects.get(pk=event_id).status
                 single_recent = SingleModel.objects.select_related().filter(event=event).values().latest('last_updated')
                 Tmax = single_recent['Tmax']
                 e_Tmax = single_recent['e_Tmax']
@@ -1529,7 +1553,7 @@ def show_event_by_id(request, event_id):
                 last_obs = "N/A"
                 last_obs_hjd = "N/A"
                 last_obs_tel = "N/A"
-                
+
             # Convert the name to ARTEMiS format for bokeh plotting
             if 'OGLE' in ev_name:
                 artemis_name = 'OB'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
@@ -1543,20 +1567,20 @@ def show_event_by_id(request, event_id):
                 script, div = plot_it(artemis_name)
             except:
                 script, div = '', 'Detected empty or corrupt datafile in list of lightcurve files.<br>Plotting disabled.'
-            
+
             context = {'event_id':event_id, 'event_name':ev_names,
-                       'ev_ra':ev_ra, 'ev_dec':ev_dec, 'field':field, 'last_obs':last_obs, 
-                       'Tmax':Tmax, 'e_Tmax':e_Tmax, 'tau':tau, 'e_tau':e_tau, 'umin':umin, 
+                       'ev_ra':ev_ra, 'ev_dec':ev_dec, 'field':field, 'last_obs':last_obs,
+                       'Tmax':Tmax, 'e_Tmax':e_Tmax, 'tau':tau, 'e_tau':e_tau, 'umin':umin,
                        'e_umin':e_umin, 'last_updated':last_updated, 'last_updated_hjd':last_updated_hjd,
                        'last_obs':last_obs, 'last_obs_hjd':last_obs_hjd, 'status':possible_status[status],
-                       'last_obs_tel':last_obs_tel, 'ogle_url':ogle_url, 'time_now': time_now, 
+                       'last_obs_tel':last_obs_tel, 'ogle_url':ogle_url, 'time_now': time_now,
                        'time_now_jd': time_now_jd, 'the_script': script, 'the_div': div}
-        
+
         except Event.DoesNotExist:
              raise Http404("Event does not exist.")
-             
+
         return render(request, 'events/show_event_by_id.html', context)
-        
+
     else:
         return HttpResponseRedirect('login')
 
@@ -1564,9 +1588,9 @@ def show_event_by_id(request, event_id):
 @login_required(login_url='/db/login/')
 def show_event(request, event_name):
     """Will set up a single event page and display the lightcurve."""
-    
+
     if request.user.is_authenticated():
-        
+
         time_now = datetime.now()
         time_now_jd = Time(time_now).jd
         possible_status = { 'NF':'Not in footprint',
@@ -1574,9 +1598,9 @@ def show_event(request, event_name):
                             'MO':'monitor',
                             'AN':'anomaly',
                             'EX':'expired' }
-        
+
         try:
-        
+
             # Convert shorthand format to long format to make compatible with the DB
             event_name = short_to_long_name(event_name)
             this_event_number = event_name.split('-')[-1]
@@ -1584,13 +1608,13 @@ def show_event(request, event_name):
             prev_event_number = str(int(this_event_number)-1).zfill(4)
             next_name = event_name.replace(this_event_number, next_event_number)
             prev_name = event_name.replace(this_event_number, prev_event_number)
-            
+
             # Get the ID for this event
             event_id = EventName.objects.get(name=event_name).event_id
             ev_ra = Event.objects.get(pk=event_id).ev_ra
             ev_dec = Event.objects.get(pk=event_id).ev_dec
             ev_names = EventName.objects.filter(event_id=event_id)
-            
+
             flag = 0
             ev_ogle, ev_moa, ev_kmt = '', '', ''
             for name in ev_names:
@@ -1601,7 +1625,7 @@ def show_event(request, event_name):
                     ev_moa = name.name
                 if 'KMT' in name.name:
                     ev_kmt = name.name
-            
+
             # Get the names for this event ID from all surveys
             # Keep just one so that we can generate the url link to /microlensing.zah.uni-heidelberg.de
             if len(ev_ogle) > 0:
@@ -1616,11 +1640,11 @@ def show_event(request, event_name):
                 ev_name = ev_kmt
                 survey_name = "KMT"
                 event_number = ev_name.split('-')[-1]
-            
+
             field_id =  Event.objects.get(pk=event_id).field.id
             field = Field.objects.get(id=field_id).name
             # Get list of all observations and select the one with the most recent time.
-            
+
             try:
                 event = Event.objects.get(id=event_id)
                 status_recent = Event.objects.get(pk=event_id).status
@@ -1650,7 +1674,7 @@ def show_event(request, event_name):
                 last_obs_tel = "N/A"
                 status = 'EX'
                 ogle_url = ''
-        
+
             try:
                 obs_recent = DataFile.objects.select_related().filter(event=event).values().latest('last_hjd')
                 last_obs_hjd = obs_recent['last_hjd']
@@ -1665,37 +1689,37 @@ def show_event(request, event_name):
                 last_obs = "N/A"
                 last_obs_hjd = "N/A"
                 last_obs_tel = "N/A"
-        
+
             artemis_name = utilities.long_to_artemis_name(ev_name)
-        
+
             try:
                 script, div = plot_it(artemis_name)
             except:
                 script, div = '', 'Detected empty or corrupt datafile in list of lightcurve files.<br>Plotting disabled.'
-            
+
             survey_data = gather_survey_links(utilities.long_to_short_name(ev_name))
-            
-            context = {'event_id':event_id, 'event_names':ev_names, 
-                	    'this_name':event_name, 
+
+            context = {'event_id':event_id, 'event_names':ev_names,
+                	    'this_name':event_name,
                 	    'prev_name':prev_name, 'next_name':next_name,
-                	    'ev_ra':ev_ra, 'ev_dec':ev_dec, 'field':field, 'last_obs':last_obs, 
-                	    'Tmax':Tmax, 'e_Tmax':e_Tmax, 'tau':tau, 'e_tau':e_tau, 'umin':umin, 
+                	    'ev_ra':ev_ra, 'ev_dec':ev_dec, 'field':field, 'last_obs':last_obs,
+                	    'Tmax':Tmax, 'e_Tmax':e_Tmax, 'tau':tau, 'e_tau':e_tau, 'umin':umin,
                 	    'e_umin':e_umin, 'last_updated':last_updated, 'last_updated_hjd':last_updated_hjd,
                 	    'last_obs':last_obs, 'last_obs_hjd':last_obs_hjd, 'status':possible_status[status],
-                	    'last_obs_tel':last_obs_tel, 'ogle_url':ogle_url, 'time_now': time_now, 
+                	    'last_obs_tel':last_obs_tel, 'ogle_url':ogle_url, 'time_now': time_now,
                 	    'time_now_jd': time_now_jd, 'the_script': script, 'the_div': div,
                       'survey_data': survey_data}
-            
+
             return render(request, 'events/show_event.html', context)
-            
+
         except EventName.DoesNotExist:
             raise Http404("Event does not exist in DB.")
-    
+
         except ValueError:
-            raise Http404("Unrecognized event name. Please provide name in standard short or long notation.")	 
-            
+            raise Http404("Unrecognized event name. Please provide name in standard short or long notation.")
+
     else:
-        
+
         return HttpResponseRedirect('login')
 
 
@@ -1704,44 +1728,44 @@ def show_event(request, event_name):
 def display_obs_monitor(request):
     """Display of functions which monitor the observing system, observations
     requested and data taken."""
-    
+
     rome_start = datetime.strptime('2019-04-01','%Y-%m-%d')
     rome_start = rome_start.replace(tzinfo=pytz.UTC)
     now = datetime.utcnow()
     now = now.replace(tzinfo=pytz.UTC)
-    
+
     if request.user.is_authenticated():
-        
+
         (script1,div1,start_date1,end_date1) = obs_monitor.analyze_requested_vs_observed(monitor_period_days=5.0)
         (script2,div2,start_date2,end_date2) = obs_monitor.analyze_percentage_completed(start_date=rome_start,
                                                                                         end_date=now)
         if script1 == None and div1 == None:
-            
+
             script1 = ''
             div1 = 'Timeout: response too slow'
-            
+
         elif script1 == None and div1 != None:
-            
+
             script1 = ''
-        
+
         if script2 == None and div2 == None:
-            
+
             script2 = ''
             div2 = 'Timeout: response too slow'
-            
+
         elif script2 == None and div2 != None:
-            
+
             script2 = ''
-        
+
         context = {'req_vs_obs_plot_script': script1, 'req_vs_obs_plot_div': div1,
                    'completion_plot_script': script2, 'completion_plot_div': div2,
-                   'req_vs_obs_start_date': start_date1.strftime('%Y-%m-%dT%H:%M:%S'), 
+                   'req_vs_obs_start_date': start_date1.strftime('%Y-%m-%dT%H:%M:%S'),
                    'req_vs_obs_end_date':end_date1.strftime('%Y-%m-%dT%H:%M:%S'),
-                   'completion_start_date': start_date2.strftime('%Y-%m-%dT%H:%M:%S'), 
+                   'completion_start_date': start_date2.strftime('%Y-%m-%dT%H:%M:%S'),
                    'completion_end_date':end_date2.strftime('%Y-%m-%dT%H:%M:%S')}
 
         return render(request, 'events/obs_monitor_display.html', context)
-      
+
     else:
 
         return HttpResponseRedirect('login')
@@ -1752,7 +1776,7 @@ def event_obs_details(request, event_name):
     """
     Will set up a single event page with current observing details.
     """
-    
+
     if request.user.is_authenticated():
         # Convert shorthand format to long format to make compatible with the DB
         event_name = short_to_long_name(event_name)
@@ -1775,7 +1799,7 @@ def event_obs_details(request, event_name):
             patches = ax.pie(fracs, colors=cols, labels=tels, labeldistance=0.95, explode=None, autopct='%1.f%%', shadow=False)
             for pie_wedge in patches[0]:
                 pie_wedge.set_edgecolor('white')
- 
+
             title = "Observations: "+str(ndata)
             legend([k[0]+': '+str(k[1]) for k in zip(tels, num_obs)],loc=(-.12,-.12), framealpha=0.4)
             canvas = FigureCanvas(fig)
@@ -1786,7 +1810,7 @@ def event_obs_details(request, event_name):
             canvas.print_figure(filename)
             # close the figure
             close(11)
- 
+
         time_now = datetime.now()
         time_now_jd = Time(time_now).jd
         possible_status = {
@@ -1823,7 +1847,7 @@ def event_obs_details(request, event_name):
                     ev_name = ev_kmt
                     survey_name = "KMT"
                     event_number = ev_name.split('-')[-1]
-                
+
                 field = Event.objects.get(pk=event_id).field.name
                 # Get list of all observations and select the one with the most recent time.
                 try:
@@ -1879,7 +1903,7 @@ def event_obs_details(request, event_name):
                                 ogle_url = ''
                             if "OGLE" in ev_name:
                                 ogle_url = 'http://ogle.astrouw.edu.pl/ogle4/ews/%s/%s.html' % (ev_name.split('-')[1], 'blg-'+ev_name.split('-')[-1])
-                        
+
                 except:
                     #pie_url = ''
                     my_pie = 'Image Failed to Load'
@@ -1911,7 +1935,7 @@ def event_obs_details(request, event_name):
                     artemis_name = 'KM'+ev_name.split('-')[1][2:]+ev_name.split('-')[-1]
                 else:
                     artemis_name = 'UNKNOWN EVENT'
-                
+
                 context = {'event_id': event_id, 'event_name': ev_names, 'field': field,
                                 'ev_ra': ev_ra, 'ev_dec':ev_dec, 'cadence':cadence,
                                 #'pie_url':pie_url,
@@ -1920,24 +1944,24 @@ def event_obs_details(request, event_name):
                                 'status':possible_status[status],
                                 'last_obs_tel':last_obs_tel, 'ogle_url':ogle_url, 'time_now': time_now,
                                 'time_now_jd': time_now_jd}
-                
+
                 return render(request, 'events/event_obs_details.html', context)
-                
+
         except Event.DoesNotExist:
-                                    
+
             raise Http404("Event does not exist.")
-                    
+
     else:
-        
+
         return HttpResponseRedirect('login')
-                     
+
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def query_obs_requests(request):
     """Function to provide an endpoint for users to query what observation
     requests have been made for a specific target"""
-    
+
     if request.user.is_authenticated():
         if request.method == "POST":
             form = QueryObsRequestForm(request.POST)
@@ -1946,7 +1970,7 @@ def query_obs_requests(request):
                 qs = ObsRequest.objects.filter(
                         field = post.field,
                         )
-                    
+
                 obs_list = []
                 for q in qs:
                     obs = { 'id':q.grp_id, 'field': q.field, \
@@ -1978,39 +2002,39 @@ def query_obs_requests(request):
 def query_obs_by_date(request, timestamp, time_expire, request_status):
     """Function to provide an endpoint for users to query what observation
     requests have been made within a specified date range"""
-    
+
     if request.user.is_authenticated():
-        
+
         if request.method == "GET":
 
             qs = ObsRequest.objects.filter(
                         timestamp__gt = timestamp,
                         time_expire__lte = time_expire,
                         request_status = request_status)
-                
+
             obs_list = []
-                
+
             for q in qs:
                 obs = { 'pk': q.pk, 'grp_id':q.grp_id, 'track_id': q.track_id,
                         'submit_date':q.timestamp.strftime("%Y-%m-%dT%H:%M:%S"),
                         'expire_date':q.time_expire.strftime("%Y-%m-%dT%H:%M:%S"),
                         'request_status': q.request_status
                         }
-                        
+
                 obs_list.append(obs)
-            
+
             if len(obs_list) == 0:
-                
+
                 message = 'DBREPLY: No matching observations'
-                
+
             else:
-                
+
                 message = 'DBREPLY: Got observations list'
-            
+
             return render(request, 'events/query_obs_by_date.html', \
                                     {'observations': obs_list,
                                      'message': message})
-            
+
     else:
 
         return HttpResponseRedirect('login')
@@ -2023,42 +2047,42 @@ def query_obs_by_date(request, timestamp, time_expire, request_status):
 def query_event_in_survey(request, ra=None, dec=None):
     """Function to provide a PUBLIC endpoint API for users to query whether
     a set of coordinates lie within the ROME/REA survey fields.
-    
+
     Expects RA, Dec in decimal degrees.
     Returns TRUE or FALSE
     """
-    
+
     if request.method == "GET":
-        
+
         if ra != None and dec != None:
-            
+
             ra = float(ra)
             dec = float(dec)
-            
-            result = query_db.get_field_containing_coordinates({'ra':ra, 
+
+            result = query_db.get_field_containing_coordinates({'ra':ra,
                                                                 'dec':dec})
-            
+
             if 'ROME-FIELD' in result:
                 result = 'TRUE'
             else:
                 result = 'FALSE'
         else:
-            
+
             result = 'ERROR: no coordinates specified'
-            
-        return render(request, 'events/query_event_in_survey.html', 
+
+        return render(request, 'events/query_event_in_survey.html',
                           {'result': result})
-                     
+
     else:
-        
+
         return render(request, 'events/404.html', {})
-    
+
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def record_obs_request(request):
-    """Function to allow new (submitted) observation requests to be 
+    """Function to allow new (submitted) observation requests to be
     recorded in the database"""
-        
+
     if request.user.is_authenticated():
         if request.method == "POST":
             form = RecordObsRequestForm(request.POST)
@@ -2067,7 +2091,7 @@ def record_obs_request(request):
                 status = update_db_2.add_request(post.field,post.t_sample,\
                             post.exptime, timestamp=post.timestamp, \
                             time_expire=post.time_expire,n_exp=post.n_exp)
-                
+
                 return render(request, 'events/record_obs_request.html', \
                                     {'form': form, 'message': status})
             else:
@@ -2080,7 +2104,7 @@ def record_obs_request(request):
         else:
             form = RecordObsRequestForm()
             return render(request, 'events/record_obs_request.html', \
-                                    {'form': form, 
+                                    {'form': form,
                                     'message': 'none'})
     else:
         return HttpResponseRedirect('login')
@@ -2088,105 +2112,105 @@ def record_obs_request(request):
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def record_sub_obs_request_form(request):
-    """Function to provide a web form to allow new sub-requests to be 
+    """Function to provide a web form to allow new sub-requests to be
     added to the database"""
-    
+
     if request.user.is_authenticated():
-        
+
         if request.method == "POST":
-            
+
             form = RecordSubObsRequestForm(request.POST)
-            
+
             if form.is_valid():
-                
+
                 post = form.save(commit=False)
 
                 (update_ok,message1) = update_db_2.add_sub_request(post.sr_id,
                                                            post.grp_id,
                                                            post.track_id,
                                                            post.window_start,
-                                                           post.window_end, 
-                                                           post.status, 
+                                                           post.window_end,
+                                                           post.status,
                                                            post.time_executed)
-                                
+
                 if update_ok:
-                    
+
                     message = 'DBREPLY: Subrequest successfully added to database: '+message1
-                    
+
                 else:
 
                     if 'Subrequest already exists' in message:
-                        
+
                         (update_ok,message2) = update_db_2.update_sub_request(post.sr_id,
                                                            post.grp_id,
                                                            post.track_id,
                                                            post.window_start,
-                                                           post.window_end, 
-                                                           post.status, 
+                                                           post.window_end,
+                                                           post.status,
                                                            post.time_executed)
                     message = message+' '+message2
-                    
+
                 return render(request, 'events/record_sub_obs_request_form.html', \
                                     {'form': form, 'message': message})
             else:
-                
+
                 form = RecordSubObsRequestForm()
 
                 return render(request, 'events/record_sub_obs_request_form.html', \
                                     {'form': form, \
                                     'message':'Form entry was invalid.<br> Reason: <br>'+\
                                     repr(form.errors)+'<br>Please try again.'})
-                                    
+
         else:
 
             form = RecordSubObsRequestForm()
 
             return render(request, 'events/record_sub_obs_request_form.html', \
-                                    {'form': form, 
+                                    {'form': form,
                                     'message': 'none'})
 
     else:
 
         return HttpResponseRedirect('login')
-        
+
 @api_view(['POST'])
 @authentication_classes((TokenAuthentication, BasicAuthentication))
 @permission_classes((IsAuthenticated,))
-def record_sub_obs_request(request, sr_id, grp_id, track_id, 
+def record_sub_obs_request(request, sr_id, grp_id, track_id,
                            window_start,window_end,status,time_executed=None):
-    """Function to provide an API endpoint to allow new sub-requests to be 
+    """Function to provide an API endpoint to allow new sub-requests to be
     added to the database"""
-    
+
     if request.user.is_authenticated():
-        
-        
+
+
         (update_ok,message) = update_db_2.add_sub_request(sr_id,
                                                            grp_id,
                                                            track_id,
                                                            window_start,
-                                                           window_end, 
-                                                           status, 
+                                                           window_end,
+                                                           status,
                                                            time_executed)
-        
+
         if update_ok:
-                
+
             message = 'DBREPLY: Subrequest successfully added to database'
-                
+
         else:
 
             if 'Subrequest already exists' in message:
-                
+
                 (update_ok,message) = update_db_2.update_sub_request(sr_id,
                                                    grp_id,
                                                    track_id,
                                                    window_start,
-                                                   window_end, 
-                                                   status, 
+                                                   window_end,
+                                                   status,
                                                    time_executed)
-        
+
         return render(request, 'events/record_sub_obs_request.html', \
                             {'message': message})
-                                
+
     else:
 
         return HttpResponseRedirect('login')
@@ -2200,20 +2224,20 @@ def test_token(request):
         'auth': unicode(request.auth),  # None
     }
     return Response(content)
-    
+
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def add_operator(request):
-    """Function to allow new operator to be 
+    """Function to allow new operator to be
     recorded in the database"""
-        
+
     if request.user.is_authenticated():
         if request.method == "POST":
             form = OperatorForm(request.POST)
             if form.is_valid():
                 post = form.save(commit=False)
                 status = update_db_2.add_operator(post.name)
-                
+
                 return render(request, 'events/add_operator.html', \
                                     {'form': form, 'message': status})
             else:
@@ -2226,7 +2250,7 @@ def add_operator(request):
         else:
             form = OperatorForm(request.POST)
             return render(request, 'events/add_operator.html', \
-                                    {'form': form, 
+                                    {'form': form,
                                     'message': 'none'})
     else:
         return HttpResponseRedirect('login')
@@ -2234,9 +2258,9 @@ def add_operator(request):
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def add_telescope(request):
-    """Function to allow new telescope to be 
+    """Function to allow new telescope to be
     recorded in the database"""
-        
+
     if request.user.is_authenticated():
         if request.method == "POST":
             form = TelescopeForm(request.POST)
@@ -2245,7 +2269,7 @@ def add_telescope(request):
                 status = update_db_2.add_telescope(operator=post.operator,telescope_name=post.telescope_name,\
                             aperture=post.aperture, longitude=post.longitude, latitude=post.latitude,\
                             altitude=post.altitude, site=post.site)
-                
+
                 return render(request, 'events/add_telescope.html', \
                                     {'form': form, 'message': status})
             else:
@@ -2258,7 +2282,7 @@ def add_telescope(request):
         else:
             form = TelescopeForm(request.POST)
             return render(request, 'events/add_telescope.html', \
-                                    {'form': form, 
+                                    {'form': form,
                                     'message': 'none'})
     else:
         return HttpResponseRedirect('login')
@@ -2266,9 +2290,9 @@ def add_telescope(request):
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def add_event(request):
-    """Function to allow new event to be 
+    """Function to allow new event to be
     recorded in the database"""
-        
+
     if request.user.is_authenticated():
         if request.method == "POST":
             form = EventForm(request.POST)
@@ -2277,7 +2301,7 @@ def add_event(request):
                 status = update_db_2.add_event(field_name=post.field, operator_name=post.operator,
 		                               ev_ra=post.ev_ra, ev_dec=post.ev_dec, status=post.status,
 					       anomaly_rank=post.anomaly_rank, year=post.year)
-                
+
                 return render(request, 'events/add_event.html', \
                                     {'form': form, 'message': status})
             else:
@@ -2290,7 +2314,7 @@ def add_event(request):
         else:
             form = EventForm(request.POST)
             return render(request, 'events/add_event.html', \
-                                    {'form': form, 
+                                    {'form': form,
                                     'message': 'none'})
     else:
         return HttpResponseRedirect('login')
@@ -2298,9 +2322,9 @@ def add_event(request):
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def add_eventname(request):
-    """Function to allow new eventname to be 
+    """Function to allow new eventname to be
     recorded in the database"""
-        
+
     if request.user.is_authenticated():
         if request.method == "POST":
             form = EventNameForm(request.POST)
@@ -2308,7 +2332,7 @@ def add_eventname(request):
                 post = form.save(commit=False)
                 status = update_db_2.add_event_name(event=post.event, operator=post.operator,
 		                                    name=post.name)
-                
+
                 return render(request, 'events/add_eventname.html', \
                                     {'form': form, 'message': status})
             else:
@@ -2321,7 +2345,7 @@ def add_eventname(request):
         else:
             form = EventNameForm(request.POST)
             return render(request, 'events/add_eventname.html', \
-                                    {'form': form, 
+                                    {'form': form,
                                     'message': 'none'})
     else:
         return HttpResponseRedirect('login')
@@ -2329,9 +2353,9 @@ def add_eventname(request):
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def add_singlemodel(request):
-    """Function to allow new Single Model to be 
+    """Function to allow new Single Model to be
     recorded in the database"""
-        
+
     if request.user.is_authenticated():
         if request.method == "POST":
             form = SingleModelForm(request.POST)
@@ -2355,7 +2379,7 @@ def add_singlemodel(request):
 						     last_updated=post.last_updated,
 						     tap_omega=post.tap_omega,
 						     chi_sq=post.chi_sq)
-                
+
                 return render(request, 'events/add_singlemodel.html', \
                                     {'form': form, 'message': status})
             else:
@@ -2368,7 +2392,7 @@ def add_singlemodel(request):
         else:
             form = SingleModelForm(request.POST)
             return render(request, 'events/add_singlemodel.html', \
-                                    {'form': form, 
+                                    {'form': form,
                                     'message': 'none'})
     else:
         return HttpResponseRedirect('login')
@@ -2376,9 +2400,9 @@ def add_singlemodel(request):
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def add_binarymodel(request):
-    """Function to allow new Binary Model to be 
+    """Function to allow new Binary Model to be
     recorded in the database"""
-        
+
     if request.user.is_authenticated():
         if request.method == "POST":
             form = BinaryModelForm(request.POST)
@@ -2411,7 +2435,7 @@ def add_binarymodel(request):
 						     e_pi_e_e=post.e_pi_e_e,
 						     last_updated=post.last_updated,
 						     chi_sq=post.chi_sq)
-                
+
                 return render(request, 'events/add_binarymodel.html', \
                                     {'form': form, 'message': status})
             else:
@@ -2424,7 +2448,7 @@ def add_binarymodel(request):
         else:
             form = BinaryModelForm(request.POST)
             return render(request, 'events/add_binarymodel.html', \
-                                    {'form': form, 
+                                    {'form': form,
                                     'message': 'none'})
     else:
         return HttpResponseRedirect('login')
@@ -2432,9 +2456,9 @@ def add_binarymodel(request):
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def add_eventreduction(request):
-    """Function to allow new Event Reduction to be 
+    """Function to allow new Event Reduction to be
     recorded in the database"""
-        
+
     if request.user.is_authenticated():
         if request.method == "POST":
             form = EventReductionForm(request.POST)
@@ -2495,7 +2519,7 @@ def add_eventreduction(request):
 						   ps_var  = post.ps_var,
 						   back_var  = post.back_var,
 						   diffpro = post.diffpro)
-                
+
                 return render(request, 'events/add_eventreduction.html', \
                                     {'form': form, 'message': status})
             else:
@@ -2508,7 +2532,7 @@ def add_eventreduction(request):
         else:
             form = EventReductionForm(request.POST)
             return render(request, 'events/add_eventreduction.html', \
-                                    {'form': form, 
+                                    {'form': form,
                                     'message': 'none'})
     else:
         return HttpResponseRedirect('login')
@@ -2516,32 +2540,32 @@ def add_eventreduction(request):
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def add_tap(request):
-    """Function to allow a new tap entry to be 
+    """Function to allow a new tap entry to be
     recorded in the database"""
-        
+
     if request.user.is_authenticated():
         if request.method == "POST":
             form = TapForm(request.POST)
             if form.is_valid():
                 post = form.save(commit=False)
                 evname = EventName.objects.filter(event_id=post.event)[0].name
-                status = update_db_2.add_tap(event_name=evname, 
-		                             timestamp=post.timestamp, 
-					     priority=post.priority, 
-					     tsamp=post.tsamp, 
-					     texp=post.texp, 
+                status = update_db_2.add_tap(event_name=evname,
+		                             timestamp=post.timestamp,
+					     priority=post.priority,
+					     tsamp=post.tsamp,
+					     texp=post.texp,
 					     nexp=post.nexp,
-					     telclass=post.telclass, 
-					     imag=post.imag, 
-					     omega=post.omega, 
-					     err_omega=post.err_omega, 
-					     peak_omega=post.peak_omega, 
+					     telclass=post.telclass,
+					     imag=post.imag,
+					     omega=post.omega,
+					     err_omega=post.err_omega,
+					     peak_omega=post.peak_omega,
 					     blended=post.blended,
-					     visibility=post.visibility, 
-					     cost1m=post.cost1m, 
+					     visibility=post.visibility,
+					     cost1m=post.cost1m,
 					     passband=post.passband,
 					     ipp=post.ipp)
-                
+
                 return render(request, 'events/add_tap.html', \
                                     {'form': form, 'message': status})
             else:
@@ -2554,7 +2578,7 @@ def add_tap(request):
         else:
             form = TapForm(request.POST)
             return render(request, 'events/add_tap.html', \
-                                    {'form': form, 
+                                    {'form': form,
                                     'message': 'none'})
     else:
         return HttpResponseRedirect('login')
@@ -2562,32 +2586,32 @@ def add_tap(request):
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def add_taplima(request):
-    """Function to allow a new taplima entry to be 
+    """Function to allow a new taplima entry to be
     recorded in the database"""
-        
+
     if request.user.is_authenticated():
         if request.method == "POST":
             form = TapLimaForm(request.POST)
             if form.is_valid():
                 post = form.save(commit=False)
                 evname = EventName.objects.filter(event_id=post.event)[0].name
-                status = update_db_2.add_taplima(event_name=evname, 
-		                             timestamp=post.timestamp, 
-					     priority=post.priority, 
-					     tsamp=post.tsamp, 
-					     texp=post.texp, 
+                status = update_db_2.add_taplima(event_name=evname,
+		                             timestamp=post.timestamp,
+					     priority=post.priority,
+					     tsamp=post.tsamp,
+					     texp=post.texp,
 					     nexp=post.nexp,
-					     telclass=post.telclass, 
-					     imag=post.imag, 
-					     omega=post.omega, 
-					     err_omega=post.err_omega, 
-					     peak_omega=post.peak_omega, 
+					     telclass=post.telclass,
+					     imag=post.imag,
+					     omega=post.omega,
+					     err_omega=post.err_omega,
+					     peak_omega=post.peak_omega,
 					     blended=post.blended,
-					     visibility=post.visibility, 
-					     cost1m=post.cost1m, 
+					     visibility=post.visibility,
+					     cost1m=post.cost1m,
 					     passband=post.passband,
 					     ipp=post.ipp)
-                
+
                 return render(request, 'events/add_taplima.html', \
                                     {'form': form, 'message': status})
             else:
@@ -2600,7 +2624,7 @@ def add_taplima(request):
         else:
             form = TapForm(request.POST)
             return render(request, 'events/add_taplima.html', \
-                                    {'form': form, 
+                                    {'form': form,
                                     'message': 'none'})
     else:
         return HttpResponseRedirect('login')
@@ -2609,9 +2633,9 @@ def add_taplima(request):
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def add_datafile(request):
-    """Function to allow a new ARTEMiS datafile entry to be 
+    """Function to allow a new ARTEMiS datafile entry to be
     recorded in the database"""
-        
+
     if request.user.is_authenticated():
         if request.method == "POST":
             form = DataFileForm(request.POST)
@@ -2622,14 +2646,14 @@ def add_datafile(request):
 						  datafile=post.datafile,
 						  last_upd=post.last_upd,
 						  last_hjd=post.last_hjd,
-						  last_mag=post.last_mag, 
-						  tel=post.tel, 
-						  ndata=post.ndata, 
-						  inst=post.inst, 
-						  filt=post.filt, 
-						  baseline=post.baseline, 
+						  last_mag=post.last_mag,
+						  tel=post.tel,
+						  ndata=post.ndata,
+						  inst=post.inst,
+						  filt=post.filt,
+						  baseline=post.baseline,
 						  g=post.g)
-                
+
                 return render(request, 'events/add_datafile.html', \
                                     {'form': form, 'message': status})
             else:
@@ -2642,7 +2666,7 @@ def add_datafile(request):
         else:
             form = DataFileForm(request.POST)
             return render(request, 'events/add_datafile.html', \
-                                    {'form': form, 
+                                    {'form': form,
                                     'message': 'none'})
     else:
         return HttpResponseRedirect('login')
@@ -2650,9 +2674,9 @@ def add_datafile(request):
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def add_image(request):
-    """Function to allow a new image entry to be 
+    """Function to allow a new image entry to be
     recorded in the database"""
-        
+
     if request.user.is_authenticated():
         if request.method == "POST":
             form = ImageForm(request.POST)
@@ -2681,7 +2705,7 @@ def add_image(request):
 					       shift_x = post.shift_x,
 					       shift_y = post.shift_y,
 					       quality = post.quality)
-                
+
                 return render(request, 'events/add_image.html', \
                                     {'form': form, 'message': status})
             else:
@@ -2694,7 +2718,7 @@ def add_image(request):
         else:
             form = ImageForm(request.POST)
             return render(request, 'events/add_image.html', \
-                                    {'form': form, 
+                                    {'form': form,
                                     'message': 'none'})
     else:
         return HttpResponseRedirect('login')
@@ -2705,13 +2729,13 @@ def add_image(request):
 @permission_classes((IsAuthenticated,))
 def record_image(request, field_name, image_name, date_obs, timestamp, tel,
                  inst, filt, grp_id, track_id, req_id, airmass, avg_fwhm,
-                 avg_sky, avg_sigsky, moon_sep, moon_phase, moon_up, 
+                 avg_sky, avg_sigsky, moon_sep, moon_phase, moon_up,
                  elongation, nstars, ztemp, shift_x, shift_y, quality):
-    """Function to provide an API endpoint to allow new images to be 
+    """Function to provide an API endpoint to allow new images to be
     added to the database"""
-    
+
     if request.user.is_authenticated():
-        
+
 #        message = field_name+', '+image_name+', '+date_obs+', '+timestamp+\
 #                ', '+tel+', '+inst+', '+filt+', '+grp_id+', '+track_id+\
 #                ', '+req_id+', '+str(airmass)+', '+str(avg_fwhm)+\
@@ -2719,36 +2743,36 @@ def record_image(request, field_name, image_name, date_obs, timestamp, tel,
 #                ', '+str(moon_sep)+', '+str(moon_phase)+', '+moon_up+\
 #                ', '+str(elongation)+', '+str(nstars)+', '+str(ztemp)+\
 #                ', '+str(shift_x)+', '+str(shift_y)+', '+str(quality)
-        
+
         image_known = query_db.check_image_in_db(image_name)
-        
+
         if image_known:
-            
-            update_ok = update_db_2.update_image(image_name, date_obs, 
-                                               timestamp=timezone.now(), 
-                                               tel=tel, inst=inst, filt=filt, 
-                                               grp_id=grp_id, track_id=track_id, 
-                                               req_id=req_id, airmass=airmass, 
-                                               avg_fwhm=avg_fwhm, avg_sky=avg_sky, 
-                                               avg_sigsky=avg_sigsky, 
-                                               moon_sep=moon_sep, 
-                                               moon_phase=moon_phase, 
-                                               moon_up=moon_up, 
-                                               elongation=elongation, 
-                                               nstars=nstars, ztemp=ztemp, 
-                                               shift_x=shift_x, shift_y=shift_y, 
+
+            update_ok = update_db_2.update_image(image_name, date_obs,
+                                               timestamp=timezone.now(),
+                                               tel=tel, inst=inst, filt=filt,
+                                               grp_id=grp_id, track_id=track_id,
+                                               req_id=req_id, airmass=airmass,
+                                               avg_fwhm=avg_fwhm, avg_sky=avg_sky,
+                                               avg_sigsky=avg_sigsky,
+                                               moon_sep=moon_sep,
+                                               moon_phase=moon_phase,
+                                               moon_up=moon_up,
+                                               elongation=elongation,
+                                               nstars=nstars, ztemp=ztemp,
+                                               shift_x=shift_x, shift_y=shift_y,
                                                quality=quality)
-                                               
+
             if update_ok:
-                
+
                 message = 'DBREPLY: Successfully updated image information in database'
-                
+
             else:
-    
+
                 message = 'DBREPLY: ERROR updating image information in database'
-        
+
         else:
-            
+
             update_ok = update_db_2.add_image(field_name = field_name,
                                               image_name = image_name,
                                               date_obs = date_obs,
@@ -2772,18 +2796,18 @@ def record_image(request, field_name, image_name, date_obs, timestamp, tel,
                                               shift_x = shift_x,
                                               shift_y = shift_y,
                                               quality = quality)
-        
+
             if update_ok:
-                    
+
                 message = 'DBREPLY: Successfully added image to database'
-                    
+
             else:
-    
+
                 message = 'DBREPLY: ERROR adding image to the database'
-            
+
         return render(request, 'events/add_image.html', \
                             {'message': message})
-                                
+
     else:
 
         return HttpResponseRedirect('login')
@@ -2792,7 +2816,7 @@ def record_image(request, field_name, image_name, date_obs, timestamp, tel,
 @login_required(login_url='/db/login/')
 def record_data_file(request):
     """Function to allow ARTEMiS data files to be recorded in the database"""
-    
+
     if request.user.is_authenticated():
         if request.method == "POST":
             fform = RecordDataFileForm(request.POST)
@@ -2801,9 +2825,9 @@ def record_data_file(request):
                 fpost = fform.save(commit=False)
                 epost = eform.save(commit=False)
                 params = extract_data_file_post_params(fpost,epost)
-                
+
                 (status,message) = update_db_2.add_datafile_via_api(params)
-                
+
                 return render(request, 'events/record_data_file.html', \
                                     {'fform': fform, 'eform':eform, \
                                     'message': message})
@@ -2825,7 +2849,7 @@ def record_data_file(request):
 ##############################################################################################################
 def extract_data_file_post_params(fpost,epost):
     """Function to extract the parameters from a form post to a dictionary."""
-    
+
     params = {'event_name': epost.name,\
               'datafile': fpost.datafile,\
               'last_mag': float(fpost.last_mag),\
@@ -2837,18 +2861,17 @@ def extract_data_file_post_params(fpost,epost):
               'last_obs': fpost.last_obs,\
               'last_upd': fpost.last_upd
               }
-    
+
     return params
 
 ##############################################################################################################
 @login_required(login_url='/db/login/')
 def data_quality_control(request):
     """Function to display quality control information from reception"""
-        
+
     if request.user.is_authenticated():
         plot_path = db_plotting_utilities.plot_image_rejection_statistics()
         return render(request, 'events/data_quality_display.html', \
                                     {'plot_file': plot_path})
     else:
         return HttpResponseRedirect('login')
-

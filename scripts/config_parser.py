@@ -66,17 +66,17 @@ def read_config(config_file_path):
 
 def read_config_for_code(code_name):
     """Function to read XML configuration files
-    code_name = { 'obs_control', 'artemis_subscriber', 'setup', 'update_subrequests' }    
+    code_name = { 'obs_control', 'artemis_subscriber', 'setup', 'update_subrequests' }
     """
-    
+
     configs = { 'obs_control': 'obscontrol_config.xml',
                 'artemis_subscriber': 'artemis_sync.xml',
 	          'setup': 'setup.xml',
                 'update_subrequests': 'update_subrequests.xml'}
-                
+
     if code_name in configs.keys():
         config_file = configs[code_name]
-    
+
     host_name = socket.gethostname()
     #if 'rachel' in str(host_name).lower() or 'uni-heidelberg' in str(host_name).lower():
     if 'rachel' in str(host_name).lower() in str(host_name).lower():
@@ -88,11 +88,11 @@ def read_config_for_code(code_name):
             config_file_path = path.join('/var/www/robonetsite/configs/',configs[code_name])
         else:
             config_file_path = path.join('/data/romerea/configs/',configs[code_name])
-    
+
     if path.isfile(config_file_path) == False:
         raise IOError('Cannot find configuration file, looking for:'+config_file_path)
     script_config = read_config(config_file_path)
-    
+
     if code_name in ['update_subrequests']:
         for key, value in script_config.items():
             if value == 'True':
@@ -100,7 +100,7 @@ def read_config_for_code(code_name):
             elif value == 'False':
                 value = False
             script_config[key] = value
-            
+
     return script_config
 
 #################################
@@ -112,7 +112,7 @@ if __name__ == '__main__':
 
     config = read_config(config_file_path)
 
-    if config == None: print 'ERROR: Cannot read file '+config_file_path
+    if config == None: print('ERROR: Cannot read file '+config_file_path)
     else:
-        print 'Input configuration:'
-        for par,par_value in config.items(): print '    ',par, ':', par_value
+        print('Input configuration:')
+        for par,par_value in config.items(): print('    ',par, ':', par_value)

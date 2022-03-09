@@ -5,7 +5,7 @@ Created on Mon Apr 24 13:47:12 2017
 @author: rstreet
 """
 
-import httplib
+#import httplib
 import urllib
 import json
 import requests
@@ -14,7 +14,7 @@ from datetime import datetime
 
 ################################################################################
 def submit_obs_request_record(config,params):
-    """Function to submit a record of a new observation to the database 
+    """Function to submit a record of a new observation to the database
     using the API record_obs_request endpoint
     Required parameters:
         config    dict    script configuration parameters
@@ -25,16 +25,16 @@ def submit_obs_request_record(config,params):
                     timestamp   string
                     time_expire string
     """
-    
+
     end_point = 'record_obs_request'
-    
+
     message = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=True)
 
 ################################################################################
 def submit_sub_obs_request_record(config,params,testing=False,verbose=False):
-    """Function to submit a record of a new observation to the database 
+    """Function to submit a record of a new observation to the database
     using the API record_obs_request endpoint
     Required parameters:
         config    dict    script configuration parameters
@@ -43,28 +43,28 @@ def submit_sub_obs_request_record(config,params,testing=False,verbose=False):
                     grp_id,
                     track_id,
                     window_start,
-                    window_end, 
-                    status, 
+                    window_end,
+                    status,
                     time_executed
     """
-    
+
     end_point = 'record_sub_obs_request'
-    
-    key_order = [ 'sr_id', 'grp_id', 'track_id', 'window_start', 'window_end', 
+
+    key_order = [ 'sr_id', 'grp_id', 'track_id', 'window_start', 'window_end',
                  'status' ]
     if 'time_executed' in params.keys():
         key_order.append('time_executed')
-    
+
     query = build_url_query(end_point,key_order,params)
-    
+
     message = talk_to_db(query,config['db_token'],
                             testing=testing,verbose=verbose)
-                            
+
     return message
-    
+
 ################################################################################
 def submit_event_record(config,params):
-    """Function to submit a record of a new event to the database 
+    """Function to submit a record of a new event to the database
     using the API add_event endpoint
     Required parameters:
         config    dict    script configuration parameters
@@ -77,16 +77,16 @@ def submit_event_record(config,params):
                     anomaly rank     float
                     year             str
     """
-    
+
     end_point = 'add_event'
-    
+
     response = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=True)
 
 ################################################################################
 def submit_eventname_record(config,params):
-    """Function to submit a record of a new event name to the database 
+    """Function to submit a record of a new event name to the database
     using the API add_eventname endpoint
     Required parameters:
         config    dict    script configuration parameters
@@ -95,9 +95,9 @@ def submit_eventname_record(config,params):
                     operator      str
                     name          str
     """
-    
+
     end_point = 'add_eventname'
-    
+
     response = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=True)
@@ -105,7 +105,7 @@ def submit_eventname_record(config,params):
 
 ################################################################################
 def submit_data_file_record(config,params,testing=False):
-    """Function to submit a record of a new observation to the database 
+    """Function to submit a record of a new observation to the database
     using the API record_obs_request endpoint
     Required parameters:
         config    dict    script configuration parameters
@@ -121,33 +121,33 @@ def submit_data_file_record(config,params,testing=False):
                     g           float ARTEMiS' fitted blend parameter
                     ndata       int   Number of datapoints
     """
-    
+
     end_point = 'record_data_file'
-    
+
     message = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=testing)
     return message
-    
+
 ################################################################################
 def submit_operator_record(config,params):
-    """Function to submit a record of a new operator to the database 
+    """Function to submit a record of a new operator to the database
     using the API add_operator endpoint
     Required parameters:
         config    dict    script configuration parameters
         params    dict    operator parameters, including
                     name       str
     """
-    
+
     end_point = 'add_operator'
-    
+
     response = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=True)
 
 ################################################################################
 def submit_telescope_record(config,params):
-    """Function to submit a record of a new telescope to the database 
+    """Function to submit a record of a new telescope to the database
     using the API add_telescope endpoint
     Required parameters:
         config    dict    script configuration parameters
@@ -160,16 +160,16 @@ def submit_telescope_record(config,params):
                     altitude 		float
                     site 		str
     """
-    
+
     end_point = 'add_telescope'
-    
+
     response = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=True)
 
 ################################################################################
 def submit_singlemodel_record(config,params):
-    """Function to submit a record of a new single lens model to the database 
+    """Function to submit a record of a new single lens model to the database
     using the API add_singlemodel endpoint
     Required parameters:
         config    dict    script configuration parameters
@@ -192,16 +192,16 @@ def submit_singlemodel_record(config,params):
 		    tap_omega	float
 		    chi_sq	float
     """
-    
+
     end_point = 'add_singlemodel'
-    
+
     response = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=True)
 
 ################################################################################
 def submit_binarymodel_record(config,params):
-    """Function to submit a record of a new binary lens model to the database 
+    """Function to submit a record of a new binary lens model to the database
     using the API add_binarymodel endpoint
     Required parameters:
         config    dict    script configuration parameters
@@ -234,16 +234,16 @@ def submit_binarymodel_record(config,params):
 		    tap_omega	float
 		    chi_sq	float
     """
-    
+
     end_point = 'add_binarymodel'
-    
+
     response = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=True)
 
 ################################################################################
 def submit_eventreduction_record(config,params):
-    """Function to submit a record of a new event reduction to the database 
+    """Function to submit a record of a new event reduction to the database
     using the API add_eventreduction endpoint
     Required parameters:
         config    dict    script configuration parameters
@@ -303,16 +303,16 @@ def submit_eventreduction_record(config,params):
 		    back_var	    int
 		    diffpro         int
     """
-    
+
     end_point = 'add_eventreduction'
-    
+
     response = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=True)
 
 ################################################################################
 def submit_tap_record(config,params):
-    """Function to submit a record of a new TAP to the database 
+    """Function to submit a record of a new TAP to the database
     using the API add_tap endpoint
     Required parameters:
         config    dict    script configuration parameters
@@ -335,16 +335,16 @@ def submit_tap_record(config,params):
         passband		str
         ipp			float
     """
-    
+
     end_point = 'add_tap'
-    
+
     response = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=True)
 
 ################################################################################
 def submit_taplima_record(config,params):
-    """Function to submit a record of a new TAPLima to the database 
+    """Function to submit a record of a new TAPLima to the database
     using the API add_taplima endpoint
     Required parameters:
         config    dict    script configuration parameters
@@ -367,9 +367,9 @@ def submit_taplima_record(config,params):
         passband		str
         ipp			float
     """
-    
+
     end_point = 'add_taplima'
-    
+
     response = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=True)
@@ -377,7 +377,7 @@ def submit_taplima_record(config,params):
 
 ################################################################################
 def submit_datafile_record(config,params):
-    """Function to submit a record of a new ARTEMiS DataFile to the database 
+    """Function to submit a record of a new ARTEMiS DataFile to the database
     using the API add_datafile endpoint
     Required parameters:
         config    dict    script configuration parameters
@@ -389,21 +389,21 @@ def submit_datafile_record(config,params):
 	last_mag		float
 	tel			str
 	ndata			int
-	inst			str		
+	inst			str
 	filt			str
 	baseline		float
 	g			float
      """
-    
+
     end_point = 'add_datafile'
-    
+
     response = talk_to_db(params,end_point,\
                             config['db_user_id'],config['db_pswd'],
                             testing=True)
 
 ################################################################################
 def submit_image_record(config,params,testing=False,verbose=False):
-    """Function to submit a record of a new image to the database 
+    """Function to submit a record of a new image to the database
     using the API add_image endpoint
     Required parameters:
         config    dict    script configuration parameters
@@ -434,105 +434,105 @@ def submit_image_record(config,params,testing=False,verbose=False):
      """
 
     end_point = 'record_image'
-    
-    key_order = [ 
-                'field_name', 'image_name', 'date_obs', 'timestamp', 
+
+    key_order = [
+                'field_name', 'image_name', 'date_obs', 'timestamp',
                 'tel', 'inst', 'filt', 'grp_id', 'track_id', 'req_id',
                 'airmass', 'avg_fwhm', 'avg_sky', 'avg_sigsky',
                 'moon_sep', 'moon_phase', 'moon_up', 'elongation', 'nstars',
                 'ztemp', 'shift_x', 'shift_y', 'quality'
                   ]
-    
+
     query = build_url_query(end_point,key_order,params)
-    
+
     message = talk_to_db(query,config['db_token'],
                             testing=testing,verbose=verbose)
-    
+
     return message
 
 def submit_event_status(config,params,testing=False,verbose=False):
-    
+
     end_point = 'set_event_status_api'
-    
+
     key_order = [ 'event_name', 'status' ]
-    
+
     query = build_url_query(end_point,key_order,params)
-    
+
     message = talk_to_db(query,config['db_token'],
                             testing=testing,verbose=verbose)
-    
+
     return message
-    
+
 ################################################################################
 def get_obs_list(config,params,testing=False,verbose=False):
-    """Function to retrieve from the database API endpoint a list of 
+    """Function to retrieve from the database API endpoint a list of
     observations matching the parameters given.
-    
+
     Inputs:
         :param dict config: script configuration parameters
         :param dict params: observation parameters, where key, values match
                             the keywords and data types in the ObsRequest.
     """
-    
+
     end_point = 'query_obs_by_date'
-    
+
     key_order = [ 'timestamp', 'time_expire', 'request_status' ]
 
-    status_options = [ 'AC', 'EX', 'CN' ]    
-    
+    status_options = [ 'AC', 'EX', 'CN' ]
+
     if params['request_status'] != 'ALL':
-        
+
         status_options = [ params['request_status'] ]
-    
+
     obs_list = []
-    
+
     for status in status_options:
-        
+
         qparams = {}
-        
+
         for key in key_order:
-            
+
             qparams[key] = params[key]
-        
+
         qparams['request_status'] = status
-        
+
         query = build_url_query(end_point,key_order,qparams)
-        
+
         (message, response) = ask_db(query,config['db_token'],
                                 testing=testing,verbose=verbose)
-        
+
         if 'Got observations list' in message:
-            
+
             table_data = extract_table_data(response)
-            
+
             obs_list = obs_list + table_data
-            
+
     return message, obs_list
 
 def check_image_in_db(config,params,testing=False,verbose=False):
     """Function to check the database to see if an image is present
-    
+
     Inputs:
         :params dict config: script configuration parameters
         :param dict params: containing image_name as a parameter.
     """
-    
+
     end_point = 'image_search'
-    
+
     key_order = [ 'image_name' ]
-    
+
     query = build_url_query(end_point,key_order,params)
-    
+
     (message, response) = ask_db(query,config['db_token'],
                                 testing=testing,verbose=verbose)
-    
+
     return message
-    
+
 def extract_table_data(html_text):
     """Function to extract table data from HTML-format text"""
-    
+
     lines = html_text.split('\n')
-    
+
     istart = None
     iend = None
     for i,l in enumerate(lines):
@@ -540,16 +540,16 @@ def extract_table_data(html_text):
             istart = i
         elif '</table>' in l:
             iend = i
-    
+
     data = []
-    
+
     for l in lines[istart+1:iend]:
-        
+
         if l.lstrip()[0:4] == '<tr>' and '<th>' not in l:
-            
+
             ldata = l.lstrip().replace('<tr>','').replace('</tr>\n','')
             ldata = ldata.replace('<td>','::').replace('</td>','::').split('::')
-                        
+
             entry = {}
             entry['pk'] = int(ldata[1])
             entry['grp_id'] = ldata[3]
@@ -557,116 +557,116 @@ def extract_table_data(html_text):
             entry['timestamp'] = datetime.strptime(ldata[7],"%Y-%m-%dT%H:%M:%S")
             entry['time_expire'] = datetime.strptime(ldata[9],"%Y-%m-%dT%H:%M:%S")
             entry['status'] = ldata[11]
-            
+
             data.append( entry )
-    
+
     return data
 
 def build_url_query(end_point,key_order,params):
     """Function to build an URL query string in the format necessary for
     an API"""
-    
+
     query = end_point + '/'
-    
+
     for i,key in enumerate(key_order):
-        
+
         value = params[key]
-        
+
         if i < len(key_order)-1:
             query = query + key + '=' + str(value) + '&'
         else:
             query = query + key + '=' + str(value)
-    
+
     return query
-    
+
 ################################################################################
 def talk_to_db(query,token,testing=False,verbose=False):
     """Method to communicate with various APIs of the ROME/REA database to
     submit information (i.e. POST)
-    
+
     Required arguments are:
-        query        string  API endpoint address and query parameters 
+        query        string  API endpoint address and query parameters
                             concatenated in URL format
         token       string   User token login for database
-    
+
     E.g. if submitting to URL:
         http://robonet.lco.global/db/record_obs_request/
     end_point = 'record_obs_request
-    
+
     Optional arguments:
         testing    boolean            Switch to localhost URL for testing
                                         Def=False for operations
         verbose    boolean            Switch for additional debugging output
     """
-    
+
     if testing == True:
         host_url = 'http://127.0.0.1:8000/db/'
     else:
         host_url = 'https://robonet.lco.global/db/'
     if host_url[-1:] != '/':
         host_url = host_url + '/'
-    
+
     url = path.join(host_url,query)
     if url[-1:] != '/':
         url = url + '/'
-    
+
     if verbose==True:
         print('End point URL:',url)
-    
+
     headers = {'Authorization': 'Token ' + token}
-    
+
     response = requests.post(url, headers=headers, verify=True)
-    
+
     if verbose==True:
 
-        print 'Completed successfully'
-    
+        print('Completed successfully')
+
     message = parse_db_message(response)
-    
+
     return message
 
 def ask_db(query,token,testing=False,verbose=False):
-    """Method to communicate with various APIs of the ROME/REA database to 
+    """Method to communicate with various APIs of the ROME/REA database to
     extract information (i.e. GET)
-    
+
     Required arguments are:
-        query        string  API endpoint address and query parameters 
+        query        string  API endpoint address and query parameters
                             concatenated in URL format
         token       string   User token login for database
-    
+
     E.g. if submitting to URL:
         http://robonet.lco.global/db/record_obs_request/
     end_point = 'record_obs_request
-    
+
     Optional arguments:
         testing    boolean            Switch to localhost URL for testing
                                         Def=False for operations
         verbose    boolean            Switch for additional debugging output
     """
-    
+
     if testing == True:
         host_url = 'http://127.0.0.1:8000/db'
     else:
         host_url = 'https://robonet.lco.global/db'
-    
+
     url = path.join(host_url,query)
     if url[-1:] != '/':
         url = url + '/'
-    
+
     if verbose==True:
-        print 'End point URL:',url
-    
+        print('End point URL:',url)
+
     headers = {'Authorization': 'Token ' + token}
-    
+
     response = requests.get(url, headers=headers)
-    
+
     message = parse_db_message(response)
-    
+
     return message, response.text
 
 def parse_db_message(response):
     """Function to parse the database response message"""
-    
+
     message = None
 
     for line in response.text.split('\n'):
@@ -676,9 +676,8 @@ def parse_db_message(response):
             message = line.lstrip().replace('<h5>','').replace('</h5>','')
             message = message.replace('<center>','').replace('</center>','')
             message = message.replace('DBREPLY: ','')
-    
+
     if message == None:
         message = response.text
-        
+
     return message
-    

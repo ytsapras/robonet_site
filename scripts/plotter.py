@@ -1,7 +1,7 @@
-import MLPlots
-from local_conf import get_conf
+from . import MLPlots
+from . import local_conf
 def plot_it(event):
-    artemis = get_conf('artemis')
+    artemis = local_conf.get_conf('artemis')
     Plot=MLPlots.MLplots(event)
     Plot.path_lightcurves(artemis+'data/')
     Plot.path_models(artemis+'model/')
