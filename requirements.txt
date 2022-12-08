@@ -11,7 +11,7 @@ backports.shutil-get-terminal-size==1.0.0
 beautifulsoup4==4.10.0
 bokeh==2.4.2
 bs4==0.0.1
-certifi==2021.10.8
+certifi==2022.12.7
 charset-normalizer==2.0.12
 cycler==0.11.0
 decorator==5.1.1
